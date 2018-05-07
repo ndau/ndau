@@ -1,0 +1,38 @@
+syntax="proto3";
+package ndau;
+
+// A Transaction is an atomic operation on the ndau chain.
+//
+// There are several types of transaction defined, with various
+// effects. See documentation for each type for details.
+message Transaction {
+    oneof tx {
+        GTValidatorChange gt_validator_change = 999;
+    }
+
+    // In order to prevent consensus errors stemming from repeated transactions
+    // which are otherwise identical, Transactions support an arbitrary nonce.
+    // This is NOT a cryptographic nonce; it is simply an arbitrary
+    // number of high entropy. It has no semantic meaning.
+    //
+    // UUID1 produces good values suitable for this.
+    bytes nonce = 15;
+}
+
+// A GTValidatorChange is a Globally Trusted Validator Change.
+//
+// No attempt is made to validate the validator change;
+// nobody watches the watchmen.
+//
+// THIS IS DANGEROUS AND MUST BE DISABLED PRIOR TO RELEASE
+message GTValidatorChange {
+    // No information about the public key format is
+    // currently available.
+    bytes public_key = 1;
+
+    // Power is an arbitrary integer with no intrinsic
+    // meaning; during the Global Trust period, it
+    // can be literally whatever. Setting it to 0
+    // removes the validator.
+    int64 power = 2;
+}

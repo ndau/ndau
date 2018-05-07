@@ -1,0 +1,28 @@
+package: gitlab.ndau.tech/experiments/ndau-chain
+import:
+- package: github.com/gogo/protobuf
+  version: ^1.0.0
+  subpackages:
+  - proto
+- package: github.com/golang/protobuf
+  version: ^1.0.0
+  subpackages:
+  - proto
+- package: golang.org/x/crypto
+  subpackages:
+  - ed25519
+- package: github.com/attic-labs/noms
+  # it's hardly friendly to depend on a particular hash,
+  # but this may be the only thing which will work reliably
+  # for now. This hash represents the current head of
+  # the master branch, which is right now some 8 months
+  # and 300 commits newer than the newest release.
+  # It would be great if it had a proper release, but
+  # for now, at least this compiles.
+  #
+  # Also, we're aliasing this to our own fork of the repo
+  # for now. Long-term, once we start officially supporting
+  # our fork, we should probably just rename it and use it
+  # directly, but for now this is the fast path to victory.
+  version: 186e0939a5044b182bce9e60dea910bd6bcb5cd9
+  repo: https://github.com/oneiro-ndev/noms.git
