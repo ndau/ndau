@@ -8,4 +8,4 @@ package ndau
 // from our vendored dependencies. We also need to set it in the current directory;
 // subdirectories are not searched.
 //
-//go:generate protoc --gogoslick_out=. transaction.proto --proto_path=. --proto_path=$GOPATH/src/gitlab.ndau.tech/experiments/ndau-chain/vendor
+//go:generate protoc --gogoslick_out=. transaction.proto --proto_path=. --proto_path=$GOPATH/src/github.com/oneiro-ndev/ndau-chain/vendor

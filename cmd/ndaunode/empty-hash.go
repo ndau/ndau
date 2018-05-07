@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.ndau.tech/experiments/ndau-chain/pkg/ndau"
+	"github.com/oneiro-ndev/ndau-chain/pkg/ndau"
 )
 
 // get the hash of an empty database

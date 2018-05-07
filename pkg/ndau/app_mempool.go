@@ -3,8 +3,8 @@
 package ndau
 
 import (
+	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/code"
 	"github.com/tendermint/abci/types"
-	"gitlab.ndau.tech/experiments/ndau-chain/pkg/ndau/code"
 )
 
 // CheckTx validates a Transaction (defined in transaction.proto)

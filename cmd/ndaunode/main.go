@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/oneiro-ndev/ndau-chain/pkg/ndau"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/log"
-	"gitlab.ndau.tech/experiments/ndau-chain/pkg/ndau"
 )
 
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/chaos")
