@@ -1,11 +1,11 @@
-# `chaosnode`: ABCI application implementing a chaos chain node
+# `ndaunode`: ABCI application implementing a ndau chain node
 
 ## Usage
 
 - Terminal 1:
 
     ```sh
-    $ chaosnode
+    $ ndaunode
     ```
 
 - Terminal 2:
@@ -16,10 +16,10 @@
 
 - Terminal 3:
 
-    Set and read values from the chaos blockchain using the `chaos` tool:
+    Set and read values from the ndau blockchain using the `ndau` tool:
 
     ```sh
-    $ chaos set -k key -v value
+    $ ndau set -k key -v value
     ```
 
-    and so forth. See `chaos` tool documentation for more details.
+    and so forth. See `ndau` tool documentation for more details.

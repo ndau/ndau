@@ -6,7 +6,7 @@ package code
 // ReturnCode is the type returned by various operations
 type ReturnCode uint32
 
-// Return codes for the chaos blockchain
+// Return codes for the ndau blockchain
 const (
 	OK ReturnCode = iota
 	UnknownTransaction

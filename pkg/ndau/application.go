@@ -16,11 +16,7 @@ import (
 	"github.com/tendermint/tmlibs/log"
 )
 
-// App is an ABCI application which implements immutable storage
-// of arbitrary namespaced K-V data on the blockchain.
-//
-// See the "chaos chain" section of the Epistemology whitepaper
-// for details.
+// App is an ABCI application which implements the Ndau chain
 type App struct {
 	types.BaseApplication
 
@@ -44,7 +40,7 @@ type App struct {
 	logger log.Logger
 }
 
-// NewApp prepares a new Chaos App
+// NewApp prepares a new Ndau App
 func NewApp(dbSpec string) (*App, error) {
 	if len(dbSpec) == 0 {
 		dbSpec = "mem"
@@ -66,13 +62,18 @@ func NewApp(dbSpec string) (*App, error) {
 	}
 
 	// in some ways, a dataset is like a particular table in the db
-	ds := db.GetDataset("chaos")
+	ds := db.GetDataset("ndau")
 
-	return &App{
+	app := App{
 		db:     db,
 		ds:     ds,
 		logger: log.NewNopLogger(),
-	}, nil
+	}
+	err = app.initializeDataset()
+	if err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
 
 // SetLogger sets the logger to be used by this app
@@ -105,7 +106,7 @@ func (app *App) logRequest(method string) log.Logger {
 
 // Close closes the database connection opened on App creation
 func (app *App) Close() error {
-	return errors.Wrap(app.db.Close(), "Failed to Close chaos.App")
+	return errors.Wrap(app.db.Close(), "Failed to Close ndau.App")
 }
 
 // return the current state of the application
@@ -146,5 +147,26 @@ func (app *App) updateValidator(v types.Validator) (err error) {
 	// we only update the changes array if we successfully updated the tree
 	app.ValUpdates = append(app.ValUpdates, v)
 	logger.Info("exiting OK", "app.ValUpdates", app.ValUpdates)
+	return nil
+}
+
+// Ensure that a head value exists in the application's dataset
+func (app *App) initializeDataset() (err error) {
+	head, hasHead := app.ds.MaybeHeadValue()
+	if !hasHead {
+		head = nt.NewMap(app.db)
+		// commit the empty head so when we go to get things later, we don't
+		// panic due to an empty dataset
+		ds, err := app.db.CommitValue(app.ds, head)
+		if err != nil {
+			return errors.Wrap(err, "initializeDataset failed to commit new head")
+		}
+		app.ds = ds
+	}
+	_, isMap := head.(nt.Map)
+	if !isMap {
+		return errors.New("InitializeDataset found non-`nt.Map` as ds.HeadValue")
+	}
+
 	return nil
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tmlibs/log"
 )
 
-var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/chaos")
+var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
 var socketAddr = flag.String("addr", "0.0.0.0:46658", "socket address for incoming connection from tendermint")
 var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and then quit")
@@ -25,8 +25,8 @@ func getNdauhome() string {
 	return filepath.Join(os.ExpandEnv("$HOME"), ".ndau")
 }
 
-func getChaosConfigDir() string {
-	return filepath.Join(getNdauhome(), "chaos")
+func getNdauConfigDir() string {
+	return filepath.Join(getNdauhome(), "ndau")
 }
 
 func getDbSpec() string {
@@ -34,7 +34,7 @@ func getDbSpec() string {
 		return *dbspec
 	}
 	if *useNh {
-		return filepath.Join(getChaosConfigDir(), "data")
+		return filepath.Join(getNdauConfigDir(), "data")
 	}
 	// default to noms server for dockerization
 	return "http://noms:8000"
