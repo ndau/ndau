@@ -34,6 +34,15 @@ type App struct {
 	db datas.Database
 	ds datas.Dataset
 
+	// Why store this state at all? Why not just have an app.state() function
+	// which constructs it in realtime from app.ds.HeadValue?
+	//
+	// We want to ensure that at all times, the 'official' state committed
+	// into the dataset is only updated on a 'Commit' transaction. This
+	// in turn means that we need to persist the state between transactions
+	// in memory, which means keeping track of this state object.
+	state nt.Map
+
 	// List of pending validator updates
 	ValUpdates []types.Validator
 
@@ -69,7 +78,7 @@ func NewApp(dbSpec string) (*App, error) {
 		ds:     ds,
 		logger: log.NewNopLogger(),
 	}
-	err = app.initializeDataset()
+	err = app.initialize()
 	if err != nil {
 		return nil, err
 	}
@@ -109,17 +118,16 @@ func (app *App) Close() error {
 	return errors.Wrap(app.db.Close(), "Failed to Close ndau.App")
 }
 
-// return the current state of the application
-func (app *App) state() nt.Map {
-	return app.ds.HeadValue().(nt.Map)
-}
-
 // commit the current application state
 //
 // This is different from Commit, which processes a Commit Tx!
-func (app *App) commit() error {
-	var err error
-	app.ds, err = app.db.CommitValue(app.ds, app.state())
+// However, they're related: think HARD before using this function
+// outside of func Commit.
+func (app *App) commit() (err error) {
+	ds, err := app.db.CommitValue(app.ds, app.state)
+	if err == nil {
+		app.ds = ds
+	}
 	return err
 }
 
@@ -131,27 +139,8 @@ func (app *App) Height() uint64 {
 	return app.ds.HeadRef().Height() - 1
 }
 
-// Update the app's internal state with the given validator
-func (app *App) updateValidator(v types.Validator) (err error) {
-	logger := app.logger.With("method", "updateValidator")
-	logger.Info("entered method", "Power", v.GetPower(), "PubKey", v.GetPubKey())
-	if v.Power == 0 {
-		logger.Info("attempting to remove validator")
-		// TODO: remove validator from internal state
-
-	} else {
-		logger.Info("attempting to update validator")
-		// TODO: upsert validator into internal state
-	}
-
-	// we only update the changes array if we successfully updated the tree
-	app.ValUpdates = append(app.ValUpdates, v)
-	logger.Info("exiting OK", "app.ValUpdates", app.ValUpdates)
-	return nil
-}
-
 // Ensure that a head value exists in the application's dataset
-func (app *App) initializeDataset() (err error) {
+func (app *App) initialize() (err error) {
 	head, hasHead := app.ds.MaybeHeadValue()
 	if !hasHead {
 		head = nt.NewMap(app.db)
@@ -159,14 +148,15 @@ func (app *App) initializeDataset() (err error) {
 		// panic due to an empty dataset
 		ds, err := app.db.CommitValue(app.ds, head)
 		if err != nil {
-			return errors.Wrap(err, "initializeDataset failed to commit new head")
+			return errors.Wrap(err, "initialize failed to commit new head")
 		}
 		app.ds = ds
 	}
-	_, isMap := head.(nt.Map)
+	state, isMap := head.(nt.Map)
 	if !isMap {
-		return errors.New("InitializeDataset found non-`nt.Map` as ds.HeadValue")
+		return errors.New("initialize found non-`nt.Map` as ds.HeadValue")
 	}
+	app.state = state
 
 	return nil
 }

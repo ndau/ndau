@@ -21,7 +21,8 @@ func (tx *GTValidatorChange) Apply(app *App) error {
 	}
 	v := tx.ToValidator()
 
-	return app.updateValidator(v)
+	app.updateValidator(v)
+	return nil
 }
 
 // AsTransaction builds a Transaction from a GTValidatorChange

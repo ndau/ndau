@@ -1,5 +1,5 @@
-hash: cf6be3ccfb8d1d69e5fdbd7ad93131659a67ab2c12901c7e5caa88070b13a827
-updated: 2018-05-07T17:43:38.8662013+02:00
+hash: d64bc37ccea7b32d8f34e4bfa64e6afc2d4c4bec3caaaeaa67aa2ff1f8f9af3e
+updated: 2018-05-09T13:31:58.279781+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -123,6 +123,9 @@ imports:
   version: 9bdec3dec7c611fa97beadc374d75bdf02cd880e
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/oneiro-ndev/noms-util
+  version: b31787dd193cccca41bb0b9fb9743ff0ed50d1f1
+  repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib

@@ -11,10 +11,7 @@ import (
 func (app *App) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	app.logRequest("InitChain")
 	for _, v := range req.Validators {
-		e := app.updateValidator(v)
-		if e != nil {
-			app.logger.Error("Error updating validators", "error", e.Error())
-		}
+		app.updateValidator(v)
 	}
 	return types.ResponseInitChain{}
 }
@@ -71,11 +68,17 @@ func (app *App) Commit() types.ResponseCommit {
 	err := app.commit()
 	if err != nil {
 		logger.Error("Failed to commit block")
-		// Should we do something smarter here?
-		// Is there a real way to recover from a failure to save
-		// a version?
-		// What could cause an error here anyway? TODO:
-		// look that up in the noms docs
+		// A panic is appropriate here because the one thing we do _not_ want
+		// in the event that a block cannot be committed is for the app to
+		// just keep ticking along as if things were ok. Crashing the
+		// app should kill the whole node service, which in turn should
+		// give human operators a chance to figure out what went wrong.
+		//
+		// There is no noms documentation stating what kind of errors can
+		// be expected from this, but we'd expect them to be mostly I/O
+		// issues. In that case, restarting the service, potentially
+		// automatically, and recovering state from the rest of the chain
+		// is the best way forward.
 		panic(err)
 	}
 

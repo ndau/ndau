@@ -26,3 +26,5 @@ import:
   # directly, but for now this is the fast path to victory.
   version: 186e0939a5044b182bce9e60dea910bd6bcb5cd9
   repo: https://github.com/oneiro-ndev/noms.git
+- package: github.com/oneiro-ndev/noms-util
+  repo: git@github.com:oneiro-ndev/noms-util.git
