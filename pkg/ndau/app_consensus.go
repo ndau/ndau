@@ -39,7 +39,7 @@ func (app *App) DeliverTx(bytes []byte) (response types.ResponseDeliverTx) {
 		return
 	}
 
-	nt := ToNdauTransaction(tx)
+	nt := ToTransactable(tx)
 	if nt == nil {
 		response.Code = uint32(code.UnknownTransaction)
 		return

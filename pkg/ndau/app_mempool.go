@@ -18,7 +18,7 @@ func (app *App) CheckTx(bytes []byte) (response types.ResponseCheckTx) {
 		return
 	}
 
-	nt := ToNdauTransaction(tx)
+	nt := ToTransactable(tx)
 	if nt == nil {
 		response.Code = uint32(code.UnknownTransaction)
 		return

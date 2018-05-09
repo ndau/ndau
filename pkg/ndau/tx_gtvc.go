@@ -5,9 +5,9 @@ import (
 	"github.com/tendermint/abci/types"
 )
 
-// static assert that GTValidatorChange fits the NdauTransaction
+// static assert that GTValidatorChange fits the Transactable
 // interface
-var _ NdauTransaction = (*GTValidatorChange)(nil)
+var _ Transactable = (*GTValidatorChange)(nil)
 
 // IsValid returns nil if tx is valid, or an error otherwise
 func (tx *GTValidatorChange) IsValid(app *App) error {
