@@ -3,17 +3,42 @@
 package ndau
 
 import (
+	nt "github.com/attic-labs/noms/go/types"
 	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/code"
 	"github.com/tendermint/abci/types"
 )
 
-// InitChain saves the validators in the merkle tree
-func (app *App) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	app.logRequest("InitChain")
+// InitChain performs necessary chain initialization.
+//
+// This includes saving the initial validator set in the local state.
+func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseInitChain) {
+	logger := app.logRequestBare("InitChain")
+
+	// first ensure that there's a head on app.ds and app.state is initialized
+	head, hasHead := app.ds.MaybeHeadValue()
+	if !hasHead {
+		head = nt.NewMap(app.db)
+	}
+	app.state = head.(nt.Map)
+
+	// now add the initial validators set
 	for _, v := range req.Validators {
 		app.updateValidator(v)
 	}
-	return types.ResponseInitChain{}
+
+	// commiting here ensures two things:
+	// 1. we actually have a head value
+	// 2. the initial validators are present from height 1 (or 0, tendermint style)
+	err := app.commit()
+	if err != nil {
+		logger.Error(err.Error())
+		// fail fast if we can't actually initialize the chain
+		panic(err.Error())
+	}
+
+	app.ValUpdates = make([]types.Validator, 0)
+
+	return
 }
 
 // BeginBlock tracks the block hash and header information

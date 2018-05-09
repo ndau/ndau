@@ -1,5 +1,5 @@
 hash: d64bc37ccea7b32d8f34e4bfa64e6afc2d4c4bec3caaaeaa67aa2ff1f8f9af3e
-updated: 2018-05-09T13:31:58.279781+02:00
+updated: 2018-05-09T15:05:45.161537+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -138,6 +138,7 @@ imports:
   version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert
+  - require
 - name: github.com/syndtr/goleveldb
   version: 34011bf325bce385408353a30b101fe5e923eb6e
   subpackages:
@@ -167,6 +168,7 @@ imports:
   version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
   subpackages:
   - ed25519
+  - ed25519/internal/edwards25519
 - name: golang.org/x/net
   version: 434ec0c7fe3742c984919a691b2018a6e9694425
   subpackages:

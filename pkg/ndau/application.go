@@ -78,10 +78,6 @@ func NewApp(dbSpec string) (*App, error) {
 		ds:     ds,
 		logger: log.NewNopLogger(),
 	}
-	err = app.initialize()
-	if err != nil {
-		return nil, err
-	}
 	return &app, nil
 }
 
@@ -102,15 +98,27 @@ func (app *App) LogState() {
 // logRequest emits a log message on request receipt
 //
 // It also returns a decorated logger for request-internal logging.
-func (app *App) logRequest(method string) log.Logger {
+func (app *App) logRequestOptHt(method string, showHeight bool) log.Logger {
 	decoratedLogger := app.logger.With(
 		"method", method,
 	)
-	decoratedLogger.Info(
-		"received request",
-		"height", app.Height(),
-	)
+	if showHeight {
+		decoratedLogger.Info(
+			"received request",
+			"height", app.Height(),
+		)
+	} else {
+		decoratedLogger.Info("received request")
+	}
 	return decoratedLogger
+}
+
+func (app *App) logRequest(m string) log.Logger {
+	return app.logRequestOptHt(m, true)
+}
+
+func (app *App) logRequestBare(m string) log.Logger {
+	return app.logRequestOptHt(m, false)
 }
 
 // Close closes the database connection opened on App creation
@@ -137,26 +145,4 @@ func (app *App) Height() uint64 {
 	// tendermint hates this, and won't reconnect
 	// if we do so, because it counts from 0
 	return app.ds.HeadRef().Height() - 1
-}
-
-// Ensure that a head value exists in the application's dataset
-func (app *App) initialize() (err error) {
-	head, hasHead := app.ds.MaybeHeadValue()
-	if !hasHead {
-		head = nt.NewMap(app.db)
-		// commit the empty head so when we go to get things later, we don't
-		// panic due to an empty dataset
-		ds, err := app.db.CommitValue(app.ds, head)
-		if err != nil {
-			return errors.Wrap(err, "initialize failed to commit new head")
-		}
-		app.ds = ds
-	}
-	state, isMap := head.(nt.Map)
-	if !isMap {
-		return errors.New("initialize found non-`nt.Map` as ds.HeadValue")
-	}
-	app.state = state
-
-	return nil
 }
