@@ -36,3 +36,52 @@ func (m *SVIMap) GetNamespacedKey(key string, currentBlock uint64) *SVINamespace
 	}
 	return innerMap[key].GetNamespacedKey(currentBlock)
 }
+
+func (m *SVIMap) init() {
+	if m == nil {
+		*m = SVIMap{}
+	}
+	if m.Map == nil {
+		m.Map = make(map[string]*SVIIndirectValue)
+	}
+}
+
+// Set sets the given name to the specified NamedpacedKey
+func (m *SVIMap) Set(name string, nsk NamespacedKey) {
+	m.init()
+	m.Map[name] = &SVIIndirectValue{
+		Value: &SVIIndirectValue_Simple{
+			Simple: &SVINamespacedKey{
+				Namespace: nsk.Namespace.Bytes(),
+				Key:       nsk.Key.Bytes(),
+			},
+		},
+	}
+}
+
+// SetOn sets the given name to the specified NamespacedKey on the given block.
+//
+// If name already exists, a Deferred value is created updating on the
+// specified block. Otherwise, a simple value is created.
+func (m *SVIMap) SetOn(name string, nsk NamespacedKey, block uint64) {
+	m.init()
+	if currentIndirect, hasCurrent := m.Map[name]; hasCurrent {
+		// the current block is almost certainly not actually 0, but
+		// choosing that value should unconditionally get the current value
+		current := currentIndirect.GetNamespacedKey(0)
+		m.Map[name] = &SVIIndirectValue{
+			Value: &SVIIndirectValue_Deferred{
+				Deferred: &SVIDeferredChange{
+					Current: current,
+					Future: &SVINamespacedKey{
+						Namespace: nsk.Namespace.Bytes(),
+						Key:       nsk.Key.Bytes(),
+					},
+					UpdateBlock: block,
+				},
+			},
+		}
+	} else {
+		m.Set(name, nsk)
+	}
+}

@@ -17,7 +17,9 @@ type namespace struct {
 	Data      []kv
 }
 
-type cm []namespace
+type cm struct {
+	Namespaces []namespace
+}
 
 // ChaosMock is a mocked representation of the chaos chain.
 //
@@ -41,7 +43,7 @@ func LoadMock(mockPath string) (ChaosMock, error) {
 	}
 
 	mock := make(ChaosMock)
-	for _, ns := range *cmRaw {
+	for _, ns := range cmRaw.Namespaces {
 		name := string(ns.Namespace.Bytes())
 		mock[name] = make(chaosMockInner)
 		for _, kvi := range ns.Data {
@@ -52,9 +54,9 @@ func LoadMock(mockPath string) (ChaosMock, error) {
 	return mock, nil
 }
 
-// DumpMock stores the given ChaosMock in a file
-func (m ChaosMock) DumpMock(mockPath string) error {
-	cmRaw := make([]namespace, 0)
+// Dump stores the given ChaosMock in a file
+func (m ChaosMock) Dump(mockPath string) error {
+	namespaces := make([]namespace, 0)
 	for ns, mData := range m {
 		data := make([]kv, 0)
 		for k, v := range mData {
@@ -63,10 +65,13 @@ func (m ChaosMock) DumpMock(mockPath string) error {
 				Value: NewB64Data([]byte(v)),
 			})
 		}
-		cmRaw = append(cmRaw, namespace{
+		namespaces = append(namespaces, namespace{
 			Namespace: NewB64Data([]byte(ns)),
 			Data:      data,
 		})
+	}
+	chaosMock := cm{
+		Namespaces: namespaces,
 	}
 
 	fp, err := os.Create(mockPath)
@@ -74,5 +79,21 @@ func (m ChaosMock) DumpMock(mockPath string) error {
 	if err != nil {
 		return err
 	}
-	return toml.NewEncoder(fp).Encode(cmRaw)
+	return toml.NewEncoder(fp).Encode(chaosMock)
+}
+
+// Set puts val into the mock ns and key
+func (m ChaosMock) Set(ns, key string, val []byte) {
+	if m == nil {
+		m = make(ChaosMock)
+	}
+	if _, ok := m[ns]; !ok {
+		m[ns] = make(chaosMockInner)
+	}
+	m[ns][key] = val
+}
+
+// Sets puts the string val into the mock ns and key
+func (m ChaosMock) Sets(ns, key, val string) {
+	m.Set(ns, key, []byte(val))
 }

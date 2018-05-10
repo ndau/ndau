@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
@@ -49,4 +50,14 @@ func LoadConfig(configPath string) (*Config, error) {
 	config := new(Config)
 	_, err := toml.DecodeFile(configPath, config)
 	return config, err
+}
+
+// Dump writes the given config object to the specified file
+func (c *Config) Dump(configPath string) error {
+	fp, err := os.Create(configPath)
+	defer fp.Close()
+	if err != nil {
+		return err
+	}
+	return toml.NewEncoder(fp).Encode(c)
 }

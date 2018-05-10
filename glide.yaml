@@ -18,3 +18,7 @@ import:
   repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/BurntSushi/toml
   version: ^0.3.0
+- package: gitlab.ndau.tech/experiments/chaos-go
+  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go
+  vcs: git
+  version: ~v0.4.0

@@ -1,5 +1,5 @@
-hash: 140e82e631bc896d2192c0d3f141859d3eb8202974b6b642e4a34d2fa1e3bcaf
-updated: 2018-05-10T13:37:50.090845+02:00
+hash: 1f1c186c7697dc87f175d2cbde696f2fb2f344b866a2e8951c4b6f6f55864d8c
+updated: 2018-05-10T15:46:42.465369+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -166,6 +166,10 @@ imports:
   subpackages:
   - common
   - log
+- name: gitlab.ndau.tech/experiments/chaos-go
+  version: e58fbd305ee0e76daf6532f0d6c84ded5fd910fa
+  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go
+  vcs: git
 - name: golang.org/x/crypto
   version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
   subpackages:

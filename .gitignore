@@ -27,3 +27,7 @@ docker_keyfile_rsa
 
 # Editor customization
 .vscode/
+
+# Ignore the executable output of go build ndaunode, but not the actual folder
+ndaunode
+!*/ndaunode

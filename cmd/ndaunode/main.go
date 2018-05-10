@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 
 	"github.com/oneiro-ndev/ndau-chain/pkg/ndau"
+	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/log"
 )
 
+var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data and exit")
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
 var socketAddr = flag.String("addr", "0.0.0.0:46658", "socket address for incoming connection from tendermint")
@@ -51,6 +53,21 @@ func main() {
 	if *echoEmptyHash {
 		fmt.Println(getEmptyHash())
 		os.Exit(0)
+	}
+
+	if *makeMocks {
+		ndauhome := getNdauhome()
+		configPath := config.DefaultConfigPath(ndauhome)
+		mockPath := config.DefaultMockPath(ndauhome)
+		fmt.Printf("Config: %s\n", configPath)
+		fmt.Printf("Mock:   %s\n", mockPath)
+		err := config.MakeMock(configPath, mockPath)
+		if err == nil {
+			os.Exit(0)
+		} else {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
 	}
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("bin", "ndaunode")
