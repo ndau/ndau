@@ -1,5 +1,5 @@
-hash: d64bc37ccea7b32d8f34e4bfa64e6afc2d4c4bec3caaaeaa67aa2ff1f8f9af3e
-updated: 2018-05-09T15:05:45.161537+02:00
+hash: 140e82e631bc896d2192c0d3f141859d3eb8202974b6b642e4a34d2fa1e3bcaf
+updated: 2018-05-10T13:37:50.090845+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -61,6 +61,8 @@ imports:
   - service/dynamodb
   - service/s3
   - service/sts
+- name: github.com/BurntSushi/toml
+  version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/davecgh/go-spew
   version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
