@@ -36,7 +36,7 @@ func (b *B64Data) UnmarshalText(text []byte) error {
 }
 
 // MarshalText satisfies the encoding.TextMarshaler interface
-func (b *B64Data) MarshalText() (text []byte, err error) {
+func (b B64Data) MarshalText() (text []byte, err error) {
 	text = []byte(base64.StdEncoding.EncodeToString(b.data))
 	return
 }
