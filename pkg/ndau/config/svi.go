@@ -101,11 +101,12 @@ func GetNSK(ss SystemStore, nsk NamespacedKey) (out []byte, err error) {
 }
 
 // GetSVI returns the System Variable Indirection map from any SystemStore
-func GetSVI(ss SystemStore, nsk NamespacedKey) (svi *SVIMap, err error) {
+func GetSVI(ss SystemStore, nsk NamespacedKey) (*SVIMap, error) {
 	svib, err := GetNSK(ss, nsk)
 	if err != nil {
-		return
+		return nil, err
 	}
+	svi := new(SVIMap)
 	err = svi.Unmarshal(svib)
-	return
+	return svi, nil
 }

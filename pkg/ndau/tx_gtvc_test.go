@@ -3,7 +3,6 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/abci/types"
 	"golang.org/x/crypto/ed25519"
@@ -62,12 +61,8 @@ func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 	app.Commit()
 }
 
-func initApp(t *testing.T, valQty int) (app *App, gtvcs []GTValidatorChange) {
-	configP, err := config.MakeTmpMock("")
-	require.NoError(t, err)
-
-	app, err = NewApp("", *configP)
-	require.NoError(t, err)
+func initAppValidators(t *testing.T, valQty int) (app *App, gtvcs []GTValidatorChange) {
+	app = initApp(t)
 
 	gtvcs = make([]GTValidatorChange, 0, valQty)
 	validators := make([]types.Validator, 0, valQty)
@@ -86,12 +81,12 @@ func initApp(t *testing.T, valQty int) (app *App, gtvcs []GTValidatorChange) {
 
 // Test basic operations on GTVC transactions
 func TestGTValidatorChange(t *testing.T) {
-	initApp(t, 1)
+	initAppValidators(t, 1)
 }
 
 func TestGTValidatorChangeInitChain(t *testing.T) {
 	qtyVals := 10
-	app, gtvcs := initApp(t, qtyVals)
+	app, gtvcs := initAppValidators(t, qtyVals)
 
 	actualValidators, err := app.GetValidators()
 	require.NoError(t, err)
@@ -99,7 +94,7 @@ func TestGTValidatorChangeInitChain(t *testing.T) {
 }
 
 func TestGTValidatorChangeAddValidator(t *testing.T) {
-	app, gtvcs := initApp(t, 1)
+	app, gtvcs := initAppValidators(t, 1)
 
 	// add a validator
 	gtvc2 := validator(t, 1, app)
@@ -113,7 +108,7 @@ func TestGTValidatorChangeAddValidator(t *testing.T) {
 }
 
 func TestGTValidatorChangeRemoveValidator(t *testing.T) {
-	app, gtvcs := initApp(t, 2)
+	app, gtvcs := initAppValidators(t, 2)
 
 	// remove a validator
 	gtvc := gtvcs[0]

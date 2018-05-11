@@ -1,5 +1,5 @@
-hash: c8833585ae93bd72ef6b12506322803c95bb7b0881e1733a84a9edbe77f383cf
-updated: 2018-05-11T13:48:31.910231+02:00
+hash: fe72e1d7c5fa2084fac10dc8989df2c0db1db2353e89ec99a739cfb557337768
+updated: 2018-05-11T14:41:01.0585+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -61,6 +61,8 @@ imports:
   - service/dynamodb
   - service/s3
   - service/sts
+- name: github.com/bouk/monkey
+  version: 5df1f207ff77e025801505ae4d903133a0b4353f
 - name: github.com/btcsuite/btcd
   version: 2e60448ffcc6bf78332d1fe590260095f554dd78
   subpackages:

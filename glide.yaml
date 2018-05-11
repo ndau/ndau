@@ -19,13 +19,15 @@ import:
 - package: github.com/BurntSushi/toml
   version: ^0.3.0
 - package: gitlab.ndau.tech/experiments/chaos-go
+  version: ~v0.4.0
   repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go
   vcs: git
+- package: gitlab.ndau.tech/experiments/chaostool
   version: ~v0.4.0
-- package: gitlab.ndau.tech/experiments/chaostool/pkg/tool
   repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaostool
   vcs: git
-  version: ~v0.4.0
-# we need to pin this particular tmlibs version for things to compile
+  subpackages:
+  - pkg/tool
 - package: github.com/tendermint/tmlibs
   version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
+- package: github.com/bouk/monkey
