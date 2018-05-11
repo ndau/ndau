@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -28,6 +29,9 @@ type cm struct {
 // Instead, we're stuck with lists of structs.
 type ChaosMock map[string]map[string][]byte
 type chaosMockInner map[string][]byte
+
+// Static type assertion that ChaosMock implements the SystemStore interface
+var _ SystemStore = (*ChaosMock)(nil)
 
 // DefaultMockPath returns the default path at which a chaos mock file is expected
 func DefaultMockPath(ndauhome string) string {
@@ -96,4 +100,17 @@ func (m ChaosMock) Set(ns, key string, val []byte) {
 // Sets puts the string val into the mock ns and key
 func (m ChaosMock) Sets(ns, key, val string) {
 	m.Set(ns, key, []byte(val))
+}
+
+// Get implements the SystemStore interface
+func (m ChaosMock) Get(namespace, key []byte) ([]byte, error) {
+	inner, hasNamespace := m[string(namespace)]
+	if hasNamespace {
+		value, hasKey := inner[string(key)]
+		if hasKey {
+			return value, nil
+		}
+		return nil, errors.New("Requested key does not exist")
+	}
+	return nil, errors.New("Requested namespace does not exist")
 }

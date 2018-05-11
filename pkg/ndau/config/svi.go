@@ -85,3 +85,27 @@ func (m *SVIMap) SetOn(name string, nsk NamespacedKey, block uint64) {
 		m.Set(name, nsk)
 	}
 }
+
+// SystemStore types are stores of system variables.
+//
+// No restriction is placed on their implementation, so long as they
+// can get values from namespaced keys.
+type SystemStore interface {
+	Get(namespace, key []byte) ([]byte, error)
+}
+
+// GetNSK gets the requested namespaced key from any SystemStore
+func GetNSK(ss SystemStore, nsk NamespacedKey) (out []byte, err error) {
+	out, err = ss.Get(nsk.Namespace.Bytes(), nsk.Key.Bytes())
+	return
+}
+
+// GetSVI returns the System Variable Indirection map from any SystemStore
+func GetSVI(ss SystemStore, nsk NamespacedKey) (svi *SVIMap, err error) {
+	svib, err := GetNSK(ss, nsk)
+	if err != nil {
+		return
+	}
+	err = svi.Unmarshal(svib)
+	return
+}
