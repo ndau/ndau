@@ -1,6 +1,8 @@
 package config
 
 import (
+	"io/ioutil"
+
 	"gitlab.ndau.tech/experiments/chaos-go/pkg/chaos/ns"
 	"golang.org/x/crypto/ed25519"
 )
@@ -10,27 +12,27 @@ import (
 // If `configPath == ""`, the config file is skipped. Otherwise,
 // the config file at that path is created and directed to the
 // mock file.
-func MakeMock(configPath, mockPath string) (err error) {
+func MakeMock(configPath, mockPath string) (config *Config, err error) {
 	bpc, _, err := ed25519.GenerateKey(nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	svi := makeMockSVI(bpc)
 	svib, err := svi.Marshal()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	mock, sviKey := makeMockChaos(bpc, svib)
 
 	// make the mock file
 	err = mock.Dump(mockPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if configPath != "" {
-		config := Config{
+		config = &Config{
 			ChaosAddress:           "",
 			UseMock:                mockPath,
 			SystemVariableIndirect: *sviKey,
@@ -38,7 +40,28 @@ func MakeMock(configPath, mockPath string) (err error) {
 		err = config.Dump(configPath)
 	}
 
-	return err
+	return config, err
+}
+
+// MakeTmpMock makes a mock config with temporary files.
+//
+// `tmpdir` is the location in which to store these files.
+// If it is blank, they're stored in a system-defined location.
+//
+// As we don't keep track of these files, they'll persist until
+// the system cleans them up. On most OSX and Linux systems, that
+// happens after three days of disuse. We can get away with this
+// because they're small.
+func MakeTmpMock(tmpdir string) (config *Config, err error) {
+	configFile, err := ioutil.TempFile("", "config")
+	if err != nil {
+		return nil, err
+	}
+	mockFile, err := ioutil.TempFile("", "mock")
+	if err != nil {
+		return nil, err
+	}
+	return MakeMock(configFile.Name(), mockFile.Name())
 }
 
 // mock up some chaos data

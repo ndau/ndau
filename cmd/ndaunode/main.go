@@ -42,6 +42,13 @@ func getDbSpec() string {
 	return "http://noms:8000"
 }
 
+func check(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -55,44 +62,38 @@ func main() {
 		os.Exit(0)
 	}
 
+	ndauhome := getNdauhome()
+	configPath := config.DefaultConfigPath(ndauhome)
 	if *makeMocks {
-		ndauhome := getNdauhome()
-		configPath := config.DefaultConfigPath(ndauhome)
 		mockPath := config.DefaultMockPath(ndauhome)
 		fmt.Printf("Config: %s\n", configPath)
 		fmt.Printf("Mock:   %s\n", mockPath)
-		err := config.MakeMock(configPath, mockPath)
-		if err == nil {
-			os.Exit(0)
-		} else {
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(1)
-		}
+		_, err := config.MakeMock(configPath, mockPath)
+		check(err)
+		os.Exit(0)
 	}
+
+	conf, err := config.LoadConfig(configPath)
+	check(err)
+
+	app, err := ndau.NewApp(getDbSpec(), *conf)
+	check(err)
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("bin", "ndaunode")
-
-	// JSG get socket addr from flag or default: 0.0.0.0:46658
-	sa := *socketAddr
-
-	app, err := ndau.NewApp(getDbSpec())
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
 	app.SetLogger(logger)
 	app.LogState()
 
-	server := server.NewSocketServer(sa, app)
+	server := server.NewSocketServer(*socketAddr, app)
 	server.SetLogger(logger)
 
 	err = server.Start()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
+	check(err)
 
-	logger.Info("started ABCI socket server", "address", sa, "name", server.String())
+	logger.Info(
+		"started ABCI socket server",
+		"address", *socketAddr,
+		"name", server.String(),
+	)
 	// we want to keep this service running indefinitely
 	// if there were more commands to run, we'd probably want to split this into a separate
 	// goroutine and deal with closing options, but for now, it's probably fine to actually

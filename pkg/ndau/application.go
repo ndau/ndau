@@ -11,6 +11,7 @@ import (
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/attic-labs/noms/go/spec"
 	nt "github.com/attic-labs/noms/go/types"
+	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
 	"github.com/pkg/errors"
 	"github.com/tendermint/abci/types"
 	"github.com/tendermint/tmlibs/log"
@@ -47,10 +48,16 @@ type App struct {
 	ValUpdates []types.Validator
 
 	logger log.Logger
+
+	// configuration data loaded at initialization
+	// for now, this just stores the necessary info to get system variables
+	// from the chaos chain (or a mock as necessary), but it permits
+	// growth as requirements evolve
+	config config.Config
 }
 
 // NewApp prepares a new Ndau App
-func NewApp(dbSpec string) (*App, error) {
+func NewApp(dbSpec string, config config.Config) (*App, error) {
 	if len(dbSpec) == 0 {
 		dbSpec = "mem"
 	}
@@ -77,6 +84,7 @@ func NewApp(dbSpec string) (*App, error) {
 		db:     db,
 		ds:     ds,
 		logger: log.NewNopLogger(),
+		config: config,
 	}
 	return &app, nil
 }

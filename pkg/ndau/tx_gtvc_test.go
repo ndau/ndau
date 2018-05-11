@@ -3,6 +3,7 @@ package ndau
 import (
 	"testing"
 
+	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/abci/types"
 	"golang.org/x/crypto/ed25519"
@@ -62,7 +63,10 @@ func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 }
 
 func initApp(t *testing.T, valQty int) (app *App, gtvcs []GTValidatorChange) {
-	app, err := NewApp("")
+	configP, err := config.MakeTmpMock("")
+	require.NoError(t, err)
+
+	app, err = NewApp("", *configP)
 	require.NoError(t, err)
 
 	gtvcs = make([]GTValidatorChange, 0, valQty)
