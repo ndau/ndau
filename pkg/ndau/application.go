@@ -11,7 +11,7 @@ import (
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/attic-labs/noms/go/spec"
 	nt "github.com/attic-labs/noms/go/types"
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	"github.com/tendermint/abci/types"
 	"github.com/tendermint/tmlibs/log"

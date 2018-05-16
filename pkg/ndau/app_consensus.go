@@ -4,7 +4,7 @@ package ndau
 
 import (
 	nt "github.com/attic-labs/noms/go/types"
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/code"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/code"
 	"github.com/tendermint/abci/types"
 )
 

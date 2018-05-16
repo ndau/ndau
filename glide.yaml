@@ -1,4 +1,4 @@
-package: github.com/oneiro-ndev/ndau-chain
+package: github.com/oneiro-ndev/ndaunode
 import:
 - package: github.com/gogo/protobuf
   version: ^1.0.0

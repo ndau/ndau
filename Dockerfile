@@ -15,7 +15,7 @@ RUN touch ${KH} && ssh-keygen -R ${GITHUB}
 RUN ssh-keyscan -t rsa ${GITHUB} >> ${KH}
 
 # Copy the context into the container and build the ndau application
-ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndau-chain
+ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndaunode
 COPY ./pkg ${NDAU}/pkg
 COPY ./cmd ${NDAU}/cmd
 COPY ./glide.* ${NDAU}/

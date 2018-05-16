@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/bouk/monkey"
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/stretchr/testify/require"
 )
 

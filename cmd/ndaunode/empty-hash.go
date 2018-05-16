@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau"
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 )
 
 // get the hash of an empty database

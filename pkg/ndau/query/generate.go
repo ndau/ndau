@@ -8,4 +8,4 @@ package query
 // from our vendored dependencies. We also need to set it in the current directory;
 // subdirectories are not searched.
 //
-//go:generate protoc --gogoslick_out=. query.proto --proto_path=. --proto_path=$GOPATH/src/github.com/oneiro-ndev/ndau-chain/vendor
+//go:generate protoc --gogoslick_out=. query.proto --proto_path=. --proto_path=$GOPATH/src/github.com/oneiro-ndev/ndaunode/vendor

@@ -1,7 +1,7 @@
 package ndau
 
 import (
-	"github.com/oneiro-ndev/ndau-chain/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	trpc "github.com/tendermint/tendermint/rpc/client"
 	"gitlab.ndau.tech/experiments/chaostool/pkg/tool"
