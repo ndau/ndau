@@ -5,15 +5,6 @@ import (
 	"encoding/base64"
 )
 
-// B64Data is a byte slice which can marshal/unmarshal itself as b64
-//
-// This is useful for a variety of fields: namespaces in particular,
-// but also anything else which has a natural binary representation
-// but no natural textual representation.
-type B64Data struct {
-	data []byte
-}
-
 // NewB64Data creates a new B64data object
 func NewB64Data(data []byte) B64Data {
 	return B64Data{

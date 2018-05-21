@@ -51,11 +51,11 @@ func (app *App) System(name string) (val []byte, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "System() could not find SVI")
 	}
-	snsk := svi.GetNamespacedKey(name, app.Height())
-	if snsk == nil {
-		return nil, errors.New("System() could not locate desired name")
+	nsk, err := svi.Get(name, app.Height())
+	if err != nil {
+		return nil, errors.Wrap(err, "System() could not locate desired name")
 	}
-	nsk := snsk.AsNamespacedKey()
+
 	val, err = config.GetNSK(ss, nsk)
 	return val, errors.Wrap(err, "System() could not find named indirect target")
 }

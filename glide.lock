@@ -1,5 +1,5 @@
-hash: 6cf827be67a6f09f3e1f3cab13991a62b723551f46c140b4f7d6c042b96968d4
-updated: 2018-05-16T14:47:53.167712+02:00
+hash: cefa4787ee2629757906bcefa4ba0448530b9b0677920722075a14918b6fcc15
+updated: 2018-05-21T13:25:07.202984+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -234,6 +234,8 @@ imports:
   - merkle
   - pubsub
   - pubsub/query
+- name: github.com/tinylib/msgp
+  version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
 - name: gitlab.ndau.tech/experiments/chaos-go
   version: e58fbd305ee0e76daf6532f0d6c84ded5fd910fa
   repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go

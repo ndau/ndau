@@ -7,12 +7,6 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// NamespacedKey is a namespace and key which together identify a unique value on the chaos chain.
-type NamespacedKey struct {
-	Namespace B64Data
-	Key       B64Data
-}
-
 // Config defines configuration data for the ndau node
 type Config struct {
 	// ChaosAddress is the address of a chaos node.

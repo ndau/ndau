@@ -88,7 +88,7 @@ func makeMockChaos(bpc []byte, svib []byte) (ChaosMock, *NamespacedKey) {
 // mock up an SVI Map using most of its features
 func makeMockSVI(bpc []byte) *SVIMap {
 	svi := new(SVIMap)
-	svi.Set("one", NamespacedKey{
+	svi.set("one", NamespacedKey{
 		Namespace: NewB64Data(bpc),
 		Key:       NewB64Data([]byte("one")),
 	})
@@ -98,18 +98,19 @@ func makeMockSVI(bpc []byte) *SVIMap {
 			Namespace: NewB64Data(ns.System),
 			Key:       NewB64Data([]byte("one")),
 		},
+		0,    // we're effectively at genesis right now
 		1000, // plan to give this variable to the sys var on 1000
 	)
 
 	// simple case: associate a string with a namespaced key
-	svi.Set("two", NamespacedKey{
+	svi.set("two", NamespacedKey{
 		Namespace: NewB64Data(ns.System),
 		Key:       NewB64Data([]byte("two")),
 	})
 
 	// demonstrate that aliasing is possible: the official system name may not
 	// be the same as the actual key name
-	svi.Set("foo", NamespacedKey{
+	svi.set("foo", NamespacedKey{
 		Namespace: NewB64Data(bpc),
 		Key:       NewB64Data([]byte("bar")),
 	})

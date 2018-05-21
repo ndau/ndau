@@ -31,3 +31,5 @@ import:
 - package: github.com/tendermint/tmlibs
   version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
 - package: github.com/bouk/monkey
+- package: github.com/tinylib/msgp
+  version: ^1.0.2
