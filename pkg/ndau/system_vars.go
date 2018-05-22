@@ -1,10 +1,10 @@
 package ndau
 
 import (
+	"github.com/oneiro-ndev/chaostool/pkg/tool"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	trpc "github.com/tendermint/tendermint/rpc/client"
-	"gitlab.ndau.tech/experiments/chaostool/pkg/tool"
 )
 
 type chaosClient struct {

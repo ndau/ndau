@@ -3,7 +3,7 @@ package config
 import (
 	"io/ioutil"
 
-	"gitlab.ndau.tech/experiments/chaos-go/pkg/chaos/ns"
+	"github.com/oneiro-ndev/chaosnode/pkg/chaos/ns"
 	"golang.org/x/crypto/ed25519"
 )
 

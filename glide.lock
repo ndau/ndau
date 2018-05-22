@@ -1,5 +1,5 @@
-hash: cefa4787ee2629757906bcefa4ba0448530b9b0677920722075a14918b6fcc15
-updated: 2018-05-21T13:25:07.202984+02:00
+hash: 2b761664410e4ccced60f9990fed55b67dd8a2e30168aa74c17b67a78753406a
+updated: 2018-05-22T12:35:23.569389+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -137,9 +137,29 @@ imports:
   version: 9bdec3dec7c611fa97beadc374d75bdf02cd880e
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/oneiro-ndev/chaosnode
+  version: 3b912b7d69136add9243c72127bb5cd710da4750
+  repo: git@github.com:oneiro-ndev/chaosnode.git
+  subpackages:
+  - pkg/chaos/code
+  - pkg/chaos/ns
+  - pkg/chaos/query
+  - pkg/chaos/transaction
+- name: github.com/oneiro-ndev/chaostool
+  version: caea430626d91bf4f248dff26eb1af6b5028a653
+  repo: git@github.com:oneiro-ndev/chaostool.git
+  subpackages:
+  - pkg/tool
 - name: github.com/oneiro-ndev/noms-util
   version: b31787dd193cccca41bb0b9fb9743ff0ed50d1f1
   repo: git@github.com:oneiro-ndev/noms-util.git
+- name: github.com/oneiro-ndev/whitelist
+  version: f9950b022eeab826b83f535c133967bf96aa7977
+  repo: git@github.com:oneiro-ndev/whitelist.git
+  subpackages:
+  - pkg/whitelist
+- name: github.com/philhofer/fwd
+  version: bb6d471dc95d4fe11e432687f8b70ff496cf3136
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib
@@ -236,27 +256,8 @@ imports:
   - pubsub/query
 - name: github.com/tinylib/msgp
   version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
-- name: gitlab.ndau.tech/experiments/chaos-go
-  version: e58fbd305ee0e76daf6532f0d6c84ded5fd910fa
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go
-  vcs: git
   subpackages:
-  - pkg/chaos/code
-  - pkg/chaos/ns
-  - pkg/chaos/query
-  - pkg/chaos/transaction
-- name: gitlab.ndau.tech/experiments/chaostool
-  version: 27d935e85449a36c05202f4b12140b2e023a1e67
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaostool
-  vcs: git
-  subpackages:
-  - pkg/tool
-- name: gitlab.ndau.tech/experiments/whitelist
-  version: f9950b022eeab826b83f535c133967bf96aa7977
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/whitelist
-  vcs: git
-  subpackages:
-  - pkg/whitelist
+  - msgp
 - name: golang.org/x/crypto
   version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
   subpackages:
