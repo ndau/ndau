@@ -86,8 +86,8 @@ func makeMockChaos(bpc []byte, svib []byte) (ChaosMock, *NamespacedKey) {
 }
 
 // mock up an SVI Map using most of its features
-func makeMockSVI(bpc []byte) *SVIMap {
-	svi := new(SVIMap)
+func makeMockSVI(bpc []byte) SVIMap {
+	svi := make(SVIMap)
 	svi.set("one", NamespacedKey{
 		Namespace: NewB64Data(bpc),
 		Key:       NewB64Data([]byte("one")),

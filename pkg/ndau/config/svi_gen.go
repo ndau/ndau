@@ -10,34 +10,20 @@ import (
 
 // DecodeMsg implements msgp.Decodable
 func (z *B64Data) DecodeMsg(dc *msgp.Reader) (err error) {
-	var field []byte
-	_ = field
-	var zb0001 uint32
-	zb0001, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
-	for zb0001 > 0 {
-		zb0001--
-		field, err = dc.ReadMapKeyPtr()
+	{
+		var zb0001 []byte
+		zb0001, err = dc.ReadBytes([]byte((*z)))
 		if err != nil {
 			return
 		}
-		switch msgp.UnsafeString(field) {
-		default:
-			err = dc.Skip()
-			if err != nil {
-				return
-			}
-		}
+		(*z) = B64Data(zb0001)
 	}
 	return
 }
 
 // EncodeMsg implements msgp.Encodable
 func (z B64Data) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 0
-	err = en.Append(0x80)
+	err = en.WriteBytes([]byte(z))
 	if err != nil {
 		return
 	}
@@ -47,33 +33,19 @@ func (z B64Data) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z B64Data) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 0
-	o = append(o, 0x80)
+	o = msgp.AppendBytes(o, []byte(z))
 	return
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
 func (z *B64Data) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var field []byte
-	_ = field
-	var zb0001 uint32
-	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		return
-	}
-	for zb0001 > 0 {
-		zb0001--
-		field, bts, err = msgp.ReadMapKeyZC(bts)
+	{
+		var zb0001 []byte
+		zb0001, bts, err = msgp.ReadBytesBytes(bts, []byte((*z)))
 		if err != nil {
 			return
 		}
-		switch msgp.UnsafeString(field) {
-		default:
-			bts, err = msgp.Skip(bts)
-			if err != nil {
-				return
-			}
-		}
+		(*z) = B64Data(zb0001)
 	}
 	o = bts
 	return
@@ -81,7 +53,7 @@ func (z *B64Data) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z B64Data) Msgsize() (s int) {
-	s = 1
+	s = msgp.BytesPrefixSize + len([]byte(z))
 	return
 }
 
@@ -96,45 +68,21 @@ func (z *NamespacedKey) DecodeMsg(dc *msgp.Reader) (err error) {
 		err = msgp.ArrayError{Wanted: 2, Got: zb0001}
 		return
 	}
-	var field []byte
-	_ = field
-	var zb0002 uint32
-	zb0002, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
-	for zb0002 > 0 {
-		zb0002--
-		field, err = dc.ReadMapKeyPtr()
+	{
+		var zb0002 []byte
+		zb0002, err = dc.ReadBytes([]byte(z.Namespace))
 		if err != nil {
 			return
 		}
-		switch msgp.UnsafeString(field) {
-		default:
-			err = dc.Skip()
-			if err != nil {
-				return
-			}
-		}
+		z.Namespace = B64Data(zb0002)
 	}
-	var zb0003 uint32
-	zb0003, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
-	for zb0003 > 0 {
-		zb0003--
-		field, err = dc.ReadMapKeyPtr()
+	{
+		var zb0003 []byte
+		zb0003, err = dc.ReadBytes([]byte(z.Key))
 		if err != nil {
 			return
 		}
-		switch msgp.UnsafeString(field) {
-		default:
-			err = dc.Skip()
-			if err != nil {
-				return
-			}
-		}
+		z.Key = B64Data(zb0003)
 	}
 	return
 }
@@ -142,13 +90,15 @@ func (z *NamespacedKey) DecodeMsg(dc *msgp.Reader) (err error) {
 // EncodeMsg implements msgp.Encodable
 func (z *NamespacedKey) EncodeMsg(en *msgp.Writer) (err error) {
 	// array header, size 2
-	// map header, size 0
-	err = en.Append(0x92, 0x80)
+	err = en.Append(0x92)
 	if err != nil {
 		return
 	}
-	// map header, size 0
-	err = en.Append(0x80)
+	err = en.WriteBytes([]byte(z.Namespace))
+	if err != nil {
+		return
+	}
+	err = en.WriteBytes([]byte(z.Key))
 	if err != nil {
 		return
 	}
@@ -159,10 +109,9 @@ func (z *NamespacedKey) EncodeMsg(en *msgp.Writer) (err error) {
 func (z *NamespacedKey) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// array header, size 2
-	// map header, size 0
-	o = append(o, 0x92, 0x80)
-	// map header, size 0
-	o = append(o, 0x80)
+	o = append(o, 0x92)
+	o = msgp.AppendBytes(o, []byte(z.Namespace))
+	o = msgp.AppendBytes(o, []byte(z.Key))
 	return
 }
 
@@ -177,45 +126,21 @@ func (z *NamespacedKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 		err = msgp.ArrayError{Wanted: 2, Got: zb0001}
 		return
 	}
-	var field []byte
-	_ = field
-	var zb0002 uint32
-	zb0002, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		return
-	}
-	for zb0002 > 0 {
-		zb0002--
-		field, bts, err = msgp.ReadMapKeyZC(bts)
+	{
+		var zb0002 []byte
+		zb0002, bts, err = msgp.ReadBytesBytes(bts, []byte(z.Namespace))
 		if err != nil {
 			return
 		}
-		switch msgp.UnsafeString(field) {
-		default:
-			bts, err = msgp.Skip(bts)
-			if err != nil {
-				return
-			}
-		}
+		z.Namespace = B64Data(zb0002)
 	}
-	var zb0003 uint32
-	zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		return
-	}
-	for zb0003 > 0 {
-		zb0003--
-		field, bts, err = msgp.ReadMapKeyZC(bts)
+	{
+		var zb0003 []byte
+		zb0003, bts, err = msgp.ReadBytesBytes(bts, []byte(z.Key))
 		if err != nil {
 			return
 		}
-		switch msgp.UnsafeString(field) {
-		default:
-			bts, err = msgp.Skip(bts)
-			if err != nil {
-				return
-			}
-		}
+		z.Key = B64Data(zb0003)
 	}
 	o = bts
 	return
@@ -223,7 +148,7 @@ func (z *NamespacedKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *NamespacedKey) Msgsize() (s int) {
-	s = 1 + 1 + 1
+	s = 1 + msgp.BytesPrefixSize + len([]byte(z.Namespace)) + msgp.BytesPrefixSize + len([]byte(z.Key))
 	return
 }
 
@@ -244,100 +169,14 @@ func (z *SVIDeferredChange) DecodeMsg(dc *msgp.Reader) (err error) {
 		}
 		switch msgp.UnsafeString(field) {
 		case "Current":
-			var zb0002 uint32
-			zb0002, err = dc.ReadArrayHeader()
+			err = z.Current.DecodeMsg(dc)
 			if err != nil {
 				return
-			}
-			if zb0002 != 2 {
-				err = msgp.ArrayError{Wanted: 2, Got: zb0002}
-				return
-			}
-			var zb0003 uint32
-			zb0003, err = dc.ReadMapHeader()
-			if err != nil {
-				return
-			}
-			for zb0003 > 0 {
-				zb0003--
-				field, err = dc.ReadMapKeyPtr()
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					err = dc.Skip()
-					if err != nil {
-						return
-					}
-				}
-			}
-			var zb0004 uint32
-			zb0004, err = dc.ReadMapHeader()
-			if err != nil {
-				return
-			}
-			for zb0004 > 0 {
-				zb0004--
-				field, err = dc.ReadMapKeyPtr()
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					err = dc.Skip()
-					if err != nil {
-						return
-					}
-				}
 			}
 		case "Future":
-			var zb0005 uint32
-			zb0005, err = dc.ReadArrayHeader()
+			err = z.Future.DecodeMsg(dc)
 			if err != nil {
 				return
-			}
-			if zb0005 != 2 {
-				err = msgp.ArrayError{Wanted: 2, Got: zb0005}
-				return
-			}
-			var zb0006 uint32
-			zb0006, err = dc.ReadMapHeader()
-			if err != nil {
-				return
-			}
-			for zb0006 > 0 {
-				zb0006--
-				field, err = dc.ReadMapKeyPtr()
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					err = dc.Skip()
-					if err != nil {
-						return
-					}
-				}
-			}
-			var zb0007 uint32
-			zb0007, err = dc.ReadMapHeader()
-			if err != nil {
-				return
-			}
-			for zb0007 > 0 {
-				zb0007--
-				field, err = dc.ReadMapKeyPtr()
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					err = dc.Skip()
-					if err != nil {
-						return
-					}
-				}
 			}
 		case "ChangeOn":
 			z.ChangeOn, err = dc.ReadUint64()
@@ -358,26 +197,20 @@ func (z *SVIDeferredChange) DecodeMsg(dc *msgp.Reader) (err error) {
 func (z *SVIDeferredChange) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 3
 	// write "Current"
-	// array header, size 2
-	// map header, size 0
-	err = en.Append(0x83, 0xa7, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x92, 0x80)
+	err = en.Append(0x83, 0xa7, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74)
 	if err != nil {
 		return
 	}
-	// map header, size 0
-	err = en.Append(0x80)
+	err = z.Current.EncodeMsg(en)
 	if err != nil {
 		return
 	}
 	// write "Future"
-	// array header, size 2
-	// map header, size 0
-	err = en.Append(0xa6, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65, 0x92, 0x80)
+	err = en.Append(0xa6, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65)
 	if err != nil {
 		return
 	}
-	// map header, size 0
-	err = en.Append(0x80)
+	err = z.Future.EncodeMsg(en)
 	if err != nil {
 		return
 	}
@@ -398,17 +231,17 @@ func (z *SVIDeferredChange) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
 	// string "Current"
-	// array header, size 2
-	// map header, size 0
-	o = append(o, 0x83, 0xa7, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x92, 0x80)
-	// map header, size 0
-	o = append(o, 0x80)
+	o = append(o, 0x83, 0xa7, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74)
+	o, err = z.Current.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "Future"
-	// array header, size 2
-	// map header, size 0
-	o = append(o, 0xa6, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65, 0x92, 0x80)
-	// map header, size 0
-	o = append(o, 0x80)
+	o = append(o, 0xa6, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65)
+	o, err = z.Future.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "ChangeOn"
 	o = append(o, 0xa8, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4f, 0x6e)
 	o = msgp.AppendUint64(o, z.ChangeOn)
@@ -432,100 +265,14 @@ func (z *SVIDeferredChange) UnmarshalMsg(bts []byte) (o []byte, err error) {
 		}
 		switch msgp.UnsafeString(field) {
 		case "Current":
-			var zb0002 uint32
-			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			bts, err = z.Current.UnmarshalMsg(bts)
 			if err != nil {
 				return
-			}
-			if zb0002 != 2 {
-				err = msgp.ArrayError{Wanted: 2, Got: zb0002}
-				return
-			}
-			var zb0003 uint32
-			zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
-			for zb0003 > 0 {
-				zb0003--
-				field, bts, err = msgp.ReadMapKeyZC(bts)
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					bts, err = msgp.Skip(bts)
-					if err != nil {
-						return
-					}
-				}
-			}
-			var zb0004 uint32
-			zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
-			for zb0004 > 0 {
-				zb0004--
-				field, bts, err = msgp.ReadMapKeyZC(bts)
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					bts, err = msgp.Skip(bts)
-					if err != nil {
-						return
-					}
-				}
 			}
 		case "Future":
-			var zb0005 uint32
-			zb0005, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			bts, err = z.Future.UnmarshalMsg(bts)
 			if err != nil {
 				return
-			}
-			if zb0005 != 2 {
-				err = msgp.ArrayError{Wanted: 2, Got: zb0005}
-				return
-			}
-			var zb0006 uint32
-			zb0006, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
-			for zb0006 > 0 {
-				zb0006--
-				field, bts, err = msgp.ReadMapKeyZC(bts)
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					bts, err = msgp.Skip(bts)
-					if err != nil {
-						return
-					}
-				}
-			}
-			var zb0007 uint32
-			zb0007, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
-			for zb0007 > 0 {
-				zb0007--
-				field, bts, err = msgp.ReadMapKeyZC(bts)
-				if err != nil {
-					return
-				}
-				switch msgp.UnsafeString(field) {
-				default:
-					bts, err = msgp.Skip(bts)
-					if err != nil {
-						return
-					}
-				}
 			}
 		case "ChangeOn":
 			z.ChangeOn, bts, err = msgp.ReadUint64Bytes(bts)
@@ -545,7 +292,7 @@ func (z *SVIDeferredChange) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *SVIDeferredChange) Msgsize() (s int) {
-	s = 1 + 8 + 1 + 1 + 1 + 7 + 1 + 1 + 1 + 9 + msgp.Uint64Size
+	s = 1 + 8 + z.Current.Msgsize() + 7 + z.Future.Msgsize() + 9 + msgp.Uint64Size
 	return
 }
 
@@ -571,9 +318,41 @@ func (z *SVIMap) DecodeMsg(dc *msgp.Reader) (err error) {
 		if err != nil {
 			return
 		}
-		err = zb0002.DecodeMsg(dc)
+		var field []byte
+		_ = field
+		var zb0004 uint32
+		zb0004, err = dc.ReadMapHeader()
 		if err != nil {
 			return
+		}
+		for zb0004 > 0 {
+			zb0004--
+			field, err = dc.ReadMapKeyPtr()
+			if err != nil {
+				return
+			}
+			switch msgp.UnsafeString(field) {
+			case "Current":
+				err = zb0002.Current.DecodeMsg(dc)
+				if err != nil {
+					return
+				}
+			case "Future":
+				err = zb0002.Future.DecodeMsg(dc)
+				if err != nil {
+					return
+				}
+			case "ChangeOn":
+				zb0002.ChangeOn, err = dc.ReadUint64()
+				if err != nil {
+					return
+				}
+			default:
+				err = dc.Skip()
+				if err != nil {
+					return
+				}
+			}
 		}
 		(*z)[zb0001] = zb0002
 	}
@@ -586,12 +365,36 @@ func (z SVIMap) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for zb0004, zb0005 := range z {
-		err = en.WriteString(zb0004)
+	for zb0005, zb0006 := range z {
+		err = en.WriteString(zb0005)
 		if err != nil {
 			return
 		}
-		err = zb0005.EncodeMsg(en)
+		// map header, size 3
+		// write "Current"
+		err = en.Append(0x83, 0xa7, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74)
+		if err != nil {
+			return
+		}
+		err = zb0006.Current.EncodeMsg(en)
+		if err != nil {
+			return
+		}
+		// write "Future"
+		err = en.Append(0xa6, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65)
+		if err != nil {
+			return
+		}
+		err = zb0006.Future.EncodeMsg(en)
+		if err != nil {
+			return
+		}
+		// write "ChangeOn"
+		err = en.Append(0xa8, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4f, 0x6e)
+		if err != nil {
+			return
+		}
+		err = en.WriteUint64(zb0006.ChangeOn)
 		if err != nil {
 			return
 		}
@@ -603,12 +406,24 @@ func (z SVIMap) EncodeMsg(en *msgp.Writer) (err error) {
 func (z SVIMap) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	o = msgp.AppendMapHeader(o, uint32(len(z)))
-	for zb0004, zb0005 := range z {
-		o = msgp.AppendString(o, zb0004)
-		o, err = zb0005.MarshalMsg(o)
+	for zb0005, zb0006 := range z {
+		o = msgp.AppendString(o, zb0005)
+		// map header, size 3
+		// string "Current"
+		o = append(o, 0x83, 0xa7, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74)
+		o, err = zb0006.Current.MarshalMsg(o)
 		if err != nil {
 			return
 		}
+		// string "Future"
+		o = append(o, 0xa6, 0x46, 0x75, 0x74, 0x75, 0x72, 0x65)
+		o, err = zb0006.Future.MarshalMsg(o)
+		if err != nil {
+			return
+		}
+		// string "ChangeOn"
+		o = append(o, 0xa8, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4f, 0x6e)
+		o = msgp.AppendUint64(o, zb0006.ChangeOn)
 	}
 	return
 }
@@ -635,9 +450,41 @@ func (z *SVIMap) UnmarshalMsg(bts []byte) (o []byte, err error) {
 		if err != nil {
 			return
 		}
-		bts, err = zb0002.UnmarshalMsg(bts)
+		var field []byte
+		_ = field
+		var zb0004 uint32
+		zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
 		if err != nil {
 			return
+		}
+		for zb0004 > 0 {
+			zb0004--
+			field, bts, err = msgp.ReadMapKeyZC(bts)
+			if err != nil {
+				return
+			}
+			switch msgp.UnsafeString(field) {
+			case "Current":
+				bts, err = zb0002.Current.UnmarshalMsg(bts)
+				if err != nil {
+					return
+				}
+			case "Future":
+				bts, err = zb0002.Future.UnmarshalMsg(bts)
+				if err != nil {
+					return
+				}
+			case "ChangeOn":
+				zb0002.ChangeOn, bts, err = msgp.ReadUint64Bytes(bts)
+				if err != nil {
+					return
+				}
+			default:
+				bts, err = msgp.Skip(bts)
+				if err != nil {
+					return
+				}
+			}
 		}
 		(*z)[zb0001] = zb0002
 	}
@@ -649,9 +496,9 @@ func (z *SVIMap) UnmarshalMsg(bts []byte) (o []byte, err error) {
 func (z SVIMap) Msgsize() (s int) {
 	s = msgp.MapHeaderSize
 	if z != nil {
-		for zb0004, zb0005 := range z {
-			_ = zb0005
-			s += msgp.StringPrefixSize + len(zb0004) + zb0005.Msgsize()
+		for zb0005, zb0006 := range z {
+			_ = zb0006
+			s += msgp.StringPrefixSize + len(zb0005) + 1 + 8 + zb0006.Current.Msgsize() + 7 + zb0006.Future.Msgsize() + 9 + msgp.Uint64Size
 		}
 	}
 	return

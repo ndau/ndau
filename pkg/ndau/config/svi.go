@@ -12,9 +12,7 @@ import (
 // This is useful for a variety of fields: namespaces in particular,
 // but also anything else which has a natural binary representation
 // but no natural textual representation.
-type B64Data struct {
-	data []byte
-}
+type B64Data []byte
 
 //msgp:tuple NamespacedKey
 
@@ -74,15 +72,16 @@ func (m *SVIMap) Unmarshal(bytes []byte) error {
 }
 
 // Get the value of a namespaced key at a specififed height
-func (m *SVIMap) Get(name string, height uint64) (nsk NamespacedKey, err error) {
+func (m *SVIMap) Get(name string, height uint64) (NamespacedKey, error) {
+	nsk := NamespacedKey{}
 	if m == nil {
-		err = errors.New("nil SVIMap")
-		return
+		err := errors.New("nil SVIMap")
+		return nsk, err
 	}
 	deferred, hasKey := map[string]SVIDeferredChange(*m)[name]
 	if !hasKey {
-		err = fmt.Errorf("Key '%s' not present in SVIMap", name)
-		return
+		err := fmt.Errorf("Key '%s' not present in SVIMap", name)
+		return nsk, err
 	}
 
 	if height >= deferred.ChangeOn {
@@ -91,7 +90,7 @@ func (m *SVIMap) Get(name string, height uint64) (nsk NamespacedKey, err error) 
 		nsk = deferred.Current
 	}
 
-	return
+	return nsk, nil
 }
 
 // SetOn sets the location of a named system variable to a given namespace and key as of a particular block.
@@ -138,12 +137,12 @@ func GetNSK(ss SystemStore, nsk NamespacedKey) (out []byte, err error) {
 }
 
 // GetSVI returns the System Variable Indirection map from any SystemStore
-func GetSVI(ss SystemStore, nsk NamespacedKey) (*SVIMap, error) {
+func GetSVI(ss SystemStore, nsk NamespacedKey) (SVIMap, error) {
 	svib, err := GetNSK(ss, nsk)
 	if err != nil {
 		return nil, err
 	}
-	svi := new(SVIMap)
+	svi := make(SVIMap)
 	err = svi.Unmarshal(svib)
-	return svi, nil
+	return svi, err
 }
