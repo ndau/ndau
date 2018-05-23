@@ -5,6 +5,7 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	trpc "github.com/tendermint/tendermint/rpc/client"
+	"github.com/tinylib/msgp/msgp"
 )
 
 type chaosClient struct {
@@ -21,11 +22,14 @@ func newChaosClient(address string) chaosClient {
 }
 
 // Get implements the SystemStore interface
-func (cc chaosClient) Get(namespace, key []byte) (result []byte, err error) {
-	result, _, err = tool.GetNamespacedAt(
-		cc.inner, namespace, key, 0,
+func (cc chaosClient) Get(
+	namespace []byte,
+	key msgp.Marshaler,
+	value msgp.Unmarshaler,
+) error {
+	return tool.GetStructured(
+		cc.inner, namespace, key, value, 0,
 	)
-	return
 }
 
 // System retrieves a named system variable.
@@ -36,12 +40,12 @@ func (cc chaosClient) Get(namespace, key []byte) (result []byte, err error) {
 // variables, there needs to be an indirection layer. Because we want to
 // test our code, there needs to be a second indirect where we choose
 // whether or not to divert to a mock.
-func (app *App) System(name string) (val []byte, err error) {
+func (app *App) System(name string, value msgp.Unmarshaler) (err error) {
 	var ss config.SystemStore
 	if len(app.config.UseMock) > 0 {
 		ss, err = config.LoadMock(app.config.UseMock)
 		if err != nil {
-			return nil, errors.Wrap(err, "System() failed to load mock")
+			return errors.Wrap(err, "System() failed to load mock")
 		}
 	} else {
 		ss = newChaosClient(app.config.ChaosAddress)
@@ -49,13 +53,15 @@ func (app *App) System(name string) (val []byte, err error) {
 
 	svi, err := config.GetSVI(ss, app.config.SystemVariableIndirect)
 	if err != nil {
-		return nil, errors.Wrap(err, "System() could not find SVI")
+		return errors.Wrap(err, "System() could not find SVI")
 	}
 	nsk, err := svi.Get(name, app.Height())
 	if err != nil {
-		return nil, errors.Wrap(err, "System() could not locate desired name")
+		return errors.Wrap(err, "System() could not locate desired name")
 	}
 
-	val, err = config.GetNSK(ss, nsk)
-	return val, errors.Wrap(err, "System() could not find named indirect target")
+	return errors.Wrap(
+		config.GetNSK(ss, nsk, value),
+		"System() could not find named indirect target",
+	)
 }

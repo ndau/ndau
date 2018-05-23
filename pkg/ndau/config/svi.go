@@ -3,23 +3,32 @@ package config
 import (
 	"errors"
 	"fmt"
+
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/tinylib/msgp/msgp"
 )
 
 //go:generate msgp
 
-// B64Data is a byte slice which can marshal/unmarshal itself as b64
-//
-// This is useful for a variety of fields: namespaces in particular,
-// but also anything else which has a natural binary representation
-// but no natural textual representation.
-type B64Data []byte
-
 //msgp:tuple NamespacedKey
 
 // NamespacedKey is a namespace and key which together identify a unique value on the chaos chain.
+//
+// Though the keys have human meaning, and are likely to be strings, we still
+// represent them with byte slices because there's nothing theoretically
+// prohibiting someone from using a jpeg of a kitten as they key to a system
+// variable.
 type NamespacedKey struct {
-	Namespace B64Data
-	Key       B64Data
+	Namespace wkt.Bytes
+	Key       wkt.Bytes
+}
+
+// NewNamespacedKey constructs a namespaced key from a namespace and a key
+func NewNamespacedKey(ns []byte, key string) NamespacedKey {
+	return NamespacedKey{
+		Namespace: wkt.Bytes(ns),
+		Key:       wkt.Bytes([]byte(key)),
+	}
 }
 
 // SVIDeferredChange is an indirection struct.
@@ -127,22 +136,20 @@ func (m *SVIMap) set(name string, nsk NamespacedKey) error {
 // No restriction is placed on their implementation, so long as they
 // can get values from namespaced keys.
 type SystemStore interface {
-	Get(namespace, key []byte) ([]byte, error)
+	Get(namespace []byte, key msgp.Marshaler, value msgp.Unmarshaler) error
 }
 
 // GetNSK gets the requested namespaced key from any SystemStore
-func GetNSK(ss SystemStore, nsk NamespacedKey) (out []byte, err error) {
-	out, err = ss.Get(nsk.Namespace.Bytes(), nsk.Key.Bytes())
-	return
+func GetNSK(ss SystemStore, nsk NamespacedKey, value msgp.Unmarshaler) error {
+	return ss.Get(nsk.Namespace.Bytes(), nsk.Key, value)
 }
 
 // GetSVI returns the System Variable Indirection map from any SystemStore
 func GetSVI(ss SystemStore, nsk NamespacedKey) (SVIMap, error) {
-	svib, err := GetNSK(ss, nsk)
+	svi := make(SVIMap)
+	err := GetNSK(ss, nsk, &svi)
 	if err != nil {
 		return nil, err
 	}
-	svi := make(SVIMap)
-	err = svi.Unmarshal(svib)
 	return svi, err
 }

@@ -1,5 +1,5 @@
-hash: 2b761664410e4ccced60f9990fed55b67dd8a2e30168aa74c17b67a78753406a
-updated: 2018-05-22T12:35:23.569389+02:00
+hash: 0bcf683f65b1fd0445a8360f7cb366e90ccdaa0da32ecfc92abcba84e915f3f4
+updated: 2018-05-22T17:51:00.541878+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -150,6 +150,11 @@ imports:
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
+- name: github.com/oneiro-ndev/msgp-well-known-types
+  version: 20dbc66cfaa097bf8cdf60b740e0ac37251d07c3
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+  subpackages:
+  - wkt
 - name: github.com/oneiro-ndev/noms-util
   version: b31787dd193cccca41bb0b9fb9743ff0ed50d1f1
   repo: git@github.com:oneiro-ndev/noms-util.git

@@ -31,3 +31,6 @@ import:
 - package: github.com/bouk/monkey
 - package: github.com/tinylib/msgp
   version: ^1.0.2
+- package: github.com/oneiro-ndev/msgp-well-known-types
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+  version: ~0.1.0

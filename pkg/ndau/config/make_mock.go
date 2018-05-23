@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 
 	"github.com/oneiro-ndev/chaosnode/pkg/chaos/ns"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/tinylib/msgp/msgp"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -19,11 +21,7 @@ func MakeMock(configPath, mockPath string) (config *Config, err error) {
 	}
 
 	svi := makeMockSVI(bpc)
-	svib, err := svi.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	mock, sviKey := makeMockChaos(bpc, svib)
+	mock, sviKey := makeMockChaos(bpc, svi)
 
 	// make the mock file
 	err = mock.Dump(mockPath)
@@ -65,55 +63,38 @@ func MakeTmpMock(tmpdir string) (config *Config, err error) {
 }
 
 // mock up some chaos data
-func makeMockChaos(bpc []byte, svib []byte) (ChaosMock, *NamespacedKey) {
+func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, *NamespacedKey) {
 	mock := make(ChaosMock)
-	sys := string(ns.System)
-	mock.Sets(sys, "one", "system value one")
-	mock.Sets(sys, "two", "system value two")
+	mock.Sets(ns.System, "one", wkt.String("system value one"))
+	mock.Sets(ns.System, "two", wkt.String("system value two"))
 
-	bpcs := string(bpc)
-	mock.Sets(bpcs, "one", "bpc val one")
-	mock.Sets(bpcs, "bar", "baz")
-	var sviKey *NamespacedKey
-	if svib != nil {
-		mock.Set(bpcs, "svi", svib)
-		sviKey = &NamespacedKey{
-			Namespace: NewB64Data(bpc),
-			Key:       NewB64Data([]byte("svi")),
-		}
+	mock.Sets(bpc, "one", wkt.String("bpc val one"))
+	mock.Sets(bpc, "bar", wkt.String("baz"))
+	var sviKey NamespacedKey
+	if svi != nil {
+		mock.Sets(bpc, "svi", svi)
+		sviKey = NewNamespacedKey(bpc, "svi")
 	}
-	return mock, sviKey
+	return mock, &sviKey
 }
 
 // mock up an SVI Map using most of its features
 func makeMockSVI(bpc []byte) SVIMap {
 	svi := make(SVIMap)
-	svi.set("one", NamespacedKey{
-		Namespace: NewB64Data(bpc),
-		Key:       NewB64Data([]byte("one")),
-	})
+	svi.set("one", NewNamespacedKey(bpc, "one"))
 	svi.SetOn(
 		"one",
-		NamespacedKey{
-			Namespace: NewB64Data(ns.System),
-			Key:       NewB64Data([]byte("one")),
-		},
+		NewNamespacedKey(ns.System, "one"),
 		0,    // we're effectively at genesis right now
 		1000, // plan to give this variable to the sys var on 1000
 	)
 
 	// simple case: associate a string with a namespaced key
-	svi.set("two", NamespacedKey{
-		Namespace: NewB64Data(ns.System),
-		Key:       NewB64Data([]byte("two")),
-	})
+	svi.set("two", NewNamespacedKey(ns.System, "two"))
 
 	// demonstrate that aliasing is possible: the official system name may not
 	// be the same as the actual key name
-	svi.set("foo", NamespacedKey{
-		Namespace: NewB64Data(bpc),
-		Key:       NewB64Data([]byte("bar")),
-	})
+	svi.set("foo", NewNamespacedKey(bpc, "bar"))
 
 	return svi
 }
