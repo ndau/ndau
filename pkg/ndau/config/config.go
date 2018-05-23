@@ -32,6 +32,14 @@ type Config struct {
 	// The value on the chaos chain to which this points must be the
 	// serialized Protobuf encoding of a SVIMap.
 	SystemVariableIndirect NamespacedKey
+
+	// ChaosTimeout is the time in milliseconds which should be allowed
+	// for reads from the chaos chain.
+	//
+	// Because all system variables must be fetched from the chaos chain
+	// every block, this should be shorter than the block time for
+	// the ndau chain.
+	ChaosTimeout int
 }
 
 // DefaultConfigPath returns the default path at which a config file is expected

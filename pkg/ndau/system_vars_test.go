@@ -8,6 +8,7 @@ import (
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/abci/types"
 )
 
 func initApp(t *testing.T) (app *App) {
@@ -27,7 +28,8 @@ func initApp(t *testing.T) (app *App) {
 // Unfortunately, by default, app.Height just crashes before the app
 // is fully initialized, which happens at the InitChain transaction.
 //
-// We _could_ just send an InitChain transaction to get things going,
+// We need to send InitChain regardless, to set the initial system
+// variable cache,
 // but that doesn't allow us to control the returned height, and we
 // definitely don't want to wait around for the chain to run for some
 // number of blocks.
@@ -44,6 +46,7 @@ func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
 	monkey.PatchInstanceMethod(reflect.TypeOf(app), "Height", func(_ *App) uint64 {
 		return atHeight
 	})
+	app.InitChain(types.RequestInitChain{})
 	return
 }
 

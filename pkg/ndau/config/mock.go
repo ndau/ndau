@@ -109,24 +109,32 @@ func (m ChaosMock) Sets(ns []byte, key string, val msgp.Marshaler) {
 	m.Set(ns, wkt.Bytes([]byte(key)), val)
 }
 
-// Get implements the SystemStore interface
-func (m ChaosMock) Get(namespace []byte, key msgp.Marshaler, value msgp.Unmarshaler) error {
+// GetRaw implements the SystemStore interface
+func (m ChaosMock) GetRaw(namespace []byte, key msgp.Marshaler) ([]byte, error) {
 	inner, hasNamespace := m[string(namespace)]
 	if hasNamespace {
 		keyBytes, err := key.MarshalMsg([]byte{})
 		if err != nil {
-			return errors.Wrap(err, "ChaosMock.Get failed to marshal key")
+			return nil, errors.Wrap(err, "ChaosMock.Get failed to marshal key")
 		}
 		valueBytes, hasKey := inner[string(keyBytes)]
 		if hasKey {
-			leftovers, err := value.UnmarshalMsg(valueBytes)
-			if len(leftovers) > 0 {
-				return errors.New("ChaosMock.Get unmarshal had leftover bytes")
-			}
-			return errors.Wrap(err, "ChaosMock.Get failed")
-
+			return valueBytes, nil
 		}
-		return errors.New("Requested key does not exist")
+		return nil, errors.New("Requested key does not exist")
 	}
-	return errors.New("Requested namespace does not exist")
+	return nil, errors.New("Requested namespace does not exist")
+}
+
+// Get implements the SystemStore interface
+func (m ChaosMock) Get(namespace []byte, key msgp.Marshaler, value msgp.Unmarshaler) error {
+	valueBytes, err := m.GetRaw(namespace, key)
+	if err != nil {
+		return err
+	}
+	leftovers, err := value.UnmarshalMsg(valueBytes)
+	if len(leftovers) > 0 {
+		return errors.New("ChaosMock.Get unmarshal had leftover bytes")
+	}
+	return errors.Wrap(err, "ChaosMock.Get failed")
 }

@@ -37,15 +37,46 @@ func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseIn
 	}
 
 	app.ValUpdates = make([]types.Validator, 0)
+	// update system variable cache
+	err = app.systemCache.Update(app.Height())
+	if err != nil {
+		logger.Error(
+			"failed update of system variable cache",
+			"err", err.Error(),
+		)
+		// given that the system hasn't properly come up yet, I feel no shame
+		// simply aborting here
+		panic(err)
+	}
 
 	return
 }
 
 // BeginBlock tracks the block hash and header information
 func (app *App) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	app.logRequest("BeginBlock")
+	logger := app.logRequest("BeginBlock")
 	// reset valset changes
 	app.ValUpdates = make([]types.Validator, 0)
+	// update system variable cache
+	// this is safe to do asynchronously: the first thing an Update does
+	// is acquire a lock; it doesn't release the lock until updates are
+	// complete. This means that even if we go straight from here to another
+	// transaction which requires the values, they'll block until that
+	// lock is released.
+	go func() {
+		err := app.systemCache.Update(app.Height())
+		if err != nil {
+			// should we panic here? not sure.
+			// most of the time we'd expect errors here to be
+			// timeouts, and most of the time that won't matter,
+			// so I'm inclined to just log it and continue.
+			// Might be worth considering for the future, though.
+			logger.Error(
+				"failed update of system variable cache",
+				"err", err.Error(),
+			)
+		}
+	}()
 	return types.ResponseBeginBlock{}
 }
 
