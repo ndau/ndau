@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bouk/monkey"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/stretchr/testify/require"
 )
@@ -53,7 +54,8 @@ func cleanupApp(app *App) {
 func testSystem(t *testing.T, app *App, name, expect string) {
 	// Note: all these keys/values are presets and defined in
 	// config/make_mock.go
-	value, err := app.System(name)
+	var value wkt.String
+	err := app.System(name, &value)
 	require.NoError(t, err)
 	require.Equal(t, expect, string(value))
 }

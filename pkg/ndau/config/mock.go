@@ -1,31 +1,19 @@
 package config
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 
-	"github.com/BurntSushi/toml"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/pkg/errors"
+	"github.com/tinylib/msgp/msgp"
 )
-
-type kv struct {
-	Key   B64Data
-	Value B64Data
-}
-
-type namespace struct {
-	Namespace B64Data
-	Data      []kv
-}
-
-type cm struct {
-	Namespaces []namespace
-}
 
 // ChaosMock is a mocked representation of the chaos chain.
 //
-// (De)serialization is a pain: despite the TOML format supporting
-// map[B64Data]map[B64Data]B64data, the go language prohibits that.
+// (De)serialization is a pain: despite its storage in binary format,
+// and the natural representation of the chain as
+// map[wkt.Bytes]map[wkt.Bytes]B64data, the go language prohibits that.
 // Instead, we're stuck with lists of structs.
 type ChaosMock map[string]map[string][]byte
 type chaosMockInner map[string][]byte
@@ -35,19 +23,25 @@ var _ SystemStore = (*ChaosMock)(nil)
 
 // DefaultMockPath returns the default path at which a chaos mock file is expected
 func DefaultMockPath(ndauhome string) string {
-	return filepath.Join(ndauhome, "ndau", "mock-chaos.toml")
+	return filepath.Join(ndauhome, "ndau", "mock-chaos.msgp")
 }
 
 // LoadMock returns a ChaosMock loaded from its file
 func LoadMock(mockPath string) (ChaosMock, error) {
-	cmRaw := new(cm)
-	_, err := toml.DecodeFile(mockPath, cmRaw)
+	mcc := new(MockChaosChain)
+	mockFp, err := os.Open(mockPath)
+	if err != nil {
+		return nil, err
+	}
+	defer mockFp.Close()
+	bufMockReader := msgp.NewReader(mockFp)
+	err = mcc.DecodeMsg(bufMockReader)
 	if err != nil {
 		return nil, err
 	}
 
 	mock := make(ChaosMock)
-	for _, ns := range cmRaw.Namespaces {
+	for _, ns := range mcc.Namespaces {
 		name := string(ns.Namespace.Bytes())
 		mock[name] = make(chaosMockInner)
 		for _, kvi := range ns.Data {
@@ -60,57 +54,79 @@ func LoadMock(mockPath string) (ChaosMock, error) {
 
 // Dump stores the given ChaosMock in a file
 func (m ChaosMock) Dump(mockPath string) error {
-	namespaces := make([]namespace, 0)
+	namespaces := make([]MockNamespace, 0)
 	for ns, mData := range m {
-		data := make([]kv, 0)
+		data := make([]MockKeyValue, 0)
 		for k, v := range mData {
-			data = append(data, kv{
-				Key:   NewB64Data([]byte(k)),
-				Value: NewB64Data([]byte(v)),
+			data = append(data, MockKeyValue{
+				Key:   wkt.Bytes([]byte(k)),
+				Value: wkt.Bytes([]byte(v)),
 			})
 		}
-		namespaces = append(namespaces, namespace{
-			Namespace: NewB64Data([]byte(ns)),
+		namespaces = append(namespaces, MockNamespace{
+			Namespace: wkt.Bytes([]byte(ns)),
 			Data:      data,
 		})
 	}
-	chaosMock := cm{
+	chaosMock := MockChaosChain{
 		Namespaces: namespaces,
 	}
 
 	fp, err := os.Create(mockPath)
-	defer fp.Close()
 	if err != nil {
 		return err
 	}
-	return toml.NewEncoder(fp).Encode(chaosMock)
+	defer fp.Close()
+
+	mockWriter := msgp.NewWriter(fp)
+	defer mockWriter.Flush()
+	return chaosMock.EncodeMsg(mockWriter)
 }
 
 // Set puts val into the mock ns and key
-func (m ChaosMock) Set(ns, key string, val []byte) {
+func (m ChaosMock) Set(ns []byte, key, val msgp.Marshaler) {
 	if m == nil {
 		m = make(ChaosMock)
 	}
-	if _, ok := m[ns]; !ok {
-		m[ns] = make(chaosMockInner)
+	if _, ok := m[string(ns)]; !ok {
+		m[string(ns)] = make(chaosMockInner)
 	}
-	m[ns][key] = val
+	keyBytes, err := key.MarshalMsg([]byte{})
+	if err != nil {
+		panic(err)
+	}
+	valBytes, err := val.MarshalMsg([]byte{})
+	if err != nil {
+		panic(err)
+	}
+	m[string(ns)][string(keyBytes)] = valBytes
 }
 
-// Sets puts the string val into the mock ns and key
-func (m ChaosMock) Sets(ns, key, val string) {
-	m.Set(ns, key, []byte(val))
+// Sets puts val into the mock ns and key.
+//
+// key is a string which gets reinterpreted as bytes.
+func (m ChaosMock) Sets(ns []byte, key string, val msgp.Marshaler) {
+	m.Set(ns, wkt.Bytes([]byte(key)), val)
 }
 
 // Get implements the SystemStore interface
-func (m ChaosMock) Get(namespace, key []byte) ([]byte, error) {
+func (m ChaosMock) Get(namespace []byte, key msgp.Marshaler, value msgp.Unmarshaler) error {
 	inner, hasNamespace := m[string(namespace)]
 	if hasNamespace {
-		value, hasKey := inner[string(key)]
-		if hasKey {
-			return value, nil
+		keyBytes, err := key.MarshalMsg([]byte{})
+		if err != nil {
+			return errors.Wrap(err, "ChaosMock.Get failed to marshal key")
 		}
-		return nil, errors.New("Requested key does not exist")
+		valueBytes, hasKey := inner[string(keyBytes)]
+		if hasKey {
+			leftovers, err := value.UnmarshalMsg(valueBytes)
+			if len(leftovers) > 0 {
+				return errors.New("ChaosMock.Get unmarshal had leftover bytes")
+			}
+			return errors.Wrap(err, "ChaosMock.Get failed")
+
+		}
+		return errors.New("Requested key does not exist")
 	}
-	return nil, errors.New("Requested namespace does not exist")
+	return errors.New("Requested namespace does not exist")
 }

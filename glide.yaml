@@ -18,16 +18,19 @@ import:
   repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/BurntSushi/toml
   version: ^0.3.0
-- package: gitlab.ndau.tech/experiments/chaos-go
+- package: github.com/oneiro-ndev/chaosnode
   version: ~v0.4.0
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go
-  vcs: git
-- package: gitlab.ndau.tech/experiments/chaostool
+  repo: git@github.com:oneiro-ndev/chaosnode.git
+- package: github.com/oneiro-ndev/chaostool
   version: ~v0.4.0
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaostool
-  vcs: git
+  repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - package: github.com/tendermint/tmlibs
   version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
 - package: github.com/bouk/monkey
+- package: github.com/tinylib/msgp
+  version: ^1.0.2
+- package: github.com/oneiro-ndev/msgp-well-known-types
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+  version: ~0.1.0

@@ -1,5 +1,5 @@
-hash: 6cf827be67a6f09f3e1f3cab13991a62b723551f46c140b4f7d6c042b96968d4
-updated: 2018-05-16T14:47:53.167712+02:00
+hash: 0bcf683f65b1fd0445a8360f7cb366e90ccdaa0da32ecfc92abcba84e915f3f4
+updated: 2018-05-22T17:51:00.541878+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: e13376c2344b5694a62b7cf6cd8b543c813cd5ee
@@ -137,9 +137,34 @@ imports:
   version: 9bdec3dec7c611fa97beadc374d75bdf02cd880e
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/oneiro-ndev/chaosnode
+  version: 3b912b7d69136add9243c72127bb5cd710da4750
+  repo: git@github.com:oneiro-ndev/chaosnode.git
+  subpackages:
+  - pkg/chaos/code
+  - pkg/chaos/ns
+  - pkg/chaos/query
+  - pkg/chaos/transaction
+- name: github.com/oneiro-ndev/chaostool
+  version: caea430626d91bf4f248dff26eb1af6b5028a653
+  repo: git@github.com:oneiro-ndev/chaostool.git
+  subpackages:
+  - pkg/tool
+- name: github.com/oneiro-ndev/msgp-well-known-types
+  version: 20dbc66cfaa097bf8cdf60b740e0ac37251d07c3
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+  subpackages:
+  - wkt
 - name: github.com/oneiro-ndev/noms-util
   version: b31787dd193cccca41bb0b9fb9743ff0ed50d1f1
   repo: git@github.com:oneiro-ndev/noms-util.git
+- name: github.com/oneiro-ndev/whitelist
+  version: f9950b022eeab826b83f535c133967bf96aa7977
+  repo: git@github.com:oneiro-ndev/whitelist.git
+  subpackages:
+  - pkg/whitelist
+- name: github.com/philhofer/fwd
+  version: bb6d471dc95d4fe11e432687f8b70ff496cf3136
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib
@@ -234,27 +259,10 @@ imports:
   - merkle
   - pubsub
   - pubsub/query
-- name: gitlab.ndau.tech/experiments/chaos-go
-  version: e58fbd305ee0e76daf6532f0d6c84ded5fd910fa
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaos-go
-  vcs: git
+- name: github.com/tinylib/msgp
+  version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
   subpackages:
-  - pkg/chaos/code
-  - pkg/chaos/ns
-  - pkg/chaos/query
-  - pkg/chaos/transaction
-- name: gitlab.ndau.tech/experiments/chaostool
-  version: 27d935e85449a36c05202f4b12140b2e023a1e67
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/chaostool
-  vcs: git
-  subpackages:
-  - pkg/tool
-- name: gitlab.ndau.tech/experiments/whitelist
-  version: f9950b022eeab826b83f535c133967bf96aa7977
-  repo: ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/whitelist
-  vcs: git
-  subpackages:
-  - pkg/whitelist
+  - msgp
 - name: golang.org/x/crypto
   version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
   subpackages:
