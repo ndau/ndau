@@ -11,6 +11,7 @@ import (
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/attic-labs/noms/go/spec"
 	nt "github.com/attic-labs/noms/go/types"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	"github.com/tendermint/abci/types"
@@ -54,6 +55,9 @@ type App struct {
 	// from the chaos chain (or a mock as necessary), but it permits
 	// growth as requirements evolve
 	config config.Config
+
+	// cache of system variables, updated every block
+	systemCache *cache.SystemCache
 }
 
 // NewApp prepares a new Ndau App
@@ -80,11 +84,17 @@ func NewApp(dbSpec string, config config.Config) (*App, error) {
 	// in some ways, a dataset is like a particular table in the db
 	ds := db.GetDataset("ndau")
 
+	sc, err := cache.NewSystemCache(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
+	}
+
 	app := App{
-		db:     db,
-		ds:     ds,
-		logger: log.NewNopLogger(),
-		config: config,
+		db:          db,
+		ds:          ds,
+		logger:      log.NewNopLogger(),
+		config:      config,
+		systemCache: sc,
 	}
 	return &app, nil
 }

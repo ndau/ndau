@@ -136,6 +136,12 @@ func (m *SVIMap) set(name string, nsk NamespacedKey) error {
 // No restriction is placed on their implementation, so long as they
 // can get values from namespaced keys.
 type SystemStore interface {
+	// GetRaw returns the raw bytes for a given namespace and key.
+	//
+	// This should normally be avoided in favor of the higher-level Get
+	// method, but there are use cases which require this kind of low-level
+	// access.
+	GetRaw(namespace []byte, key msgp.Marshaler) ([]byte, error)
 	Get(namespace []byte, key msgp.Marshaler, value msgp.Unmarshaler) error
 }
 

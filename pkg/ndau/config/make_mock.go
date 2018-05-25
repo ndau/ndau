@@ -34,6 +34,7 @@ func MakeMock(configPath, mockPath string) (config *Config, err error) {
 			ChaosAddress:           "",
 			UseMock:                mockPath,
 			SystemVariableIndirect: *sviKey,
+			ChaosTimeout:           500,
 		}
 		err = config.Dump(configPath)
 	}
