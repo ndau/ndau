@@ -3,24 +3,18 @@
 package ndau
 
 import (
+	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/code"
 	"github.com/tendermint/abci/types"
 )
 
-// CheckTx validates a Transaction (defined in transaction.proto)
+// CheckTx validates a Transaction
 func (app *App) CheckTx(bytes []byte) (response types.ResponseCheckTx) {
 	app.logRequest("CheckTx")
-	tx := new(Transaction)
-	err := tx.Unmarshal(bytes)
+	nt, err := metatx.TransactableFromBytes(bytes, TxIDs)
 	if err != nil {
 		response.Code = uint32(code.InvalidTransaction)
 		response.Log = err.Error()
-		return
-	}
-
-	nt := ToTransactable(tx)
-	if nt == nil {
-		response.Code = uint32(code.UnknownTransaction)
 		return
 	}
 
