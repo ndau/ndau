@@ -10,9 +10,6 @@ import:
   repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/BurntSushi/toml
   version: ^0.3.0
-- package: github.com/oneiro-ndev/chaosnode
-  version: ~v0.6.0
-  repo: git@github.com:oneiro-ndev/chaosnode.git
 - package: github.com/oneiro-ndev/chaostool
   version: ~v0.6.0
   repo: git@github.com:oneiro-ndev/chaostool.git
