@@ -3,11 +3,16 @@ package config
 import (
 	"io/ioutil"
 
-	"github.com/oneiro-ndev/chaosnode/pkg/chaos/ns"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/tinylib/msgp/msgp"
 	"golang.org/x/crypto/ed25519"
 )
+
+// we redefine the system namespace here instead of depending on the actual
+// value from the chaos chain. It doesn't particularly matter whether we get
+// it right for the purposes of this test, and it simplifies the dependency
+// management story considerably
+var system = []byte("system")
 
 // MakeMock creates a mock file with the specififed data.
 //
@@ -66,8 +71,8 @@ func MakeTmpMock(tmpdir string) (config *Config, err error) {
 // mock up some chaos data
 func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, *NamespacedKey) {
 	mock := make(ChaosMock)
-	mock.Sets(ns.System, "one", wkt.String("system value one"))
-	mock.Sets(ns.System, "two", wkt.String("system value two"))
+	mock.Sets(system, "one", wkt.String("system value one"))
+	mock.Sets(system, "two", wkt.String("system value two"))
 
 	mock.Sets(bpc, "one", wkt.String("bpc val one"))
 	mock.Sets(bpc, "bar", wkt.String("baz"))
@@ -85,13 +90,13 @@ func makeMockSVI(bpc []byte) SVIMap {
 	svi.set("one", NewNamespacedKey(bpc, "one"))
 	svi.SetOn(
 		"one",
-		NewNamespacedKey(ns.System, "one"),
+		NewNamespacedKey(system, "one"),
 		0,    // we're effectively at genesis right now
 		1000, // plan to give this variable to the sys var on 1000
 	)
 
 	// simple case: associate a string with a namespaced key
-	svi.set("two", NewNamespacedKey(ns.System, "two"))
+	svi.set("two", NewNamespacedKey(system, "two"))
 
 	// demonstrate that aliasing is possible: the official system name may not
 	// be the same as the actual key name

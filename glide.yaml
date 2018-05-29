@@ -1,13 +1,5 @@
 package: github.com/oneiro-ndev/ndaunode
 import:
-- package: github.com/gogo/protobuf
-  version: ^1.0.0
-  subpackages:
-  - proto
-- package: github.com/golang/protobuf
-  version: ^1.0.0
-  subpackages:
-  - proto
 - package: golang.org/x/crypto
   subpackages:
   - ed25519
@@ -18,19 +10,22 @@ import:
   repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/BurntSushi/toml
   version: ^0.3.0
-- package: github.com/oneiro-ndev/chaosnode
-  version: ~v0.4.0
-  repo: git@github.com:oneiro-ndev/chaosnode.git
 - package: github.com/oneiro-ndev/chaostool
-  version: ~v0.4.0
+  version: ~v0.6.0
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - package: github.com/tendermint/tmlibs
-  version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
+  version: 0.8.1
 - package: github.com/bouk/monkey
 - package: github.com/tinylib/msgp
   version: ^1.0.2
 - package: github.com/oneiro-ndev/msgp-well-known-types
-  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
   version: ~0.1.0
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+- package: github.com/oneiro-ndev/metanode
+  repo: git@github.com:oneiro-ndev/metanode.git
+- package: github.com/satori/go.uuid
+  version: master
+- package: github.com/tendermint/go-crypto
+  version: v0.5.0

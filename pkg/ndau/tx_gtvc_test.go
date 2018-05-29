@@ -3,6 +3,8 @@ package ndau
 import (
 	"testing"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/abci/types"
 	"golang.org/x/crypto/ed25519"
@@ -16,7 +18,7 @@ func validatorOptCk(t *testing.T, power int64, app *App, check bool) (gtvc GTVal
 		PublicKey: public,
 		Power:     power,
 	}
-	tx, err := gtvc.AsTransaction().Marshal()
+	tx, err := metatx.TransactableToBytes(&gtvc, TxIDs)
 	require.NoError(t, err)
 
 	if check {
@@ -41,7 +43,7 @@ func toVals(gtvcs []GTValidatorChange) (vals []types.Validator) {
 func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 	app.BeginBlock(types.RequestBeginBlock{})
 	for _, gtvc := range updates {
-		tx, err := gtvc.AsTransaction().Marshal()
+		tx, err := metatx.TransactableToBytes(&gtvc, TxIDs)
 		require.NoError(t, err)
 
 		response := app.DeliverTx(tx)

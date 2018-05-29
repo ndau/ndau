@@ -4,9 +4,9 @@ package code
 
 import "strconv"
 
-const _ReturnCode_name = "OKUnknownTransactionInvalidTransactionErrorApplyingTransaction"
+const _ReturnCode_name = "OKUnknownTransactionInvalidTransactionErrorApplyingTransactionEncodingError"
 
-var _ReturnCode_index = [...]uint8{0, 2, 20, 38, 62}
+var _ReturnCode_index = [...]uint8{0, 2, 20, 38, 62, 75}
 
 func (i ReturnCode) String() string {
 	if i >= ReturnCode(len(_ReturnCode_index)-1) {

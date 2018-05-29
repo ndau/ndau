@@ -81,31 +81,19 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock
 }
 
 // DeliverTx services DeliverTx requests
-// tx a tx.Transaction (defined in tx.Transaction.proto)
 func (app *App) DeliverTx(bytes []byte) (response types.ResponseDeliverTx) {
 	app.logRequest("DeliverTx")
-	tx := new(Transaction)
-	err := tx.Unmarshal(bytes)
+	tx, rc, err := app.validateTransactable(bytes)
+	response.Code = rc
 	if err != nil {
-		response.Code = uint32(code.InvalidTransaction)
 		response.Log = err.Error()
 		return
 	}
-
-	nt := ToTransactable(tx)
-	if nt == nil {
-		response.Code = uint32(code.UnknownTransaction)
-		return
-	}
-
-	err = nt.Apply(app)
+	err = tx.Apply(app)
 	if err != nil {
 		response.Code = uint32(code.ErrorApplyingTransaction)
 		response.Log = err.Error()
-		return
 	}
-
-	response.Code = uint32(code.OK)
 	return
 }
 

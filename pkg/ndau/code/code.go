@@ -12,4 +12,5 @@ const (
 	UnknownTransaction
 	InvalidTransaction
 	ErrorApplyingTransaction
+	EncodingError
 )
