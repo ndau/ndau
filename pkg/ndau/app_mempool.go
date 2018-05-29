@@ -8,23 +8,29 @@ import (
 	"github.com/tendermint/abci/types"
 )
 
+func (app *App) validateTransactable(bytes []byte) (metatx.Transactable, uint32, error) {
+	tx, err := metatx.TransactableFromBytes(bytes, TxIDs)
+	rc := uint32(code.OK)
+	if err != nil {
+		app.logger.Info("tx encoding error", "reason", err.Error())
+		return nil, uint32(code.EncodingError), err
+	}
+	err = tx.IsValid(app)
+	if err != nil {
+		app.logger.Info("invalid tx", "reason", err.Error())
+		rc = uint32(code.InvalidTransaction)
+		return nil, rc, err
+	}
+	return tx, rc, nil
+}
+
 // CheckTx validates a Transaction
 func (app *App) CheckTx(bytes []byte) (response types.ResponseCheckTx) {
-	app.logRequest("CheckTx")
-	nt, err := metatx.TransactableFromBytes(bytes, TxIDs)
+	app.logger.Info("Received request", "type", "CheckTx")
+	_, rc, err := app.validateTransactable(bytes)
+	response.Code = rc
 	if err != nil {
-		response.Code = uint32(code.InvalidTransaction)
 		response.Log = err.Error()
-		return
 	}
-
-	err = nt.IsValid(app)
-	if err != nil {
-		response.Code = uint32(code.InvalidTransaction)
-		response.Log = err.Error()
-		return
-	}
-
-	response.Code = uint32(code.OK)
 	return
 }

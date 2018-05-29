@@ -4,7 +4,6 @@ package ndau
 
 import (
 	nt "github.com/attic-labs/noms/go/types"
-	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/code"
 	"github.com/tendermint/abci/types"
 )
@@ -84,21 +83,17 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock
 // DeliverTx services DeliverTx requests
 func (app *App) DeliverTx(bytes []byte) (response types.ResponseDeliverTx) {
 	app.logRequest("DeliverTx")
-	nt, err := metatx.TransactableFromBytes(bytes, TxIDs)
+	tx, rc, err := app.validateTransactable(bytes)
+	response.Code = rc
 	if err != nil {
-		response.Code = uint32(code.InvalidTransaction)
 		response.Log = err.Error()
 		return
 	}
-
-	err = nt.Apply(app)
+	err = tx.Apply(app)
 	if err != nil {
 		response.Code = uint32(code.ErrorApplyingTransaction)
 		response.Log = err.Error()
-		return
 	}
-
-	response.Code = uint32(code.OK)
 	return
 }
 
