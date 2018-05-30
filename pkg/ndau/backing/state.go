@@ -1,8 +1,8 @@
 package backing
 
 import (
+	"github.com/attic-labs/noms/go/datas"
 	nt "github.com/attic-labs/noms/go/types"
-	"github.com/oneiro-ndev/noms/go/datas"
 	"github.com/pkg/errors"
 )
 
@@ -44,4 +44,9 @@ func LoadState(db datas.Database, ds datas.Dataset) (State, datas.Dataset, error
 	}
 
 	return State(nsS), ds, nil
+}
+
+// Commit the current state and return an updated dataset
+func (state *State) Commit(db datas.Database, ds datas.Dataset) (datas.Dataset, error) {
+	return db.CommitValue(ds, nt.Struct(*state))
 }
