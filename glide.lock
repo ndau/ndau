@@ -1,5 +1,5 @@
 hash: 950e4501175fef8553fe590ee6efc6fe010f206dc5607fef212e5e29466f7f07
-updated: 2018-05-29T15:37:42.056447+02:00
+updated: 2018-05-30T15:23:06.6123516+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -157,6 +157,10 @@ imports:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
   subpackages:
   - wkt
+- name: github.com/oneiro-ndev/noms
+  version: 186e0939a5044b182bce9e60dea910bd6bcb5cd9
+  subpackages:
+  - go/datas
 - name: github.com/oneiro-ndev/noms-util
   version: b31787dd193cccca41bb0b9fb9743ff0ed50d1f1
   repo: git@github.com:oneiro-ndev/noms-util.git
