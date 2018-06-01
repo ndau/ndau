@@ -90,7 +90,7 @@ func TestGTValidatorChangeInitChain(t *testing.T) {
 	qtyVals := 10
 	app, gtvcs := initAppValidators(t, qtyVals)
 
-	actualValidators, err := app.GetValidators()
+	actualValidators, err := app.state.GetValidators()
 	require.NoError(t, err)
 	require.ElementsMatch(t, toVals(gtvcs), actualValidators)
 }
@@ -104,7 +104,7 @@ func TestGTValidatorChangeAddValidator(t *testing.T) {
 	gtvcs = append(gtvcs, gtvc2)
 	updateValidators(t, app, updates)
 
-	actualValidators, err := app.GetValidators()
+	actualValidators, err := app.state.GetValidators()
 	require.NoError(t, err)
 	require.ElementsMatch(t, toVals(gtvcs), actualValidators)
 }
@@ -119,7 +119,7 @@ func TestGTValidatorChangeRemoveValidator(t *testing.T) {
 	gtvcs = gtvcs[1:]
 	updateValidators(t, app, updates)
 
-	actualValidators, err := app.GetValidators()
+	actualValidators, err := app.state.GetValidators()
 	require.NoError(t, err)
 	require.ElementsMatch(t, toVals(gtvcs), actualValidators)
 }

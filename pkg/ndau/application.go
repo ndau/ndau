@@ -7,12 +7,13 @@ package ndau
 import (
 	"fmt"
 
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/cache"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+
 	"github.com/attic-labs/noms/go/d"
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/attic-labs/noms/go/spec"
-	nt "github.com/attic-labs/noms/go/types"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/cache"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	"github.com/tendermint/abci/types"
 	"github.com/tendermint/tmlibs/log"
@@ -43,7 +44,7 @@ type App struct {
 	// into the dataset is only updated on a 'Commit' transaction. This
 	// in turn means that we need to persist the state between transactions
 	// in memory, which means keeping track of this state object.
-	state nt.Map
+	state backing.State
 
 	// List of pending validator updates
 	ValUpdates []types.Validator
@@ -84,6 +85,11 @@ func NewApp(dbSpec string, config config.Config) (*App, error) {
 	// in some ways, a dataset is like a particular table in the db
 	ds := db.GetDataset("ndau")
 
+	state, ds, err := backing.LoadState(db, ds)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewApp failed to load existing state")
+	}
+
 	sc, err := cache.NewSystemCache(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
@@ -92,6 +98,7 @@ func NewApp(dbSpec string, config config.Config) (*App, error) {
 	app := App{
 		db:          db,
 		ds:          ds,
+		state:       state,
 		logger:      log.NewNopLogger(),
 		config:      config,
 		systemCache: sc,
@@ -150,7 +157,7 @@ func (app *App) Close() error {
 // However, they're related: think HARD before using this function
 // outside of func Commit.
 func (app *App) commit() (err error) {
-	ds, err := app.db.CommitValue(app.ds, app.state)
+	ds, err := app.state.Commit(app.db, app.ds)
 	if err == nil {
 		app.ds = ds
 	}
