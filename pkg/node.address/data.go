@@ -7,9 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Address is the serialized representation of an address.Data struct
-type Address []byte
-
 // Data is the data associated with an address
 type Data struct {
 	key        signature.Key
