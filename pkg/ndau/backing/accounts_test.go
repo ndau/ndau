@@ -15,6 +15,15 @@ import (
 	address "github.com/oneiro-ndev/ndaunode/pkg/node.address"
 )
 
+func alphaOf(in string) (out string) {
+	for _, ch := range in {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') {
+			out += string(ch)
+		}
+	}
+	return
+}
+
 func TestAccountDataRoundTrip(t *testing.T) {
 	// set up noms
 	sp, err := spec.ForDatabase("mem")
@@ -24,7 +33,7 @@ func TestAccountDataRoundTrip(t *testing.T) {
 	for _, hasLock := range []bool{false, true} {
 		for _, hasStake := range []bool{false, true} {
 			account, name := generateAccount(t, randNdau(), hasLock, hasStake)
-			ds := db.GetDataset(name)
+			ds := db.GetDataset(alphaOf(name))
 
 			t.Run(name, func(t *testing.T) {
 				// write to noms
@@ -36,7 +45,7 @@ func TestAccountDataRoundTrip(t *testing.T) {
 				recoveredNomsAccount, hasHead := ds.MaybeHeadValue()
 				require.True(t, hasHead)
 				var recoveredAccount AccountData
-				err = marshal.Unmarshal(recoveredNomsAccount, recoveredAccount)
+				err = marshal.Unmarshal(recoveredNomsAccount, &recoveredAccount)
 				require.NoError(t, err)
 
 				require.True(t, reflect.DeepEqual(account, recoveredAccount))
