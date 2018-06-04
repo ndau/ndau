@@ -97,8 +97,7 @@ func generateLock(notified bool) *Lock {
 		Duration: randDuration(),
 	}
 	if randBool() {
-		n := randTimestamp()
-		l.NotifiedOn = &n
+		*l.NotifiedOn = randTimestamp()
 	}
 	return l
 }
@@ -122,10 +121,8 @@ func generateEscrowSettings(changing bool) EscrowSettings {
 		Duration: randDuration(),
 	}
 	if changing {
-		ca := randTimestamp()
-		es.ChangesAt = &ca
-		n := randDuration()
-		es.Next = &n
+		*es.ChangesAt = randTimestamp()
+		*es.Next = randDuration()
 	}
 	return es
 }

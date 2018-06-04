@@ -15,6 +15,8 @@ func newState(db datas.Database) nt.Struct {
 	return nt.NewStruct(stateName, map[string]nt.Value{
 		// Validators is a map of public key to power
 		validatorsKey: nt.NewMap(db),
+		// Accounts is a map of Address to AccountData
+		accountsKey: nt.NewMap(db),
 	})
 }
 
