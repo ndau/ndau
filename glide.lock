@@ -1,5 +1,5 @@
-hash: 330718558c8e0f0622ed880659179d1b15fc8bbf3b3c30ddfe832b3f950d30a4
-updated: 2018-06-01T14:16:13.841588+02:00
+hash: 621a74467557008394b2e2bcb3f0177ddca5641ac8824907bf0db5e0f99dcb17
+updated: 2018-06-05T13:23:12.796437+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 209f1e83c9ac446ac667c46d8c7d6af9640e815a
+  version: 399dd2df8c1bc8a3a69c3c264bc4ea1fb5a7da73
   subpackages:
   - aws
   - aws/awserr
@@ -51,6 +51,7 @@ imports:
   - aws/credentials/ec2rolecreds
   - aws/credentials/endpointcreds
   - aws/credentials/stscreds
+  - aws/csm
   - aws/defaults
   - aws/ec2metadata
   - aws/endpoints
@@ -61,6 +62,8 @@ imports:
   - internal/sdkrand
   - internal/shareddefaults
   - private/protocol
+  - private/protocol/eventstream
+  - private/protocol/eventstream/eventstreamapi
   - private/protocol/json/jsonutil
   - private/protocol/jsonrpc
   - private/protocol/query
@@ -135,7 +138,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaosnode
-  version: 4acd5e0aa2488bbd48e7b38eddb167b39c842bcb
+  version: baa0de7e67ae6ade50849beae2357df2d965d420
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
@@ -149,9 +152,11 @@ imports:
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: a37ec8ffdfb966cdfca6c4d48e654afc532c6541
+  version: 15557b0e2cf433e58b0222150e0fa3f9f09f1cb4
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
+  - pkg/meta.app
+  - pkg/meta.app/code
   - pkg/meta.transaction
 - name: github.com/oneiro-ndev/msgp-well-known-types
   version: 20dbc66cfaa097bf8cdf60b740e0ac37251d07c3
@@ -190,7 +195,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
 - name: github.com/stretchr/testify
-  version: c679ae2cc0cb27ec3293fea7e254e47386f05d69
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert
   - require
@@ -278,7 +283,7 @@ imports:
   subpackages:
   - msgp
 - name: golang.org/x/crypto
-  version: 5ba7f63082460102a45837dbd1827e10f9479ac0
+  version: df8d4716b3472e4a531c33cedbe537dae921a1a9
   subpackages:
   - curve25519
   - ed25519
@@ -312,11 +317,11 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: 4065a77fc542a455295382a23a996a08ed18813a
+  version: 81158efcc9f219c511e4d3c0d61a0e6e49c01a24
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 590da37e2dfb4705d8ebd9574ce4cb75295d9674
+  version: 35085cc92dceefc2beb14feff0f24c69fc678c42
   subpackages:
   - balancer
   - balancer/base

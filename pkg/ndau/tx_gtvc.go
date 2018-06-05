@@ -11,7 +11,7 @@ import (
 // As it happens, we don't currently _have_ any business logic which would
 // determine whether or not a GTValidatorChange is valid, but we've put in
 // this method anyway to implement the Transactable interface
-func (vc *GTValidatorChange) IsValid(abci.Application) error {
+func (vc *GTValidatorChange) IsValid(interface{}) error {
 	return nil
 }
 
@@ -24,11 +24,11 @@ func (vc *GTValidatorChange) ToValidator() abci.Validator {
 }
 
 // Apply this GTVC to the node state
-func (vc *GTValidatorChange) Apply(appInt abci.Application) error {
+func (vc *GTValidatorChange) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 
 	// from persistent_app.go: we now know that this public key should be in go-crypto format
-	logger := app.logger.With("method", "processGTValidatorChange")
+	logger := app.GetLogger().With("method", "processGTValidatorChange")
 	logger.Info(
 		"entered method",
 		"PubKey", fmt.Sprintf("%x", vc.PublicKey),
@@ -39,7 +39,7 @@ func (vc *GTValidatorChange) Apply(appInt abci.Application) error {
 		return err
 	}
 	v := vc.ToValidator()
-	app.updateValidator(v)
+	app.UpdateValidator(v)
 
 	logger.Info("exit method; success")
 	return nil

@@ -25,6 +25,7 @@ import:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
+  version: master
 - package: github.com/satori/go.uuid
   version: master
 - package: github.com/tendermint/go-crypto
@@ -33,3 +34,8 @@ import:
   repo: git@github.com:oneiro-ndev/ndaumath.git
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
+- package: github.com/oneiro-ndev/chaosnode
+  repo: git@github.com:oneiro-ndev/chaosnode.git
+  # this overrides a transitive dependency so things work
+  # this package requirement shouldn't be in the merged product!
+  version: prgn-use-metanode

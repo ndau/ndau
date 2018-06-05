@@ -4,12 +4,17 @@ import (
 	"github.com/attic-labs/noms/go/datas"
 	nt "github.com/attic-labs/noms/go/types"
 	"github.com/pkg/errors"
+
+	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
 )
 
 const stateName = "State"
 
 // State is a noms struct containing all Ndau chain state.
 type State nt.Struct
+
+// make sure State is a metaapp.State
+var _ meta.State = (*State)(nil)
 
 func newState(db datas.Database) nt.Struct {
 	return nt.NewStruct(stateName, map[string]nt.Value{
@@ -46,6 +51,13 @@ func LoadState(db datas.Database, ds datas.Dataset) (State, datas.Dataset, error
 	}
 
 	return State(nsS), ds, nil
+}
+
+// Load a state from a DB and DS, satisfying meta.State
+func (state *State) Load(db datas.Database, ds datas.Dataset) (datas.Dataset, error) {
+	var err error
+	*state, ds, err = LoadState(db, ds)
+	return ds, err
 }
 
 // Commit the current state and return an updated dataset
