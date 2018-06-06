@@ -39,11 +39,13 @@ func NewApp(dbSpec string, config config.Config) (*App, error) {
 		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
 	}
 
-	return &App{
+	app := App{
 		metaapp,
 		config,
 		sc,
-	}, nil
+	}
+	app.App.SetChild(&app)
+	return &app, nil
 }
 
 // InitChain performs necessary chain initialization.
