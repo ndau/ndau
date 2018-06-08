@@ -10,7 +10,7 @@ import (
 
 // Lock keeps track of an account's Lock information
 type Lock struct {
-	Duration math.Duration
+	NoticePeriod math.Duration
 	// if a lock has not been notified, this is nil
 	NotifiedOn *math.Timestamp
 }
@@ -42,7 +42,7 @@ type nomsLock struct {
 
 func (l Lock) toNomsLock() nomsLock {
 	nl := nomsLock{
-		Duration:   util.Int(l.Duration),
+		Duration:   util.Int(l.NoticePeriod),
 		IsNotified: l.NotifiedOn != nil,
 	}
 	if l.NotifiedOn != nil {
@@ -52,9 +52,10 @@ func (l Lock) toNomsLock() nomsLock {
 }
 
 func (l *Lock) fromNomsLock(nl nomsLock) {
-	l.Duration = math.Duration(nl.Duration)
+	l.NoticePeriod = math.Duration(nl.Duration)
 	if nl.IsNotified {
-		*l.NotifiedOn = math.Timestamp(nl.NotifiedOn)
+		ts := math.Timestamp(nl.NotifiedOn)
+		l.NotifiedOn = &ts
 	} else {
 		l.NotifiedOn = nil
 	}
@@ -193,8 +194,10 @@ func (e EscrowSettings) toNomsEscrowSettings() nomsEscrowSettings {
 func (e *EscrowSettings) fromNomsEscrowSettings(n nomsEscrowSettings) {
 	e.Duration = math.Duration(n.Duration)
 	if n.HasUpdate {
-		*e.ChangesAt = math.Timestamp(n.ChangesAt)
-		*e.Next = math.Duration(n.Next)
+		ts := math.Timestamp(n.ChangesAt)
+		e.ChangesAt = &ts
+		n := math.Duration(n.Next)
+		e.Next = &n
 	} else {
 		e.ChangesAt = nil
 		e.Next = nil
@@ -205,13 +208,17 @@ func (e *EscrowSettings) fromNomsEscrowSettings(n nomsEscrowSettings) {
 //
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
-	Balance        math.Ndau
-	Lock           *Lock
-	Stake          *Stake
-	UpdatePoint    math.Timestamp
-	Sequence       uint64
-	Escrows        []Escrow
-	EscrowSettings EscrowSettings
+	Balance            math.Ndau
+	TransferKey        []byte
+	RewardsTarget      string
+	DelegationNode     string
+	Lock               *Lock
+	Stake              *Stake
+	LastEAITime        math.Timestamp
+	WeightedAverageAge math.Duration
+	Sequence           uint64
+	Escrows            []Escrow
+	EscrowSettings     EscrowSettings
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
@@ -219,7 +226,7 @@ var _ marshal.Unmarshaler = (*AccountData)(nil)
 
 // MarshalNoms implements Marshaler for AccountData
 func (ad AccountData) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
-	return marshal.Marshal(vrw, ad.toNomsAccountData())
+	return marshal.Marshal(vrw, ad.toNomsAccountData(vrw))
 }
 
 // UnmarshalNoms implements Unmarshaler for AccountData
@@ -229,31 +236,38 @@ func (ad *AccountData) UnmarshalNoms(v nt.Value) error {
 	if err != nil {
 		return err
 	}
-	ad.fromNomsAccountData(n)
-	return nil
+	return ad.fromNomsAccountData(n)
 }
 
 type nomsAccountData struct {
-	Balance        util.Int
-	HasLock        bool
-	Lock           Lock
-	HasStake       bool
-	Stake          Stake
-	UpdatePoint    util.Int
-	Sequence       util.Int
-	Escrows        []Escrow
-	EscrowSettings EscrowSettings
+	Balance            util.Int
+	TransferKey        nt.Blob
+	RewardsTarget      nt.String
+	DelegationNode     nt.String
+	HasLock            bool
+	Lock               Lock
+	HasStake           bool
+	Stake              Stake
+	LastEAITime        util.Int
+	WeightedAverageAge util.Int
+	Sequence           util.Int
+	Escrows            []Escrow
+	EscrowSettings     EscrowSettings
 }
 
-func (ad AccountData) toNomsAccountData() nomsAccountData {
+func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) nomsAccountData {
 	nad := nomsAccountData{
-		Balance:        util.Int(ad.Balance),
-		HasLock:        ad.Lock != nil,
-		HasStake:       ad.Stake != nil,
-		UpdatePoint:    util.Int(ad.UpdatePoint),
-		Sequence:       util.Int(ad.Sequence),
-		Escrows:        ad.Escrows,
-		EscrowSettings: ad.EscrowSettings,
+		Balance:            util.Int(ad.Balance),
+		TransferKey:        util.Blob(vrw, ad.TransferKey),
+		RewardsTarget:      nt.String(ad.RewardsTarget),
+		DelegationNode:     nt.String(ad.DelegationNode),
+		HasLock:            ad.Lock != nil,
+		HasStake:           ad.Stake != nil,
+		LastEAITime:        util.Int(ad.LastEAITime),
+		WeightedAverageAge: util.Int(ad.WeightedAverageAge),
+		Sequence:           util.Int(ad.Sequence),
+		Escrows:            ad.Escrows,
+		EscrowSettings:     ad.EscrowSettings,
 	}
 	if nad.HasLock {
 		nad.Lock = *ad.Lock
@@ -264,8 +278,15 @@ func (ad AccountData) toNomsAccountData() nomsAccountData {
 	return nad
 }
 
-func (ad *AccountData) fromNomsAccountData(n nomsAccountData) {
+func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	ad.Balance = math.Ndau(n.Balance)
+	ad.TransferKey, err = util.Unblob(n.TransferKey)
+	if err != nil {
+		*ad = AccountData{}
+		return err
+	}
+	ad.RewardsTarget = string(n.RewardsTarget)
+	ad.DelegationNode = string(n.DelegationNode)
 	if n.HasLock {
 		ad.Lock = &n.Lock
 	} else {
@@ -276,8 +297,10 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) {
 	} else {
 		ad.Stake = nil
 	}
-	ad.UpdatePoint = math.Timestamp(n.UpdatePoint)
+	ad.LastEAITime = math.Timestamp(n.LastEAITime)
+	ad.WeightedAverageAge = math.Duration(n.WeightedAverageAge)
 	ad.Sequence = uint64(n.Sequence)
 	ad.Escrows = n.Escrows
 	ad.EscrowSettings = n.EscrowSettings
+	return nil
 }
