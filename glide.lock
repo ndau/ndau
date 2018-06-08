@@ -1,5 +1,5 @@
-hash: e84858d45631ee0642a7acd6d8ab8930bb274732bd8a0d84bdb94f19f5a944ef
-updated: 2018-06-08T12:17:48.644224+02:00
+hash: e38698068d07ac5fcafcdc5c2ec7a7626d8e5bcf47b9923fe0be0be4bc299510
+updated: 2018-06-08T16:04:38.195894+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -165,7 +165,7 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 4d184e828c4902bda616a41e4ac720275f31c469
+  version: 7c09f881b764d0b6ffa4053158b0fe57a204ff8e
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -175,8 +175,10 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: 2223cd2bc0976848e21ac3bf77a9f520bd130c94
+  version: ebc492ac9b70d9593d47eb2edfbac6f91613a8ec
   repo: git@github.com:oneiro-ndev/signature.git
+  subpackages:
+  - pkg/signature
 - name: github.com/oneiro-ndev/whitelist
   version: f9950b022eeab826b83f535c133967bf96aa7977
   repo: git@github.com:oneiro-ndev/whitelist.git
