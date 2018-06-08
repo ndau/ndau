@@ -1,5 +1,5 @@
-hash: 29d10c4cc1582fc6bb9f39fbb6531500dfc8ca0953f30826eb4efddbb7328143
-updated: 2018-06-06T10:59:39.767279+02:00
+hash: e84858d45631ee0642a7acd6d8ab8930bb274732bd8a0d84bdb94f19f5a944ef
+updated: 2018-06-08T12:17:48.644224+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -138,21 +138,20 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaosnode
-  version: baa0de7e67ae6ade50849beae2357df2d965d420
+  version: 9c5ce943b8e7f03da849da11ad2b14f2babf0c45
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
   - pkg/chaos/backing
-  - pkg/chaos/code
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: fd7e78f1025a48750e65e8ba25fc8e5b257b6e6a
+  version: 4028b4f1e83670fe41d01d945a5a3147fe9a7378
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 6176cb9ca76b3423508f682cd3d67d9acd9dbf53
+  version: 0f90c2d703f2be7836148eacd4e6136f61e04969
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -164,7 +163,7 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 92d019fd30765e46d8000f7b265513c0516ddfd2
+  version: 4d184e828c4902bda616a41e4ac720275f31c469
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/constants
