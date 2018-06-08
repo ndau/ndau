@@ -10,9 +10,9 @@ import (
 	"github.com/attic-labs/noms/go/spec"
 	"github.com/stretchr/testify/require"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	address "github.com/oneiro-ndev/ndaunode/pkg/node.address"
 )
 
 func alphaOf(in string) (out string) {
@@ -103,9 +103,13 @@ func generateLock(notified bool) *Lock {
 }
 
 func generateStake() *Stake {
+	addr, _ := address.Generate(
+		address.KindUser,
+		make([]byte, address.MinDataLength),
+	)
 	return &Stake{
 		Point:   randTimestamp(),
-		Address: address.Address(make([]byte, 32)),
+		Address: addr,
 	}
 }
 

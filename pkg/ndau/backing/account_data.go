@@ -5,7 +5,6 @@ import (
 	nt "github.com/attic-labs/noms/go/types"
 
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	address "github.com/oneiro-ndev/ndaunode/pkg/node.address"
 	util "github.com/oneiro-ndev/noms-util"
 )
 
@@ -64,7 +63,7 @@ func (l *Lock) fromNomsLock(nl nomsLock) {
 // Stake keeps track of an account's staking information
 type Stake struct {
 	Point   math.Timestamp
-	Address address.Address
+	Address string
 }
 
 var _ marshal.Marshaler = (*Stake)(nil)
@@ -88,7 +87,7 @@ func (s *Stake) UnmarshalNoms(v nt.Value) error {
 
 type nomsStake struct {
 	Point   util.Int
-	Address address.Address
+	Address string
 }
 
 func (s Stake) toNomsStake() nomsStake {
