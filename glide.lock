@@ -1,5 +1,5 @@
-hash: 873c6c8d99db52c0ba7cf58701ad3e28002d9c4170a5fbaa9f93f823db73ccaa
-updated: 2018-06-11T12:19:41.584939+02:00
+hash: 1856dc18f39716942bcfdd13d08d0ea93cdb408b6aeeb404929666ca05c7fbb7
+updated: 2018-06-11T17:39:38.261047+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -173,7 +173,7 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: ebc492ac9b70d9593d47eb2edfbac6f91613a8ec
+  version: 79844201eb5200e0c4cdf0a19ff018a2ec7c5e58
   repo: git@github.com:oneiro-ndev/signature.git
   subpackages:
   - pkg/signature

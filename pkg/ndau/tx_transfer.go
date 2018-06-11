@@ -10,12 +10,15 @@ import (
 )
 
 // NewTransfer creates a new signed transfer transactable
-func NewTransfer(ts math.Timestamp, s string, d string, q math.Ndau, seq uint64, al signature.Algorithm, privateKey signature.Key) (*Transfer, error) {
+func NewTransfer(
+	ts math.Timestamp,
+	s string, d string,
+	q math.Ndau,
+	seq uint64,
+	key signature.PrivateKey,
+) (*Transfer, error) {
 	if s == d {
 		return nil, errors.New("source may not equal destination")
-	}
-	if al == nil {
-		return nil, errors.New("Nil Algorithm")
 	}
 	t := &Transfer{
 		Timestamp:   ts,
@@ -24,12 +27,13 @@ func NewTransfer(ts math.Timestamp, s string, d string, q math.Ndau, seq uint64,
 		Qty:         q,
 		Sequence:    seq,
 	}
-	sig, err := t.signature(al, privateKey)
+	bytes, err := t.signableBytes()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to sign NewTransfer")
+		return nil, err
 	}
-	t.Signature = sig
-	return t, nil
+	t.Signature, err = key.Sign(bytes).Marshal()
+
+	return t, err
 }
 
 func appendUint64(b []byte, i uint64) []byte {
@@ -55,13 +59,13 @@ func (t *Transfer) signableBytes() ([]byte, error) {
 	return bytes, nil
 }
 
-func (t *Transfer) signature(al signature.Algorithm, private signature.Key) ([]byte, error) {
+func (t *Transfer) signature(private signature.PrivateKey) ([]byte, error) {
 	bytes, err := t.signableBytes()
 	if err != nil {
 		return nil, err
 	}
-	sig := al.Sign(private, bytes)
-	sigB, err := signature.MarshalSignature(al, sig)
+
+	sigB, err := private.Sign(bytes).Marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +121,8 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 	if source.TransferKey == nil {
 		return errors.New("source.TransferKey not set")
 	}
-	algorithm, publicKey, err := signature.UnmarshalKey(source.TransferKey)
+	publicKey := signature.PublicKey{}
+	err = (&publicKey).Unmarshal(source.TransferKey)
 	if err != nil {
 		return errors.Wrap(err, "source.TransferKey")
 	}
@@ -125,7 +130,12 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "signable bytes")
 	}
-	if !algorithm.Verify(publicKey, tBytes, t.Signature) {
+	sig := signature.Signature{}
+	err = (&sig).Unmarshal(t.Signature)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal signature")
+	}
+	if !publicKey.Verify(tBytes, sig) {
 		return errors.New("invalid signature")
 	}
 

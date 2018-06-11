@@ -35,4 +35,4 @@ import:
   version: ~v0.1.0
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
-  version: master
+  version: ~v0.1.0
