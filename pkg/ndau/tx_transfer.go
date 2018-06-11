@@ -98,6 +98,10 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
+	if t.Qty <= math.Ndau(0) {
+		return errors.New("invalid transfer: Qty not positive")
+	}
+
 	if t.Source == t.Destination {
 		return errors.New("invalid transfer: source == destination")
 	}
@@ -162,6 +166,16 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Destination")
 	}
+
+	err = (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
+		app.blockTime.Since(dest.LastWAAUpdate),
+		t.Qty,
+		dest.Balance,
+	)
+	if err != nil {
+		return errors.Wrap(err, "update waa")
+	}
+	dest.LastWAAUpdate = app.blockTime
 
 	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {

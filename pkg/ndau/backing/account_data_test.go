@@ -61,7 +61,7 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					require.Equal(t, account.DelegationNode, recoveredAccount.DelegationNode)
 					require.Equal(t, account.Lock, recoveredAccount.Lock)
 					require.Equal(t, account.Stake, recoveredAccount.Stake)
-					require.Equal(t, account.LastEAITime, recoveredAccount.LastEAITime)
+					require.Equal(t, account.LastWAAUpdate, recoveredAccount.LastWAAUpdate)
 					require.Equal(t, account.WeightedAverageAge, recoveredAccount.WeightedAverageAge)
 					require.Equal(t, account.Sequence, recoveredAccount.Sequence)
 					require.Equal(t, account.Escrows, recoveredAccount.Escrows)
@@ -110,7 +110,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	ad := AccountData{
 		Balance:            balance,
 		TransferKey:        randKey(),
-		LastEAITime:        randTimestamp(),
+		LastWAAUpdate:      randTimestamp(),
 		WeightedAverageAge: randDuration(),
 		Sequence:           rand.Uint64(),
 		EscrowSettings:     generateEscrowSettings(randBool()),

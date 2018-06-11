@@ -1,5 +1,5 @@
-hash: e38698068d07ac5fcafcdc5c2ec7a7626d8e5bcf47b9923fe0be0be4bc299510
-updated: 2018-06-08T16:04:38.195894+02:00
+hash: 873c6c8d99db52c0ba7cf58701ad3e28002d9c4170a5fbaa9f93f823db73ccaa
+updated: 2018-06-11T12:19:41.584939+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -123,8 +123,6 @@ imports:
   version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
 - name: github.com/gorilla/websocket
   version: 5ed622c449da6d44c3c8329331ff47a9e5844f71
-- name: github.com/howeyc/crc16
-  version: 2b2a61e366a66d3efb279e46176e7291001e0354
 - name: github.com/jmespath/go-jmespath
   version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/jmhodges/levigo
@@ -165,7 +163,7 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 7c09f881b764d0b6ffa4053158b0fe57a204ff8e
+  version: 28439760f3f098991129e0435f6b185c45a43f1a
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -196,8 +194,12 @@ imports:
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+- name: github.com/sigurn/crc16
+  version: da416fad5162ac0f3338ba24dccdb26e4da22485
+- name: github.com/sigurn/utils
+  version: f19e41f79f8f006116f682c1af454591bc278ad4
 - name: github.com/stretchr/testify
-  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
   - assert
   - require
