@@ -3,7 +3,6 @@
 package ndau
 
 import (
-	nt "github.com/attic-labs/noms/go/types"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/code"
 	"github.com/tendermint/abci/types"
 )
@@ -14,16 +13,9 @@ import (
 func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseInitChain) {
 	logger := app.logRequestBare("InitChain")
 
-	// first ensure that there's a head on app.ds and app.state is initialized
-	head, hasHead := app.ds.MaybeHeadValue()
-	if !hasHead {
-		head = nt.NewMap(app.db)
-	}
-	app.state = head.(nt.Map)
-
 	// now add the initial validators set
 	for _, v := range req.Validators {
-		app.updateValidator(v)
+		app.state.UpdateValidator(app.db, v)
 	}
 
 	// commiting here ensures two things:

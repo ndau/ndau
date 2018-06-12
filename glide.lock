@@ -1,5 +1,5 @@
-hash: 950e4501175fef8553fe590ee6efc6fe010f206dc5607fef212e5e29466f7f07
-updated: 2018-05-29T15:37:42.056447+02:00
+hash: 330718558c8e0f0622ed880659179d1b15fc8bbf3b3c30ddfe832b3f950d30a4
+updated: 2018-06-01T14:16:13.841588+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -23,6 +23,7 @@ imports:
   - go/d
   - go/datas
   - go/hash
+  - go/marshal
   - go/merge
   - go/metrics
   - go/nbs
@@ -38,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: afeff3d347c1929b452f2d318f79741510888734
+  version: 209f1e83c9ac446ac667c46d8c7d6af9640e815a
   subpackages:
   - aws
   - aws/awserr
@@ -73,7 +74,7 @@ imports:
 - name: github.com/bouk/monkey
   version: 5df1f207ff77e025801505ae4d903133a0b4353f
 - name: github.com/btcsuite/btcd
-  version: bc0944904505aab55e089371a892be2f87883161
+  version: 86fed781132ac890ee03e906e4ecd5d6fa180c64
   subpackages:
   - btcec
 - name: github.com/BurntSushi/toml
@@ -157,9 +158,20 @@ imports:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
   subpackages:
   - wkt
+- name: github.com/oneiro-ndev/ndaumath
+  version: 92d019fd30765e46d8000f7b265513c0516ddfd2
+  repo: git@github.com:oneiro-ndev/ndaumath.git
+  subpackages:
+  - pkg/constants
+  - pkg/types
 - name: github.com/oneiro-ndev/noms-util
-  version: b31787dd193cccca41bb0b9fb9743ff0ed50d1f1
+  version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
+- name: github.com/oneiro-ndev/signature
+  version: 2223cd2bc0976848e21ac3bf77a9f520bd130c94
+  repo: git@github.com:oneiro-ndev/signature.git
+  subpackages:
+  - pkg/signature
 - name: github.com/oneiro-ndev/whitelist
   version: f9950b022eeab826b83f535c133967bf96aa7977
   repo: git@github.com:oneiro-ndev/whitelist.git
@@ -266,7 +278,7 @@ imports:
   subpackages:
   - msgp
 - name: golang.org/x/crypto
-  version: ab813273cd59e1333f7ae7bff5d027d4aadf528c
+  version: 5ba7f63082460102a45837dbd1827e10f9479ac0
   subpackages:
   - curve25519
   - ed25519
@@ -279,7 +291,7 @@ imports:
   - ripemd160
   - salsa20/salsa
 - name: golang.org/x/net
-  version: dfa909b99c79129e1100513e5cd36307665e5723
+  version: 1e491301e022f8f977054da4c2d852decd59571f
   subpackages:
   - context
   - http/httpguts
@@ -300,11 +312,11 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: 694d95ba50e67b2e363f3483057db5d4910c18f9
+  version: 4065a77fc542a455295382a23a996a08ed18813a
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 1fa3750c9a209f5efbdc2722d40f2657885af5e5
+  version: 590da37e2dfb4705d8ebd9574ce4cb75295d9674
   subpackages:
   - balancer
   - balancer/base
@@ -318,6 +330,7 @@ imports:
   - grpclb/grpc_lb_v1/messages
   - grpclog
   - internal
+  - internal/grpcrand
   - keepalive
   - metadata
   - naming
