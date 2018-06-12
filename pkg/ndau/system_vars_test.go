@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bouk/monkey"
+	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func initApp(t *testing.T) (app *App) {
 // If that doesn't work, you may need to just skip these tests.
 func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
 	app = initApp(t)
-	monkey.PatchInstanceMethod(reflect.TypeOf(app), "Height", func(_ *App) uint64 {
+	monkey.PatchInstanceMethod(reflect.TypeOf(app.App), "Height", func(*meta.App) uint64 {
 		return atHeight
 	})
 	app.InitChain(types.RequestInitChain{})

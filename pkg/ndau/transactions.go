@@ -4,6 +4,11 @@ import metatx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 
 //go:generate msgp
 
+// TxIDs is a map which defines canonical numeric ids for each transactable type.
+var TxIDs = map[metatx.TxID]metatx.Transactable{
+	metatx.TxID(0xff): &GTValidatorChange{},
+}
+
 // A GTValidatorChange is a Globally Trusted Validator Change.
 //
 // No attempt is made to validate the validator change;
