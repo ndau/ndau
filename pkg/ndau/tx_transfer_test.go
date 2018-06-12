@@ -198,3 +198,171 @@ func TestTransfersUpdateDestWAA(t *testing.T) {
 		"max epsilon", maxEpsilon,
 	)
 }
+
+func TestTransfersUpdateDestLastWAAUpdate(t *testing.T) {
+	now := time.Now()
+	unixTime := now.Unix()
+	timestamp, err := math.TimestampFrom(now)
+	require.NoError(t, err)
+
+	// truncate timestamp to the nearest second:
+	// we assume that unix time is what tendermint uses,
+	// and unix time is truncated to seconds
+	timestamp = math.Timestamp(int64(timestamp) - (int64(timestamp) % math.Second))
+
+	app, private := initAppTx(t)
+
+	modifyDest(t, app, func(acct *backing.AccountData) {
+		acct.Balance = 100 * constants.QuantaPerUnit
+		acct.LastWAAUpdate = timestamp.Sub(math.Duration(30 * math.Day))
+	})
+
+	tr := generateTransfer(t, 50, 1, private)
+	resp := deliverTrAt(t, app, tr, unixTime)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// not actually modifying the dest here; this is just the
+	// fastest way to get access to the account data
+	modifyDest(t, app, func(acct *backing.AccountData) {
+		require.Equal(t, timestamp, acct.LastWAAUpdate)
+	})
+}
+
+func TestTransfersDeductBalanceFromSource(t *testing.T) {
+	app, private := initAppTx(t)
+
+	var initialSourceNdau int64
+	modifySource(t, app, func(src *backing.AccountData) {
+		initialSourceNdau = int64(src.Balance)
+	})
+
+	const deltaNapu = 50 * constants.QuantaPerUnit
+
+	tr := generateTransfer(t, 50, 1, private)
+	resp := deliverTr(t, app, tr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	modifySource(t, app, func(src *backing.AccountData) {
+		require.Equal(t, initialSourceNdau-deltaNapu, int64(src.Balance))
+	})
+}
+
+func TestTransfersAddBalanceToDest(t *testing.T) {
+	app, private := initAppTx(t)
+
+	var initialDestNdau int64
+	modifyDest(t, app, func(dest *backing.AccountData) {
+		initialDestNdau = int64(dest.Balance)
+	})
+
+	const deltaNapu = 123 * constants.QuantaPerUnit
+
+	tr := generateTransfer(t, 123, 1, private)
+	resp := deliverTr(t, app, tr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	modifyDest(t, app, func(dest *backing.AccountData) {
+		require.Equal(t, initialDestNdau+deltaNapu, int64(dest.Balance))
+	})
+}
+
+func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
+	app, key := initAppTx(t)
+
+	qty := int64(1)
+	seq := uint64(1)
+
+	// generate a transfer
+	// this is almost a straight copy-paste of generateTransfer,
+	// but we use source as dest as well
+	//
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	_, err = NewTransfer(
+		ts,
+		source, source,
+		math.Ndau(qty*constants.QuantaPerUnit),
+		seq, key,
+	)
+	require.Error(t, err)
+
+	// We've just proved that this implementation refuses to generate
+	// a transfer for which source and dest are identical.
+	//
+	// However, what if someone builds one from scratch?
+	// We need to ensure that the application
+	// layer rejects deserialized transfers which are invalid.
+	tr := generateTransfer(t, qty, seq, key)
+	tr.Destination = tr.Source
+	bytes, err := tr.signableBytes()
+	require.NoError(t, err)
+	tr.Signature, err = key.Sign(bytes).Marshal()
+	require.NoError(t, err)
+
+	resp := deliverTr(t, app, tr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestSignatureMustValidate(t *testing.T) {
+	app, private := initAppTx(t)
+	tr := generateTransfer(t, 1, 1, private)
+	// I'm almost completely certain that this will be an invalid signature
+	tr.Signature = []byte("foo bar bat baz")
+	resp := deliverTr(t, app, tr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestInvalidTransactionDoesntAffectAnyBalance(t *testing.T) {
+	app, private := initAppTx(t)
+	var (
+		beforeSrc  math.Ndau
+		beforeDest math.Ndau
+		afterSrc   math.Ndau
+		afterDest  math.Ndau
+	)
+	modifySource(t, app, func(src *backing.AccountData) {
+		beforeSrc = src.Balance
+	})
+	modifyDest(t, app, func(dest *backing.AccountData) {
+		beforeDest = dest.Balance
+	})
+
+	// invalid: sequence 0
+	tr := generateTransfer(t, 1, 0, private)
+	resp := deliverTr(t, app, tr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+
+	modifySource(t, app, func(src *backing.AccountData) {
+		afterSrc = src.Balance
+	})
+	modifyDest(t, app, func(dest *backing.AccountData) {
+		afterDest = dest.Balance
+	})
+
+	require.Equal(t, beforeSrc, afterSrc)
+	require.Equal(t, beforeDest, afterDest)
+}
+
+func TestTransfersOfMoreThanSourceBalanceAreInvalid(t *testing.T) {
+	app, private := initAppTx(t)
+	modifySource(t, app, func(src *backing.AccountData) {
+		src.Balance = 1 * constants.QuantaPerUnit
+	})
+	tr := generateTransfer(t, 2, 1, private)
+	resp := deliverTr(t, app, tr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestSequenceMustIncrease(t *testing.T) {
+	app, private := initAppTx(t)
+	invalidZero := generateTransfer(t, 1, 0, private)
+	resp := deliverTr(t, app, invalidZero)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+	// valid now, because its sequence is greater than the account sequence
+	tr := generateTransfer(t, 1, 1, private)
+	resp = deliverTr(t, app, tr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	// invalid now because account sequence must have been updated
+	resp = deliverTr(t, app, tr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
