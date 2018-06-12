@@ -1,5 +1,5 @@
-hash: e84858d45631ee0642a7acd6d8ab8930bb274732bd8a0d84bdb94f19f5a944ef
-updated: 2018-06-08T12:17:48.644224+02:00
+hash: 40b0ce7beedf5bb2407b5e4d12c521fb72250f082dc1dbf1cd423ce1f1af6ce8
+updated: 2018-06-12T13:06:21.099171+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -123,8 +123,6 @@ imports:
   version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
 - name: github.com/gorilla/websocket
   version: 5ed622c449da6d44c3c8329331ff47a9e5844f71
-- name: github.com/howeyc/crc16
-  version: 2b2a61e366a66d3efb279e46176e7291001e0354
 - name: github.com/jmespath/go-jmespath
   version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/jmhodges/levigo
@@ -140,7 +138,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaosnode
-  version: 9c5ce943b8e7f03da849da11ad2b14f2babf0c45
+  version: 8cfaf6eb07abbd467a21db1fa77af637c71e96de
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
@@ -148,12 +146,12 @@ imports:
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: 4028b4f1e83670fe41d01d945a5a3147fe9a7378
+  version: 6e88f759e2e83bf193adefab79a85c7de8450a80
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 0f90c2d703f2be7836148eacd4e6136f61e04969
+  version: 494f7ec1aef0f61c6b8e2d8a7c87508c92a3c074
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -165,7 +163,7 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 4d184e828c4902bda616a41e4ac720275f31c469
+  version: 28439760f3f098991129e0435f6b185c45a43f1a
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -175,7 +173,7 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: 2223cd2bc0976848e21ac3bf77a9f520bd130c94
+  version: 79844201eb5200e0c4cdf0a19ff018a2ec7c5e58
   repo: git@github.com:oneiro-ndev/signature.git
 - name: github.com/oneiro-ndev/whitelist
   version: f9950b022eeab826b83f535c133967bf96aa7977
@@ -194,8 +192,12 @@ imports:
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+- name: github.com/sigurn/crc16
+  version: da416fad5162ac0f3338ba24dccdb26e4da22485
+- name: github.com/sigurn/utils
+  version: f19e41f79f8f006116f682c1af454591bc278ad4
 - name: github.com/stretchr/testify
-  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
   - assert
   - require
