@@ -27,20 +27,31 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	app := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
-	// initialize the source address with a bunch of ndau
-	state := app.GetState().(*backing.State)
-	acct, err := state.GetAccount(app.GetDB(), source)
-	require.NoError(t, err)
-	acct.Balance = math.Ndau(1000000 * constants.QuantaPerUnit)
 	// generate the transfer key so we can transfer from it
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
-	acct.TransferKey, err = public.Marshal()
-	require.NoError(t, err)
-	err = state.UpdateAccount(app.GetDB(), source, acct)
-	require.NoError(t, err)
+
+	modifySource(t, app, func(acct backing.AccountData) backing.AccountData {
+		// initialize the source address with a bunch of ndau
+		acct.Balance = math.Ndau(1000000 * constants.QuantaPerUnit)
+		acct.TransferKey, err = public.Marshal()
+		require.NoError(t, err)
+		return acct
+	})
 
 	return app, private
+}
+
+// update the source account
+func modifySource(t *testing.T, app *App, f func(backing.AccountData) backing.AccountData) {
+	state := app.GetState().(*backing.State)
+	acct, err := state.GetAccount(app.GetDB(), source)
+	require.NoError(t, err)
+
+	acct = f(acct)
+
+	err = state.UpdateAccount(app.GetDB(), source, acct)
+	require.NoError(t, err)
 }
 
 func deliverTr(t *testing.T, app *App, transfer *Transfer) abci.ResponseDeliverTx {
