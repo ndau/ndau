@@ -13,10 +13,10 @@ func (ad *AccountData) IsLocked(blockTime math.Timestamp) bool {
 	if ad.Lock == nil {
 		return false
 	}
-	if ad.Lock.NotifiedOn == nil {
+	if ad.Lock.UnlocksOn == nil {
 		return true
 	}
-	if ad.Lock.NotifiedOn.Add(ad.Lock.NoticePeriod).Compare(blockTime) <= 0 {
+	if ad.Lock.UnlocksOn.Compare(blockTime) > 0 {
 		return true
 	}
 	ad.Lock = nil
@@ -25,10 +25,10 @@ func (ad *AccountData) IsLocked(blockTime math.Timestamp) bool {
 
 // IsNotified is true when this account has been notified but has not yet unlocked.
 func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
-	if ad.Lock == nil || ad.Lock.NotifiedOn == nil {
+	if ad.Lock == nil || ad.Lock.UnlocksOn == nil {
 		return false
 	}
-	if ad.Lock.NotifiedOn.Add(ad.Lock.NoticePeriod).Compare(blockTime) <= 0 {
+	if ad.Lock.UnlocksOn.Compare(blockTime) > 0 {
 		return true
 	}
 	ad.Lock = nil

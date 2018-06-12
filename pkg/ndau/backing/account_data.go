@@ -12,7 +12,7 @@ import (
 type Lock struct {
 	NoticePeriod math.Duration
 	// if a lock has not been notified, this is nil
-	NotifiedOn *math.Timestamp
+	UnlocksOn *math.Timestamp
 }
 
 var _ marshal.Marshaler = (*Lock)(nil)
@@ -37,16 +37,16 @@ func (l *Lock) UnmarshalNoms(v nt.Value) error {
 type nomsLock struct {
 	Duration   util.Int
 	IsNotified bool
-	NotifiedOn util.Int
+	UnlocksOn  util.Int
 }
 
 func (l Lock) toNomsLock() nomsLock {
 	nl := nomsLock{
 		Duration:   util.Int(l.NoticePeriod),
-		IsNotified: l.NotifiedOn != nil,
+		IsNotified: l.UnlocksOn != nil,
 	}
-	if l.NotifiedOn != nil {
-		nl.NotifiedOn = util.Int(*l.NotifiedOn)
+	if l.UnlocksOn != nil {
+		nl.UnlocksOn = util.Int(*l.UnlocksOn)
 	}
 	return nl
 }
@@ -54,10 +54,10 @@ func (l Lock) toNomsLock() nomsLock {
 func (l *Lock) fromNomsLock(nl nomsLock) {
 	l.NoticePeriod = math.Duration(nl.Duration)
 	if nl.IsNotified {
-		ts := math.Timestamp(nl.NotifiedOn)
-		l.NotifiedOn = &ts
+		ts := math.Timestamp(nl.UnlocksOn)
+		l.UnlocksOn = &ts
 	} else {
-		l.NotifiedOn = nil
+		l.UnlocksOn = nil
 	}
 }
 

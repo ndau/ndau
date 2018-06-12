@@ -140,7 +140,7 @@ func generateLock(notified bool) *Lock {
 	}
 	if randBool() {
 		ts := randTimestamp()
-		l.NotifiedOn = &ts
+		l.UnlocksOn = &ts
 	}
 	return l
 }

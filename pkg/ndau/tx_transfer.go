@@ -44,7 +44,7 @@ func appendUint64(b []byte, i uint64) []byte {
 
 func (t *Transfer) signableBytes() ([]byte, error) {
 	var err error
-	bytes := make([]byte, t.Msgsize())
+	bytes := make([]byte, 0, t.Msgsize())
 	bytes, err = t.Timestamp.MarshalMsg(bytes)
 	if err != nil {
 		return nil, err
