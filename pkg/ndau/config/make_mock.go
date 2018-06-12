@@ -2,6 +2,8 @@ package config
 
 import (
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/tinylib/msgp/msgp"
@@ -13,6 +15,12 @@ import (
 // it right for the purposes of this test, and it simplifies the dependency
 // management story considerably
 var system = []byte("system")
+
+// ensure that the parents of a given path exist
+func ensureDir(path string) error {
+	parent := filepath.Dir(path)
+	return os.MkdirAll(parent, 0700)
+}
 
 // MakeMock creates a mock file with the specififed data.
 //
