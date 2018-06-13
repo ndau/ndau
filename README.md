@@ -6,17 +6,17 @@ This is a low-level interface: it operates primarily on raw bytes and strings. W
 
 ### Initial configuration
 
-This tool needs to know the address of a chaos chain node.
+This tool needs to know the address of a ndau chain node.
 
 ```sh
 ndau conf [ADDR]
 ```
 
-`ADDR` must be the http address of a Tendermint node running the chaos chain. If unset, it defaults to the tendermint default port on localhost: `http://localhost:46657`
+`ADDR` must be the http address of a Tendermint node running the ndau chain. If unset, it defaults to the tendermint default port on localhost: `http://localhost:46657`
 
 No other `ndau` command will work until the initial configuration is written.
 
-If you're running a single ndau node, you can find which port it's running on from within the chaosnode directory with:
+If you're running a single ndau node, you can find which port it's running on from within the ndaunode directory with:
 
 ```sh
 bin/defaults.sh docker-compose port tendermint 46657
@@ -46,7 +46,7 @@ You may simply wish to know some information about the node's internal state. `n
 
 ## API Usage
 
-The `pkg/tool` package provides a high-level interface with which external programs can interact with the chaos chain.
+The `pkg/tool` package provides a high-level interface with which external programs can interact with the ndau chain.
 
 After some research, we decided that [MessagePack](https://msgpack.org/index.html) is the best available canonical data format for the ndau chain, and [msgp](https://github.com/tinylib/msgp) is the best available library for interface use.
 
@@ -64,9 +64,9 @@ As a matter of style, the methods of this class which accept and return `[]byte`
 
 MessagePack is fundamentally schemaless. We are likely to search for and/or write a schema discovery/validation tool at some point in the future, but that time has not yet come.
 
-## Tendermint/Chaos RESTful API server
+## Tendermint/ndau RESTful API server
 
-The `ndautool` can function as a Tendermint/Chaos chain API server.  To start in this mode use the `server` command with a port argument, like so:
+The `ndautool` can function as a Tendermint/ndau chain API server.  To start in this mode use the `server` command with a port argument, like so:
 
 ```sh
 % ndau server 8005
