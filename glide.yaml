@@ -1,0 +1,29 @@
+package: github.com/oneiro-ndev/ndautool
+import:
+- package: github.com/BurntSushi/toml
+  version: ^0.3.0
+- package: golang.org/x/crypto
+  subpackages:
+  - ed25519
+- package: github.com/ybbus/jsonrpc
+  version: ^1.0.1
+- package: github.com/tendermint/tendermint
+  version: ~0.18.0
+  subpackages:
+  - rpc/client
+- package: github.com/tendermint/go-wire
+  version: ~0.7.3
+  repo: https://github.com/tendermint/go-amino.git
+- package: github.com/tendermint/tmlibs
+  version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
+- package: github.com/tinylib/msgp
+  version: ^1.0.2
+- package: github.com/oneiro-ndev/metanode
+  repo: git@github.com:oneiro-ndev/metanode.git
+  version: ~v0.3.0
+- package: github.com/stretchr/testify
+  version: ^1.2.1
+  subpackages:
+  - require
+- package: github.com/google/go-cmp
+  version: ^0.2.0
