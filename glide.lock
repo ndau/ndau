@@ -1,5 +1,5 @@
-hash: 40b0ce7beedf5bb2407b5e4d12c521fb72250f082dc1dbf1cd423ce1f1af6ce8
-updated: 2018-06-12T13:06:21.099171+02:00
+hash: 789187754a5af4ca12c0f01269145286adc97cd5f8589c9ad2614173e3803dc4
+updated: 2018-06-13T14:13:05.207112+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -151,11 +151,12 @@ imports:
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 494f7ec1aef0f61c6b8e2d8a7c87508c92a3c074
+  version: a2913155cd180d55d356657adcbafb19b3a76244
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
   - pkg/meta.app/code
+  - pkg/meta.app/meta.state
   - pkg/meta.transaction
 - name: github.com/oneiro-ndev/msgp-well-known-types
   version: 20dbc66cfaa097bf8cdf60b740e0ac37251d07c3

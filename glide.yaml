@@ -25,7 +25,7 @@ import:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: ~v0.4.0
+  version: ~v0.5.0
 - package: github.com/satori/go.uuid
   version: master
 - package: github.com/tendermint/go-crypto
