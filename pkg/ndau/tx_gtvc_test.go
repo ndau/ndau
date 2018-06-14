@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
@@ -42,7 +43,9 @@ func toVals(gtvcs []GTValidatorChange) (vals []types.Validator) {
 }
 
 func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
-	app.BeginBlock(types.RequestBeginBlock{})
+	app.BeginBlock(types.RequestBeginBlock{Header: types.Header{
+		Time: time.Now().Unix(),
+	}})
 	for _, gtvc := range updates {
 		tx, err := metatx.TransactableToBytes(&gtvc, TxIDs)
 		require.NoError(t, err)

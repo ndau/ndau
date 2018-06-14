@@ -175,6 +175,8 @@ imports:
 - name: github.com/oneiro-ndev/signature
   version: 79844201eb5200e0c4cdf0a19ff018a2ec7c5e58
   repo: git@github.com:oneiro-ndev/signature.git
+  subpackages:
+  - pkg/signature
 - name: github.com/oneiro-ndev/whitelist
   version: f9950b022eeab826b83f535c133967bf96aa7977
   repo: git@github.com:oneiro-ndev/whitelist.git

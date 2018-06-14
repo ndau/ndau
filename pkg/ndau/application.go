@@ -5,7 +5,11 @@
 package ndau
 
 import (
+	"time"
+
 	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
@@ -25,6 +29,9 @@ type App struct {
 
 	// cache of system variables, updated every block
 	systemCache *cache.SystemCache
+
+	// official chain time of the current block
+	blockTime math.Timestamp
 }
 
 // NewApp prepares a new Ndau App
@@ -39,10 +46,16 @@ func NewApp(dbSpec string, config config.Config) (*App, error) {
 		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
 	}
 
+	initialBlockTime, err := math.TimestampFrom(constants.Epoch)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewApp failed to create initial block time")
+	}
+
 	app := App{
 		metaapp,
 		config,
 		sc,
+		initialBlockTime,
 	}
 	app.App.SetChild(&app)
 	return &app, nil
@@ -69,4 +82,27 @@ func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseIn
 	}
 
 	return
+}
+
+// BeginBlock is called every time a block starts
+//
+// Most of this is taken care of for us by meta.App, but we need to
+// update the current block time.
+func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.ResponseBeginBlock) {
+	response = app.App.BeginBlock(req)
+
+	header := req.GetHeader()
+	tmTime := header.GetTime()
+	goTime := time.Unix(tmTime, 0)
+	blockTime, err := math.TimestampFrom(goTime)
+	if err != nil {
+		app.GetLogger().Error(
+			"Failed to create ndau timestamp from block time",
+			"goTime", goTime,
+		)
+		panic(err)
+	}
+	app.blockTime = blockTime
+
+	return response
 }

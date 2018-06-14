@@ -12,7 +12,7 @@ import (
 type Lock struct {
 	NoticePeriod math.Duration
 	// if a lock has not been notified, this is nil
-	NotifiedOn *math.Timestamp
+	UnlocksOn *math.Timestamp
 }
 
 var _ marshal.Marshaler = (*Lock)(nil)
@@ -37,16 +37,16 @@ func (l *Lock) UnmarshalNoms(v nt.Value) error {
 type nomsLock struct {
 	Duration   util.Int
 	IsNotified bool
-	NotifiedOn util.Int
+	UnlocksOn  util.Int
 }
 
 func (l Lock) toNomsLock() nomsLock {
 	nl := nomsLock{
 		Duration:   util.Int(l.NoticePeriod),
-		IsNotified: l.NotifiedOn != nil,
+		IsNotified: l.UnlocksOn != nil,
 	}
-	if l.NotifiedOn != nil {
-		nl.NotifiedOn = util.Int(*l.NotifiedOn)
+	if l.UnlocksOn != nil {
+		nl.UnlocksOn = util.Int(*l.UnlocksOn)
 	}
 	return nl
 }
@@ -54,10 +54,10 @@ func (l Lock) toNomsLock() nomsLock {
 func (l *Lock) fromNomsLock(nl nomsLock) {
 	l.NoticePeriod = math.Duration(nl.Duration)
 	if nl.IsNotified {
-		ts := math.Timestamp(nl.NotifiedOn)
-		l.NotifiedOn = &ts
+		ts := math.Timestamp(nl.UnlocksOn)
+		l.UnlocksOn = &ts
 	} else {
-		l.NotifiedOn = nil
+		l.UnlocksOn = nil
 	}
 }
 
@@ -214,7 +214,7 @@ type AccountData struct {
 	DelegationNode     string
 	Lock               *Lock
 	Stake              *Stake
-	LastEAITime        math.Timestamp
+	LastWAAUpdate      math.Timestamp
 	WeightedAverageAge math.Duration
 	Sequence           uint64
 	Escrows            []Escrow
@@ -248,7 +248,7 @@ type nomsAccountData struct {
 	Lock               Lock
 	HasStake           bool
 	Stake              Stake
-	LastEAITime        util.Int
+	LastWAAUpdate      util.Int
 	WeightedAverageAge util.Int
 	Sequence           util.Int
 	Escrows            []Escrow
@@ -263,7 +263,7 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) nomsAccountData 
 		DelegationNode:     nt.String(ad.DelegationNode),
 		HasLock:            ad.Lock != nil,
 		HasStake:           ad.Stake != nil,
-		LastEAITime:        util.Int(ad.LastEAITime),
+		LastWAAUpdate:      util.Int(ad.LastWAAUpdate),
 		WeightedAverageAge: util.Int(ad.WeightedAverageAge),
 		Sequence:           util.Int(ad.Sequence),
 		Escrows:            ad.Escrows,
@@ -297,7 +297,7 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	} else {
 		ad.Stake = nil
 	}
-	ad.LastEAITime = math.Timestamp(n.LastEAITime)
+	ad.LastWAAUpdate = math.Timestamp(n.LastWAAUpdate)
 	ad.WeightedAverageAge = math.Duration(n.WeightedAverageAge)
 	ad.Sequence = uint64(n.Sequence)
 	ad.Escrows = n.Escrows
