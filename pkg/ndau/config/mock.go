@@ -72,6 +72,7 @@ func (m ChaosMock) Dump(mockPath string) error {
 		Namespaces: namespaces,
 	}
 
+	ensureDir(mockPath)
 	fp, err := os.Create(mockPath)
 	if err != nil {
 		return err
