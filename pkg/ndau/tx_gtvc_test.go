@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/abci/types"
@@ -91,7 +90,7 @@ func TestGTValidatorChangeInitChain(t *testing.T) {
 	qtyVals := 10
 	app, gtvcs := initAppValidators(t, qtyVals)
 
-	actualValidators, err := app.GetState().(*backing.State).GetValidators()
+	actualValidators, err := app.Validators()
 	require.NoError(t, err)
 	require.ElementsMatch(t, toVals(gtvcs), actualValidators)
 }
@@ -105,7 +104,7 @@ func TestGTValidatorChangeAddValidator(t *testing.T) {
 	gtvcs = append(gtvcs, gtvc2)
 	updateValidators(t, app, updates)
 
-	actualValidators, err := app.GetState().(*backing.State).GetValidators()
+	actualValidators, err := app.Validators()
 	require.NoError(t, err)
 	require.ElementsMatch(t, toVals(gtvcs), actualValidators)
 }
@@ -120,7 +119,7 @@ func TestGTValidatorChangeRemoveValidator(t *testing.T) {
 	gtvcs = gtvcs[1:]
 	updateValidators(t, app, updates)
 
-	actualValidators, err := app.GetState().(*backing.State).GetValidators()
+	actualValidators, err := app.Validators()
 	require.NoError(t, err)
 	require.ElementsMatch(t, toVals(gtvcs), actualValidators)
 }

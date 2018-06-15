@@ -15,9 +15,9 @@ type State struct {
 // make sure State is a metaapp.State
 var _ meta.State = (*State)(nil)
 
-// NewState initializes the Ndau chain's state
-func NewState() State {
-	return State{Accounts: make(map[string]AccountData)}
+// Init satisfies meta.State
+func (s *State) Init(nt.ValueReadWriter) {
+	s.Accounts = make(map[string]AccountData)
 }
 
 // MarshalNoms satisfies noms' Marshaler interface
