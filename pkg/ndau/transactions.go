@@ -47,3 +47,27 @@ type Transfer struct {
 
 // static assert that GTValidatorChange is metatx.Transactable
 var _ metatx.Transactable = (*Transfer)(nil)
+
+// SigningKeyKind is the kind of key used to sign a ChangeTransferKey
+type SigningKeyKind byte
+
+const (
+	// SigningKeyOwnership indicates that the ownership key is used to sign the ChangeTransferKey transaction
+	SigningKeyOwnership SigningKeyKind = 0x01
+	// SigningKeyTransfer indicates that the previous transfer key is used to sign the ChangeTransferKey transaction
+	SigningKeyTransfer SigningKeyKind = 0x02
+)
+
+// A ChangeTransferKey transaction is used to set a transfer key
+//
+// It may be signed with the account ownership key or the previous public key.
+// KeyKind is used to identify which of these are in use.
+type ChangeTransferKey struct {
+	Target     address.Address
+	NewKey     []byte
+	SigningKey []byte
+	KeyKind    SigningKeyKind
+	Signature  []byte
+}
+
+var _ metatx.Transactable = (*ChangeTransferKey)(nil)
