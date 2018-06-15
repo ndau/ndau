@@ -3,10 +3,12 @@ package ndau
 import (
 	"encoding/binary"
 
+	"github.com/pkg/errors"
+
+	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
-	"github.com/pkg/errors"
 )
 
 // NewTransfer creates a new signed transfer transactable
@@ -110,10 +112,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, err := state.GetAccount(app.GetDB(), t.Source)
-	if err != nil {
-		return errors.Wrap(err, "Source")
-	}
+	source := state.Accounts[t.Source]
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
 	}
@@ -122,7 +121,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("source.TransferKey not set")
 	}
 	publicKey := signature.PublicKey{}
-	err = (&publicKey).Unmarshal(source.TransferKey)
+	err := (&publicKey).Unmarshal(source.TransferKey)
 	if err != nil {
 		return errors.Wrap(err, "source.TransferKey")
 	}
@@ -151,10 +150,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("insufficient balance in source")
 	}
 
-	dest, err := state.GetAccount(app.GetDB(), t.Destination)
-	if err != nil {
-		return errors.Wrap(err, "Destination")
-	}
+	dest := state.Accounts[t.Destination]
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
@@ -168,16 +164,10 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
-	source, err := state.GetAccount(app.GetDB(), t.Source)
-	if err != nil {
-		return errors.Wrap(err, "Source")
-	}
-	dest, err := state.GetAccount(app.GetDB(), t.Destination)
-	if err != nil {
-		return errors.Wrap(err, "Destination")
-	}
+	source := state.Accounts[t.Source]
+	dest := state.Accounts[t.Destination]
 
-	err = (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
+	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
 		t.Qty,
 		dest.Balance,
@@ -195,16 +185,16 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	source.Sequence = t.Sequence
 	dest.Balance += t.Qty
 
-	// fail safe: update the dest before the source, so if only one
-	// fails, we're crediting too much money instead of burning it
-	err = state.UpdateAccount(app.GetDB(), t.Destination, dest)
-	if err != nil {
-		return errors.Wrap(err, "update Destination")
-	}
-	err = state.UpdateAccount(app.GetDB(), t.Source, source)
-	if err != nil {
-		return errors.Wrap(err, "update Source")
-	}
+	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
 
-	return nil
+		state.Accounts[t.Destination] = dest
+		if source.Balance > 0 {
+			state.Accounts[t.Source] = source
+		} else {
+			delete(state.Accounts, t.Source)
+		}
+
+		return state, nil
+	})
 }

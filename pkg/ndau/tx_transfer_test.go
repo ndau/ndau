@@ -10,6 +10,7 @@ import (
 	abci "github.com/tendermint/abci/types"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -42,28 +43,28 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	return app, private
 }
 
+func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
+	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		acct := state.Accounts[addr]
+
+		f(&acct)
+
+		state.Accounts[addr] = acct
+		return state, nil
+	})
+
+	require.NoError(t, err)
+}
+
 // update the source account
 func modifySource(t *testing.T, app *App, f func(*backing.AccountData)) {
-	state := app.GetState().(*backing.State)
-	acct, err := state.GetAccount(app.GetDB(), source)
-	require.NoError(t, err)
-
-	f(&acct)
-
-	err = state.UpdateAccount(app.GetDB(), source, acct)
-	require.NoError(t, err)
+	modify(t, source, app, f)
 }
 
 // update the dest account
 func modifyDest(t *testing.T, app *App, f func(*backing.AccountData)) {
-	state := app.GetState().(*backing.State)
-	acct, err := state.GetAccount(app.GetDB(), dest)
-	require.NoError(t, err)
-
-	f(&acct)
-
-	err = state.UpdateAccount(app.GetDB(), dest, acct)
-	require.NoError(t, err)
+	modify(t, dest, app, f)
 }
 
 func deliverTr(t *testing.T, app *App, transfer *Transfer) abci.ResponseDeliverTx {
