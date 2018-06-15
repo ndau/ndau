@@ -2,6 +2,7 @@ package ndau
 
 import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
@@ -37,8 +38,8 @@ var _ metatx.Transactable = (*GTValidatorChange)(nil)
 // A Transfer is the fundamental transaction of the Ndau chain.
 type Transfer struct {
 	Timestamp   math.Timestamp
-	Source      string // should be address.Address once that PR goes throguh
-	Destination string // should be address.Address once that PR goes throguh
+	Source      address.Address
+	Destination address.Address
 	Qty         math.Ndau
 	Sequence    uint64
 	Signature   []byte

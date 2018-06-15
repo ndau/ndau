@@ -146,12 +146,12 @@ func (z *Transfer) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 		case "Source":
-			z.Source, err = dc.ReadString()
+			err = z.Source.DecodeMsg(dc)
 			if err != nil {
 				return
 			}
 		case "Destination":
-			z.Destination, err = dc.ReadString()
+			err = z.Destination.DecodeMsg(dc)
 			if err != nil {
 				return
 			}
@@ -197,7 +197,7 @@ func (z *Transfer) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteString(z.Source)
+	err = z.Source.EncodeMsg(en)
 	if err != nil {
 		return
 	}
@@ -206,7 +206,7 @@ func (z *Transfer) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteString(z.Destination)
+	err = z.Destination.EncodeMsg(en)
 	if err != nil {
 		return
 	}
@@ -252,10 +252,16 @@ func (z *Transfer) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	// string "Source"
 	o = append(o, 0xa6, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65)
-	o = msgp.AppendString(o, z.Source)
+	o, err = z.Source.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "Destination"
 	o = append(o, 0xab, 0x44, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e)
-	o = msgp.AppendString(o, z.Destination)
+	o, err = z.Destination.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "Qty"
 	o = append(o, 0xa3, 0x51, 0x74, 0x79)
 	o, err = z.Qty.MarshalMsg(o)
@@ -293,12 +299,12 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "Source":
-			z.Source, bts, err = msgp.ReadStringBytes(bts)
+			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
 		case "Destination":
-			z.Destination, bts, err = msgp.ReadStringBytes(bts)
+			bts, err = z.Destination.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -330,6 +336,6 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Transfer) Msgsize() (s int) {
-	s = 1 + 10 + z.Timestamp.Msgsize() + 7 + msgp.StringPrefixSize + len(z.Source) + 12 + msgp.StringPrefixSize + len(z.Destination) + 4 + z.Qty.Msgsize() + 9 + msgp.Uint64Size + 10 + msgp.BytesPrefixSize + len(z.Signature)
+	s = 1 + 10 + z.Timestamp.Msgsize() + 7 + z.Source.Msgsize() + 12 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 9 + msgp.Uint64Size + 10 + msgp.BytesPrefixSize + len(z.Signature)
 	return
 }

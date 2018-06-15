@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/stretchr/testify/require"
@@ -79,6 +81,7 @@ func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.Re
 		Time: time,
 	}})
 	resp := app.DeliverTx(bytes)
+	t.Log(resp.Log)
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
@@ -88,9 +91,13 @@ func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.Re
 func generateTransfer(t *testing.T, qty int64, seq uint64, key signature.PrivateKey) *Transfer {
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
+	s, err := address.Validate(source)
+	require.NoError(t, err)
+	d, err := address.Validate(dest)
+	require.NoError(t, err)
 	tr, err := NewTransfer(
 		ts,
-		source, dest,
+		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, key,
 	)
@@ -179,9 +186,10 @@ func TestTransfersUpdateDestWAA(t *testing.T) {
 	// _exact_. As such, we need to define success in terms of
 	// error margins.
 	//
-	// I think that half of a second accuracy should be fine
-	// for our purposes.
-	const maxEpsilon = int64(500) * math.Millisecond
+	// Given that we're constrained by tendermint limitations to
+	// block times at a resolution of 1 second anyway, it makes sense
+	// to require that we calculate the correct second.
+	const maxEpsilon = int64(1000) * math.Millisecond
 	var epsilon int64
 	expect := int64(20 * math.Day)
 	// not actually modifying the dest here; this is just the
@@ -279,9 +287,11 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
+	s, err := address.Validate(source)
+	require.NoError(t, err)
 	_, err = NewTransfer(
 		ts,
-		source, source,
+		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, key,
 	)

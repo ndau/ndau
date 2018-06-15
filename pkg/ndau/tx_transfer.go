@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -14,7 +15,7 @@ import (
 // NewTransfer creates a new signed transfer transactable
 func NewTransfer(
 	ts math.Timestamp,
-	s string, d string,
+	s address.Address, d address.Address,
 	q math.Ndau,
 	seq uint64,
 	key signature.PrivateKey,
@@ -51,8 +52,8 @@ func (t *Transfer) signableBytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	bytes = append(bytes, t.Source...)
-	bytes = append(bytes, t.Destination...)
+	bytes = append(bytes, t.Source.String()...)
+	bytes = append(bytes, t.Destination.String()...)
 	bytes, err = t.Qty.MarshalMsg(bytes)
 	if err != nil {
 		return nil, err
@@ -112,7 +113,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source := state.Accounts[t.Source]
+	source := state.Accounts[t.Source.String()]
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
 	}
@@ -150,7 +151,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("insufficient balance in source")
 	}
 
-	dest := state.Accounts[t.Destination]
+	dest := state.Accounts[t.Destination.String()]
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
@@ -164,8 +165,8 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
-	source := state.Accounts[t.Source]
-	dest := state.Accounts[t.Destination]
+	source := state.Accounts[t.Source.String()]
+	dest := state.Accounts[t.Destination.String()]
 
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
@@ -188,11 +189,11 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
-		state.Accounts[t.Destination] = dest
+		state.Accounts[t.Destination.String()] = dest
 		if source.Balance > 0 {
-			state.Accounts[t.Source] = source
+			state.Accounts[t.Source.String()] = source
 		} else {
-			delete(state.Accounts, t.Source)
+			delete(state.Accounts, t.Source.String())
 		}
 
 		return state, nil

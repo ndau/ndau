@@ -96,7 +96,7 @@ func randKey() []byte {
 	return key
 }
 
-func randAddress() string {
+func randAddress() address.Address {
 	addr, _ := address.Generate(
 		address.KindUser,
 		randKey(),
@@ -116,10 +116,12 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		EscrowSettings:     generateEscrowSettings(randBool()),
 	}
 	if randBool() {
-		ad.RewardsTarget = randAddress()
+		addr := randAddress()
+		ad.RewardsTarget = &addr
 	}
 	if randBool() {
-		ad.DelegationNode = randAddress()
+		addr := randAddress()
+		ad.DelegationNode = &addr
 	}
 	if hasLock {
 		ad.Lock = generateLock(randBool())
