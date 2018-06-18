@@ -12,6 +12,7 @@ import (
 // TxIDs is a map which defines canonical numeric ids for each transactable type.
 var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):    &Transfer{},
+	metatx.TxID(2):    &ChangeTransferKey{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
