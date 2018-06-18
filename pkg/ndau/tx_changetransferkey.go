@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -112,5 +113,14 @@ func (ct *ChangeTransferKey) IsValid(appI interface{}) (err error) {
 
 // Apply implements metatx.Transactable
 func (ct *ChangeTransferKey) Apply(appI interface{}) error {
-	return errors.New("not implemented")
+	app := appI.(*App)
+	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
+
+		ad := state.Accounts[ct.Target.String()]
+		ad.TransferKey = &ct.NewKey
+		state.Accounts[ct.Target.String()] = ad
+
+		return state, nil
+	})
 }
