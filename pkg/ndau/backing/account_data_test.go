@@ -3,8 +3,9 @@ package backing
 import (
 	"fmt"
 	"math/rand"
-	"reflect"
 	"testing"
+
+	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/attic-labs/noms/go/marshal"
 	"github.com/attic-labs/noms/go/spec"
@@ -56,7 +57,8 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					// require equality for known fields by name so we know what's
 					// unequal, if anything is
 					require.Equal(t, account.Balance, recoveredAccount.Balance)
-					require.Equal(t, account.TransferKey, recoveredAccount.TransferKey)
+					// transfer key may not be equal if algorithm pointers are unequal
+					require.Equal(t, account.TransferKey.Bytes(), recoveredAccount.TransferKey.Bytes())
 					require.Equal(t, account.RewardsTarget, recoveredAccount.RewardsTarget)
 					require.Equal(t, account.DelegationNode, recoveredAccount.DelegationNode)
 					require.Equal(t, account.Lock, recoveredAccount.Lock)
@@ -66,8 +68,6 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					require.Equal(t, account.Sequence, recoveredAccount.Sequence)
 					require.Equal(t, account.Escrows, recoveredAccount.Escrows)
 					require.Equal(t, account.EscrowSettings, recoveredAccount.EscrowSettings)
-					// require deep equality just in case we add something later
-					require.True(t, reflect.DeepEqual(account, recoveredAccount))
 				})
 			}
 		}
@@ -90,16 +90,19 @@ func randTimestamp() math.Timestamp {
 	return math.Timestamp(rand.Int63n(5 * math.Year))
 }
 
-func randKey() []byte {
-	key := make([]byte, address.MinDataLength)
-	rand.Read(key)
-	return key
+func randKey() *signature.PublicKey {
+	public, _, err := signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
+	return &public
 }
 
 func randAddress() address.Address {
+	key := randKey()
 	addr, _ := address.Generate(
 		address.KindUser,
-		randKey(),
+		key.Bytes(),
 	)
 	return addr
 }

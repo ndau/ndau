@@ -59,6 +59,15 @@ const (
 	SigningKeyTransfer SigningKeyKind = 0x02
 )
 
+// ChangeTransferKeys include Key and Signature types, for which the zero
+// value is intentionally invalid. Unfortunately for us, the auto-generated
+// tests use the zero value as a test value, and it turns out that if you
+// run MarshalMsg on the zero value of one of those, it panics.
+//
+// It's a good way to keep that sort of behavior out of the real codebase,
+// but it means we have to avoid writing these tests.
+//msgp:test ignore ChangeTransferKey
+
 // A ChangeTransferKey transaction is used to set a transfer key
 //
 // It may be signed with the account ownership key or the previous public key.

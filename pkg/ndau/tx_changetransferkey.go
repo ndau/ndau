@@ -59,20 +59,25 @@ func (ct *ChangeTransferKey) IsValid(appI interface{}) (err error) {
 		return fmt.Errorf("Target account %s does not exist", ct.Target)
 	}
 
+	// get the target address kind for later use:
+	// we need to generate addresses for the signing key, to verify it matches
+	// the actual ownership key, if used, and for the new transfer key,
+	// to ensure it's not equal to the actual ownership key
+	kind := address.Kind(string(ct.Target.String()[2]))
+	if !address.IsValidKind(kind) {
+		return fmt.Errorf("Target has invalid address kind: %s", kind)
+	}
+
 	// ensure the key kind checks out
 	switch ct.KeyKind {
 	case SigningKeyTransfer:
 		if acct.TransferKey == nil {
 			return fmt.Errorf("Invalid KeyKind: no current transfer key set")
 		}
-		if !bytes.Equal(ct.SigningKey.Bytes(), acct.TransferKey) {
+		if !bytes.Equal(ct.SigningKey.Bytes(), acct.TransferKey.Bytes()) {
 			return fmt.Errorf("Signing key is not previous transfer key")
 		}
 	case SigningKeyOwnership:
-		kind := address.Kind(string(ct.Target.String()[2]))
-		if !address.IsValidKind(kind) {
-			return fmt.Errorf("Target has invalid address kind: %s", kind)
-		}
 		sigAddr, err := address.Generate(kind, ct.SigningKey.Bytes())
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate address from signing key")
@@ -87,6 +92,20 @@ func (ct *ChangeTransferKey) IsValid(appI interface{}) (err error) {
 	// ensure the signature validates the signing key
 	if !ct.SigningKey.Verify(ct.signableBytes(), ct.Signature) {
 		return fmt.Errorf("Invalid signature")
+	}
+
+	// new transfer key must not equal existing transfer key
+	if acct.TransferKey != nil && bytes.Equal(ct.NewKey.Bytes(), acct.TransferKey.Bytes()) {
+		return fmt.Errorf("New transfer key must not equal existing transfer key")
+	}
+
+	// new transfer key must not equal ownership key
+	ntAddr, err := address.Generate(kind, ct.NewKey.Bytes())
+	if err != nil {
+		return errors.Wrap(err, "Failed to generate address from new transfer key")
+	}
+	if ct.Target.String() == ntAddr.String() {
+		return fmt.Errorf("New transfer key must not equal ownership key")
 	}
 	return
 }

@@ -121,11 +121,8 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 	if source.TransferKey == nil {
 		return errors.New("source.TransferKey not set")
 	}
-	publicKey := signature.PublicKey{}
-	err := (&publicKey).Unmarshal(source.TransferKey)
-	if err != nil {
-		return errors.Wrap(err, "source.TransferKey")
-	}
+	publicKey := *source.TransferKey
+
 	tBytes, err := t.signableBytes()
 	if err != nil {
 		return errors.Wrap(err, "signable bytes")
