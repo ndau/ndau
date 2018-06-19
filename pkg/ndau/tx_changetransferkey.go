@@ -32,8 +32,9 @@ func (ct *ChangeTransferKey) signableBytes() []byte {
 // NewChangeTransferKey creates a new signed transfer key from its data and a private key
 func NewChangeTransferKey(
 	target address.Address,
-	newKey, signingKey signature.PublicKey,
+	newKey signature.PublicKey,
 	keyKind SigningKeyKind,
+	signingKey signature.PublicKey,
 	private signature.PrivateKey,
 ) ChangeTransferKey {
 	ct := ChangeTransferKey{

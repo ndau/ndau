@@ -1,8 +1,8 @@
 package ndau
 
 import (
-	"encoding/hex"
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
@@ -14,34 +14,29 @@ import (
 	abci "github.com/tendermint/abci/types"
 )
 
-// define ownership key and address for target
-const (
-	targetPrivateHex = "995db0d8fcdbac19f1d7ebb3c320ac41749b650878ed6fbe60f59364bf24e96ecc9db61c8cfaaf4bac2e64fc6ba064e53db7d5d9d121593d5d7e1e4ab3a4b835"
-	targetPublicHex  = "cc9db61c8cfaaf4bac2e64fc6ba064e53db7d5d9d121593d5d7e1e4ab3a4b835"
-	target           = "ndapm8etnfe53nc3sbpcnkpwnc4hku7ahbfr2um7mwupttgt"
-)
-
 var (
-	targetPrivate *signature.PrivateKey
-	targetPublic  *signature.PublicKey
+	targetPrivate signature.PrivateKey
+	targetPublic  signature.PublicKey
+	targetAddress address.Address
 )
 
 func init() {
-	tPrivBytes, err := hex.DecodeString(targetPrivateHex)
+	var err error
+	targetPublic, targetPrivate, err = signature.Generate(signature.Ed25519, nil)
 	if err != nil {
 		panic(err)
 	}
-	targetPrivate, err = signature.RawPrivateKey(signature.Ed25519, tPrivBytes)
+
+	targetAddress, err = address.Generate(address.KindUser, targetPublic.Bytes())
 	if err != nil {
 		panic(err)
 	}
-	tPubBytes, err := hex.DecodeString(targetPublicHex)
-	if err != nil {
-		panic(err)
-	}
-	targetPublic, err = signature.RawPublicKey(signature.Ed25519, tPubBytes)
-	if err != nil {
-		panic(err)
+
+	// require that the public and private keys agree
+	testdata := []byte("foo bar bat baz")
+	sig := targetPrivate.Sign(testdata)
+	if !targetPublic.Verify(testdata, sig) {
+		panic("target public and private keys do not agree")
 	}
 }
 
@@ -50,14 +45,14 @@ func initAppCTK(t *testing.T) *App {
 	app.InitChain(abci.RequestInitChain{})
 
 	// this ensures the target address exists
-	modify(t, target, app, func(acct *backing.AccountData) {})
+	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {})
 
 	return app
 }
 
 func TestCTKAddressFieldValidates(t *testing.T) {
 	// flip the bits of the last byte so the address is no longer correct
-	addrBytes := []byte(target)
+	addrBytes := []byte(targetAddress.String())
 	addrBytes[len(addrBytes)-1] = ^addrBytes[len(addrBytes)-1]
 	addrS := string(addrBytes)
 
@@ -66,9 +61,10 @@ func TestCTKAddressFieldValidates(t *testing.T) {
 	require.Error(t, err)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 
 	// the address is invalid, but newCTK doesn't validate this
-	ctk := NewChangeTransferKey(addr, newPublic, *targetPublic, SigningKeyOwnership, *targetPrivate)
+	ctk := NewChangeTransferKey(addr, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
 
 	// However, the resultant transaction must not be valid
 	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
@@ -77,4 +73,110 @@ func TestCTKAddressFieldValidates(t *testing.T) {
 	app := initAppCTK(t)
 	resp := app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+
+	// what about an address which is valid but doesn't already exist?
+	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
+	require.NoError(t, err)
+	ctk = NewChangeTransferKey(fakeTarget, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
+	ctkBytes, err = tx.TransactableToBytes(&ctk, TxIDs)
+	require.NoError(t, err)
+	resp = app.CheckTx(ctkBytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestValidCTKOwnership(t *testing.T) {
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	ctk := NewChangeTransferKey(targetAddress, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
+	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	require.NoError(t, err)
+
+	app := initAppCTK(t)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestValidCTKTransfer(t *testing.T) {
+	transferPublic, transferPrivate, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	app := initAppCTK(t)
+	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+		acct.TransferKey = &transferPublic
+	})
+
+	// now change the transfer key using the previous transfer key
+	newPub, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	ctk := NewChangeTransferKey(targetAddress, newPub, SigningKeyTransfer, transferPublic, transferPrivate)
+	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestCTKNewTransferKeyNotEqualExistingTransferKey(t *testing.T) {
+	transferPublic, transferPrivate, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	app := initAppCTK(t)
+	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+		acct.TransferKey = &transferPublic
+	})
+
+	ctk := NewChangeTransferKey(targetAddress, transferPublic, SigningKeyTransfer, transferPublic, transferPrivate)
+	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestCTKNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
+	transferPublic, transferPrivate, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	app := initAppCTK(t)
+	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+		acct.TransferKey = &transferPublic
+	})
+
+	ctk := NewChangeTransferKey(targetAddress, targetPublic, SigningKeyTransfer, transferPublic, transferPrivate)
+	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestValidCTKUpdatesTransferKey(t *testing.T) {
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	ctk := NewChangeTransferKey(targetAddress, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
+	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	require.NoError(t, err)
+
+	app := initAppCTK(t)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// apply the transaction
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: time.Now().Unix(),
+	}})
+	dresp := app.DeliverTx(ctkBytes)
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
+
+	t.Log(dresp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
+	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
+		require.Equal(t, newPublic.Bytes(), ad.TransferKey.Bytes())
+	})
 }
