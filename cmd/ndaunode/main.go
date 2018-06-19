@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/tendermint/abci/server"
-	"github.com/tendermint/tmlibs/log"
+	tmlog "github.com/tendermint/tmlibs/log"
 )
 
 var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data and exit")
@@ -79,12 +79,13 @@ func main() {
 	app, err := ndau.NewApp(getDbSpec(), *conf)
 	check(err)
 
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("bin", "ndaunode")
+	logger := app.GetLogger()
+	logger = logger.WithField("bin", "chaosnode")
 	app.SetLogger(logger)
 	app.LogState()
 
 	server := server.NewSocketServer(*socketAddr, app)
-	server.SetLogger(logger)
+	server.SetLogger(tmlog.NewTMLogger(os.Stderr))
 
 	err = server.Start()
 	check(err)

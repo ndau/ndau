@@ -3,6 +3,7 @@ package ndau
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	abci "github.com/tendermint/abci/types"
 )
 
@@ -28,12 +29,11 @@ func (vc *GTValidatorChange) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 
 	// from persistent_app.go: we now know that this public key should be in go-crypto format
-	logger := app.GetLogger().With("method", "processGTValidatorChange")
-	logger.Info(
-		"entered method",
-		"PubKey", fmt.Sprintf("%x", vc.PublicKey),
-		"Power", vc.Power,
-	)
+	logger := app.GetLogger().WithField("method", "GTValidatorChange.Apply")
+	logger.WithFields(log.Fields{
+		"PubKey": fmt.Sprintf("%x", vc.PublicKey),
+		"Power":  vc.Power,
+	}).Info("entered method")
 	if err := vc.IsValid(app); err != nil {
 		logger.Info("exit method; invalid vc")
 		return err
