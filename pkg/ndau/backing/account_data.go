@@ -3,7 +3,9 @@ package backing
 import (
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	util "github.com/oneiro-ndev/noms-util"
 )
@@ -64,7 +66,7 @@ func (l *Lock) fromNomsLock(nl nomsLock) {
 // Stake keeps track of an account's staking information
 type Stake struct {
 	Point   math.Timestamp
-	Address string
+	Address address.Address
 }
 
 var _ marshal.Marshaler = (*Stake)(nil)
@@ -82,8 +84,7 @@ func (s *Stake) UnmarshalNoms(v nt.Value) error {
 	if err != nil {
 		return err
 	}
-	s.fromNomsStake(n)
-	return nil
+	return s.fromNomsStake(n)
 }
 
 type nomsStake struct {
@@ -94,13 +95,16 @@ type nomsStake struct {
 func (s Stake) toNomsStake() nomsStake {
 	return nomsStake{
 		Point:   util.Int(s.Point),
-		Address: s.Address,
+		Address: s.Address.String(),
 	}
 }
 
-func (s *Stake) fromNomsStake(n nomsStake) {
+func (s *Stake) fromNomsStake(n nomsStake) (err error) {
 	s.Point = math.Timestamp(n.Point)
-	s.Address = n.Address
+	if len(n.Address) > 0 {
+		s.Address, err = address.Validate(n.Address)
+	}
+	return
 }
 
 // Escrow tracks a single transaction of incoming escrow
@@ -209,9 +213,9 @@ func (e *EscrowSettings) fromNomsEscrowSettings(n nomsEscrowSettings) {
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
 	Balance            math.Ndau
-	TransferKey        []byte
-	RewardsTarget      string
-	DelegationNode     string
+	TransferKey        *signature.PublicKey
+	RewardsTarget      *address.Address
+	DelegationNode     *address.Address
 	Lock               *Lock
 	Stake              *Stake
 	LastWAAUpdate      math.Timestamp
@@ -226,7 +230,11 @@ var _ marshal.Unmarshaler = (*AccountData)(nil)
 
 // MarshalNoms implements Marshaler for AccountData
 func (ad AccountData) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
-	return marshal.Marshal(vrw, ad.toNomsAccountData(vrw))
+	nad, err := ad.toNomsAccountData(vrw)
+	if err != nil {
+		return nil, err
+	}
+	return marshal.Marshal(vrw, nad)
 }
 
 // UnmarshalNoms implements Unmarshaler for AccountData
@@ -241,8 +249,11 @@ func (ad *AccountData) UnmarshalNoms(v nt.Value) error {
 
 type nomsAccountData struct {
 	Balance            util.Int
+	HasTransferKey     bool
 	TransferKey        nt.Blob
+	HasRewardsTarget   bool
 	RewardsTarget      nt.String
+	HasDelegationNode  bool
 	DelegationNode     nt.String
 	HasLock            bool
 	Lock               Lock
@@ -255,12 +266,12 @@ type nomsAccountData struct {
 	EscrowSettings     EscrowSettings
 }
 
-func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) nomsAccountData {
+func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
 	nad := nomsAccountData{
 		Balance:            util.Int(ad.Balance),
-		TransferKey:        util.Blob(vrw, ad.TransferKey),
-		RewardsTarget:      nt.String(ad.RewardsTarget),
-		DelegationNode:     nt.String(ad.DelegationNode),
+		HasTransferKey:     ad.TransferKey != nil,
+		HasRewardsTarget:   ad.RewardsTarget != nil,
+		HasDelegationNode:  ad.DelegationNode != nil,
 		HasLock:            ad.Lock != nil,
 		HasStake:           ad.Stake != nil,
 		LastWAAUpdate:      util.Int(ad.LastWAAUpdate),
@@ -269,24 +280,61 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) nomsAccountData 
 		Escrows:            ad.Escrows,
 		EscrowSettings:     ad.EscrowSettings,
 	}
+	if nad.HasTransferKey {
+		tkBytes, err := ad.TransferKey.Marshal()
+		if err != nil {
+			return nomsAccountData{}, err
+		}
+		nad.TransferKey = util.Blob(vrw, tkBytes)
+	} else {
+		nad.TransferKey = nt.NewBlob(vrw)
+	}
+	if nad.HasRewardsTarget {
+		nad.RewardsTarget = nt.String(ad.RewardsTarget.String())
+	}
+	if nad.HasDelegationNode {
+		nad.DelegationNode = nt.String(ad.DelegationNode.String())
+	}
 	if nad.HasLock {
 		nad.Lock = *ad.Lock
 	}
 	if nad.HasStake {
 		nad.Stake = *ad.Stake
 	}
-	return nad
+	return nad, nil
 }
 
 func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	ad.Balance = math.Ndau(n.Balance)
-	ad.TransferKey, err = util.Unblob(n.TransferKey)
 	if err != nil {
 		*ad = AccountData{}
 		return err
 	}
-	ad.RewardsTarget = string(n.RewardsTarget)
-	ad.DelegationNode = string(n.DelegationNode)
+	if n.HasTransferKey {
+		tkBytes, err := util.Unblob(n.TransferKey)
+		if err != nil {
+			*ad = AccountData{}
+			return err
+		}
+		ad.TransferKey = &signature.PublicKey{}
+		err = ad.TransferKey.Unmarshal(tkBytes)
+	}
+	if n.HasRewardsTarget {
+		ad.RewardsTarget = new(address.Address)
+		*ad.RewardsTarget, err = address.Validate(string(n.RewardsTarget))
+		if err != nil {
+			*ad = AccountData{}
+			return err
+		}
+	}
+	if n.HasDelegationNode {
+		ad.DelegationNode = new(address.Address)
+		*ad.DelegationNode, err = address.Validate(string(n.DelegationNode))
+		if err != nil {
+			*ad = AccountData{}
+			return err
+		}
+	}
 	if n.HasLock {
 		ad.Lock = &n.Lock
 	} else {

@@ -8,63 +8,99 @@ import (
 	"github.com/tinylib/msgp/msgp"
 )
 
-// DecodeMsg implements msgp.Decodable
-func (z *GTValidatorChange) DecodeMsg(dc *msgp.Reader) (err error) {
+// MarshalMsg implements msgp.Marshaler
+func (z *ChangeTransferKey) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 5
+	// string "Target"
+	o = append(o, 0x85, 0xa6, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74)
+	o, err = z.Target.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "NewKey"
+	o = append(o, 0xa6, 0x4e, 0x65, 0x77, 0x4b, 0x65, 0x79)
+	o, err = z.NewKey.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "SigningKey"
+	o = append(o, 0xaa, 0x53, 0x69, 0x67, 0x6e, 0x69, 0x6e, 0x67, 0x4b, 0x65, 0x79)
+	o, err = z.SigningKey.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "KeyKind"
+	o = append(o, 0xa7, 0x4b, 0x65, 0x79, 0x4b, 0x69, 0x6e, 0x64)
+	o = msgp.AppendByte(o, byte(z.KeyKind))
+	// string "Signature"
+	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
+	o, err = z.Signature.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *ChangeTransferKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
-	zb0001, err = dc.ReadMapHeader()
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
-		field, err = dc.ReadMapKeyPtr()
+		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "PublicKey":
-			z.PublicKey, err = dc.ReadBytes(z.PublicKey)
+		case "Target":
+			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
-		case "Power":
-			z.Power, err = dc.ReadInt64()
+		case "NewKey":
+			bts, err = z.NewKey.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "SigningKey":
+			bts, err = z.SigningKey.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "KeyKind":
+			{
+				var zb0002 byte
+				zb0002, bts, err = msgp.ReadByteBytes(bts)
+				if err != nil {
+					return
+				}
+				z.KeyKind = SigningKeyKind(zb0002)
+			}
+		case "Signature":
+			bts, err = z.Signature.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
 		default:
-			err = dc.Skip()
+			bts, err = msgp.Skip(bts)
 			if err != nil {
 				return
 			}
 		}
 	}
+	o = bts
 	return
 }
 
-// EncodeMsg implements msgp.Encodable
-func (z *GTValidatorChange) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 2
-	// write "PublicKey"
-	err = en.Append(0x82, 0xa9, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79)
-	if err != nil {
-		return
-	}
-	err = en.WriteBytes(z.PublicKey)
-	if err != nil {
-		return
-	}
-	// write "Power"
-	err = en.Append(0xa5, 0x50, 0x6f, 0x77, 0x65, 0x72)
-	if err != nil {
-		return
-	}
-	err = en.WriteInt64(z.Power)
-	if err != nil {
-		return
-	}
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *ChangeTransferKey) Msgsize() (s int) {
+	s = 1 + 7 + z.Target.Msgsize() + 7 + z.NewKey.Msgsize() + 11 + z.SigningKey.Msgsize() + 8 + msgp.ByteSize + 10 + z.Signature.Msgsize()
 	return
 }
 
@@ -124,119 +160,30 @@ func (z *GTValidatorChange) Msgsize() (s int) {
 	return
 }
 
-// DecodeMsg implements msgp.Decodable
-func (z *Transfer) DecodeMsg(dc *msgp.Reader) (err error) {
-	var field []byte
-	_ = field
-	var zb0001 uint32
-	zb0001, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
-	for zb0001 > 0 {
-		zb0001--
-		field, err = dc.ReadMapKeyPtr()
-		if err != nil {
-			return
-		}
-		switch msgp.UnsafeString(field) {
-		case "Timestamp":
-			err = z.Timestamp.DecodeMsg(dc)
-			if err != nil {
-				return
-			}
-		case "Source":
-			z.Source, err = dc.ReadString()
-			if err != nil {
-				return
-			}
-		case "Destination":
-			z.Destination, err = dc.ReadString()
-			if err != nil {
-				return
-			}
-		case "Qty":
-			err = z.Qty.DecodeMsg(dc)
-			if err != nil {
-				return
-			}
-		case "Sequence":
-			z.Sequence, err = dc.ReadUint64()
-			if err != nil {
-				return
-			}
-		case "Signature":
-			z.Signature, err = dc.ReadBytes(z.Signature)
-			if err != nil {
-				return
-			}
-		default:
-			err = dc.Skip()
-			if err != nil {
-				return
-			}
-		}
-	}
+// MarshalMsg implements msgp.Marshaler
+func (z SigningKeyKind) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendByte(o, byte(z))
 	return
 }
 
-// EncodeMsg implements msgp.Encodable
-func (z *Transfer) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 6
-	// write "Timestamp"
-	err = en.Append(0x86, 0xa9, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70)
-	if err != nil {
-		return
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *SigningKeyKind) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 byte
+		zb0001, bts, err = msgp.ReadByteBytes(bts)
+		if err != nil {
+			return
+		}
+		(*z) = SigningKeyKind(zb0001)
 	}
-	err = z.Timestamp.EncodeMsg(en)
-	if err != nil {
-		return
-	}
-	// write "Source"
-	err = en.Append(0xa6, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65)
-	if err != nil {
-		return
-	}
-	err = en.WriteString(z.Source)
-	if err != nil {
-		return
-	}
-	// write "Destination"
-	err = en.Append(0xab, 0x44, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e)
-	if err != nil {
-		return
-	}
-	err = en.WriteString(z.Destination)
-	if err != nil {
-		return
-	}
-	// write "Qty"
-	err = en.Append(0xa3, 0x51, 0x74, 0x79)
-	if err != nil {
-		return
-	}
-	err = z.Qty.EncodeMsg(en)
-	if err != nil {
-		return
-	}
-	// write "Sequence"
-	err = en.Append(0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
-	if err != nil {
-		return
-	}
-	err = en.WriteUint64(z.Sequence)
-	if err != nil {
-		return
-	}
-	// write "Signature"
-	err = en.Append(0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
-	if err != nil {
-		return
-	}
-	err = en.WriteBytes(z.Signature)
-	if err != nil {
-		return
-	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z SigningKeyKind) Msgsize() (s int) {
+	s = msgp.ByteSize
 	return
 }
 
@@ -252,10 +199,16 @@ func (z *Transfer) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	// string "Source"
 	o = append(o, 0xa6, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65)
-	o = msgp.AppendString(o, z.Source)
+	o, err = z.Source.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "Destination"
 	o = append(o, 0xab, 0x44, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e)
-	o = msgp.AppendString(o, z.Destination)
+	o, err = z.Destination.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	// string "Qty"
 	o = append(o, 0xa3, 0x51, 0x74, 0x79)
 	o, err = z.Qty.MarshalMsg(o)
@@ -293,12 +246,12 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "Source":
-			z.Source, bts, err = msgp.ReadStringBytes(bts)
+			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
 		case "Destination":
-			z.Destination, bts, err = msgp.ReadStringBytes(bts)
+			bts, err = z.Destination.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -330,6 +283,6 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Transfer) Msgsize() (s int) {
-	s = 1 + 10 + z.Timestamp.Msgsize() + 7 + msgp.StringPrefixSize + len(z.Source) + 12 + msgp.StringPrefixSize + len(z.Destination) + 4 + z.Qty.Msgsize() + 9 + msgp.Uint64Size + 10 + msgp.BytesPrefixSize + len(z.Signature)
+	s = 1 + 10 + z.Timestamp.Msgsize() + 7 + z.Source.Msgsize() + 12 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 9 + msgp.Uint64Size + 10 + msgp.BytesPrefixSize + len(z.Signature)
 	return
 }

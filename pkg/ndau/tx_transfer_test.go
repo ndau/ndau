@@ -4,12 +4,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/abci/types"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -35,35 +38,34 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
 		acct.Balance = math.Ndau(1000000 * constants.QuantaPerUnit)
-		acct.TransferKey, err = public.Marshal()
-		require.NoError(t, err)
+		acct.TransferKey = &public
 	})
 
 	return app, private
 }
 
+func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
+	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		acct := state.Accounts[addr]
+
+		f(&acct)
+
+		state.Accounts[addr] = acct
+		return state, nil
+	})
+
+	require.NoError(t, err)
+}
+
 // update the source account
 func modifySource(t *testing.T, app *App, f func(*backing.AccountData)) {
-	state := app.GetState().(*backing.State)
-	acct, err := state.GetAccount(app.GetDB(), source)
-	require.NoError(t, err)
-
-	f(&acct)
-
-	err = state.UpdateAccount(app.GetDB(), source, acct)
-	require.NoError(t, err)
+	modify(t, source, app, f)
 }
 
 // update the dest account
 func modifyDest(t *testing.T, app *App, f func(*backing.AccountData)) {
-	state := app.GetState().(*backing.State)
-	acct, err := state.GetAccount(app.GetDB(), dest)
-	require.NoError(t, err)
-
-	f(&acct)
-
-	err = state.UpdateAccount(app.GetDB(), dest, acct)
-	require.NoError(t, err)
+	modify(t, dest, app, f)
 }
 
 func deliverTr(t *testing.T, app *App, transfer *Transfer) abci.ResponseDeliverTx {
@@ -78,6 +80,7 @@ func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.Re
 		Time: time,
 	}})
 	resp := app.DeliverTx(bytes)
+	t.Log(resp.Log)
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
@@ -87,9 +90,13 @@ func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.Re
 func generateTransfer(t *testing.T, qty int64, seq uint64, key signature.PrivateKey) *Transfer {
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
+	s, err := address.Validate(source)
+	require.NoError(t, err)
+	d, err := address.Validate(dest)
+	require.NoError(t, err)
 	tr, err := NewTransfer(
 		ts,
-		source, dest,
+		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, key,
 	)
@@ -178,9 +185,10 @@ func TestTransfersUpdateDestWAA(t *testing.T) {
 	// _exact_. As such, we need to define success in terms of
 	// error margins.
 	//
-	// I think that half of a second accuracy should be fine
-	// for our purposes.
-	const maxEpsilon = int64(500) * math.Millisecond
+	// Given that we're constrained by tendermint limitations to
+	// block times at a resolution of 1 second anyway, it makes sense
+	// to require that we calculate the correct second.
+	const maxEpsilon = int64(1000) * math.Millisecond
 	var epsilon int64
 	expect := int64(20 * math.Day)
 	// not actually modifying the dest here; this is just the
@@ -278,9 +286,11 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
+	s, err := address.Validate(source)
+	require.NoError(t, err)
 	_, err = NewTransfer(
 		ts,
-		source, source,
+		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, key,
 	)

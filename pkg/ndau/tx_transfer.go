@@ -3,16 +3,19 @@ package ndau
 import (
 	"encoding/binary"
 
+	"github.com/pkg/errors"
+
+	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
-	"github.com/pkg/errors"
 )
 
 // NewTransfer creates a new signed transfer transactable
 func NewTransfer(
 	ts math.Timestamp,
-	s string, d string,
+	s address.Address, d address.Address,
 	q math.Ndau,
 	seq uint64,
 	key signature.PrivateKey,
@@ -49,8 +52,8 @@ func (t *Transfer) signableBytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	bytes = append(bytes, t.Source...)
-	bytes = append(bytes, t.Destination...)
+	bytes = append(bytes, t.Source.String()...)
+	bytes = append(bytes, t.Destination.String()...)
 	bytes, err = t.Qty.MarshalMsg(bytes)
 	if err != nil {
 		return nil, err
@@ -110,10 +113,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, err := state.GetAccount(app.GetDB(), t.Source)
-	if err != nil {
-		return errors.Wrap(err, "Source")
-	}
+	source := state.Accounts[t.Source.String()]
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
 	}
@@ -121,11 +121,8 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 	if source.TransferKey == nil {
 		return errors.New("source.TransferKey not set")
 	}
-	publicKey := signature.PublicKey{}
-	err = (&publicKey).Unmarshal(source.TransferKey)
-	if err != nil {
-		return errors.Wrap(err, "source.TransferKey")
-	}
+	publicKey := *source.TransferKey
+
 	tBytes, err := t.signableBytes()
 	if err != nil {
 		return errors.Wrap(err, "signable bytes")
@@ -151,10 +148,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("insufficient balance in source")
 	}
 
-	dest, err := state.GetAccount(app.GetDB(), t.Destination)
-	if err != nil {
-		return errors.Wrap(err, "Destination")
-	}
+	dest := state.Accounts[t.Destination.String()]
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
@@ -168,16 +162,10 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
-	source, err := state.GetAccount(app.GetDB(), t.Source)
-	if err != nil {
-		return errors.Wrap(err, "Source")
-	}
-	dest, err := state.GetAccount(app.GetDB(), t.Destination)
-	if err != nil {
-		return errors.Wrap(err, "Destination")
-	}
+	source := state.Accounts[t.Source.String()]
+	dest := state.Accounts[t.Destination.String()]
 
-	err = (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
+	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
 		t.Qty,
 		dest.Balance,
@@ -195,16 +183,16 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	source.Sequence = t.Sequence
 	dest.Balance += t.Qty
 
-	// fail safe: update the dest before the source, so if only one
-	// fails, we're crediting too much money instead of burning it
-	err = state.UpdateAccount(app.GetDB(), t.Destination, dest)
-	if err != nil {
-		return errors.Wrap(err, "update Destination")
-	}
-	err = state.UpdateAccount(app.GetDB(), t.Source, source)
-	if err != nil {
-		return errors.Wrap(err, "update Source")
-	}
+	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
 
-	return nil
+		state.Accounts[t.Destination.String()] = dest
+		if source.Balance > 0 {
+			state.Accounts[t.Source.String()] = source
+		} else {
+			delete(state.Accounts, t.Source.String())
+		}
+
+		return state, nil
+	})
 }
