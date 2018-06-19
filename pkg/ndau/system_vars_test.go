@@ -12,8 +12,8 @@ import (
 	"github.com/tendermint/abci/types"
 )
 
-func initApp(t *testing.T) (app *App) {
-	configP, err := config.MakeTmpMock("")
+func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
+	configP, assc, err := config.MakeTmpMock("")
 	require.NoError(t, err)
 
 	app, err = NewApp("", *configP)
@@ -43,7 +43,7 @@ func initApp(t *testing.T) (app *App) {
 // In short, if these tests start crashing, try running them with -gcflags=-l.
 // If that doesn't work, you may need to just skip these tests.
 func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
-	app = initApp(t)
+	app, _ = initApp(t)
 	monkey.PatchInstanceMethod(reflect.TypeOf(app.App), "Height", func(*meta.App) uint64 {
 		return atHeight
 	})

@@ -28,7 +28,7 @@ const source = "ndanp2cieaz6w3viwfdxf5dibrt5u8zmdtdep7w3n7yvqsrc"
 const dest = "ndam5v8hpv5b79zbxxcepih8d4km4a3j2ev8dpaegexpdest"
 
 func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
-	app := initApp(t)
+	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	// generate the transfer key so we can transfer from it

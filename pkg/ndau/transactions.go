@@ -13,6 +13,7 @@ import (
 var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):    &Transfer{},
 	metatx.TxID(2):    &ChangeTransferKey{},
+	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -82,3 +83,25 @@ type ChangeTransferKey struct {
 }
 
 var _ metatx.Transactable = (*ChangeTransferKey)(nil)
+
+// ReleaseFromEndowment includes a Signature field, for which the zero
+// value is intentionally invalid. Unfortunately for us, the auto-generated
+// tests use the zero value as a test value, and it turns out that if you
+// run MarshalMsg on the zero value of one of those, it panics.
+//
+// It's a good way to keep that sort of behavior out of the real codebase,
+// but it means we have to avoid writing these tests.
+//msgp:test ignore ReleaseFromEndowment
+
+// A ReleaseFromEndowment transaction is used to release funds from the
+// endowment into an individual account.
+//
+// It must be signed with the private key corresponding to one of the public
+// keys listed in the system variable `ReleaseFromEndowmentKeys`.
+type ReleaseFromEndowment struct {
+	Destination address.Address
+	Qty         math.Ndau
+	Signature   signature.Signature
+}
+
+var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)

@@ -5,7 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/oneiro-ndev/signature/pkg/signature"
+
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	"github.com/tinylib/msgp/msgp"
 	"golang.org/x/crypto/ed25519"
 )
@@ -22,24 +25,33 @@ func ensureDir(path string) error {
 	return os.MkdirAll(parent, 0700)
 }
 
+// MockAssociated tracks associated data which goes with the mocks.
+//
+// In particular, it's used for tests. For example, we mock up some
+// public/private keypairs for the ReleaseFromEndowment transaction.
+// The public halves of those keys are written into the mock file,
+// but the private halves are communicated to the test suite by means
+// of the MockAssociated struct.
+type MockAssociated map[string]interface{}
+
 // MakeMock creates a mock file with the specififed data.
 //
 // If `configPath == ""`, the config file is skipped. Otherwise,
 // the config file at that path is created and directed to the
 // mock file.
-func MakeMock(configPath, mockPath string) (config *Config, err error) {
+func MakeMock(configPath, mockPath string) (config *Config, ma MockAssociated, err error) {
 	bpc, _, err := ed25519.GenerateKey(nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	svi := makeMockSVI(bpc)
-	mock, sviKey := makeMockChaos(bpc, svi)
+	mock, ma, sviKey := makeMockChaos(bpc, svi)
 
 	// make the mock file
 	err = mock.Dump(mockPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if configPath != "" {
@@ -52,7 +64,7 @@ func MakeMock(configPath, mockPath string) (config *Config, err error) {
 		err = config.Dump(configPath)
 	}
 
-	return config, err
+	return config, ma, err
 }
 
 // MakeTmpMock makes a mock config with temporary files.
@@ -64,20 +76,20 @@ func MakeMock(configPath, mockPath string) (config *Config, err error) {
 // the system cleans them up. On most OSX and Linux systems, that
 // happens after three days of disuse. We can get away with this
 // because they're small.
-func MakeTmpMock(tmpdir string) (config *Config, err error) {
+func MakeTmpMock(tmpdir string) (config *Config, ma MockAssociated, err error) {
 	configFile, err := ioutil.TempFile("", "config")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	mockFile, err := ioutil.TempFile("", "mock")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return MakeMock(configFile.Name(), mockFile.Name())
 }
 
 // mock up some chaos data
-func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, *NamespacedKey) {
+func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, MockAssociated, *NamespacedKey) {
 	mock := make(ChaosMock)
 	mock.Sets(system, "one", wkt.String("system value one"))
 	mock.Sets(system, "two", wkt.String("system value two"))
@@ -89,7 +101,25 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, *NamespacedKey) {
 		mock.Sets(bpc, "svi", svi)
 		sviKey = NewNamespacedKey(bpc, "svi")
 	}
-	return mock, &sviKey
+
+	// prepare to return associated data
+	ma := make(MockAssociated)
+
+	// make RFE keypairs
+	const noKeys = 2
+	rfeKeys := make(sv.ReleaseFromEndowmentKeys, noKeys)
+	rfePrivate := make([]signature.PrivateKey, noKeys)
+	var err error
+	for i := 0; i < noKeys; i++ {
+		rfeKeys[i], rfePrivate[i], err = signature.Generate(signature.Ed25519, nil)
+		if err != nil {
+			panic(err)
+		}
+	}
+	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
+	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
+
+	return mock, ma, &sviKey
 }
 
 // mock up an SVI Map using most of its features
@@ -109,6 +139,12 @@ func makeMockSVI(bpc []byte) SVIMap {
 	// demonstrate that aliasing is possible: the official system name may not
 	// be the same as the actual key name
 	svi.set("foo", NewNamespacedKey(bpc, "bar"))
+
+	// set the ReleaseFromEndowmentsKeys indirect to a BPC variable
+	svi.set(
+		sv.ReleaseFromEndowmentKeysName,
+		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
+	)
 
 	return svi
 }
