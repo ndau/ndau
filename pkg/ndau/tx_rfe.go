@@ -29,7 +29,8 @@ func (rfe *ReleaseFromEndowment) signableBytes() ([]byte, error) {
 // The caller must ensure that `private` corresponds to a public key listed
 // in the `ReleaseFromEndowmentKeys` system variable.
 func NewReleaseFromEndowment(
-	qty math.Ndau, destination address.Address,
+	qty math.Ndau,
+	destination address.Address,
 	private signature.PrivateKey,
 ) (ReleaseFromEndowment, error) {
 	rfe := ReleaseFromEndowment{
@@ -68,7 +69,7 @@ func (rfe *ReleaseFromEndowment) IsValid(appI interface{}) error {
 		}
 	}
 	if !valid {
-		return fmt.Errorf("No pub key in %s verifies RFE signature", sv.ReleaseFromEndowmentKeysName)
+		return fmt.Errorf("No public key in %s verifies RFE signature", sv.ReleaseFromEndowmentKeysName)
 	}
 
 	return nil
