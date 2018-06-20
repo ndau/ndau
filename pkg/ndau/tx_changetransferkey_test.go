@@ -41,7 +41,7 @@ func init() {
 }
 
 func initAppCTK(t *testing.T) *App {
-	app := initApp(t)
+	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	// this ensures the target address exists

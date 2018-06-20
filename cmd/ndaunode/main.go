@@ -68,8 +68,13 @@ func main() {
 		mockPath := config.DefaultMockPath(ndauhome)
 		fmt.Printf("Config: %s\n", configPath)
 		fmt.Printf("Mock:   %s\n", mockPath)
-		_, err := config.MakeMock(configPath, mockPath)
+		_, associated, err := config.MakeMock(configPath, mockPath)
 		check(err)
+
+		fmt.Printf("\nAssociated data:\n")
+		for k, v := range associated {
+			fmt.Printf("%v: %v\n", k, v)
+		}
 		os.Exit(0)
 	}
 

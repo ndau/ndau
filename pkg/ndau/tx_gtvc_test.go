@@ -67,7 +67,7 @@ func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 }
 
 func initAppValidators(t *testing.T, valQty int) (app *App, gtvcs []GTValidatorChange) {
-	app = initApp(t)
+	app, _ = initApp(t)
 
 	gtvcs = make([]GTValidatorChange, 0, valQty)
 	validators := make([]types.Validator, 0, valQty)
