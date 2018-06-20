@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -100,6 +101,23 @@ func main() {
 
 			resp, err := tool.GTVC(tmnode(config.Node), pkb, power)
 			finish(*verbose, resp, err, "gtvc")
+		}
+	})
+
+	app.Command("account", "query the ndau chain about this account", func(cmd *cli.Cmd) {
+		cmd.Spec = "ADDRESS"
+
+		address := cmd.StringArg("ADDRESS", "", "ndau address to query")
+
+		cmd.Action = func() {
+			config := getConfig()
+			ad, resp, err := tool.GetAccount(tmnode(config.Node), *address)
+			if err != nil {
+				finish(*verbose, resp, err, "account")
+			}
+			jsb, err := json.MarshalIndent(ad, "", "  ")
+			fmt.Println(string(jsb))
+			finish(*verbose, resp, err, "account")
 		}
 	})
 
