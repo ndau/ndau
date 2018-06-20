@@ -7,22 +7,21 @@ import (
 	"net/http"
 	"os"
 
+	cli "github.com/jawher/mow.cli"
 	"github.com/kentquirk/boneful"
+	"github.com/pkg/errors"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/pkg/errors"
-
-	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndautool/pkg/tool"
 )
 
 func main() {
-	app := cli.App("chaos", "interact with the chaos chain")
+	app := cli.App("ndau", "interact with the ndau chain")
 
 	app.Spec = "[-v]"
 
 	var (
-		verbose = app.BoolOpt("v verbose", false, "Emit detailed results from the chaos chain if set")
+		verbose = app.BoolOpt("v verbose", false, "Emit detailed results from the ndau chain if set")
 	)
 
 	app.Command("conf", "perform initial configuration", func(cmd *cli.Cmd) {
@@ -46,6 +45,28 @@ func main() {
 		cmd.Action = func() {
 			fmt.Println(tool.GetConfigPath())
 		}
+	})
+
+	app.Command("id", "manage identities", func(cmd *cli.Cmd) {
+		cmd.Command("list", "list known identities", func(subcmd *cli.Cmd) {
+			subcmd.Action = func() {
+				config := getConfig()
+				config.EmitIdentities(os.Stdout)
+			}
+		})
+
+		cmd.Command("new", "create a new identity", func(subcmd *cli.Cmd) {
+			subcmd.Spec = "NAME"
+
+			var name = subcmd.StringArg("NAME", "", "Name to associate with the new identity")
+
+			subcmd.Action = func() {
+				config := getConfig()
+				err := config.CreateIdentity(*name, os.Stdout)
+				orQuit(errors.Wrap(err, "Failed to create identity"))
+				config.Save()
+			}
+		})
 	})
 
 	app.Command("info", "get information about node's current status", func(cmd *cli.Cmd) {
@@ -88,23 +109,6 @@ func main() {
 		port := cmd.StringArg("PORT", "", "port number for server to listen on")
 
 		cmd.Action = func() {
-			/*
-				router := mux.NewRouter()
-				router.HandleFunc("/status", getStatus).Methods("GET")
-				router.HandleFunc("/health", getHealth).Methods("GET")
-				router.HandleFunc("/net_info", getNetInfo).Methods("GET")
-				router.HandleFunc("/genesis", getGenesis).Methods("GET")
-				router.HandleFunc("/abci_info", getABCIInfo).Methods("GET")
-				router.HandleFunc("/num_unconfirmed_txs", getNumUnconfirmedTxs).Methods("GET")
-				router.HandleFunc("/dump_consensus_state", getDumpConsensusState).Methods("GET")
-				router.HandleFunc("/block", getBlock).Queries("height", "{height}")
-				router.HandleFunc("/blockchain", getBlockChain).Queries("min_height", "{min_height}", "max_height", "{max_height}")
-				router.HandleFunc("/set_key", setKeyVal).Methods("GET")
-				router.HandleFunc("/get_key", getKeyVal).Methods("GET")
-				router.HandleFunc("/get_ns", getNamespaces).Methods("GET")
-				router.HandleFunc("/dump_key_vals", dumpKeyVals).Methods("GET")
-			*/
-
 			svc := new(boneful.Service).
 				Path("/").
 				Doc(`This service provides the API for Tendermint and Chaos/Order/ndau blockchain data`)
@@ -166,38 +170,6 @@ func main() {
 				Produces("application/json").
 				Writes(rpctypes.ResultBlockchainInfo{}))
 
-			//                      router.HandleFunc("/get_key", getKeyVal).Queries("name", "{name}", "height", "{height}", "key", "{key}", "emit", "{emit}")
-
-			/*
-				"subscribe":       rpc.NewWSRPCFunc(Subscribe, "query"),
-				"unsubscribe":     rpc.NewWSRPCFunc(Unsubscribe, "query"),
-				"unsubscribe_all": rpc.NewWSRPCFunc(UnsubscribeAll, ""),
-
-				// info API
-				"health":               rpc.NewRPCFunc(Health, ""),
-				"status":               rpc.NewRPCFunc(Status, ""),
-				"net_info":             rpc.NewRPCFunc(NetInfo, ""),
-				"blockchain":           rpc.NewRPCFunc(BlockchainInfo, "minHeight,maxHeight"),
-				"genesis":              rpc.NewRPCFunc(Genesis, ""),
-				"block":                rpc.NewRPCFunc(Block, "height"),
-				"block_results":        rpc.NewRPCFunc(BlockResults, "height"),
-				"commit":               rpc.NewRPCFunc(Commit, "height"),
-				"tx":                   rpc.NewRPCFunc(Tx, "hash,prove"),
-				"tx_search":            rpc.NewRPCFunc(TxSearch, "query,prove"),
-				"validators":           rpc.NewRPCFunc(Validators, "height"),
-				"dump_consensus_state": rpc.NewRPCFunc(DumpConsensusState, ""),
-				"unconfirmed_txs":      rpc.NewRPCFunc(UnconfirmedTxs, ""),
-				"num_unconfirmed_txs":  rpc.NewRPCFunc(NumUnconfirmedTxs, ""),
-
-				// broadcast API
-				"broadcast_tx_commit": rpc.NewRPCFunc(BroadcastTxCommit, "tx"),
-				"broadcast_tx_sync":   rpc.NewRPCFunc(BroadcastTxSync, "tx"),
-				"broadcast_tx_async":  rpc.NewRPCFunc(BroadcastTxAsync, "tx"),
-
-				// abci API
-				"abci_query": rpc.NewRPCFunc(ABCIQuery, "path,data,height,prove"),
-				"abci_info":  rpc.NewRPCFunc(ABCIInfo, ""),
-			*/
 			log.Printf("Chaos server listening on port %s\n", *port)
 			server := &http.Server{Addr: ":" + *port, Handler: svc.Mux()}
 			log.Fatal(server.ListenAndServe())

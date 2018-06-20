@@ -1,14 +1,95 @@
-hash: e3b0aeded59384b5bc5456b735e28ef88377c9e3ac2600201b2067da8cbddae9
-updated: 2018-06-12T17:54:03.15203195-04:00
+hash: 4250a7706a5ae534191ddc972ab07611c1fa20450febb0369dc5bb0d3d281e58
+updated: 2018-06-20T11:49:57.656876+02:00
 imports:
+- name: github.com/attic-labs/graphql
+  version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
+  subpackages:
+  - gqlerrors
+  - language/ast
+  - language/kinds
+  - language/lexer
+  - language/location
+  - language/parser
+  - language/printer
+  - language/source
+  - language/typeInfo
+  - language/visitor
+- name: github.com/attic-labs/noms
+  version: 186e0939a5044b182bce9e60dea910bd6bcb5cd9
+  repo: https://github.com/oneiro-ndev/noms.git
+  subpackages:
+  - go/chunks
+  - go/constants
+  - go/d
+  - go/datas
+  - go/hash
+  - go/marshal
+  - go/merge
+  - go/metrics
+  - go/nbs
+  - go/ngql
+  - go/nomdl
+  - go/sloppy
+  - go/spec
+  - go/types
+  - go/util/exit
+  - go/util/functions
+  - go/util/random
+  - go/util/sizecache
+  - go/util/verbose
+  - go/util/writers
+- name: github.com/aws/aws-sdk-go
+  version: 501e7d93a8b119e43174f56683e5aefebb1ff41e
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/csm
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - internal/sdkio
+  - internal/sdkrand
+  - internal/shareddefaults
+  - private/protocol
+  - private/protocol/eventstream
+  - private/protocol/eventstream/eventstreamapi
+  - private/protocol/json/jsonutil
+  - private/protocol/jsonrpc
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - service/dynamodb
+  - service/s3
+  - service/sts
 - name: github.com/btcsuite/btcd
   version: 86fed781132ac890ee03e906e4ecd5d6fa180c64
   subpackages:
   - btcec
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
+- name: github.com/davecgh/go-spew
+  version: 8991bc29aa16c548c550c7ff78260e27b9ab7c73
+  subpackages:
+  - spew
+- name: github.com/dustin/go-humanize
+  version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
+- name: github.com/go-ini/ini
+  version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
   version: ca4112baa34cb55091301bdc13b1420a122b1b9e
   subpackages:
@@ -20,7 +101,7 @@ imports:
 - name: github.com/go-stack/stack
   version: 259ab82a6cad3992b4e21ff5cac294ccb06474bc
 - name: github.com/go-zoo/bone
-  version: 653c40b56a8f80bd8f7448c822ce7882ba5740fe
+  version: 9c7950ceaeb58228faa3bbde0ccf93b97b8ab08d
 - name: github.com/gogo/protobuf
   version: 1adfc126b41513cc696b209667c8656ea7aac67c
   subpackages:
@@ -45,7 +126,7 @@ imports:
 - name: github.com/gorilla/websocket
   version: 5ed622c449da6d44c3c8329331ff47a9e5844f71
 - name: github.com/jawher/mow.cli
-  version: b76d58b46609ca80ec9770af083eebee7546b3a2
+  version: 123c8a60ff2f69b8c55b3e19b1383233321b316f
   subpackages:
   - internal/container
   - internal/flow
@@ -54,28 +135,98 @@ imports:
   - internal/matcher
   - internal/parser
   - internal/values
+- name: github.com/jmespath/go-jmespath
+  version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/jmhodges/levigo
   version: c42d9e0ca023e2198120196f842701bb4c55d7b9
+- name: github.com/jpillora/backoff
+  version: 8eab2debe79d12b7bd3d10653910df25fa9552ba
+- name: github.com/juju/gnuflag
+  version: 2ce1bb71843d6d179b3f1c1c9cb4a72cd067fc65
+- name: github.com/julienschmidt/httprouter
+  version: adbc77eec0d91467376ca515bc3a14b8434d0f18
+- name: github.com/kch42/buzhash
+  version: 9bdec3dec7c611fa97beadc374d75bdf02cd880e
 - name: github.com/kentquirk/boneful
   version: 3803229ab933de2ae9bc4809a89295b28286cf36
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/oneiro-ndev/chaosnode
+  version: b7c7f63b60180453d7bf1b574e0f941adc27c094
+  repo: git@github.com:oneiro-ndev/chaosnode.git
+  subpackages:
+  - pkg/chaos
+  - pkg/chaos/backing
+  - pkg/chaos/ns
+  - pkg/chaos/query
+- name: github.com/oneiro-ndev/chaostool
+  version: 4fd025fa4117745cd5077c3e44dd2f8969fce322
+  repo: git@github.com:oneiro-ndev/chaostool.git
+  subpackages:
+  - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 0f90c2d703f2be7836148eacd4e6136f61e04969
+  version: 03a90e576152947ec709beb69162050555fd0b25
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
+  - pkg/meta.app
+  - pkg/meta.app/code
+  - pkg/meta.app/meta.state
   - pkg/meta.transaction
+- name: github.com/oneiro-ndev/msgp-well-known-types
+  version: 20dbc66cfaa097bf8cdf60b740e0ac37251d07c3
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+  subpackages:
+  - wkt
+- name: github.com/oneiro-ndev/ndaumath
+  version: 2cc508e789e8dd1819625bc52920989ef8148688
+  repo: git@github.com:oneiro-ndev/ndaumath.git
+  subpackages:
+  - pkg/address
+  - pkg/constants
+  - pkg/types
+- name: github.com/oneiro-ndev/ndaunode
+  version: 0dac5580ac84065d3fc6b258a5f76cd6f945c376
+  repo: git@github.com:oneiro-ndev/ndaunode.git
+  subpackages:
+  - pkg/ndau
+  - pkg/ndau/backing
+  - pkg/ndau/cache
+  - pkg/ndau/config
+- name: github.com/oneiro-ndev/noms-util
+  version: 7711be769e350176643c97a46d4de3a113841fd8
+  repo: git@github.com:oneiro-ndev/noms-util.git
+- name: github.com/oneiro-ndev/signature
+  version: 3a71b67b70b3b89dc62bf065c3655d26dd17b125
+  repo: git@github.com:oneiro-ndev/signature.git
+  subpackages:
+  - pkg/signature
+- name: github.com/oneiro-ndev/whitelist
+  version: f9950b022eeab826b83f535c133967bf96aa7977
+  repo: git@github.com:oneiro-ndev/whitelist.git
+  subpackages:
+  - pkg/whitelist
 - name: github.com/philhofer/fwd
   version: bb6d471dc95d4fe11e432687f8b70ff496cf3136
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
 - name: github.com/rcrowley/go-metrics
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+- name: github.com/sigurn/crc16
+  version: da416fad5162ac0f3338ba24dccdb26e4da22485
+- name: github.com/sigurn/utils
+  version: f19e41f79f8f006116f682c1af454591bc278ad4
+- name: github.com/sirupsen/logrus
+  version: 75068beb13ada9c0ddde611f678523fda7352650
 - name: github.com/stretchr/testify
   version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
+  - assert
   - require
 - name: github.com/syndtr/goleveldb
   version: 5d6fca44a948d2be89a9702de7717f0168403d3d
@@ -174,6 +325,7 @@ imports:
   - poly1305
   - ripemd160
   - salsa20/salsa
+  - ssh/terminal
 - name: golang.org/x/net
   version: 1e491301e022f8f977054da4c2d852decd59571f
   subpackages:
@@ -184,6 +336,11 @@ imports:
   - idna
   - internal/timeseries
   - trace
+- name: golang.org/x/sys
+  version: c11f84a56e43e20a78cee75a7c034031ecf57d1f
+  subpackages:
+  - unix
+  - windows
 - name: golang.org/x/text
   version: 5c1cf69b5978e5a34c5f9ba09a83e56acc4b7877
   subpackages:

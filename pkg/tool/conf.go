@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -23,14 +24,14 @@ func GetConfigPath() string {
 		home := os.ExpandEnv("$HOME")
 		ndauhome = path.Join(home, ".ndau")
 	}
-	return path.Join(ndauhome, "chaos", "chaostool.toml")
+	return path.Join(ndauhome, "ndau", "ndautool.toml")
 }
 
-// Config represents all data from `chaostool.toml`
+// Config represents all data from `ndautool.toml`
 type tomlConfig struct {
 	Node string
 
-	Identities map[string]tomlIdentity
+	Identities []tomlIdentity
 }
 
 // Identity is a named keypair
@@ -45,12 +46,12 @@ func (c *tomlConfig) asConfig() (*Config, error) {
 		Node:       c.Node,
 		Identities: make(map[string]Identity, len(c.Identities)),
 	}
-	for name, tid := range c.Identities {
+	for _, tid := range c.Identities {
 		public, err := base64.StdEncoding.DecodeString(tid.PublicKey)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Failed to decode public key for %s: %s",
-				name, tid.PublicKey,
+				tid.Name, tid.PublicKey,
 			)
 		}
 		if len(public) != ed25519.PublicKeySize {
@@ -63,7 +64,7 @@ func (c *tomlConfig) asConfig() (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Failed to decode private key for %s: %s",
-				name, tid.PrivateKey,
+				tid.Name, tid.PrivateKey,
 			)
 		}
 		if len(private) != ed25519.PrivateKeySize {
@@ -73,8 +74,8 @@ func (c *tomlConfig) asConfig() (*Config, error) {
 			)
 		}
 
-		conf.Identities[name] = Identity{
-			Name:       name,
+		conf.Identities[tid.Name] = Identity{
+			Name:       tid.Name,
 			PublicKey:  public,
 			PrivateKey: private,
 		}
@@ -85,22 +86,22 @@ func (c *tomlConfig) asConfig() (*Config, error) {
 func (c *Config) asTomlConfig() *tomlConfig {
 	conf := tomlConfig{
 		Node:       c.Node,
-		Identities: make(map[string]tomlIdentity, len(c.Identities)),
+		Identities: make([]tomlIdentity, 0, len(c.Identities)),
 	}
 	for name, id := range c.Identities {
 		public := base64.StdEncoding.EncodeToString(id.PublicKey)
 		private := base64.StdEncoding.EncodeToString(id.PrivateKey)
 
-		conf.Identities[name] = tomlIdentity{
+		conf.Identities = append(conf.Identities, tomlIdentity{
 			Name:       name,
 			PublicKey:  public,
 			PrivateKey: private,
-		}
+		})
 	}
 	return &conf
 }
 
-// Config represents all data from `chaostool.toml`
+// Config represents all data from `ndautool.toml`
 type Config struct {
 	Node string
 
@@ -157,9 +158,11 @@ func DefaultConfig() *Config {
 	return NewConfig(DefaultAddress)
 }
 
-/*
 // CreateIdentity with the specified name
 func (c *Config) CreateIdentity(name string, out io.Writer) error {
+	if name == "" {
+		return fmt.Errorf("name must not be blank")
+	}
 	if _, contained := c.Identities[name]; contained {
 		return fmt.Errorf("'%s' already present in Identities map", name)
 	}
@@ -178,7 +181,6 @@ func (c *Config) CreateIdentity(name string, out io.Writer) error {
 	}
 	return nil
 }
-*/
 
 // ReverseIdentityMap constructs and returns a map from publickey to name
 // for configured names.
