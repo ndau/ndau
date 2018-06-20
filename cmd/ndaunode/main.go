@@ -71,10 +71,9 @@ func main() {
 		_, associated, err := config.MakeMock(configPath, mockPath)
 		check(err)
 
-		fmt.Println()
-		fmt.Println("Associated data:")
+		fmt.Printf("\nAssociated data:\n")
 		for k, v := range associated {
-			fmt.Printf("%v: %v", k, v)
+			fmt.Printf("%v: %v\n", k, v)
 		}
 		os.Exit(0)
 	}
