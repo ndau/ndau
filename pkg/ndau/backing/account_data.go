@@ -10,6 +10,11 @@ import (
 	util "github.com/oneiro-ndev/noms-util"
 )
 
+// generate msgp interface implementations for AccountData and supporting structs
+// we can't generate the streaming interfaces, unfortunately, because the
+// signature.* types don't implement those
+//go:generate msgp -io=0
+
 // Lock keeps track of an account's Lock information
 type Lock struct {
 	NoticePeriod math.Duration
