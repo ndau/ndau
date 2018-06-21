@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -11,14 +10,9 @@ import (
 )
 
 // GetAccount gets the account data associated with a given address
-func GetAccount(node client.ABCIClient, addrS string) (
+func GetAccount(node client.ABCIClient, addr address.Address) (
 	*backing.AccountData, *rpctypes.ResultABCIQuery, error,
 ) {
-	// validate the input address
-	addr, err := address.Validate(addrS)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Address validation failure")
-	}
 	addrB := []byte(addr.String())
 
 	// perform the query

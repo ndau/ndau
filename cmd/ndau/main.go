@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
+	"github.com/oneiro-ndev/signature/pkg/signature"
+
 	cli "github.com/jawher/mow.cli"
 	"github.com/kentquirk/boneful"
 	"github.com/pkg/errors"
@@ -48,24 +51,56 @@ func main() {
 		}
 	})
 
-	app.Command("id", "manage identities", func(cmd *cli.Cmd) {
-		cmd.Command("list", "list known identities", func(subcmd *cli.Cmd) {
+	app.Command("account", "manage accounts", func(cmd *cli.Cmd) {
+		cmd.Command("list", "list known accounts", func(subcmd *cli.Cmd) {
 			subcmd.Action = func() {
 				config := getConfig()
-				config.EmitIdentities(os.Stdout)
+				config.EmitAccounts(os.Stdout)
 			}
 		})
 
-		cmd.Command("new", "create a new identity", func(subcmd *cli.Cmd) {
+		cmd.Command("new", "create a new account", func(subcmd *cli.Cmd) {
 			subcmd.Spec = "NAME"
 
 			var name = subcmd.StringArg("NAME", "", "Name to associate with the new identity")
 
 			subcmd.Action = func() {
 				config := getConfig()
-				err := config.CreateIdentity(*name, os.Stdout)
+				err := config.CreateAccount(*name)
 				orQuit(errors.Wrap(err, "Failed to create identity"))
 				config.Save()
+			}
+		})
+
+		cmd.Command("change-transfer-key", "change the account's transfer key", func(subcmd *cli.Cmd) {
+			subcmd.Spec = "NAME"
+
+			var name = subcmd.StringArg("NAME", "", "Name of account to change")
+
+			subcmd.Action = func() {
+				config := getConfig()
+				acct, hasAcct := config.Accounts[*name]
+				if !hasAcct {
+					orQuit(errors.New("No such account"))
+				}
+
+				public, private, err := signature.Generate(signature.Ed25519, nil)
+				orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
+				ctk := ndau.NewChangeTransferKey(
+					acct.Address,
+					public,
+					ndau.SigningKeyOwnership,
+					acct.Ownership.Public, acct.Ownership.Private,
+				)
+
+				resp, err := tool.ChangeTransferKeyCommit(tmnode(config.Node), ctk)
+
+				// only persist this change if there was no error
+				if err == nil {
+					acct.Transfer = &tool.Keypair{Public: public, Private: private}
+					config.SetAccount(*acct)
+				}
+				finish(*verbose, resp, err, "change-transfer-key")
 			}
 		})
 	})
@@ -104,14 +139,14 @@ func main() {
 		}
 	})
 
-	app.Command("account", "query the ndau chain about this account", func(cmd *cli.Cmd) {
-		cmd.Spec = "ADDRESS"
-
-		address := cmd.StringArg("ADDRESS", "", "ndau address to query")
+	app.Command("query-account", "query the ndau chain about this account", func(cmd *cli.Cmd) {
+		cmd.Spec = fmt.Sprintf("%s", getAddressSpec())
+		getAddress := getAddressClosure(cmd)
 
 		cmd.Action = func() {
+			address := getAddress()
 			config := getConfig()
-			ad, resp, err := tool.GetAccount(tmnode(config.Node), *address)
+			ad, resp, err := tool.GetAccount(tmnode(config.Node), address)
 			if err != nil {
 				finish(*verbose, resp, err, "account")
 			}
