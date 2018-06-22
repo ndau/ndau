@@ -8,12 +8,12 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 )
 
+// AccountEndpoint is the endpoint at which Account queries live
+const AccountEndpoint = "/account"
+
 func init() {
 	meta.RegisterQueryHandler(AccountEndpoint, accountQuery)
 }
-
-// AccountEndpoint is the endpoint at which Account queries live
-const AccountEndpoint = "/account"
 
 func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
