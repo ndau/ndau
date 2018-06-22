@@ -17,12 +17,12 @@ func getAddressClosure(cmd *cli.Cmd) func() address.Address {
 	)
 
 	return func() address.Address {
-		if addr != nil {
+		if addr != nil && len(*addr) > 0 {
 			a, err := address.Validate(*addr)
 			orQuit(err)
 			return a
 		}
-		if name != nil {
+		if name != nil && len(*name) > 0 {
 			config := getConfig()
 			acct, hasAcct := config.Accounts[*name]
 			if hasAcct {
