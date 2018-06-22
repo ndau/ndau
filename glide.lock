@@ -1,5 +1,5 @@
-hash: 95c45210e6650bdba1d981549977ba6f956c6841dacdddf513916a72dce71b69
-updated: 2018-06-22T13:58:25.597946+02:00
+hash: 7bfa523270f25f35ef9f91a98e399e2d0844146a1f9ba4105d1cebe84b49aeea
+updated: 2018-06-22T16:12:04.58791+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -170,6 +170,11 @@ imports:
   - pkg/address
   - pkg/constants
   - pkg/types
+- name: github.com/oneiro-ndev/ndautool
+  version: 84b1aaa59dd6b562285482cbb99a75edabf320bf
+  repo: git@github.com:oneiro-ndev/ndautool.git
+  subpackages:
+  - pkg/tool/config
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
