@@ -1,9 +1,14 @@
 package tool
 
 import (
-	"errors"
+	"fmt"
+	"os"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
+
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 
@@ -42,5 +47,27 @@ func broadcastSync(node client.ABCIClient, tx []byte) (interface{}, error) {
 	if rc != code.OK {
 		return result, errors.New(rc.String())
 	}
+	return result, nil
+}
+
+func sendGeneric(
+	node client.ABCIClient,
+	tx metatx.Transactable,
+	broadcast broadcaster,
+	name string,
+) (interface{}, error) {
+	bytes, err := metatx.TransactableToBytes(tx, ndau.TxIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("%s failed to marshal transaction", name))
+	}
+
+	result, err := broadcast(node, bytes)
+	if err != nil {
+		if err.Error() == code.EncodingError.String() {
+			fmt.Fprintf(os.Stderr, "tx bytes: %x\n", bytes)
+		}
+		return nil, errors.Wrap(err, fmt.Sprintf("%s failed to broadcast transaction", name))
+	}
+
 	return result, nil
 }

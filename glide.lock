@@ -1,5 +1,5 @@
 hash: d086d8f0de5e98843333a67f792a64977112106b2869201699ea65ad9f257c35
-updated: 2018-06-20T13:03:46.791133+02:00
+updated: 2018-06-22T16:39:24.138766+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -165,7 +165,7 @@ imports:
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 03a90e576152947ec709beb69162050555fd0b25
+  version: 75a18a0cfd8aca0dc1fd23502e9c99b6173e936b
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -185,13 +185,14 @@ imports:
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: 8a34dee0bf625f4f5db4e5e3a2422ad0a4de61b2
+  version: 5d4cbc0eec0ad7833bd96191676e1b5c6532d2c5
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
   - pkg/ndau/backing
   - pkg/ndau/cache
   - pkg/ndau/config
+  - pkg/ndau/system_vars
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
