@@ -56,10 +56,7 @@ func (ct *ChangeTransferKey) IsValid(appI interface{}) (err error) {
 	// validation for NewKey, SigningKey, Signature happens on deserialization
 
 	app := appI.(*App)
-	acct, hasAcct := app.GetState().(*backing.State).Accounts[ct.Target.String()]
-	if !hasAcct {
-		return fmt.Errorf("Target account %s does not exist", ct.Target)
-	}
+	acct := app.GetState().(*backing.State).Accounts[ct.Target.String()]
 
 	// get the target address kind for later use:
 	// we need to generate addresses for the signing key, to verify it matches
