@@ -68,7 +68,8 @@ func main() {
 				config := getConfig()
 				err := config.CreateAccount(*name)
 				orQuit(errors.Wrap(err, "Failed to create identity"))
-				config.Save()
+				err = config.Save()
+				orQuit(errors.Wrap(err, "saving config"))
 			}
 		})
 
@@ -99,6 +100,8 @@ func main() {
 				if err == nil {
 					acct.Transfer = &tool.Keypair{Public: public, Private: private}
 					config.SetAccount(*acct)
+					err = config.Save()
+					orQuit(errors.Wrap(err, "saving config"))
 				}
 				finish(*verbose, resp, err, "change-transfer-key")
 			}
