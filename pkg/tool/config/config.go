@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,6 +35,11 @@ type Config struct {
 	Node string
 
 	Accounts map[string]*Account
+
+	// for non-node-operators, this will always be empty, but for testing
+	// purposes we want the ndau tool to be able to issue release from
+	// endowment transactions, so it needs to know about these.
+	RFEKeys []signature.PrivateKey
 }
 
 // NewConfig creates a new configuration with the given address
@@ -141,17 +147,29 @@ func (c Config) toToml() (tomlConfig, error) {
 		tacs = append(tacs, tac)
 
 	}
+	var rfes []string // default nil, so unset in toml
+	if len(c.RFEKeys) > 0 {
+		rfes = make([]string, 0, len(c.RFEKeys))
+		for _, rfe := range c.RFEKeys {
+			rfeb, err := rfe.Marshal()
+			if err != nil {
+				return tomlConfig{}, err
+			}
+			rfes = append(rfes, base64.StdEncoding.EncodeToString(rfeb))
+		}
+	}
 	return tomlConfig{
 		Node:     c.Node,
 		Accounts: tacs,
+		RFEKeys:  rfes,
 	}, nil
 }
 
 // Config represents all data from `ndautool.toml`
 type tomlConfig struct {
-	Node string
-
-	Accounts []tomlAccount
+	Node     string        `toml:"node"`
+	Accounts []tomlAccount `toml:"accounts"`
+	RFEKeys  []string      `toml:"rfe_keys"`
 }
 
 func (tc tomlConfig) toConfig() (Config, error) {
@@ -166,8 +184,22 @@ func (tc tomlConfig) toConfig() (Config, error) {
 			acts[act.Name] = &act
 		}
 	}
+	rfes := make([]signature.PrivateKey, 0, len(tc.RFEKeys))
+	for _, keyb64 := range tc.RFEKeys {
+		bytes, err := base64.StdEncoding.DecodeString(keyb64)
+		if err != nil {
+			return Config{}, err
+		}
+		pk := signature.PrivateKey{}
+		err = pk.Unmarshal(bytes)
+		if err != nil {
+			return Config{}, err
+		}
+		rfes = append(rfes, pk)
+	}
 	return Config{
 		Node:     tc.Node,
 		Accounts: acts,
+		RFEKeys:  rfes,
 	}, nil
 }

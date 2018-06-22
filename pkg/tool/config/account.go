@@ -51,10 +51,10 @@ func (acct Account) String() string {
 
 // tomlAccount is an account being prepared for toml marshaling
 type tomlAccount struct {
-	Name      string
-	Address   string
-	Ownership tomlKeypair
-	Transfer  *tomlKeypair
+	Name      string       `toml:"name"`
+	Address   string       `toml:"address"`
+	Ownership tomlKeypair  `toml:"ownership"`
+	Transfer  *tomlKeypair `toml:"transfer"`
 }
 
 func (ta tomlAccount) toAccount() (Account, error) {

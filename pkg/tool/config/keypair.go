@@ -35,8 +35,8 @@ func (kp Keypair) String() string {
 }
 
 type tomlKeypair struct {
-	Public  string
-	Private string
+	Public  string `toml:"public"`
+	Private string `toml:"private"`
 }
 
 func (tkp tomlKeypair) toKeypair() (Keypair, error) {
