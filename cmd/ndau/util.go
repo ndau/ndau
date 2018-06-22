@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 
 	cli "github.com/jawher/mow.cli"
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndautool/pkg/tool/config"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )
@@ -19,8 +19,8 @@ func orQuit(err error) {
 	}
 }
 
-func getConfig() *tool.Config {
-	config, err := tool.Load()
+func getConfig() *config.Config {
+	config, err := config.Load()
 	orQuit(errors.Wrap(err, "Failed to load configuration"))
 	return config
 }

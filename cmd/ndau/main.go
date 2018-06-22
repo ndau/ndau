@@ -17,6 +17,7 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndautool/pkg/tool/config"
 )
 
 func main() {
@@ -31,23 +32,23 @@ func main() {
 	app.Command("conf", "perform initial configuration", func(cmd *cli.Cmd) {
 		cmd.Spec = "[ADDR]"
 
-		var addr = cmd.StringArg("ADDR", tool.DefaultAddress, "Address of node to connect to")
+		var addr = cmd.StringArg("ADDR", config.DefaultAddress, "Address of node to connect to")
 
 		cmd.Action = func() {
-			config, err := tool.Load()
+			conf, err := config.Load()
 			if err != nil && os.IsNotExist(err) {
-				config = tool.NewConfig(*addr)
+				conf = config.NewConfig(*addr)
 			} else {
-				config.Node = *addr
+				conf.Node = *addr
 			}
-			err = config.Save()
+			err = conf.Save()
 			orQuit(errors.Wrap(err, "Failed to save configuration"))
 		}
 	})
 
 	app.Command("conf-path", "show location of config file", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			fmt.Println(tool.GetConfigPath())
+			fmt.Println(config.GetConfigPath())
 		}
 	})
 
@@ -79,8 +80,8 @@ func main() {
 			var name = subcmd.StringArg("NAME", "", "Name of account to change")
 
 			subcmd.Action = func() {
-				config := getConfig()
-				acct, hasAcct := config.Accounts[*name]
+				conf := getConfig()
+				acct, hasAcct := conf.Accounts[*name]
 				if !hasAcct {
 					orQuit(errors.New("No such account"))
 				}
@@ -94,13 +95,13 @@ func main() {
 					acct.Ownership.Public, acct.Ownership.Private,
 				)
 
-				resp, err := tool.ChangeTransferKeyCommit(tmnode(config.Node), ctk)
+				resp, err := tool.ChangeTransferKeyCommit(tmnode(conf.Node), ctk)
 
 				// only persist this change if there was no error
 				if err == nil {
-					acct.Transfer = &tool.Keypair{Public: public, Private: private}
-					config.SetAccount(*acct)
-					err = config.Save()
+					acct.Transfer = &config.Keypair{Public: public, Private: private}
+					conf.SetAccount(*acct)
+					err = conf.Save()
 					orQuit(errors.Wrap(err, "saving config"))
 				}
 				finish(*verbose, resp, err, "change-transfer-key")
