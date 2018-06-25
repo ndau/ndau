@@ -1,20 +1,51 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/pkg/errors"
 )
 
-func getAddressSpec() string {
-	return "(NAME | -a=<ADDRESS> | --address=<ADDRESS>)"
+func nameFor(id string) string {
+	if id == "" {
+		return "NAME"
+	}
+	return fmt.Sprintf("%s_NAME", id)
 }
 
-func getAddressClosure(cmd *cli.Cmd) func() address.Address {
+func argFor(id string) string {
+	if id == "" {
+		return "a address"
+	}
+	return strings.ToLower(fmt.Sprintf("%s_address", id))
+}
+
+func getAddressSpec(id string) string {
+	if id == "" {
+		return "(NAME | -a=<ADDRESS>)"
+	}
+	return fmt.Sprintf(
+		"(%s | --%s=<%s>)",
+		nameFor(id), argFor(id), strings.ToUpper(argFor(id)),
+	)
+}
+
+func getAddressClosure(cmd *cli.Cmd, id string) func() address.Address {
 	var (
+		name *string
+		addr *string
+	)
+	if id == "" {
 		name = cmd.StringArg("NAME", "", "Name of account")
 		addr = cmd.StringOpt("a address", "", "Address")
-	)
+
+	} else {
+		name = cmd.StringArg(nameFor(id), "", fmt.Sprintf("Name of %s account", id))
+		addr = cmd.StringOpt(argFor(id), "", fmt.Sprintf("%s Address", id))
+	}
 
 	return func() address.Address {
 		if addr != nil && len(*addr) > 0 {

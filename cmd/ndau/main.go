@@ -109,15 +109,63 @@ func main() {
 		})
 	})
 
+	app.Command("transfer", "transfer ndau from one account to another", func(cmd *cli.Cmd) {
+		cmd.Spec = fmt.Sprintf(
+			"%s %s %s",
+			getNdauSpec(),
+			getAddressSpec("FROM"),
+			getAddressSpec("TO"),
+		)
+
+		getNdau := getNdauClosure(cmd)
+		getFrom := getAddressClosure(cmd, "FROM")
+		getTo := getAddressClosure(cmd, "TO")
+
+		cmd.Action = func() {
+			ndauQty := getNdau()
+			from := getFrom()
+			to := getTo()
+
+			if *verbose {
+				fmt.Printf(
+					"Transfer %s ndau from %s to %s\n",
+					ndauQty, from, to,
+				)
+			}
+
+			conf := getConfig()
+
+			// ensure we know the private transfer key of this account
+			fromAcct, hasAcct := conf.Accounts[from.String()]
+			if !hasAcct {
+				orQuit(fmt.Errorf("From account '%s' not found", fromAcct.String()))
+			}
+			if fromAcct.Transfer == nil {
+				orQuit(fmt.Errorf("From acct transfer key not set"))
+			}
+
+			// query the account to get the current sequence
+			ad, _, err := tool.GetAccount(tmnode(conf.Node), from)
+			orQuit(errors.Wrap(err, "Failed to get current sequence number"))
+
+			// construct the transfer
+			transfer, err := ndau.NewTransfer(from, to, ndauQty, ad.Sequence+1, fromAcct.Transfer.Private)
+			orQuit(errors.Wrap(err, "Failed to construct transfer"))
+
+			tresp, err := tool.TransferCommit(tmnode(conf.Node), *transfer)
+			finish(*verbose, tresp, err, "transfer")
+		}
+	})
+
 	app.Command("rfe", "release ndau from the endowment", func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf(
 			"%s %s RFE_KEY_INDEX",
 			getNdauSpec(),
-			getAddressSpec(),
+			getAddressSpec(""),
 		)
 
 		getNdau := getNdauClosure(cmd)
-		getAddress := getAddressClosure(cmd)
+		getAddress := getAddressClosure(cmd, "")
 		index := cmd.IntArg("RFE_KEY_INDEX", 0, "index of RFE key to use to sign this transaction")
 
 		cmd.Action = func() {
@@ -177,8 +225,8 @@ func main() {
 	})
 
 	app.Command("query-account", "query the ndau chain about this account", func(cmd *cli.Cmd) {
-		cmd.Spec = fmt.Sprintf("%s", getAddressSpec())
-		getAddress := getAddressClosure(cmd)
+		cmd.Spec = fmt.Sprintf("%s", getAddressSpec(""))
+		getAddress := getAddressClosure(cmd, "")
 
 		cmd.Action = func() {
 			address := getAddress()
