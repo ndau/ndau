@@ -144,6 +144,9 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("sequence number too low")
 	}
 
+	// this doesn't get persisted because this method is read-only
+	source.UpdateBalance(app.blockTime)
+
 	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {
 		return err
@@ -169,6 +172,9 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	source := state.Accounts[t.Source.String()]
 	dest := state.Accounts[t.Destination.String()]
 
+	// this will get persisted
+	source.UpdateBalance(app.blockTime)
+
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
 		t.Qty,
@@ -185,7 +191,14 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	}
 	source.Balance -= fromSource
 	source.Sequence = t.Sequence
-	dest.Balance += t.Qty
+	if source.EscrowSettings.Duration == 0 {
+		dest.Balance += t.Qty
+	} else {
+		dest.Escrows = append(dest.Escrows, backing.Escrow{
+			Qty:    t.Qty,
+			Expiry: app.blockTime.Add(source.EscrowSettings.Duration),
+		})
+	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)

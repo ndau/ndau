@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/oneiro-ndev/signature/pkg/signature"
-
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/tinylib/msgp/msgp"
 	"golang.org/x/crypto/ed25519"
 )
@@ -119,6 +119,10 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, MockAssociated, *
 	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
 	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
 
+	// make default escrow duration
+	ded := sv.DefaultEscrowDuration{math.Day * 15}
+	mock.Sets(bpc, sv.DefaultEscrowDurationName, ded)
+
 	return mock, ma, &sviKey
 }
 
@@ -144,6 +148,11 @@ func makeMockSVI(bpc []byte) SVIMap {
 	svi.set(
 		sv.ReleaseFromEndowmentKeysName,
 		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
+	)
+
+	svi.set(
+		sv.DefaultEscrowDurationName,
+		NewNamespacedKey(bpc, sv.DefaultEscrowDurationName),
 	)
 
 	return svi
