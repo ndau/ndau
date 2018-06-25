@@ -107,6 +107,23 @@ func main() {
 				finish(*verbose, resp, err, "change-transfer-key")
 			}
 		})
+
+		cmd.Command("query", "query the ndau chain about this account", func(subcmd *cli.Cmd) {
+			subcmd.Spec = fmt.Sprintf("%s", getAddressSpec(""))
+			getAddress := getAddressClosure(subcmd, "")
+
+			subcmd.Action = func() {
+				address := getAddress()
+				config := getConfig()
+				ad, resp, err := tool.GetAccount(tmnode(config.Node), address)
+				if err != nil {
+					finish(*verbose, resp, err, "account")
+				}
+				jsb, err := json.MarshalIndent(ad, "", "  ")
+				fmt.Println(string(jsb))
+				finish(*verbose, resp, err, "account")
+			}
+		})
 	})
 
 	app.Command("transfer", "transfer ndau from one account to another", func(cmd *cli.Cmd) {
@@ -221,23 +238,6 @@ func main() {
 
 			resp, err := tool.GTVC(tmnode(config.Node), pkb, power)
 			finish(*verbose, resp, err, "gtvc")
-		}
-	})
-
-	app.Command("query-account", "query the ndau chain about this account", func(cmd *cli.Cmd) {
-		cmd.Spec = fmt.Sprintf("%s", getAddressSpec(""))
-		getAddress := getAddressClosure(cmd, "")
-
-		cmd.Action = func() {
-			address := getAddress()
-			config := getConfig()
-			ad, resp, err := tool.GetAccount(tmnode(config.Node), address)
-			if err != nil {
-				finish(*verbose, resp, err, "account")
-			}
-			jsb, err := json.MarshalIndent(ad, "", "  ")
-			fmt.Println(string(jsb))
-			finish(*verbose, resp, err, "account")
 		}
 	})
 
