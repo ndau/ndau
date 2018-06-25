@@ -65,17 +65,7 @@ func main() {
 	ndauhome := getNdauhome()
 	configPath := config.DefaultConfigPath(ndauhome)
 	if *makeMocks {
-		mockPath := config.DefaultMockPath(ndauhome)
-		fmt.Printf("Config: %s\n", configPath)
-		fmt.Printf("Mock:   %s\n", mockPath)
-		_, associated, err := config.MakeMock(configPath, mockPath)
-		check(err)
-
-		fmt.Printf("\nAssociated data:\n")
-		for k, v := range associated {
-			fmt.Printf("%v: %v\n", k, v)
-		}
-		os.Exit(0)
+		generateMocks(ndauhome, configPath)
 	}
 
 	conf, err := config.LoadConfig(configPath)

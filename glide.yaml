@@ -36,3 +36,6 @@ import:
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
   version: ~v0.1.0
+- package: github.com/oneiro-ndev/ndautool
+  repo: git@github.com:oneiro-ndev/ndautool.git
+  version: ~v0.1.0
