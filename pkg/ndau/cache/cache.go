@@ -2,9 +2,11 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tinylib/msgp/msgp"
 
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
@@ -66,10 +68,14 @@ func (c *SystemCache) getKV(
 // Update the cache
 //
 // height must be the current application height
-func (c *SystemCache) Update(height uint64) error {
+// logger should be the system logger or nil
+func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// get a write lock and replace the inner map
 	c.lock.Lock()
 	defer c.lock.Unlock()
+
+	logger = logger.WithField("height", height)
+	logger.Info("SystemCache.Update started")
 
 	// get the map of system variables
 	// we get this each time instead of caching because
@@ -124,6 +130,16 @@ func (c *SystemCache) Update(height uint64) error {
 		}
 	}
 
+	// log the sys variable keys available here
+	// for debugging only
+	// keys := make([]string, len(newCache))
+	// i := 0
+	// for k := range newCache {
+	// 	keys[i] = k
+	// 	i++
+	// }
+	// logger.WithField("system variable keys", keys).Info("SystemCache.Update completed")
+
 	// everything's fine; just replace the inner cache with the new one now
 	c.inner = newCache
 	return nil
@@ -140,7 +156,7 @@ func (c *SystemCache) GetRaw(name string) []byte {
 func (c *SystemCache) Get(name string, value msgp.Unmarshaler) error {
 	valBytes := c.GetRaw(name)
 	if valBytes == nil {
-		return errors.New("Requested system variable does not exist")
+		return fmt.Errorf("Requested system variable '%s' does not exist", name)
 	}
 	leftover, err := value.UnmarshalMsg(valBytes)
 	if len(leftover) > 0 {

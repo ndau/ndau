@@ -13,9 +13,9 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
-	"github.com/tendermint/abci/types"
-
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/tendermint/abci/types"
 )
 
 // App is an ABCI application which implements the Ndau chain
@@ -61,16 +61,9 @@ func NewApp(dbSpec string, config config.Config) (*App, error) {
 	return &app, nil
 }
 
-// InitChain performs necessary chain initialization.
-//
-// Most of this is taken care of for us by meta.App, but we
-// still need to initialize the system variable cache ourselves
-func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseInitChain) {
-	// perform basic chain init
-	response = app.App.InitChain(req)
-
+func (app *App) updateSystemVariableCache() {
 	// update system variable cache
-	err := app.systemCache.Update(app.Height())
+	err := app.systemCache.Update(app.Height(), app.GetLogger())
 	if err != nil {
 		app.GetLogger().Error(
 			"failed update of system variable cache",
@@ -80,6 +73,17 @@ func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseIn
 		// simply aborting here
 		panic(err)
 	}
+}
+
+// InitChain performs necessary chain initialization.
+//
+// Most of this is taken care of for us by meta.App, but we
+// still need to initialize the system variable cache ourselves
+func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseInitChain) {
+	// perform basic chain init
+	response = app.App.InitChain(req)
+
+	app.updateSystemVariableCache()
 
 	return
 }
@@ -103,6 +107,12 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 		panic(err)
 	}
 	app.blockTime = blockTime
+	app.updateSystemVariableCache()
+
+	app.GetLogger().WithFields(log.Fields{
+		"height": app.Height(),
+		"time":   app.blockTime,
+	}).Info("ndaunode per block custom processing complete")
 
 	return response
 }
