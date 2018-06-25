@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"encoding/binary"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -14,7 +15,6 @@ import (
 
 // NewTransfer creates a new signed transfer transactable
 func NewTransfer(
-	ts math.Timestamp,
 	s address.Address, d address.Address,
 	q math.Ndau,
 	seq uint64,
@@ -22,6 +22,10 @@ func NewTransfer(
 ) (*Transfer, error) {
 	if s == d {
 		return nil, errors.New("source may not equal destination")
+	}
+	ts, err := math.TimestampFrom(time.Now())
+	if err != nil {
+		return nil, err
 	}
 	t := &Transfer{
 		Timestamp:   ts,
