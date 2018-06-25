@@ -1,5 +1,5 @@
 hash: cb76754ebe553395cb7027dc5bfb6a6afa3dd2cd7a58bc449e7c605b92077868
-updated: 2018-06-25T12:41:47.197935+02:00
+updated: 2018-06-25T13:15:25.865612+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -185,7 +185,7 @@ imports:
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: fcae2be7b45dbd7ef1a17579c49aa76497036070
+  version: dbbaefc670c711fc686982d201eb63ed27e13a3e
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
