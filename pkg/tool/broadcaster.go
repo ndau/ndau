@@ -20,6 +20,12 @@ func broadcastCommit(node client.ABCIClient, tx []byte) (interface{}, error) {
 		return result, err
 	}
 	rc := code.ReturnCode(result.CheckTx.Code)
+	if result.CheckTx.Log != "" {
+		fmt.Fprintln(os.Stderr, result.CheckTx.Log)
+	}
+	if result.DeliverTx.Log != "" {
+		fmt.Fprintln(os.Stderr, result.DeliverTx.Log)
+	}
 	if rc != code.OK {
 		return result, errors.New(rc.String())
 	}
@@ -28,6 +34,9 @@ func broadcastCommit(node client.ABCIClient, tx []byte) (interface{}, error) {
 
 func broadcastAsync(node client.ABCIClient, tx []byte) (interface{}, error) {
 	result, err := node.BroadcastTxAsync(tx)
+	if result.Log != "" {
+		fmt.Fprintln(os.Stderr, result.Log)
+	}
 	if err != nil {
 		return result, err
 	}
@@ -40,6 +49,9 @@ func broadcastAsync(node client.ABCIClient, tx []byte) (interface{}, error) {
 
 func broadcastSync(node client.ABCIClient, tx []byte) (interface{}, error) {
 	result, err := node.BroadcastTxSync(tx)
+	if result.Log != "" {
+		fmt.Fprintln(os.Stderr, result.Log)
+	}
 	if err != nil {
 		return result, err
 	}
