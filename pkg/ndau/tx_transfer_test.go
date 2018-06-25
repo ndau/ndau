@@ -88,14 +88,11 @@ func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.Re
 }
 
 func generateTransfer(t *testing.T, qty int64, seq uint64, key signature.PrivateKey) *Transfer {
-	ts, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
 	s, err := address.Validate(source)
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
 	tr, err := NewTransfer(
-		ts,
 		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, key,
@@ -284,12 +281,9 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	// this is almost a straight copy-paste of generateTransfer,
 	// but we use source as dest as well
 	//
-	ts, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
 	s, err := address.Validate(source)
 	require.NoError(t, err)
 	_, err = NewTransfer(
-		ts,
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, key,
