@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/abci/types"
 )
@@ -18,6 +20,11 @@ func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
 
 	app, err = NewApp("", *configP)
 	require.NoError(t, err)
+
+	// disable logging within the tests by sending output to devnull
+	logger := log.StandardLogger()
+	logger.Out = ioutil.Discard
+	app.SetLogger(logger)
 
 	return
 }

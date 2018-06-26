@@ -120,7 +120,7 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, MockAssociated, *
 	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
 
 	// make default escrow duration
-	ded := sv.DefaultEscrowDuration{math.Day * 15}
+	ded := sv.DefaultEscrowDuration{Duration: math.Day * 15}
 	mock.Sets(bpc, sv.DefaultEscrowDurationName, ded)
 
 	return mock, ma, &sviKey

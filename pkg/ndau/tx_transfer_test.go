@@ -27,6 +27,10 @@ const source = "ndanp2cieaz6w3viwfdxf5dibrt5u8zmdtdep7w3n7yvqsrc"
 // Public key:     2e89496b55e40021d4814440b3e0cabbe9302abb99b9fe631f3b55c2a913c3bb
 const dest = "ndam5v8hpv5b79zbxxcepih8d4km4a3j2ev8dpaegexpdest"
 
+// Private key:    73a1955a52d6e7e099607c1bcfe4825fd30632be9780c9d70c836d8c5044546a878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
+// Public key:     878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
+const escrowed = "ndap94hhwyik86x2na9m3hjtq4n5v9uj3qm4tfp4xuyescrw"
+
 func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
@@ -42,6 +46,48 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	})
 
 	return app, private
+}
+
+// generate an app with an account with a bunch of escrowed transactions
+//
+// returns that account's private key, and a timestamp after which all escrows
+// should be valid
+//
+// It is guaranteed that all escrows expire in the interval (timestamp - 1 day : timestamp)
+func initAppEscrow(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
+	app, _ := initAppTx(t)
+
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	// generate the transfer key so we can transfer from the escrowed acct
+	public, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	const qtyEscrows = 10
+
+	modify(t, escrowed, app, func(acct *backing.AccountData) {
+		// initialize the address with a bunch of ndau
+		for i := 1; i < qtyEscrows; i++ {
+			acct.Escrows = append(acct.Escrows, backing.Escrow{
+				Qty:    math.Ndau(i * constants.QuantaPerUnit),
+				Expiry: ts.Sub(math.Duration(i)),
+			})
+		}
+		acct.TransferKey = &public
+	})
+
+	// add 1 second to the timestamp to get past unix time rounding errors
+	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
+	tn = tn.Add(time.Duration(1 * time.Second))
+
+	// update the app's cached timestamp
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: tn.Unix(),
+	}})
+	app.EndBlock(abci.RequestEndBlock{})
+
+	return app, private, ts
 }
 
 func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
