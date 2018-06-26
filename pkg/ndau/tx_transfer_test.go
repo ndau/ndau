@@ -416,3 +416,55 @@ func TestSequenceMustIncrease(t *testing.T) {
 	resp = deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
+	// setup app
+	app, key, ts := initAppEscrow(t)
+	require.True(t, app.blockTime.Compare(ts) >= 0)
+	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
+	tn = tn.Add(1 * time.Second)
+
+	// generate transfer
+	// because the escrowed funds have cleared,
+	// this should succeed
+	s, err := address.Validate(escrowed)
+	require.NoError(t, err)
+	d, err := address.Validate(dest)
+	require.NoError(t, err)
+	tr, err := NewTransfer(
+		s, d,
+		math.Ndau(1),
+		1, key,
+	)
+	require.NoError(t, err)
+
+	// send transfer
+	resp := deliverTrAt(t, app, tr, tn.Unix())
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
+	// setup app
+	app, key, ts := initAppEscrow(t)
+	// set app time to a day before the escrow expiry time
+	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
+	tn = tn.Add(time.Duration(-24 * time.Hour))
+
+	// generate transfer
+	// because the escrowed funds have not yet cleared,
+	// this should fail
+	s, err := address.Validate(escrowed)
+	require.NoError(t, err)
+	d, err := address.Validate(dest)
+	require.NoError(t, err)
+	tr, err := NewTransfer(
+		s, d,
+		math.Ndau(1),
+		1, key,
+	)
+	require.NoError(t, err)
+
+	// send transfer
+	resp := deliverTrAt(t, app, tr, tn.Unix())
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
