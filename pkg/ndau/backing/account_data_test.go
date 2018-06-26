@@ -178,7 +178,7 @@ func generateEscrowSettings(changing bool) EscrowSettings {
 	return es
 }
 
-func TestUpdateBalance(t *testing.T) {
+func TestUpdateEscrow(t *testing.T) {
 	// create fixture
 	const baseNdau = 100
 	baseTimestamp, err := math.TimestampFrom(time.Now())
@@ -205,7 +205,7 @@ func TestUpdateBalance(t *testing.T) {
 		)
 	}
 
-	acct.UpdateBalance(baseTimestamp)
+	acct.UpdateEscrow(baseTimestamp)
 
 	// half of the escrows are after the base timestamp
 	require.Equal(t, qtyEscrows/2, len(acct.Escrows))
@@ -215,4 +215,39 @@ func TestUpdateBalance(t *testing.T) {
 		expectedNdau += i
 	}
 	require.Equal(t, math.Ndau(expectedNdau), acct.Balance)
+}
+
+func TestUpdateEscrowUpdatesPendingPeriodChange(t *testing.T) {
+	// create fixture
+	const baseNdau = 100
+	acct, _ := generateAccount(t, baseNdau, false, false)
+	chTs := randTimestamp()
+	chD := randDuration()
+	acct.EscrowSettings.Duration = randDuration()
+	acct.EscrowSettings.ChangesAt = &chTs
+	acct.EscrowSettings.Next = &chD
+
+	acct.UpdateEscrow(chTs)
+
+	require.Equal(t, chD, acct.EscrowSettings.Duration)
+	require.Nil(t, acct.EscrowSettings.Next)
+	require.Nil(t, acct.EscrowSettings.ChangesAt)
+}
+
+func TestUpdateEscrowPersistsPendingPeriodChange(t *testing.T) {
+	// create fixture
+	const baseNdau = 100
+	acct, _ := generateAccount(t, baseNdau, false, false)
+	stD := randDuration()
+	chTs := randTimestamp()
+	chD := randDuration()
+	acct.EscrowSettings.Duration = stD
+	acct.EscrowSettings.ChangesAt = &chTs
+	acct.EscrowSettings.Next = &chD
+
+	acct.UpdateEscrow(chTs.Sub(math.Duration(1)))
+
+	require.Equal(t, stD, acct.EscrowSettings.Duration)
+	require.Equal(t, &chD, acct.EscrowSettings.Next)
+	require.Equal(t, &chTs, acct.EscrowSettings.ChangesAt)
 }

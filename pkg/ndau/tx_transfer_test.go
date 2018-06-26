@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -114,11 +116,11 @@ func modifyDest(t *testing.T, app *App, f func(*backing.AccountData)) {
 	modify(t, dest, app, f)
 }
 
-func deliverTr(t *testing.T, app *App, transfer *Transfer) abci.ResponseDeliverTx {
+func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.ResponseDeliverTx {
 	return deliverTrAt(t, app, transfer, time.Now().Unix())
 }
 
-func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.ResponseDeliverTx {
+func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int64) abci.ResponseDeliverTx {
 	bytes, err := tx.TransactableToBytes(transfer, TxIDs)
 	require.NoError(t, err)
 

@@ -145,7 +145,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 	}
 
 	// this doesn't get persisted because this method is read-only
-	source.UpdateBalance(app.blockTime)
+	source.UpdateEscrow(app.blockTime)
 
 	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {
@@ -173,7 +173,7 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	dest := state.Accounts[t.Destination.String()]
 
 	// this will get persisted
-	source.UpdateBalance(app.blockTime)
+	source.UpdateEscrow(app.blockTime)
 
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),

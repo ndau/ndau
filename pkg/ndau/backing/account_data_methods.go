@@ -35,8 +35,8 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 	return false
 }
 
-// UpdateBalance adds escrowed funds whose escrows have expired to the balance.
-func (ad *AccountData) UpdateBalance(blockTime math.Timestamp) {
+// UpdateEscrow adds escrowed funds whose escrows have expired to the balance.
+func (ad *AccountData) UpdateEscrow(blockTime math.Timestamp) {
 	newEscrows := make([]Escrow, 0, len(ad.Escrows))
 	for _, escrow := range ad.Escrows {
 		if escrow.Expiry.Compare(blockTime) <= 0 {
@@ -46,4 +46,10 @@ func (ad *AccountData) UpdateBalance(blockTime math.Timestamp) {
 		}
 	}
 	ad.Escrows = newEscrows
+
+	if ad.EscrowSettings.ChangesAt != nil && blockTime.Compare(*ad.EscrowSettings.ChangesAt) >= 0 {
+		ad.EscrowSettings.Duration = *ad.EscrowSettings.Next
+		ad.EscrowSettings.ChangesAt = nil
+		ad.EscrowSettings.Next = nil
+	}
 }

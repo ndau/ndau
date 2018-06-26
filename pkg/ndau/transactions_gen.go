@@ -9,6 +9,79 @@ import (
 )
 
 // MarshalMsg implements msgp.Marshaler
+func (z *ChangeEscrowPeriod) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "Target"
+	o = append(o, 0x83, 0xa6, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74)
+	o, err = z.Target.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "Period"
+	o = append(o, 0xa6, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64)
+	o, err = z.Period.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "Signature"
+	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
+	o, err = z.Signature.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *ChangeEscrowPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "Target":
+			bts, err = z.Target.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "Period":
+			bts, err = z.Period.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "Signature":
+			bts, err = z.Signature.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *ChangeEscrowPeriod) Msgsize() (s int) {
+	s = 1 + 7 + z.Target.Msgsize() + 7 + z.Period.Msgsize() + 10 + z.Signature.Msgsize()
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *ChangeTransferKey) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 5
