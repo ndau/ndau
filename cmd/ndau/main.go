@@ -124,6 +124,48 @@ func main() {
 				finish(*verbose, resp, err, "account")
 			}
 		})
+
+		cmd.Command(
+			"change-escrow-period",
+			"change the escrow period for outbound transfers from this account",
+			func(subcmd *cli.Cmd) {
+				subcmd.Spec = fmt.Sprintf(
+					"NAME %s",
+					getDurationSpec(),
+				)
+
+				var name = subcmd.StringArg("NAME", "", "Name of account of which to change escrow period")
+				getDuration := getDurationClosure(subcmd)
+
+				subcmd.Action = func() {
+					config := getConfig()
+					duration := getDuration()
+
+					ad, hasAd := config.Accounts[*name]
+					if !hasAd {
+						orQuit(errors.New("No such account found"))
+					}
+					if ad.Transfer == nil {
+						orQuit(errors.New("Address transfer key not set"))
+					}
+
+					cep, err := ndau.NewChangeEscrowPeriod(ad.Address, duration, ad.Transfer.Private)
+					orQuit(errors.Wrap(err, "Creating ChangeEscrowPeriod transaction"))
+
+					if *verbose {
+						fmt.Printf(
+							"Change Escrow Period for %s (%s) to %s\n",
+							*name,
+							ad.Address,
+							duration,
+						)
+					}
+
+					resp, err := tool.ChangeEscrowPeriodCommit(tmnode(config.Node), cep)
+					finish(*verbose, resp, err, "change-escrow-period")
+				}
+			},
+		)
 	})
 
 	app.Command("transfer", "transfer ndau from one account to another", func(cmd *cli.Cmd) {

@@ -34,18 +34,8 @@ func getAddressSpec(id string) string {
 }
 
 func getAddressClosure(cmd *cli.Cmd, id string) func() address.Address {
-	var (
-		name *string
-		addr *string
-	)
-	if id == "" {
-		name = cmd.StringArg("NAME", "", "Name of account")
-		addr = cmd.StringOpt("a address", "", "Address")
-
-	} else {
-		name = cmd.StringArg(nameFor(id), "", fmt.Sprintf("Name of %s account", id))
-		addr = cmd.StringOpt(argFor(id), "", fmt.Sprintf("%s Address", id))
-	}
+	name := cmd.StringArg(nameFor(id), "", fmt.Sprintf("Name of %s account", id))
+	addr := cmd.StringOpt(argFor(id), "", fmt.Sprintf("%s Address", id))
 
 	return func() address.Address {
 		if addr != nil && len(*addr) > 0 {
