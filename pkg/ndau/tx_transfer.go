@@ -144,7 +144,7 @@ func (t *Transfer) IsValid(appInt interface{}) error {
 		return errors.New("sequence number too low")
 	}
 
-	// this doesn't get persisted because this method is read-only
+	// the source update doesn't get persisted this time because this method is read-only
 	source.UpdateEscrow(app.blockTime)
 
 	fromSource, err := t.calculateQtyFromSource()
@@ -172,7 +172,7 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	source := state.Accounts[t.Source.String()]
 	dest := state.Accounts[t.Destination.String()]
 
-	// this will get persisted
+	// this source update will get persisted if the method exits without error
 	source.UpdateEscrow(app.blockTime)
 
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
