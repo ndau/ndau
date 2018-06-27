@@ -1,5 +1,5 @@
-hash: cb76754ebe553395cb7027dc5bfb6a6afa3dd2cd7a58bc449e7c605b92077868
-updated: 2018-06-25T13:15:25.865612+02:00
+hash: db1e4b7ec90e1c6785d2970c100c1b2a79f09a41e633a386f1c1722c71a5c784
+updated: 2018-06-26T15:46:51.044853+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -178,14 +178,15 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 2cc508e789e8dd1819625bc52920989ef8148688
+  version: 20212b83cd70ef283e6dd2361675ae0b206af256
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
+  - pkg/b32
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: dbbaefc670c711fc686982d201eb63ed27e13a3e
+  version: d03d2eb4e1795f307c9f97eecd0cad15beffd686
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
