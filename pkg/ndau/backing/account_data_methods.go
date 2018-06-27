@@ -47,6 +47,7 @@ func (ad *AccountData) UpdateEscrow(blockTime math.Timestamp) {
 	}
 	ad.Escrows = newEscrows
 
+	// true if there exists a pending change which is less than or equal to the block time
 	if ad.EscrowSettings.ChangesAt != nil && blockTime.Compare(*ad.EscrowSettings.ChangesAt) >= 0 {
 		ad.EscrowSettings.Duration = *ad.EscrowSettings.Next
 		ad.EscrowSettings.ChangesAt = nil
