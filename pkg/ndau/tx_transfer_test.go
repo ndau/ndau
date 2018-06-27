@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -27,6 +29,10 @@ const source = "ndanp2cieaz6w3viwfdxf5dibrt5u8zmdtdep7w3n7yvqsrc"
 // Public key:     2e89496b55e40021d4814440b3e0cabbe9302abb99b9fe631f3b55c2a913c3bb
 const dest = "ndam5v8hpv5b79zbxxcepih8d4km4a3j2ev8dpaegexpdest"
 
+// Private key:    73a1955a52d6e7e099607c1bcfe4825fd30632be9780c9d70c836d8c5044546a878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
+// Public key:     878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
+const escrowed = "ndap94hhwyik86x2na9m3hjtq4n5v9uj3qm4tfp4xuyescrw"
+
 func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
@@ -42,6 +48,48 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	})
 
 	return app, private
+}
+
+// generate an app with an account with a bunch of escrowed transactions
+//
+// returns that account's private key, and a timestamp after which all escrows
+// should be valid
+//
+// It is guaranteed that all escrows expire in the interval (timestamp - 1 day : timestamp)
+func initAppEscrow(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
+	app, _ := initAppTx(t)
+
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	// generate the transfer key so we can transfer from the escrowed acct
+	public, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	const qtyEscrows = 10
+
+	modify(t, escrowed, app, func(acct *backing.AccountData) {
+		// initialize the address with a bunch of ndau
+		for i := 1; i < qtyEscrows; i++ {
+			acct.Escrows = append(acct.Escrows, backing.Escrow{
+				Qty:    math.Ndau(i * constants.QuantaPerUnit),
+				Expiry: ts.Sub(math.Duration(i)),
+			})
+		}
+		acct.TransferKey = &public
+	})
+
+	// add 1 second to the timestamp to get past unix time rounding errors
+	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
+	tn = tn.Add(time.Duration(1 * time.Second))
+
+	// update the app's cached timestamp
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: tn.Unix(),
+	}})
+	app.EndBlock(abci.RequestEndBlock{})
+
+	return app, private, ts
 }
 
 func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
@@ -68,11 +116,11 @@ func modifyDest(t *testing.T, app *App, f func(*backing.AccountData)) {
 	modify(t, dest, app, f)
 }
 
-func deliverTr(t *testing.T, app *App, transfer *Transfer) abci.ResponseDeliverTx {
+func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.ResponseDeliverTx {
 	return deliverTrAt(t, app, transfer, time.Now().Unix())
 }
 
-func deliverTrAt(t *testing.T, app *App, transfer *Transfer, time int64) abci.ResponseDeliverTx {
+func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int64) abci.ResponseDeliverTx {
 	bytes, err := tx.TransactableToBytes(transfer, TxIDs)
 	require.NoError(t, err)
 
@@ -368,5 +416,57 @@ func TestSequenceMustIncrease(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	// invalid now because account sequence must have been updated
 	resp = deliverTr(t, app, tr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
+	// setup app
+	app, key, ts := initAppEscrow(t)
+	require.True(t, app.blockTime.Compare(ts) >= 0)
+	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
+	tn = tn.Add(1 * time.Second)
+
+	// generate transfer
+	// because the escrowed funds have cleared,
+	// this should succeed
+	s, err := address.Validate(escrowed)
+	require.NoError(t, err)
+	d, err := address.Validate(dest)
+	require.NoError(t, err)
+	tr, err := NewTransfer(
+		s, d,
+		math.Ndau(1),
+		1, key,
+	)
+	require.NoError(t, err)
+
+	// send transfer
+	resp := deliverTrAt(t, app, tr, tn.Unix())
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
+	// setup app
+	app, key, ts := initAppEscrow(t)
+	// set app time to a day before the escrow expiry time
+	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
+	tn = tn.Add(time.Duration(-24 * time.Hour))
+
+	// generate transfer
+	// because the escrowed funds have not yet cleared,
+	// this should fail
+	s, err := address.Validate(escrowed)
+	require.NoError(t, err)
+	d, err := address.Validate(dest)
+	require.NoError(t, err)
+	tr, err := NewTransfer(
+		s, d,
+		math.Ndau(1),
+		1, key,
+	)
+	require.NoError(t, err)
+
+	// send transfer
+	resp := deliverTrAt(t, app, tr, tn.Unix())
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

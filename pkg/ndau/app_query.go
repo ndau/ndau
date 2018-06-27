@@ -32,6 +32,7 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	} else {
 		response.Log = "does not exist"
 	}
+	ad.UpdateEscrow(app.blockTime)
 	adBytes, err := ad.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "serializing account data")

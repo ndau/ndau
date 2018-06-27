@@ -34,3 +34,23 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 	ad.Lock = nil
 	return false
 }
+
+// UpdateEscrow adds escrowed funds whose escrows have expired to the balance.
+func (ad *AccountData) UpdateEscrow(blockTime math.Timestamp) {
+	newEscrows := make([]Escrow, 0, len(ad.Escrows))
+	for _, escrow := range ad.Escrows {
+		if escrow.Expiry.Compare(blockTime) <= 0 {
+			ad.Balance += escrow.Qty
+		} else {
+			newEscrows = append(newEscrows, escrow)
+		}
+	}
+	ad.Escrows = newEscrows
+
+	// true if there exists a pending change which is less than or equal to the block time
+	if ad.EscrowSettings.ChangesAt != nil && blockTime.Compare(*ad.EscrowSettings.ChangesAt) >= 0 {
+		ad.EscrowSettings.Duration = *ad.EscrowSettings.Next
+		ad.EscrowSettings.ChangesAt = nil
+		ad.EscrowSettings.Next = nil
+	}
+}

@@ -7,6 +7,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
+	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/pkg/errors"
@@ -117,8 +118,20 @@ func (ct *ChangeTransferKey) Apply(appI interface{}) error {
 
 		ad := state.Accounts[ct.Target.String()]
 		ad.TransferKey = &ct.NewKey
-		state.Accounts[ct.Target.String()] = ad
 
+		// business rule: if we're changing with an ownership key, and the
+		// current escrow duration is zero, then we set the escrow duration
+		// to the default
+		if ct.KeyKind == SigningKeyOwnership && ad.EscrowSettings.Duration == 0 {
+			defaultDuration := new(sv.DefaultEscrowDuration)
+			err := app.System(sv.DefaultEscrowDurationName, defaultDuration)
+			if err != nil {
+				return state, errors.Wrap(err, "ChangeTransferKey.Apply get default escrow duration")
+			}
+			ad.EscrowSettings.Duration = defaultDuration.Duration
+		}
+
+		state.Accounts[ct.Target.String()] = ad
 		return state, nil
 	})
 }

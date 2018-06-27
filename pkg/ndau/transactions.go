@@ -14,6 +14,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):    &Transfer{},
 	metatx.TxID(2):    &ChangeTransferKey{},
 	metatx.TxID(3):    &ReleaseFromEndowment{},
+	metatx.TxID(4):    &ChangeEscrowPeriod{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -105,3 +106,22 @@ type ReleaseFromEndowment struct {
 }
 
 var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
+
+// ChangeEscrowPeriod includes a Signature field, for which the zero
+// value is intentionally invalid. Unfortunately for us, the auto-generated
+// tests use the zero value as a test value, and it turns out that if you
+// run MarshalMsg on the zero value of one of those, it panics.
+//
+// It's a good way to keep that sort of behavior out of the real codebase,
+// but it means we have to avoid writing these tests.
+//msgp:test ignore ChangeEscrowPeriod
+
+// A ChangeEscrowPeriod transaction is used to change the escrow period for
+// transactions outbound from an account.
+type ChangeEscrowPeriod struct {
+	Target    address.Address
+	Period    math.Duration
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*ChangeEscrowPeriod)(nil)
