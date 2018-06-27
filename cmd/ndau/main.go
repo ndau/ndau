@@ -2,49 +2,208 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/kentquirk/boneful"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
-
-	"github.com/pkg/errors"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	cli "github.com/jawher/mow.cli"
+	"github.com/kentquirk/boneful"
+	"github.com/pkg/errors"
+	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+
 	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndautool/pkg/tool/config"
 )
 
 func main() {
-	app := cli.App("chaos", "interact with the chaos chain")
+	app := cli.App("ndau", "interact with the ndau chain")
 
 	app.Spec = "[-v]"
 
 	var (
-		verbose = app.BoolOpt("v verbose", false, "Emit detailed results from the chaos chain if set")
+		verbose = app.BoolOpt("v verbose", false, "Emit detailed results from the ndau chain if set")
 	)
 
 	app.Command("conf", "perform initial configuration", func(cmd *cli.Cmd) {
 		cmd.Spec = "[ADDR]"
 
-		var addr = cmd.StringArg("ADDR", tool.DefaultAddress, "Address of node to connect to")
+		var addr = cmd.StringArg("ADDR", config.DefaultAddress, "Address of node to connect to")
 
 		cmd.Action = func() {
-			config, err := tool.Load()
+			conf, err := config.Load()
 			if err != nil && os.IsNotExist(err) {
-				config = tool.NewConfig(*addr)
+				conf = config.NewConfig(*addr)
 			} else {
-				config.Node = *addr
+				conf.Node = *addr
 			}
-			err = config.Save()
+			err = conf.Save()
 			orQuit(errors.Wrap(err, "Failed to save configuration"))
 		}
 	})
 
 	app.Command("conf-path", "show location of config file", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			fmt.Println(tool.GetConfigPath())
+			fmt.Println(config.GetConfigPath())
+		}
+	})
+
+	app.Command("account", "manage accounts", func(cmd *cli.Cmd) {
+		cmd.Command("list", "list known accounts", func(subcmd *cli.Cmd) {
+			subcmd.Action = func() {
+				config := getConfig()
+				config.EmitAccounts(os.Stdout)
+			}
+		})
+
+		cmd.Command("new", "create a new account", func(subcmd *cli.Cmd) {
+			subcmd.Spec = "NAME"
+
+			var name = subcmd.StringArg("NAME", "", "Name to associate with the new identity")
+
+			subcmd.Action = func() {
+				config := getConfig()
+				err := config.CreateAccount(*name)
+				orQuit(errors.Wrap(err, "Failed to create identity"))
+				err = config.Save()
+				orQuit(errors.Wrap(err, "saving config"))
+			}
+		})
+
+		cmd.Command("change-transfer-key", "change the account's transfer key", func(subcmd *cli.Cmd) {
+			subcmd.Spec = "NAME"
+
+			var name = subcmd.StringArg("NAME", "", "Name of account to change")
+
+			subcmd.Action = func() {
+				conf := getConfig()
+				acct, hasAcct := conf.Accounts[*name]
+				if !hasAcct {
+					orQuit(errors.New("No such account"))
+				}
+
+				public, private, err := signature.Generate(signature.Ed25519, nil)
+				orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
+				ctk := ndau.NewChangeTransferKey(
+					acct.Address,
+					public,
+					ndau.SigningKeyOwnership,
+					acct.Ownership.Public, acct.Ownership.Private,
+				)
+
+				resp, err := tool.ChangeTransferKeyCommit(tmnode(conf.Node), ctk)
+
+				// only persist this change if there was no error
+				if err == nil {
+					acct.Transfer = &config.Keypair{Public: public, Private: private}
+					conf.SetAccount(*acct)
+					err = conf.Save()
+					orQuit(errors.Wrap(err, "saving config"))
+				}
+				finish(*verbose, resp, err, "change-transfer-key")
+			}
+		})
+
+		cmd.Command("query", "query the ndau chain about this account", func(subcmd *cli.Cmd) {
+			subcmd.Spec = fmt.Sprintf("%s", getAddressSpec(""))
+			getAddress := getAddressClosure(subcmd, "")
+
+			subcmd.Action = func() {
+				address := getAddress()
+				config := getConfig()
+				ad, resp, err := tool.GetAccount(tmnode(config.Node), address)
+				if err != nil {
+					finish(*verbose, resp, err, "account")
+				}
+				jsb, err := json.MarshalIndent(ad, "", "  ")
+				fmt.Println(string(jsb))
+				finish(*verbose, resp, err, "account")
+			}
+		})
+	})
+
+	app.Command("transfer", "transfer ndau from one account to another", func(cmd *cli.Cmd) {
+		cmd.Spec = fmt.Sprintf(
+			"%s %s %s",
+			getNdauSpec(),
+			getAddressSpec("FROM"),
+			getAddressSpec("TO"),
+		)
+
+		getNdau := getNdauClosure(cmd)
+		getFrom := getAddressClosure(cmd, "FROM")
+		getTo := getAddressClosure(cmd, "TO")
+
+		cmd.Action = func() {
+			ndauQty := getNdau()
+			from := getFrom()
+			to := getTo()
+
+			if *verbose {
+				fmt.Printf(
+					"Transfer %s ndau from %s to %s\n",
+					ndauQty, from, to,
+				)
+			}
+
+			conf := getConfig()
+
+			// ensure we know the private transfer key of this account
+			fromAcct, hasAcct := conf.Accounts[from.String()]
+			if !hasAcct {
+				orQuit(fmt.Errorf("From account '%s' not found", fromAcct.String()))
+			}
+			if fromAcct.Transfer == nil {
+				orQuit(fmt.Errorf("From acct transfer key not set"))
+			}
+
+			// query the account to get the current sequence
+			ad, _, err := tool.GetAccount(tmnode(conf.Node), from)
+			orQuit(errors.Wrap(err, "Failed to get current sequence number"))
+
+			// construct the transfer
+			transfer, err := ndau.NewTransfer(from, to, ndauQty, ad.Sequence+1, fromAcct.Transfer.Private)
+			orQuit(errors.Wrap(err, "Failed to construct transfer"))
+
+			tresp, err := tool.TransferCommit(tmnode(conf.Node), *transfer)
+			finish(*verbose, tresp, err, "transfer")
+		}
+	})
+
+	app.Command("rfe", "release ndau from the endowment", func(cmd *cli.Cmd) {
+		cmd.Spec = fmt.Sprintf(
+			"%s %s RFE_KEY_INDEX",
+			getNdauSpec(),
+			getAddressSpec(""),
+		)
+
+		getNdau := getNdauClosure(cmd)
+		getAddress := getAddressClosure(cmd, "")
+		index := cmd.IntArg("RFE_KEY_INDEX", 0, "index of RFE key to use to sign this transaction")
+
+		cmd.Action = func() {
+			ndauQty := getNdau()
+			address := getAddress()
+
+			if *verbose {
+				fmt.Printf("Release from endowment: %s ndau to %s\n", ndauQty, address)
+			}
+
+			conf := getConfig()
+			if len(conf.RFEKeys) <= *index {
+				orQuit(errors.New("not enough RFE keys in configuration"))
+			}
+			key := conf.RFEKeys[*index]
+
+			rfe, err := ndau.NewReleaseFromEndowment(ndauQty, address, key)
+			orQuit(errors.Wrap(err, "generating Release from Endowment tx"))
+
+			result, err := tool.ReleaseFromEndowmentCommit(tmnode(conf.Node), rfe)
+			finish(*verbose, result, err, "rfe")
 		}
 	})
 
@@ -88,23 +247,6 @@ func main() {
 		port := cmd.StringArg("PORT", "", "port number for server to listen on")
 
 		cmd.Action = func() {
-			/*
-				router := mux.NewRouter()
-				router.HandleFunc("/status", getStatus).Methods("GET")
-				router.HandleFunc("/health", getHealth).Methods("GET")
-				router.HandleFunc("/net_info", getNetInfo).Methods("GET")
-				router.HandleFunc("/genesis", getGenesis).Methods("GET")
-				router.HandleFunc("/abci_info", getABCIInfo).Methods("GET")
-				router.HandleFunc("/num_unconfirmed_txs", getNumUnconfirmedTxs).Methods("GET")
-				router.HandleFunc("/dump_consensus_state", getDumpConsensusState).Methods("GET")
-				router.HandleFunc("/block", getBlock).Queries("height", "{height}")
-				router.HandleFunc("/blockchain", getBlockChain).Queries("min_height", "{min_height}", "max_height", "{max_height}")
-				router.HandleFunc("/set_key", setKeyVal).Methods("GET")
-				router.HandleFunc("/get_key", getKeyVal).Methods("GET")
-				router.HandleFunc("/get_ns", getNamespaces).Methods("GET")
-				router.HandleFunc("/dump_key_vals", dumpKeyVals).Methods("GET")
-			*/
-
 			svc := new(boneful.Service).
 				Path("/").
 				Doc(`This service provides the API for Tendermint and Chaos/Order/ndau blockchain data`)
@@ -166,38 +308,6 @@ func main() {
 				Produces("application/json").
 				Writes(rpctypes.ResultBlockchainInfo{}))
 
-			//                      router.HandleFunc("/get_key", getKeyVal).Queries("name", "{name}", "height", "{height}", "key", "{key}", "emit", "{emit}")
-
-			/*
-				"subscribe":       rpc.NewWSRPCFunc(Subscribe, "query"),
-				"unsubscribe":     rpc.NewWSRPCFunc(Unsubscribe, "query"),
-				"unsubscribe_all": rpc.NewWSRPCFunc(UnsubscribeAll, ""),
-
-				// info API
-				"health":               rpc.NewRPCFunc(Health, ""),
-				"status":               rpc.NewRPCFunc(Status, ""),
-				"net_info":             rpc.NewRPCFunc(NetInfo, ""),
-				"blockchain":           rpc.NewRPCFunc(BlockchainInfo, "minHeight,maxHeight"),
-				"genesis":              rpc.NewRPCFunc(Genesis, ""),
-				"block":                rpc.NewRPCFunc(Block, "height"),
-				"block_results":        rpc.NewRPCFunc(BlockResults, "height"),
-				"commit":               rpc.NewRPCFunc(Commit, "height"),
-				"tx":                   rpc.NewRPCFunc(Tx, "hash,prove"),
-				"tx_search":            rpc.NewRPCFunc(TxSearch, "query,prove"),
-				"validators":           rpc.NewRPCFunc(Validators, "height"),
-				"dump_consensus_state": rpc.NewRPCFunc(DumpConsensusState, ""),
-				"unconfirmed_txs":      rpc.NewRPCFunc(UnconfirmedTxs, ""),
-				"num_unconfirmed_txs":  rpc.NewRPCFunc(NumUnconfirmedTxs, ""),
-
-				// broadcast API
-				"broadcast_tx_commit": rpc.NewRPCFunc(BroadcastTxCommit, "tx"),
-				"broadcast_tx_sync":   rpc.NewRPCFunc(BroadcastTxSync, "tx"),
-				"broadcast_tx_async":  rpc.NewRPCFunc(BroadcastTxAsync, "tx"),
-
-				// abci API
-				"abci_query": rpc.NewRPCFunc(ABCIQuery, "path,data,height,prove"),
-				"abci_info":  rpc.NewRPCFunc(ABCIInfo, ""),
-			*/
 			log.Printf("Chaos server listening on port %s\n", *port)
 			server := &http.Server{Addr: ":" + *port, Handler: svc.Mux()}
 			log.Fatal(server.ListenAndServe())
