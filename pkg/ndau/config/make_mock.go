@@ -70,6 +70,10 @@ func MakeChaosMock(config *Config) (MockAssociated, error) {
 		}
 	}
 
+	// blank the UseMock field--after setting the actual chain mocks,
+	// we don't need the mock file anymore.
+	config.UseMock = ""
+
 	return ma, nil
 }
 
