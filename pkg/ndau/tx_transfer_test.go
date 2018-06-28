@@ -121,7 +121,7 @@ func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.Respon
 }
 
 func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int64) abci.ResponseDeliverTx {
-	bytes, err := tx.TransactableToBytes(transfer, TxIDs)
+	bytes, err := tx.Marshal(transfer, TxIDs)
 	require.NoError(t, err)
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{

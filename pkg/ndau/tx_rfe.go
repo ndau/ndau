@@ -44,8 +44,8 @@ func NewReleaseFromEndowment(
 	return rfe, err
 }
 
-// IsValid implements metatx.Transactable
-func (rfe *ReleaseFromEndowment) IsValid(appI interface{}) error {
+// Validate implements metatx.Transactable
+func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	app := appI.(*App)
 
 	if rfe.Qty <= 0 {
@@ -55,11 +55,11 @@ func (rfe *ReleaseFromEndowment) IsValid(appI interface{}) error {
 	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
 	err := app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
 	if err != nil {
-		return errors.Wrap(err, "RFE.IsValid app.System err")
+		return errors.Wrap(err, "RFE.Validate app.System err")
 	}
 	sb, err := rfe.signableBytes()
 	if err != nil {
-		return errors.Wrap(err, "RFE.IsValid signableBytes")
+		return errors.Wrap(err, "RFE.Validate signableBytes")
 	}
 	valid := false
 	for _, public := range rfeKeys {

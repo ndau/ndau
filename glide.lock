@@ -1,5 +1,5 @@
-hash: 17f682c0d0776134b6c3b47d5717d1bcdfcee07c6fcc7c44d2b3275ee9f84ffb
-updated: 2018-06-28T14:17:24.343691+02:00
+hash: b9431f481d41fa4989269ca99edd173bc9db3e3b94c58a2f52aeb753705bced4
+updated: 2018-06-28T14:30:01.593259+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -151,7 +151,7 @@ imports:
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 75a18a0cfd8aca0dc1fd23502e9c99b6173e936b
+  version: 6bebc190b931901af41aa0965988d992457654b5
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -172,7 +172,7 @@ imports:
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndautool
-  version: 84b1aaa59dd6b562285482cbb99a75edabf320bf
+  version: 00abac1495ea1109f554af4cdcaa28c28c7aa9a3
   repo: git@github.com:oneiro-ndev/ndautool.git
   subpackages:
   - pkg/tool/config

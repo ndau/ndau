@@ -19,7 +19,7 @@ func validatorOptCk(t *testing.T, power int64, app *App, check bool) (gtvc GTVal
 		PublicKey: public,
 		Power:     power,
 	}
-	tx, err := metatx.TransactableToBytes(&gtvc, TxIDs)
+	tx, err := metatx.Marshal(&gtvc, TxIDs)
 	require.NoError(t, err)
 
 	if check {
@@ -46,7 +46,7 @@ func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 		Time: time.Now().Unix(),
 	}})
 	for _, gtvc := range updates {
-		tx, err := metatx.TransactableToBytes(&gtvc, TxIDs)
+		tx, err := metatx.Marshal(&gtvc, TxIDs)
 		require.NoError(t, err)
 
 		response := app.DeliverTx(tx)
