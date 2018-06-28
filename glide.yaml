@@ -20,7 +20,7 @@ import:
   version: ^1.0.2
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: ^v0.5
+  version: ~v0.6
 - package: github.com/oneiro-ndev/ndaunode
   repo: git@github.com:oneiro-ndev/ndaunode.git
   version: ~v0.3

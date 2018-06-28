@@ -68,7 +68,7 @@ func sendGeneric(
 	broadcast broadcaster,
 	name string,
 ) (interface{}, error) {
-	bytes, err := metatx.TransactableToBytes(tx, ndau.TxIDs)
+	bytes, err := metatx.Marshal(tx, ndau.TxIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("%s failed to marshal transaction", name))
 	}

@@ -36,7 +36,7 @@ func GTVC(node client.ABCIClient, key []byte, power int64) (
 		metatx.TxID(0xff): &ndau.GTValidatorChange{},
 	}
 
-	gtvcb, err := metatx.TransactableToBytes(&ndau.GTValidatorChange{
+	gtvcb, err := metatx.Marshal(&ndau.GTValidatorChange{
 		PublicKey: pk.Bytes(),
 		Power:     power,
 	}, gtvcTxID)
