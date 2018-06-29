@@ -1,0 +1,124 @@
+version: 2
+jobs:
+  build:
+    working_directory: /app
+    docker:
+      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci
+    environment:
+      AWS_DEFAULT_REGION: us-east-1
+      ECR_ENDPOINT: 578681496768.dkr.ecr.us-east-1.amazonaws.com
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build ndaunode-test image
+          command: |
+            # build ndaunode tests
+            echo -e "$gomu" > ssh-key
+            docker build -t ndaunode-test --build-arg SSH_KEY_FILE="ssh-key" . -f ./ndaunode-test.docker
+            # cleanup
+            rm ssh-key
+            docker rmi ndaunode-test
+      - run:
+          name: AWS ECR Login
+          command: |
+            eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
+      - run:
+          name: Check ndaunode version on ECR
+          command: |
+            source ./.circleci/build-versions.env
+            # Compare this container version with ECR. Fail build if version already exists.
+            version_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${NDAUNODE_CONTAINER_VERSION}\")")
+            if [ ! -z "$version_check" ]; then
+              echo "Chaosnode container version ${NDAUNODE_CONTAINER_VERSION} already exists." | tee -a /tmp/pushlog
+              exit 1
+            fi
+
+            sha=${CIRCLE_SHA1: -7}
+            sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
+            if [ ! -z "$sha_check" ]; then
+              echo "Chaosnode container version ${sha} already exists." | tee -a /tmp/pushlog
+              exit 1
+            fi
+      - run:
+          name: Build ndaunode
+          command: |
+            # build ndaunode with ssh key
+            echo -e "$gomu" > ssh-key
+            docker build -t ndaunode --build-arg SSH_KEY_FILE="ssh-key" .
+            # clean up
+            rm ssh-key
+      - run:
+          name: Push ndaunode
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              source ./.circleci/build-versions.env
+              # Do not upload commit hash that already exists.
+              # Should never really happen as long as master is not tampered with.
+              commit_hash=${CIRCLE_SHA1: -7}
+              commit_hash_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${commit_hash}\")")
+              if [ ! -z "$commit_hash_check" ]; then
+                echo "Chaosnode container hash ${commit_hash} already exists. Will not push." > /tmp/pushlog
+              else
+                new_tag="${ECR_ENDPOINT}/ndaunode:${commit_hash}"
+                docker tag ndaunode $new_tag
+                docker tag ndaunode $NDAUNODE_CONTAINER_VERSION
+                docker push $new_tag
+                docker push $NDAUNODE_CONTAINER_VERSION
+                echo "Pushed ndaunode container hash ${commit_hash}." > /tmp/pushlog
+              fi
+            fi
+      - run:
+          name: Install kubectl, helm, upgrade test net
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # get version numbers
+              source ./.circleci/build-versions.env
+
+              # download kubectl and install it
+              curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl &&\
+              chmod +x ./kubectl &&\
+              sudo mv ./kubectl /usr/local/bin/kubectl
+
+              # Use kube_config from environment variables
+              echo $kube_config > ./kubeconfig
+              export KUBECONFIG=./kubeconfig
+
+              # download and install helm
+              curl https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz > helm.tgz
+              tar -zxvf helm.tgz
+              sudo mv linux-amd64/helm /usr/local/bin/helm
+
+              # clone the k-os repo
+              git clone git@github.com:oneiro-ndev/k-os.git
+
+              # install certs for helm
+              mkdir -p ~/.helm
+              echo -e "$helm_ca_pem" > ~/.helm/ca.pem
+              echo -e "$helm_cert_pem" > ~/.helm/cert.pem
+              echo -e "$helm_key_pem" > ~/.helm/key.pem
+
+              # use the dev-chaos cluster
+              kubectl config use-context dev-chaos.cluster.ndau.tech
+
+              # upgrade castor
+              helm upgrade ren k-os/helm/ndaunode \
+                --set ndaunode.image.tag=$NDAUNODE_CONTAINER_VERSION \
+                --reuse-values \
+                --recreate-pods \
+                --tls
+
+              # update pollux
+              helm upgrade stimpy k-os/helm/ndaunode \
+                --set ndaunode.image.tag=$NDAUNODE_CONTAINER_VERSION \
+                --reuse-values \
+                --recreate-pods \
+                --tls
+
+            fi
+
+      # Save the push log
+      - store_artifacts:
+          path: /tmp/pushlog
+
