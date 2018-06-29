@@ -35,6 +35,7 @@ jobs:
               exit 1
             fi
 
+            # Look for this sha on ecr
             sha=${CIRCLE_SHA1: -7}
             sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
             if [ ! -z "$sha_check" ]; then
