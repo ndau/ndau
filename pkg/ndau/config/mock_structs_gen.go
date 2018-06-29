@@ -36,59 +36,9 @@ func (z *MockChaosChain) DecodeMsg(dc *msgp.Reader) (err error) {
 				z.Namespaces = make([]MockNamespace, zb0002)
 			}
 			for za0001 := range z.Namespaces {
-				var zb0003 uint32
-				zb0003, err = dc.ReadMapHeader()
+				err = z.Namespaces[za0001].DecodeMsg(dc)
 				if err != nil {
 					return
-				}
-				for zb0003 > 0 {
-					zb0003--
-					field, err = dc.ReadMapKeyPtr()
-					if err != nil {
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					case "Namespace":
-						err = z.Namespaces[za0001].Namespace.DecodeMsg(dc)
-						if err != nil {
-							return
-						}
-					case "Data":
-						var zb0004 uint32
-						zb0004, err = dc.ReadArrayHeader()
-						if err != nil {
-							return
-						}
-						if cap(z.Namespaces[za0001].Data) >= int(zb0004) {
-							z.Namespaces[za0001].Data = (z.Namespaces[za0001].Data)[:zb0004]
-						} else {
-							z.Namespaces[za0001].Data = make([]MockKeyValue, zb0004)
-						}
-						for za0002 := range z.Namespaces[za0001].Data {
-							var zb0005 uint32
-							zb0005, err = dc.ReadArrayHeader()
-							if err != nil {
-								return
-							}
-							if zb0005 != 2 {
-								err = msgp.ArrayError{Wanted: 2, Got: zb0005}
-								return
-							}
-							err = z.Namespaces[za0001].Data[za0002].Key.DecodeMsg(dc)
-							if err != nil {
-								return
-							}
-							err = z.Namespaces[za0001].Data[za0002].Value.DecodeMsg(dc)
-							if err != nil {
-								return
-							}
-						}
-					default:
-						err = dc.Skip()
-						if err != nil {
-							return
-						}
-					}
 				}
 			}
 		default:
@@ -114,39 +64,9 @@ func (z *MockChaosChain) EncodeMsg(en *msgp.Writer) (err error) {
 		return
 	}
 	for za0001 := range z.Namespaces {
-		// map header, size 2
-		// write "Namespace"
-		err = en.Append(0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+		err = z.Namespaces[za0001].EncodeMsg(en)
 		if err != nil {
 			return
-		}
-		err = z.Namespaces[za0001].Namespace.EncodeMsg(en)
-		if err != nil {
-			return
-		}
-		// write "Data"
-		err = en.Append(0xa4, 0x44, 0x61, 0x74, 0x61)
-		if err != nil {
-			return
-		}
-		err = en.WriteArrayHeader(uint32(len(z.Namespaces[za0001].Data)))
-		if err != nil {
-			return
-		}
-		for za0002 := range z.Namespaces[za0001].Data {
-			// array header, size 2
-			err = en.Append(0x92)
-			if err != nil {
-				return
-			}
-			err = z.Namespaces[za0001].Data[za0002].Key.EncodeMsg(en)
-			if err != nil {
-				return
-			}
-			err = z.Namespaces[za0001].Data[za0002].Value.EncodeMsg(en)
-			if err != nil {
-				return
-			}
 		}
 	}
 	return
@@ -160,27 +80,9 @@ func (z *MockChaosChain) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x81, 0xaa, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x73)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Namespaces)))
 	for za0001 := range z.Namespaces {
-		// map header, size 2
-		// string "Namespace"
-		o = append(o, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
-		o, err = z.Namespaces[za0001].Namespace.MarshalMsg(o)
+		o, err = z.Namespaces[za0001].MarshalMsg(o)
 		if err != nil {
 			return
-		}
-		// string "Data"
-		o = append(o, 0xa4, 0x44, 0x61, 0x74, 0x61)
-		o = msgp.AppendArrayHeader(o, uint32(len(z.Namespaces[za0001].Data)))
-		for za0002 := range z.Namespaces[za0001].Data {
-			// array header, size 2
-			o = append(o, 0x92)
-			o, err = z.Namespaces[za0001].Data[za0002].Key.MarshalMsg(o)
-			if err != nil {
-				return
-			}
-			o, err = z.Namespaces[za0001].Data[za0002].Value.MarshalMsg(o)
-			if err != nil {
-				return
-			}
 		}
 	}
 	return
@@ -214,59 +116,9 @@ func (z *MockChaosChain) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				z.Namespaces = make([]MockNamespace, zb0002)
 			}
 			for za0001 := range z.Namespaces {
-				var zb0003 uint32
-				zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
+				bts, err = z.Namespaces[za0001].UnmarshalMsg(bts)
 				if err != nil {
 					return
-				}
-				for zb0003 > 0 {
-					zb0003--
-					field, bts, err = msgp.ReadMapKeyZC(bts)
-					if err != nil {
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					case "Namespace":
-						bts, err = z.Namespaces[za0001].Namespace.UnmarshalMsg(bts)
-						if err != nil {
-							return
-						}
-					case "Data":
-						var zb0004 uint32
-						zb0004, bts, err = msgp.ReadArrayHeaderBytes(bts)
-						if err != nil {
-							return
-						}
-						if cap(z.Namespaces[za0001].Data) >= int(zb0004) {
-							z.Namespaces[za0001].Data = (z.Namespaces[za0001].Data)[:zb0004]
-						} else {
-							z.Namespaces[za0001].Data = make([]MockKeyValue, zb0004)
-						}
-						for za0002 := range z.Namespaces[za0001].Data {
-							var zb0005 uint32
-							zb0005, bts, err = msgp.ReadArrayHeaderBytes(bts)
-							if err != nil {
-								return
-							}
-							if zb0005 != 2 {
-								err = msgp.ArrayError{Wanted: 2, Got: zb0005}
-								return
-							}
-							bts, err = z.Namespaces[za0001].Data[za0002].Key.UnmarshalMsg(bts)
-							if err != nil {
-								return
-							}
-							bts, err = z.Namespaces[za0001].Data[za0002].Value.UnmarshalMsg(bts)
-							if err != nil {
-								return
-							}
-						}
-					default:
-						bts, err = msgp.Skip(bts)
-						if err != nil {
-							return
-						}
-					}
 				}
 			}
 		default:
@@ -284,10 +136,7 @@ func (z *MockChaosChain) UnmarshalMsg(bts []byte) (o []byte, err error) {
 func (z *MockChaosChain) Msgsize() (s int) {
 	s = 1 + 11 + msgp.ArrayHeaderSize
 	for za0001 := range z.Namespaces {
-		s += 1 + 10 + z.Namespaces[za0001].Namespace.Msgsize() + 5 + msgp.ArrayHeaderSize
-		for za0002 := range z.Namespaces[za0001].Data {
-			s += 1 + z.Namespaces[za0001].Data[za0002].Key.Msgsize() + z.Namespaces[za0001].Data[za0002].Value.Msgsize()
-		}
+		s += z.Namespaces[za0001].Msgsize()
 	}
 	return
 }

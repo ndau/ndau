@@ -32,7 +32,7 @@ import:
   version: v0.5.0
 - package: github.com/oneiro-ndev/ndaumath
   repo: git@github.com:oneiro-ndev/ndaumath.git
-  version: ~v0.2.0
+  version: prgn-eai
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
   version: ~v0.1.0

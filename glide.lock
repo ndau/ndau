@@ -1,5 +1,5 @@
-hash: 7bfa523270f25f35ef9f91a98e399e2d0844146a1f9ba4105d1cebe84b49aeea
-updated: 2018-06-22T16:12:04.58791+02:00
+hash: fc8b7779adc92b08938078bf9d5f92990dbfb4fb7f579768b4e02aae8581d740
+updated: 2018-06-29T14:55:25.588518+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -138,7 +138,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaosnode
-  version: b7c7f63b60180453d7bf1b574e0f941adc27c094
+  version: c3b7c0747599ec1ebc1572ff3b411c57056bb408
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
@@ -164,10 +164,11 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 2cc508e789e8dd1819625bc52920989ef8148688
+  version: ff874c4cd9f3b51c9fd6764663561ef3589b21ba
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
+  - pkg/b32
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndautool
