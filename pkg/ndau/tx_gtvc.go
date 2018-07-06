@@ -7,12 +7,12 @@ import (
 	abci "github.com/tendermint/abci/types"
 )
 
-// IsValid implements business logic determining if a GTValidatorChange is valid.
+// Validate implements business logic determining if a GTValidatorChange is valid.
 //
 // As it happens, we don't currently _have_ any business logic which would
 // determine whether or not a GTValidatorChange is valid, but we've put in
 // this method anyway to implement the Transactable interface
-func (vc *GTValidatorChange) IsValid(interface{}) error {
+func (vc *GTValidatorChange) Validate(interface{}) error {
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (vc *GTValidatorChange) Apply(appInt interface{}) error {
 		"PubKey": fmt.Sprintf("%x", vc.PublicKey),
 		"Power":  vc.Power,
 	}).Info("entered method")
-	if err := vc.IsValid(app); err != nil {
+	if err := vc.Validate(app); err != nil {
 		logger.Info("exit method; invalid vc")
 		return err
 	}

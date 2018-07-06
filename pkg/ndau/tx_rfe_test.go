@@ -34,7 +34,7 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 			rfe, err := NewReleaseFromEndowment(math.Ndau(1), targetAddress, private)
 			require.NoError(t, err)
 
-			rfeBytes, err := tx.TransactableToBytes(&rfe, TxIDs)
+			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -50,7 +50,7 @@ func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 	rfe, err := NewReleaseFromEndowment(math.Ndau(1), targetAddress, private)
 	require.NoError(t, err)
 
-	rfeBytes, err := tx.TransactableToBytes(&rfe, TxIDs)
+	rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(rfeBytes)
@@ -71,7 +71,7 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 			rfe, err := NewReleaseFromEndowment(math.Ndau(1), targetAddress, private)
 			require.NoError(t, err)
 
-			rfeBytes, err := tx.TransactableToBytes(&rfe, TxIDs)
+			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -109,7 +109,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			rfe, err := NewReleaseFromEndowment(math.Ndau(1), targetAddress, private)
 			require.NoError(t, err)
 
-			rfeBytes, err := tx.TransactableToBytes(&rfe, TxIDs)
+			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)

@@ -48,8 +48,8 @@ func NewChangeTransferKey(
 	return ct
 }
 
-// IsValid implements metatx.Transactable
-func (ct *ChangeTransferKey) IsValid(appI interface{}) (err error) {
+// Validate implements metatx.Transactable
+func (ct *ChangeTransferKey) Validate(appI interface{}) (err error) {
 	ct.Target, err = address.Validate(ct.Target.String())
 	if err != nil {
 		return
