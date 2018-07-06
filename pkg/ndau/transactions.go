@@ -15,6 +15,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(2):    &ChangeTransferKey{},
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeEscrowPeriod{},
+	metatx.TxID(5):    &DesignateDelegate{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -125,3 +126,17 @@ type ChangeEscrowPeriod struct {
 }
 
 var _ metatx.Transactable = (*ChangeEscrowPeriod)(nil)
+
+// DesignateDelegate includes Signature type, for which the zero
+// value is intentionally invalid. We can't use the default tests there.
+//msgp:test ignore DesignateDelegate
+
+// A DesignateDelegate transaction is used to delegate the node which should
+// compute EAI for the specified account.
+type DesignateDelegate struct {
+	Account   address.Address
+	Delegate  address.Address
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*DesignateDelegate)(nil)

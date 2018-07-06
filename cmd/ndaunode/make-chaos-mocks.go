@@ -12,7 +12,7 @@ import (
 )
 
 func generateChaosMocks(ndauhome, configPath string) {
-	conf, err := config.LoadConfig(configPath)
+	conf, err := config.LoadDefault(configPath)
 	check(err)
 
 	associated, err := config.MakeChaosMock(conf)

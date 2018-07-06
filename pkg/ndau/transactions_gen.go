@@ -178,6 +178,79 @@ func (z *ChangeTransferKey) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
+func (z *DesignateDelegate) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "Account"
+	o = append(o, 0x83, 0xa7, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74)
+	o, err = z.Account.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "Delegate"
+	o = append(o, 0xa8, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65)
+	o, err = z.Delegate.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "Signature"
+	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
+	o, err = z.Signature.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *DesignateDelegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "Account":
+			bts, err = z.Account.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "Delegate":
+			bts, err = z.Delegate.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "Signature":
+			bts, err = z.Signature.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *DesignateDelegate) Msgsize() (s int) {
+	s = 1 + 8 + z.Account.Msgsize() + 9 + z.Delegate.Msgsize() + 10 + z.Signature.Msgsize()
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *GTValidatorChange) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 2
