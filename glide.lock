@@ -1,5 +1,5 @@
-hash: db1e4b7ec90e1c6785d2970c100c1b2a79f09a41e633a386f1c1722c71a5c784
-updated: 2018-06-26T15:46:51.044853+02:00
+hash: b5515c969e20cf7134286be3b4ca529683ce2a057d4b8363878ae2c56524e80a
+updated: 2018-06-28T14:37:34.718049+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -152,7 +152,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaosnode
-  version: b7c7f63b60180453d7bf1b574e0f941adc27c094
+  version: cd76f45c367ea614f54d7cb89238b3fddf263697
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
@@ -160,12 +160,12 @@ imports:
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: 4fd025fa4117745cd5077c3e44dd2f8969fce322
+  version: fcecdb31584c0b999e1226922320bb68eaf689d8
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 75a18a0cfd8aca0dc1fd23502e9c99b6173e936b
+  version: 6bebc190b931901af41aa0965988d992457654b5
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -186,7 +186,7 @@ imports:
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: d03d2eb4e1795f307c9f97eecd0cad15beffd686
+  version: 719e2b0da9dff1f04ba202beb908515aeab142b7
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
