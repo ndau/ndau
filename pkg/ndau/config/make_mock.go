@@ -165,6 +165,18 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
 	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
 
+	// make nominator keypairs
+	nomKeys := make(sv.NominatorKeys, noKeys)
+	nomPrivate := make([]signature.PrivateKey, noKeys)
+	for i := 0; i < noKeys; i++ {
+		nomKeys[i], nomPrivate[i], err = signature.Generate(signature.Ed25519, nil)
+		if err != nil {
+			panic(err)
+		}
+	}
+	mock.Sets(bpc, sv.NominatorKeysName, nomKeys)
+	ma[sv.NominatorKeysName] = nomPrivate
+
 	// make default escrow duration
 	ded := sv.DefaultEscrowDuration{Duration: math.Day * 15}
 	mock.Sets(bpc, sv.DefaultEscrowDurationName, ded)
@@ -196,6 +208,12 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.ReleaseFromEndowmentKeysName,
 		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
+	)
+
+	// set the NominatorKeys indirect to a bpc variable
+	svi.set(
+		sv.NominatorKeysName,
+		NewNamespacedKey(bpc, sv.NominatorKeysName),
 	)
 
 	svi.set(
