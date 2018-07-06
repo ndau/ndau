@@ -16,6 +16,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeEscrowPeriod{},
 	metatx.TxID(5):    &DesignateDelegate{},
+	metatx.TxID(6):    &ComputeEAI{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -140,3 +141,21 @@ type DesignateDelegate struct {
 }
 
 var _ metatx.Transactable = (*DesignateDelegate)(nil)
+
+// ComputeEAI includes Signature type, for which the zero
+// value is intentionally invalid. We can't use the default tests there.
+//msgp:test ignore DesignateDelegate
+
+// A ComputeEAI transaction is used to trigger EAI calculations.
+//
+// It is sent periodically by a BPC-controlled machine, and contains only
+// a random number and a signature. The random number is used to deterministically
+// select which node gets to award EAI, in a manner which is entirely
+// unpredictable.
+type ComputeEAI struct {
+	Seed      uint64
+	Sequence  uint64
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*ComputeEAI)(nil)
