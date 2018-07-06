@@ -55,12 +55,12 @@ func MakeMock(configPath, mockPath string) (config *Config, ma MockAssociated, e
 	}
 
 	if configPath != "" {
-		config = &Config{
-			ChaosAddress:           "",
-			UseMock:                mockPath,
-			SystemVariableIndirect: *sviKey,
-			ChaosTimeout:           500,
+		config, err = LoadDefault(configPath)
+		if err != nil {
+			return nil, nil, err
 		}
+		config.UseMock = mockPath
+		config.SystemVariableIndirect = *sviKey
 		err = config.Dump(configPath)
 	}
 

@@ -1,5 +1,5 @@
 hash: fc8b7779adc92b08938078bf9d5f92990dbfb4fb7f579768b4e02aae8581d740
-updated: 2018-07-06T12:47:56.156717+02:00
+updated: 2018-07-06T14:31:05.953257+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -164,7 +164,7 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 3da8684dfa05b965a1e2ab9ca4b27fb51e3dfa7b
+  version: c5da450ad5021f3a67c93cedac4ee700f99c4c9e
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -180,7 +180,7 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: 3a71b67b70b3b89dc62bf065c3655d26dd17b125
+  version: 98ba9626121c5676aa52ca4ebb315d53cf16753c
   repo: git@github.com:oneiro-ndev/signature.git
   subpackages:
   - pkg/signature
