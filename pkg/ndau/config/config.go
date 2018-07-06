@@ -1,6 +1,7 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -84,8 +85,15 @@ func DefaultConfigPath(ndauhome string) string {
 
 // Load returns a config object loaded from its file
 func Load(configPath string) (*Config, error) {
+	bytes, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	if len(bytes) == 0 {
+		return nil, os.ErrNotExist
+	}
 	config := new(Config)
-	_, err := toml.DecodeFile(configPath, config)
+	err = toml.Unmarshal(bytes, config)
 	return config, err
 }
 
