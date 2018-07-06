@@ -146,12 +146,12 @@ imports:
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: 4fd025fa4117745cd5077c3e44dd2f8969fce322
+  version: fcecdb31584c0b999e1226922320bb68eaf689d8
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 75a18a0cfd8aca0dc1fd23502e9c99b6173e936b
+  version: 6bebc190b931901af41aa0965988d992457654b5
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -172,7 +172,7 @@ imports:
   - pkg/constants
   - pkg/types
 - name: github.com/oneiro-ndev/ndautool
-  version: 84b1aaa59dd6b562285482cbb99a75edabf320bf
+  version: 00abac1495ea1109f554af4cdcaa28c28c7aa9a3
   repo: git@github.com:oneiro-ndev/ndautool.git
   subpackages:
   - pkg/tool/config

@@ -32,8 +32,8 @@ func NewChangeEscrowPeriod(
 	return cep, nil
 }
 
-// IsValid implements metatx.Transactable
-func (cep *ChangeEscrowPeriod) IsValid(appI interface{}) (err error) {
+// Validate implements metatx.Transactable
+func (cep *ChangeEscrowPeriod) Validate(appI interface{}) (err error) {
 	app := appI.(*App)
 
 	if cep.Period < 0 {
