@@ -250,9 +250,9 @@ func (z *ComputeEAI) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Delegate) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 3
+	// map header, size 4
 	// string "Account"
-	o = append(o, 0x83, 0xa7, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74)
+	o = append(o, 0x84, 0xa7, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74)
 	o, err = z.Account.MarshalMsg(o)
 	if err != nil {
 		return
@@ -263,6 +263,9 @@ func (z *Delegate) MarshalMsg(b []byte) (o []byte, err error) {
 	if err != nil {
 		return
 	}
+	// string "Sequence"
+	o = append(o, 0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
+	o = msgp.AppendUint64(o, z.Sequence)
 	// string "Signature"
 	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
 	o, err = z.Signature.MarshalMsg(o)
@@ -298,6 +301,11 @@ func (z *Delegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "Sequence":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				return
+			}
 		case "Signature":
 			bts, err = z.Signature.UnmarshalMsg(bts)
 			if err != nil {
@@ -316,7 +324,7 @@ func (z *Delegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Delegate) Msgsize() (s int) {
-	s = 1 + 8 + z.Account.Msgsize() + 9 + z.Delegate.Msgsize() + 10 + z.Signature.Msgsize()
+	s = 1 + 8 + z.Account.Msgsize() + 9 + z.Delegate.Msgsize() + 9 + msgp.Uint64Size + 10 + z.Signature.Msgsize()
 	return
 }
 

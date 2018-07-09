@@ -134,9 +134,12 @@ var _ metatx.Transactable = (*ChangeEscrowPeriod)(nil)
 
 // A Delegate transaction is used to delegate the node which should
 // compute EAI for the specified account.
+//
+// The sequence number must be higher than that of the target Account
 type Delegate struct {
 	Account   address.Address
 	Delegate  address.Address
+	Sequence  uint64
 	Signature signature.Signature
 }
 

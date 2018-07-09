@@ -128,7 +128,9 @@ func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int6
 		Time: time,
 	}})
 	resp := app.DeliverTx(bytes)
-	t.Log(resp.Log)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 

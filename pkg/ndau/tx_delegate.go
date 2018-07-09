@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"encoding/binary"
+
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
@@ -8,21 +10,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewDesignateDelegate creates a new signed Delegate transaction
-func NewDesignateDelegate(
+// NewDelegate creates a new signed Delegate transaction
+func NewDelegate(
 	account, delegate address.Address,
+	sequence uint64,
 	transferKey signature.PrivateKey,
 ) *Delegate {
 	dd := &Delegate{
 		Account:  account,
 		Delegate: delegate,
+		Sequence: sequence,
 	}
 	dd.Signature = transferKey.Sign(dd.signableBytes())
 	return dd
 }
 
 func (dd *Delegate) signableBytes() []byte {
-	bytes := make([]byte, 0, dd.Account.Msgsize()+dd.Delegate.Msgsize())
+	bytes := make([]byte, 8, dd.Account.Msgsize()+dd.Delegate.Msgsize()+8)
+	binary.BigEndian.PutUint64(bytes, dd.Sequence)
 	bytes = append(bytes, []byte(dd.Account.String())...)
 	bytes = append(bytes, []byte(dd.Delegate.String())...)
 	return bytes
@@ -44,6 +49,9 @@ func (dd *Delegate) Validate(appI interface{}) error {
 	if !hasAcct {
 		return errors.New("Account does not exist")
 	}
+	if dd.Sequence <= acct.Sequence {
+		return errors.New("Sequence too low")
+	}
 	if !acct.TransferKey.Verify(dd.signableBytes(), dd.Signature) {
 		return errors.New("Invalid signature")
 	}
@@ -55,7 +63,7 @@ func (dd *Delegate) Validate(appI interface{}) error {
 func (dd *Delegate) Apply(appI interface{}) error {
 	app := appI.(*App)
 
-	app.UpdateState(func(stateI metast.State) (metast.State, error) {
+	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		as := dd.Account.String()
 		ds := dd.Delegate.String()
@@ -64,12 +72,14 @@ func (dd *Delegate) Apply(appI interface{}) error {
 			return state, errors.New("Account does not exist")
 		}
 
-		// first, remove it from its current delegate
+		acct.Sequence = dd.Sequence
+
+		// remove it from its current delegate
 		if acct.DelegationNode != nil {
 			cs := acct.DelegationNode.String()
 			currentSet, hasCurrent := state.Delegates[cs]
 			if hasCurrent {
-				delete(currentSet, cs)
+				delete(currentSet, as)
 				state.Delegates[cs] = currentSet
 			}
 		}
@@ -88,5 +98,4 @@ func (dd *Delegate) Apply(appI interface{}) error {
 
 		return state, nil
 	})
-	return nil
 }
