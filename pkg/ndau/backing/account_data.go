@@ -160,6 +160,21 @@ func (e *EscrowSettings) fromNomsEscrowSettings(n nomsEscrowSettings) {
 	}
 }
 
+// NewAccountData creates a new AccountData struct
+//
+// The zero value of AccountData is not useful, because AccountData needs
+// to have non-zero values for LastEAIUpdate and LastWAAUpdate if its EAI
+// and WAA calculations are to be accurate.
+//
+// Unfortunately, go being go, we can't require that this method is used,
+// but we can provide it to make it easier to do the right thing.
+func NewAccountData(blockTime math.Timestamp) AccountData {
+	return AccountData{
+		LastEAIUpdate: blockTime,
+		LastWAAUpdate: blockTime,
+	}
+}
+
 // AccountData contains all the information the node needs to take action on a particular account.
 //
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data

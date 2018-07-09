@@ -24,7 +24,7 @@ func NewComputeEAI(node address.Address, sequence uint64, key signature.PrivateK
 }
 
 func (c *ComputeEAI) signableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(c.Node.String()))
+	bytes := make([]byte, 8, 8+len(c.Node.String()))
 	binary.BigEndian.PutUint64(bytes, c.Sequence)
 	bytes = append(bytes, c.Node.String()...)
 	return bytes
@@ -79,9 +79,12 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 		for accountAddr := range delegatedAccounts {
 			acctData, hasAcct := state.Accounts[accountAddr]
 			if !hasAcct {
+				// accounts can sometimes be removed, i.e. due to 0 balance
+				// if we encounter that, don't worry about it
+				// TODO we may want to actually remove the reference to
+				// deleted accounts
 				continue
 			}
-
 			logger := app.GetLogger().WithFields(log.Fields{
 				"tx":            "ComputeEAI",
 				"acct":          accountAddr,
@@ -91,10 +94,10 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				"unlockedTable": unlockedTable,
 				"lockedTable":   lockedTable,
 			})
-			eaiAward, err := eai.Calculate(
-				acctData.Balance, app.blockTime, acctData.LastEAIUpdate,
-				acctData.WeightedAverageAge, acctData.Lock,
-				*unlockedTable, *lockedTable,
+			err = acctData.WeightedAverageAge.UpdateWeightedAverageAge(
+				app.blockTime.Since(acctData.LastWAAUpdate),
+				0,
+				acctData.Balance,
 			)
 			if err != nil {
 				// the only error expected from an EAI calculation is overflowing
@@ -108,6 +111,19 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				logger.WithError(err).Error("eai.Calculate failed")
 				errorList = append(errorList, err)
 				err = nil
+				continue
+			}
+			acctData.LastWAAUpdate = app.blockTime
+
+			eaiAward, err := eai.Calculate(
+				acctData.Balance, app.blockTime, acctData.LastEAIUpdate,
+				acctData.WeightedAverageAge, acctData.Lock,
+				*unlockedTable, *lockedTable,
+			)
+			if err != nil {
+				errorList = append(errorList, err)
+				err = nil
+				continue
 			}
 			acctData.Balance, err = acctData.Balance.Add(eaiAward)
 			if err != nil {
@@ -115,6 +131,7 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				logger.WithError(err).WithField("eaiAward", eaiAward).Error("error updating account balance")
 				errorList = append(errorList, err)
 				err = nil
+				continue
 			}
 			acctData.LastEAIUpdate = app.blockTime
 			state.Accounts[accountAddr] = acctData

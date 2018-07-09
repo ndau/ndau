@@ -116,7 +116,10 @@ func (ct *ChangeTransferKey) Apply(appI interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
-		ad := state.Accounts[ct.Target.String()]
+		ad, hasAd := state.Accounts[ct.Target.String()]
+		if !hasAd {
+			ad = backing.NewAccountData(app.blockTime)
+		}
 		ad.TransferKey = &ct.NewKey
 
 		// business rule: if we're changing with an ownership key, and the

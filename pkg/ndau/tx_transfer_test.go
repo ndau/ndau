@@ -43,7 +43,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
-		acct.Balance = math.Ndau(1000000 * constants.QuantaPerUnit)
+		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
 		acct.TransferKey = &public
 	})
 

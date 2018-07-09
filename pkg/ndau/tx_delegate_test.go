@@ -148,7 +148,7 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	// we must have updated the source's delegation node
 	require.Equal(t, &dA, state.Accounts[source].DelegationNode)
 
-	// we must have added the source to the node's delegation responsibilities
+	// we must have added the source to dest's delegation responsibilities
 	require.Contains(t, state.Delegates, dest)
 	require.Contains(t, state.Delegates[dest], source)
 
