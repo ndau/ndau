@@ -8,7 +8,7 @@ import (
 
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
-	tc "github.com/oneiro-ndev/ndautool/pkg/tool/config"
+	tc "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
