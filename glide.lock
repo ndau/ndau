@@ -1,5 +1,5 @@
 hash: 6bba844a5e32b90b2e5e3960dbe95f1ff9e9605b073a2cbd371477ab6fb23eeb
-updated: 2018-07-06T17:50:29.309876+02:00
+updated: 2018-07-09T13:03:49.203651+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -90,6 +90,14 @@ imports:
   version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
+- name: github.com/ericlagergren/decimal
+  version: 46eab0ab997d31131e5e37c8725d56a067a21d94
+  subpackages:
+  - internal/arith
+  - internal/arith/checked
+  - internal/c
+  - math
+  - misc
 - name: github.com/go-ini/ini
   version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
@@ -164,12 +172,13 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: da5eaef36595d9268ea0b5b87cb9848c6d24d39e
+  version: 2116617ae23cb71b895ed9002169cda64d59fabb
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
   - pkg/constants
+  - pkg/eai
   - pkg/types
 - name: github.com/oneiro-ndev/ndautool
   version: 00abac1495ea1109f554af4cdcaa28c28c7aa9a3

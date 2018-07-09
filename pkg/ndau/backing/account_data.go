@@ -170,6 +170,7 @@ type AccountData struct {
 	DelegationNode     *address.Address
 	Lock               *math.Lock
 	Stake              *Stake
+	LastEAIUpdate      math.Timestamp
 	LastWAAUpdate      math.Timestamp
 	WeightedAverageAge math.Duration
 	Sequence           uint64
@@ -211,6 +212,7 @@ type nomsAccountData struct {
 	Lock               math.Lock
 	HasStake           bool
 	Stake              Stake
+	LastEAIUpdate      util.Int
 	LastWAAUpdate      util.Int
 	WeightedAverageAge util.Int
 	Sequence           util.Int
@@ -226,6 +228,7 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		HasDelegationNode:  ad.DelegationNode != nil,
 		HasLock:            ad.Lock != nil,
 		HasStake:           ad.Stake != nil,
+		LastEAIUpdate:      util.Int(ad.LastEAIUpdate),
 		LastWAAUpdate:      util.Int(ad.LastWAAUpdate),
 		WeightedAverageAge: util.Int(ad.WeightedAverageAge),
 		Sequence:           util.Int(ad.Sequence),
@@ -297,6 +300,7 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	} else {
 		ad.Stake = nil
 	}
+	ad.LastEAIUpdate = math.Timestamp(n.LastEAIUpdate)
 	ad.LastWAAUpdate = math.Timestamp(n.LastWAAUpdate)
 	ad.WeightedAverageAge = math.Duration(n.WeightedAverageAge)
 	ad.Sequence = uint64(n.Sequence)

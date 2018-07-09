@@ -8,6 +8,7 @@ import (
 
 	"github.com/oneiro-ndev/chaostool/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -165,17 +166,9 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
 	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
 
-	// make nominator keypairs
-	nomKeys := make(sv.NominatorKeys, noKeys)
-	nomPrivate := make([]signature.PrivateKey, noKeys)
-	for i := 0; i < noKeys; i++ {
-		nomKeys[i], nomPrivate[i], err = signature.Generate(signature.Ed25519, nil)
-		if err != nil {
-			panic(err)
-		}
-	}
-	mock.Sets(bpc, sv.NominatorKeysName, nomKeys)
-	ma[sv.NominatorKeysName] = nomPrivate
+	// set default rate tables
+	mock.Sets(bpc, sv.UnlockedRateTableName, eai.DefaultUnlockedEAI)
+	mock.Sets(bpc, sv.LockedRateTableName, eai.DefaultLockBonusEAI)
 
 	// make default escrow duration
 	ded := sv.DefaultEscrowDuration{Duration: math.Day * 15}
@@ -210,10 +203,13 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
 	)
 
-	// set the NominatorKeys indirect to a bpc variable
+	// set the rate table indirects to a bpc variable
 	svi.set(
-		sv.NominatorKeysName,
-		NewNamespacedKey(bpc, sv.NominatorKeysName),
+		sv.UnlockedRateTableName,
+		NewNamespacedKey(bpc, sv.UnlockedRateTableName),
+	)
+	svi.set(sv.LockedRateTableName,
+		NewNamespacedKey(bpc, sv.LockedRateTableName),
 	)
 
 	svi.set(

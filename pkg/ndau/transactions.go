@@ -144,16 +144,23 @@ var _ metatx.Transactable = (*DesignateDelegate)(nil)
 
 // ComputeEAI includes Signature type, for which the zero
 // value is intentionally invalid. We can't use the default tests there.
-//msgp:test ignore DesignateDelegate
+//msgp:test ignore ComputeEAI
 
-// A ComputeEAI transaction is used to trigger EAI calculations.
+// A ComputeEAI transaction is used to award EAI.
 //
-// It is sent periodically by a BPC-controlled machine, and contains only
-// a random number and a signature. The random number is used to deterministically
-// select which node gets to award EAI, in a manner which is entirely
-// unpredictable.
+// This transaction is sent electively by any node which has accounts delegated
+// to it. It is expected that nodes will arrange to create this transaction on
+// a regular schedule.
+//
+// The transaction doesn't include the actual EAI computations. There are two
+// reasons for this:
+//   1. All nodes must perform the calculations anyway in order to verify that
+//      the transaction is valid. If you're doing the calculations anway, there's
+//      not much point in adding them to the transaction in the first place.
+//   2. The originating node can't know ahead of time what the official block
+//      time will be.
 type ComputeEAI struct {
-	Seed      uint64
+	Node      address.Address
 	Sequence  uint64
 	Signature signature.Signature
 }
