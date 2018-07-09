@@ -8,12 +8,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewDesignateDelegate creates a new signed DesignateDelegate transaction
+// NewDesignateDelegate creates a new signed Delegate transaction
 func NewDesignateDelegate(
 	account, delegate address.Address,
 	transferKey signature.PrivateKey,
-) *DesignateDelegate {
-	dd := &DesignateDelegate{
+) *Delegate {
+	dd := &Delegate{
 		Account:  account,
 		Delegate: delegate,
 	}
@@ -21,7 +21,7 @@ func NewDesignateDelegate(
 	return dd
 }
 
-func (dd *DesignateDelegate) signableBytes() []byte {
+func (dd *Delegate) signableBytes() []byte {
 	bytes := make([]byte, 0, dd.Account.Msgsize()+dd.Delegate.Msgsize())
 	bytes = append(bytes, []byte(dd.Account.String())...)
 	bytes = append(bytes, []byte(dd.Delegate.String())...)
@@ -29,7 +29,7 @@ func (dd *DesignateDelegate) signableBytes() []byte {
 }
 
 // Validate implements metatx.Transactable
-func (dd *DesignateDelegate) Validate(appI interface{}) error {
+func (dd *Delegate) Validate(appI interface{}) error {
 	_, err := address.Validate(dd.Account.String())
 	if err != nil {
 		return errors.Wrap(err, "Account")
@@ -52,7 +52,7 @@ func (dd *DesignateDelegate) Validate(appI interface{}) error {
 }
 
 // Apply implements metatx.Transactable
-func (dd *DesignateDelegate) Apply(appI interface{}) error {
+func (dd *Delegate) Apply(appI interface{}) error {
 	app := appI.(*App)
 
 	app.UpdateState(func(stateI metast.State) (metast.State, error) {

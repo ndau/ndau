@@ -248,7 +248,7 @@ func (z *ComputeEAI) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *DesignateDelegate) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *Delegate) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
 	// string "Account"
@@ -273,7 +273,7 @@ func (z *DesignateDelegate) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *DesignateDelegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *Delegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -315,7 +315,7 @@ func (z *DesignateDelegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *DesignateDelegate) Msgsize() (s int) {
+func (z *Delegate) Msgsize() (s int) {
 	s = 1 + 8 + z.Account.Msgsize() + 9 + z.Delegate.Msgsize() + 10 + z.Signature.Msgsize()
 	return
 }
