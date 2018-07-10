@@ -1,14 +1,16 @@
 package backing
 
 import (
-	"errors"
-
+	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
+	util "github.com/oneiro-ndev/noms-util"
+	"github.com/pkg/errors"
 )
 
 const accountKey = "accounts"
 const delegateKey = "delegates"
+const bpcSequenceKey = "bpcSequences"
 
 // State is primarily a set of accounts
 type State struct {
@@ -19,6 +21,13 @@ type State struct {
 	// the values are the addresses of the accounts which those nodes must
 	// compute
 	Delegates map[string]map[string]struct{}
+
+	// The BPC is likely to have several transactions, for which we'll want
+	// independent sequence numbers, as they'll be delegated to different
+	// individuals and groups. We keep them here.
+	BPCSequences struct {
+		ReleaseFromEndowment util.Int
+	}
 }
 
 // make sure State is a metaapp.State
@@ -47,6 +56,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		editor.Set(nt.String(k), vval)
 	}
 	ns = ns.Set(accountKey, editor.Map())
+
 	// marshal delegates
 	editor = ns.Get(delegateKey).(nt.Map).Edit()
 	for delegateNode, delegateAddresses := range s.Delegates {
@@ -58,6 +68,13 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		editor.Set(nt.String(delegateNode), setEditor.Set())
 	}
 	ns = ns.Set(delegateKey, editor.Map())
+
+	// marshal bpc sequences
+	bpcSeq, err := marshal.Marshal(vrw, s.BPCSequences)
+	if err != nil {
+		return nil, errors.Wrap(err, "Marshaling BPC sequences")
+	}
+	ns = ns.Set(bpcSequenceKey, bpcSeq)
 
 	return ns, nil
 }
@@ -131,5 +148,9 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 			}
 		}
 	})
+
+	// unmarshal sequences
+	err = marshal.Unmarshal(st.Get(bpcSequenceKey), s.BPCSequences)
+	err = errors.Wrap(err, "Unmarshaling BPC sequences")
 	return err
 }
