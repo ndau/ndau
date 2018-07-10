@@ -25,7 +25,7 @@ func generateChaosMocks(ndauhome, configPath string) {
 		check(errors.New("associated data has wrong type for RFE keys"))
 	}
 
-	tconf, err := tc.Load()
+	tconf, err := tc.LoadDefault(tc.GetConfigPath())
 	check(err)
 	tconf.RFEKeys = keys
 	err = tconf.Save()
