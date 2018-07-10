@@ -24,7 +24,7 @@ func generateMocks(ndauhome, configPath string) {
 		check(errors.New("associated data has wrong type for RFE keys"))
 	}
 
-	conf, err := tc.Load()
+	conf, err := tc.LoadDefault(tc.GetConfigPath())
 	check(err)
 	conf.RFEKeys = keys
 	err = conf.Save()

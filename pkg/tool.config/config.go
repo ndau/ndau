@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,14 +31,13 @@ func GetConfigPath() string {
 
 // Config represents all data from `ndautool.toml`
 type Config struct {
-	Node string
-
-	Accounts map[string]*Account
+	Node     string              `toml:"node"`
+	Accounts map[string]*Account `toml:"accounts"`
 
 	// for non-node-operators, this will always be empty, but for testing
 	// purposes we want the ndau tool to be able to issue release from
 	// endowment transactions, so it needs to know about these.
-	RFEKeys []signature.PrivateKey
+	RFEKeys []signature.PrivateKey `toml:"rfe_keys"`
 }
 
 // NewConfig creates a new configuration with the given address
@@ -55,20 +53,34 @@ func DefaultConfig() *Config {
 	return NewConfig(DefaultAddress)
 }
 
-// Load the current configuration
-func Load() (*Config, error) {
-	var tconfig tomlConfig
-	_, err := toml.DecodeFile(GetConfigPath(), &tconfig)
+// Load returns a config object loaded from its file
+func Load(configPath string) (*Config, error) {
+	bytes, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	if len(bytes) == 0 {
+		return nil, os.ErrNotExist
+	}
+	tconfig := new(tomlConfig)
+	err = toml.Unmarshal(bytes, tconfig)
 	if err != nil {
 		return nil, err
 	}
 
-	config, err := tconfig.toConfig()
-	if err != nil {
-		return nil, err
-	}
+	return tconfig.toConfig()
+}
 
-	return &config, nil
+// LoadDefault returns a config object loaded from its file
+//
+// If the file does not exist, a default is transparently created
+func LoadDefault(configPath string) (*Config, error) {
+	config, err := Load(configPath)
+	if err != nil && os.IsNotExist(err) {
+		config = DefaultConfig()
+		err = nil
+	}
+	return config, err
 }
 
 // Save the current configuration
@@ -77,7 +89,6 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
-
 	buf := new(bytes.Buffer)
 	if err := toml.NewEncoder(buf).Encode(tc); err != nil {
 		return err
@@ -138,68 +149,37 @@ func (c *Config) SetAccount(acct Account) {
 }
 
 func (c Config) toToml() (tomlConfig, error) {
-	tacs := make([]tomlAccount, 0, len(c.Accounts))
+	tacs := make([]Account, 0, len(c.Accounts))
 	for _, acct := range c.GetAccounts() {
-		tac, err := acct.toToml()
-		if err != nil {
-			return tomlConfig{}, err
-		}
-		tacs = append(tacs, tac)
+		tacs = append(tacs, *acct)
+	}
 
-	}
-	var rfes []string // default nil, so unset in toml
-	if len(c.RFEKeys) > 0 {
-		rfes = make([]string, 0, len(c.RFEKeys))
-		for _, rfe := range c.RFEKeys {
-			rfeb, err := rfe.Marshal()
-			if err != nil {
-				return tomlConfig{}, err
-			}
-			rfes = append(rfes, base64.StdEncoding.EncodeToString(rfeb))
-		}
-	}
 	return tomlConfig{
 		Node:     c.Node,
 		Accounts: tacs,
-		RFEKeys:  rfes,
+		RFEKeys:  c.RFEKeys,
 	}, nil
 }
 
 // Config represents all data from `ndautool.toml`
 type tomlConfig struct {
-	Node     string        `toml:"node"`
-	Accounts []tomlAccount `toml:"accounts"`
-	RFEKeys  []string      `toml:"rfe_keys"`
+	Node     string                 `toml:"node"`
+	Accounts []Account              `toml:"accounts"`
+	RFEKeys  []signature.PrivateKey `toml:"rfe_keys"`
 }
 
-func (tc tomlConfig) toConfig() (Config, error) {
+func (tc tomlConfig) toConfig() (*Config, error) {
 	acts := make(map[string]*Account, 2*len(tc.Accounts))
-	for _, tac := range tc.Accounts {
-		act, err := tac.toAccount()
-		if err != nil {
-			return Config{}, err
-		}
+	for _, act := range tc.Accounts {
 		acts[act.Address.String()] = &act
 		if act.Name != "" {
 			acts[act.Name] = &act
 		}
 	}
-	rfes := make([]signature.PrivateKey, 0, len(tc.RFEKeys))
-	for _, keyb64 := range tc.RFEKeys {
-		bytes, err := base64.StdEncoding.DecodeString(keyb64)
-		if err != nil {
-			return Config{}, err
-		}
-		pk := signature.PrivateKey{}
-		err = pk.Unmarshal(bytes)
-		if err != nil {
-			return Config{}, err
-		}
-		rfes = append(rfes, pk)
-	}
-	return Config{
+
+	return &Config{
 		Node:     tc.Node,
 		Accounts: acts,
-		RFEKeys:  rfes,
+		RFEKeys:  tc.RFEKeys,
 	}, nil
 }
