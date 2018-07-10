@@ -171,9 +171,13 @@ type tomlConfig struct {
 func (tc tomlConfig) toConfig() (*Config, error) {
 	acts := make(map[string]*Account, 2*len(tc.Accounts))
 	for _, act := range tc.Accounts {
-		acts[act.Address.String()] = &act
+		// &act is the same address on every iteration,
+		// so just using it will cause logic errors.
+		// copying to a new address should work, though.
+		acct := act
+		acts[act.Address.String()] = &acct
 		if act.Name != "" {
-			acts[act.Name] = &act
+			acts[act.Name] = &acct
 		}
 	}
 
