@@ -105,6 +105,8 @@ var _ metatx.Transactable = (*ChangeTransferKey)(nil)
 type ReleaseFromEndowment struct {
 	Destination address.Address
 	Qty         math.Ndau
+	TxFeeAcct   address.Address
+	Sequence    uint64
 	Signature   signature.Signature
 }
 

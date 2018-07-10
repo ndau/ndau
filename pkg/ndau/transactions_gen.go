@@ -403,9 +403,9 @@ func (z *GTValidatorChange) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *ReleaseFromEndowment) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 3
+	// map header, size 5
 	// string "Destination"
-	o = append(o, 0x83, 0xab, 0x44, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e)
+	o = append(o, 0x85, 0xab, 0x44, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e)
 	o, err = z.Destination.MarshalMsg(o)
 	if err != nil {
 		return
@@ -416,6 +416,15 @@ func (z *ReleaseFromEndowment) MarshalMsg(b []byte) (o []byte, err error) {
 	if err != nil {
 		return
 	}
+	// string "TxFeeAcct"
+	o = append(o, 0xa9, 0x54, 0x78, 0x46, 0x65, 0x65, 0x41, 0x63, 0x63, 0x74)
+	o, err = z.TxFeeAcct.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "Sequence"
+	o = append(o, 0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
+	o = msgp.AppendUint64(o, z.Sequence)
 	// string "Signature"
 	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
 	o, err = z.Signature.MarshalMsg(o)
@@ -451,6 +460,16 @@ func (z *ReleaseFromEndowment) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "TxFeeAcct":
+			bts, err = z.TxFeeAcct.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "Sequence":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				return
+			}
 		case "Signature":
 			bts, err = z.Signature.UnmarshalMsg(bts)
 			if err != nil {
@@ -469,7 +488,7 @@ func (z *ReleaseFromEndowment) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ReleaseFromEndowment) Msgsize() (s int) {
-	s = 1 + 12 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 10 + z.Signature.Msgsize()
+	s = 1 + 12 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 10 + z.TxFeeAcct.Msgsize() + 9 + msgp.Uint64Size + 10 + z.Signature.Msgsize()
 	return
 }
 
