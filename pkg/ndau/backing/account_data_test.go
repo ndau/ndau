@@ -140,8 +140,8 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	return ad, name
 }
 
-func generateLock(notified bool) *Lock {
-	l := &Lock{
+func generateLock(notified bool) *math.Lock {
+	l := &math.Lock{
 		NoticePeriod: randDuration(),
 	}
 	if randBool() {

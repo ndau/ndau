@@ -15,59 +15,6 @@ import (
 // signature.* types don't implement those
 //go:generate msgp -io=0
 
-// Lock keeps track of an account's Lock information
-type Lock struct {
-	NoticePeriod math.Duration
-	// if a lock has not been notified, this is nil
-	UnlocksOn *math.Timestamp
-}
-
-var _ marshal.Marshaler = (*Lock)(nil)
-var _ marshal.Unmarshaler = (*Lock)(nil)
-
-// MarshalNoms implements Marshaler for lock
-func (l Lock) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
-	return marshal.Marshal(vrw, l.toNomsLock())
-}
-
-// UnmarshalNoms implements Unmarshaler for lock
-func (l *Lock) UnmarshalNoms(v nt.Value) error {
-	nl := nomsLock{}
-	err := marshal.Unmarshal(v, &nl)
-	if err != nil {
-		return err
-	}
-	l.fromNomsLock(nl)
-	return nil
-}
-
-type nomsLock struct {
-	Duration   util.Int
-	IsNotified bool
-	UnlocksOn  util.Int
-}
-
-func (l Lock) toNomsLock() nomsLock {
-	nl := nomsLock{
-		Duration:   util.Int(l.NoticePeriod),
-		IsNotified: l.UnlocksOn != nil,
-	}
-	if l.UnlocksOn != nil {
-		nl.UnlocksOn = util.Int(*l.UnlocksOn)
-	}
-	return nl
-}
-
-func (l *Lock) fromNomsLock(nl nomsLock) {
-	l.NoticePeriod = math.Duration(nl.Duration)
-	if nl.IsNotified {
-		ts := math.Timestamp(nl.UnlocksOn)
-		l.UnlocksOn = &ts
-	} else {
-		l.UnlocksOn = nil
-	}
-}
-
 // Stake keeps track of an account's staking information
 type Stake struct {
 	Point   math.Timestamp
@@ -213,6 +160,21 @@ func (e *EscrowSettings) fromNomsEscrowSettings(n nomsEscrowSettings) {
 	}
 }
 
+// NewAccountData creates a new AccountData struct
+//
+// The zero value of AccountData is not useful, because AccountData needs
+// to have non-zero values for LastEAIUpdate and LastWAAUpdate if its EAI
+// and WAA calculations are to be accurate.
+//
+// Unfortunately, go being go, we can't require that this method is used,
+// but we can provide it to make it easier to do the right thing.
+func NewAccountData(blockTime math.Timestamp) AccountData {
+	return AccountData{
+		LastEAIUpdate: blockTime,
+		LastWAAUpdate: blockTime,
+	}
+}
+
 // AccountData contains all the information the node needs to take action on a particular account.
 //
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
@@ -221,8 +183,9 @@ type AccountData struct {
 	TransferKey        *signature.PublicKey
 	RewardsTarget      *address.Address
 	DelegationNode     *address.Address
-	Lock               *Lock
+	Lock               *math.Lock
 	Stake              *Stake
+	LastEAIUpdate      math.Timestamp
 	LastWAAUpdate      math.Timestamp
 	WeightedAverageAge math.Duration
 	Sequence           uint64
@@ -261,9 +224,10 @@ type nomsAccountData struct {
 	HasDelegationNode  bool
 	DelegationNode     nt.String
 	HasLock            bool
-	Lock               Lock
+	Lock               math.Lock
 	HasStake           bool
 	Stake              Stake
+	LastEAIUpdate      util.Int
 	LastWAAUpdate      util.Int
 	WeightedAverageAge util.Int
 	Sequence           util.Int
@@ -279,6 +243,7 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		HasDelegationNode:  ad.DelegationNode != nil,
 		HasLock:            ad.Lock != nil,
 		HasStake:           ad.Stake != nil,
+		LastEAIUpdate:      util.Int(ad.LastEAIUpdate),
 		LastWAAUpdate:      util.Int(ad.LastWAAUpdate),
 		WeightedAverageAge: util.Int(ad.WeightedAverageAge),
 		Sequence:           util.Int(ad.Sequence),
@@ -350,6 +315,7 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	} else {
 		ad.Stake = nil
 	}
+	ad.LastEAIUpdate = math.Timestamp(n.LastEAIUpdate)
 	ad.LastWAAUpdate = math.Timestamp(n.LastWAAUpdate)
 	ad.WeightedAverageAge = math.Duration(n.WeightedAverageAge)
 	ad.Sequence = uint64(n.Sequence)

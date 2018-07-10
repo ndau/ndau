@@ -43,7 +43,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
-		acct.Balance = math.Ndau(1000000 * constants.QuantaPerUnit)
+		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
 		acct.TransferKey = &public
 	})
 
@@ -128,7 +128,9 @@ func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int6
 		Time: time,
 	}})
 	resp := app.DeliverTx(bytes)
-	t.Log(resp.Log)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
@@ -162,7 +164,7 @@ func TestTransfersWhoseQtyLTE0AreInvalid(t *testing.T) {
 func TestTransfersFromLockedAddressesProhibited(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
-		acct.Lock = &backing.Lock{
+		acct.Lock = &math.Lock{
 			NoticePeriod: 90 * math.Day,
 		}
 	})
@@ -179,7 +181,7 @@ func TestTransfersFromLockedButExpiredAddressesAreValid(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
 		twoDaysAgo := now.Sub(math.Duration(2 * math.Day))
-		acct.Lock = &backing.Lock{
+		acct.Lock = &math.Lock{
 			NoticePeriod: math.Duration(1 * math.Day),
 			UnlocksOn:    &twoDaysAgo,
 		}
@@ -197,7 +199,7 @@ func TestTransfersFromNotifiedAddressesAreInvalid(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
 		tomorrow := now.Add(math.Duration(1 * math.Day))
-		acct.Lock = &backing.Lock{
+		acct.Lock = &math.Lock{
 			NoticePeriod: math.Duration(1 * math.Day),
 			UnlocksOn:    &tomorrow,
 		}

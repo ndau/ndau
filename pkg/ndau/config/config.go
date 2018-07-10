@@ -1,11 +1,26 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 )
+
+// A Keypair holds a pair of keys
+type Keypair struct {
+	Public  signature.PublicKey
+	Private signature.PrivateKey
+}
+
+// Node holds node configuration data
+type Node struct {
+	Ownership Keypair
+	Address   address.Address
+}
 
 // Config defines configuration data for the ndau node
 type Config struct {
@@ -40,6 +55,27 @@ type Config struct {
 	// every block, this should be shorter than the block time for
 	// the ndau chain.
 	ChaosTimeout int
+
+	// Node contains node configuration data
+	Node Node
+}
+
+// DefaultConfig creates a new config object with sensible defaults
+func DefaultConfig() (*Config, error) {
+	config := new(Config)
+	config.ChaosTimeout = 500
+	public, private, err := signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		return config, err
+	}
+	config.Node.Ownership.Public = public
+	config.Node.Ownership.Private = private
+	addr, err := address.Generate(address.KindUser, public.Bytes())
+	if err != nil {
+		return config, err
+	}
+	config.Node.Address = addr
+	return config, nil
 }
 
 // DefaultConfigPath returns the default path at which a config file is expected
@@ -47,10 +83,28 @@ func DefaultConfigPath(ndauhome string) string {
 	return filepath.Join(ndauhome, "ndau", "config.toml")
 }
 
-// LoadConfig returns a config object loaded from its file
-func LoadConfig(configPath string) (*Config, error) {
+// Load returns a config object loaded from its file
+func Load(configPath string) (*Config, error) {
+	bytes, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	if len(bytes) == 0 {
+		return nil, os.ErrNotExist
+	}
 	config := new(Config)
-	_, err := toml.DecodeFile(configPath, config)
+	err = toml.Unmarshal(bytes, config)
+	return config, err
+}
+
+// LoadDefault returns a config object loaded from its file
+//
+// If the file does not exist, a default is transparently created
+func LoadDefault(configPath string) (*Config, error) {
+	config, err := Load(configPath)
+	if err != nil && os.IsNotExist(err) {
+		config, err = DefaultConfig()
+	}
 	return config, err
 }
 

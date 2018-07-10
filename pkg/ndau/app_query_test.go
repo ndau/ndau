@@ -25,7 +25,7 @@ func TestCanQueryAccountStatusSource(t *testing.T) {
 	accountData := new(backing.AccountData)
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
-	require.Equal(t, math.Ndau(1000000*constants.QuantaPerUnit), accountData.Balance)
+	require.Equal(t, math.Ndau(10000*constants.QuantaPerUnit), accountData.Balance)
 }
 
 func TestCanQueryAccountStatusDest(t *testing.T) {

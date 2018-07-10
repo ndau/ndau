@@ -73,7 +73,7 @@ func main() {
 		generateChaosMocks(ndauhome, configPath)
 	}
 
-	conf, err := config.LoadConfig(configPath)
+	conf, err := config.LoadDefault(configPath)
 	check(err)
 
 	app, err := ndau.NewApp(getDbSpec(), *conf)

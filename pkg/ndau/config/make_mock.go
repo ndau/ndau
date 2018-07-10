@@ -8,6 +8,7 @@ import (
 
 	"github.com/oneiro-ndev/chaostool/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -98,12 +99,12 @@ func MakeMock(configPath, mockPath string) (config *Config, ma MockAssociated, e
 	}
 
 	if configPath != "" {
-		config = &Config{
-			ChaosAddress:           "",
-			UseMock:                mockPath,
-			SystemVariableIndirect: *sviKey,
-			ChaosTimeout:           500,
+		config, err = LoadDefault(configPath)
+		if err != nil {
+			return nil, nil, err
 		}
+		config.UseMock = mockPath
+		config.SystemVariableIndirect = *sviKey
 		err = config.Dump(configPath)
 	}
 
@@ -165,6 +166,10 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
 	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
 
+	// set default rate tables
+	mock.Sets(bpc, sv.UnlockedRateTableName, eai.DefaultUnlockedEAI)
+	mock.Sets(bpc, sv.LockedRateTableName, eai.DefaultLockBonusEAI)
+
 	// make default escrow duration
 	ded := sv.DefaultEscrowDuration{Duration: math.Day * 15}
 	mock.Sets(bpc, sv.DefaultEscrowDurationName, ded)
@@ -196,6 +201,15 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.ReleaseFromEndowmentKeysName,
 		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
+	)
+
+	// set the rate table indirects to a bpc variable
+	svi.set(
+		sv.UnlockedRateTableName,
+		NewNamespacedKey(bpc, sv.UnlockedRateTableName),
+	)
+	svi.set(sv.LockedRateTableName,
+		NewNamespacedKey(bpc, sv.LockedRateTableName),
 	)
 
 	svi.set(
