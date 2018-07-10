@@ -183,7 +183,7 @@ type AccountData struct {
 	TransferKey        *signature.PublicKey
 	RewardsTarget      *address.Address
 	DelegationNode     *address.Address
-	Lock               *math.Lock
+	Lock               *Lock
 	Stake              *Stake
 	LastEAIUpdate      math.Timestamp
 	LastWAAUpdate      math.Timestamp
@@ -224,7 +224,7 @@ type nomsAccountData struct {
 	HasDelegationNode  bool
 	DelegationNode     nt.String
 	HasLock            bool
-	Lock               math.Lock
+	Lock               Lock
 	HasStake           bool
 	Stake              Stake
 	LastEAIUpdate      util.Int

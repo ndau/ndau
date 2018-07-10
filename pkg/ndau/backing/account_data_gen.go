@@ -14,9 +14,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 11
+	// map header, size 12
 	// string "Balance"
-	o = append(o, 0x8b, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0x8c, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		return
@@ -79,6 +79,12 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 		if err != nil {
 			return
 		}
+	}
+	// string "LastEAIUpdate"
+	o = append(o, 0xad, 0x4c, 0x61, 0x73, 0x74, 0x45, 0x41, 0x49, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65)
+	o, err = z.LastEAIUpdate.MarshalMsg(o)
+	if err != nil {
+		return
 	}
 	// string "LastWAAUpdate"
 	o = append(o, 0xad, 0x4c, 0x61, 0x73, 0x74, 0x57, 0x41, 0x41, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65)
@@ -200,7 +206,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				z.Lock = nil
 			} else {
 				if z.Lock == nil {
-					z.Lock = new(math.Lock)
+					z.Lock = new(Lock)
 				}
 				bts, err = z.Lock.UnmarshalMsg(bts)
 				if err != nil {
@@ -247,6 +253,11 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						}
 					}
 				}
+			}
+		case "LastEAIUpdate":
+			bts, err = z.LastEAIUpdate.UnmarshalMsg(bts)
+			if err != nil {
+				return
 			}
 		case "LastWAAUpdate":
 			bts, err = z.LastWAAUpdate.UnmarshalMsg(bts)
@@ -353,7 +364,7 @@ func (z *AccountData) Msgsize() (s int) {
 	} else {
 		s += 1 + 6 + z.Stake.Point.Msgsize() + 8 + z.Stake.Address.Msgsize()
 	}
-	s += 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 8 + msgp.ArrayHeaderSize
+	s += 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 8 + msgp.ArrayHeaderSize
 	for za0001 := range z.Escrows {
 		s += 1 + 4 + z.Escrows[za0001].Qty.Msgsize() + 7 + z.Escrows[za0001].Expiry.Msgsize()
 	}

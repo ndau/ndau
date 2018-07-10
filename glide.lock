@@ -1,5 +1,5 @@
-hash: 6bba844a5e32b90b2e5e3960dbe95f1ff9e9605b073a2cbd371477ab6fb23eeb
-updated: 2018-07-09T13:03:49.203651+02:00
+hash: faa8b90969db9deb5473eba49283dcdbb3fe0a2dfa0ddc500e783600c74ceb5c
+updated: 2018-07-09T20:19:34.525147+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -172,7 +172,7 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 2116617ae23cb71b895ed9002169cda64d59fabb
+  version: 966e33463af68a339779a6459dec5280aa571567
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -180,11 +180,6 @@ imports:
   - pkg/constants
   - pkg/eai
   - pkg/types
-- name: github.com/oneiro-ndev/ndautool
-  version: 00abac1495ea1109f554af4cdcaa28c28c7aa9a3
-  repo: git@github.com:oneiro-ndev/ndautool.git
-  subpackages:
-  - pkg/tool/config
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git

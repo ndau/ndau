@@ -52,6 +52,9 @@ func (dd *Delegate) Validate(appI interface{}) error {
 	if dd.Sequence <= acct.Sequence {
 		return errors.New("Sequence too low")
 	}
+	if acct.TransferKey == nil {
+		return errors.New("Transfer key not set")
+	}
 	if !acct.TransferKey.Verify(dd.signableBytes(), dd.Signature) {
 		return errors.New("Invalid signature")
 	}
