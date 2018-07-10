@@ -20,7 +20,7 @@ func orQuit(err error) {
 }
 
 func getConfig() *config.Config {
-	config, err := config.Load()
+	config, err := config.LoadDefault(config.GetConfigPath())
 	orQuit(errors.Wrap(err, "Failed to load configuration"))
 	return config
 }
