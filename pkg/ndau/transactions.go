@@ -124,6 +124,7 @@ var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 type ChangeEscrowPeriod struct {
 	Target    address.Address
 	Period    math.Duration
+	Sequence  uint64
 	Signature signature.Signature
 }
 
