@@ -34,7 +34,7 @@ func (s *State) Init(nt.ValueReadWriter) {
 func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	ns := nt.NewStruct("state", nt.StructData{
 		accountKey:  nt.NewMap(vrw),
-		"delegates": nt.NewMap(vrw),
+		delegateKey: nt.NewMap(vrw),
 	})
 
 	// marshal accounts
@@ -46,7 +46,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		}
 		editor.Set(nt.String(k), vval)
 	}
-	ns.Set(accountKey, editor.Map())
+	ns = ns.Set(accountKey, editor.Map())
 	// marshal delegates
 	editor = ns.Get(delegateKey).(nt.Map).Edit()
 	for delegateNode, delegateAddresses := range s.Delegates {
@@ -57,7 +57,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		}
 		editor.Set(nt.String(delegateNode), setEditor.Set())
 	}
-	ns.Set(delegateKey, editor.Map())
+	ns = ns.Set(delegateKey, editor.Map())
 
 	return ns, nil
 }
