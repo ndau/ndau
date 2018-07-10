@@ -206,6 +206,43 @@ func main() {
 				finish(*verbose, resp, err, "delegate")
 			}
 		})
+
+		cmd.Command("compute-eai", "compute EAI for accounts which have delegated to this one", func(subcmd *cli.Cmd) {
+			subcmd.Spec = "NAME"
+
+			var name = subcmd.StringArg("NAME", "", "Name of account whose delegates' EAI should be calculated")
+
+			subcmd.Action = func() {
+				conf := getConfig()
+				acct, hasAcct := conf.Accounts[*name]
+				if !hasAcct {
+					orQuit(fmt.Errorf("No such account: %s", *name))
+				}
+				if acct.Transfer == nil {
+					orQuit(fmt.Errorf("Transfer key for %s not set", *name))
+				}
+
+				if *verbose {
+					fmt.Printf(
+						"Calculating EAI for delegates to node %s\n",
+						acct.Address.String(),
+					)
+				}
+
+				// query the account to get the current sequence
+				ad, _, err := tool.GetAccount(tmnode(conf.Node), acct.Address)
+				orQuit(errors.Wrap(err, "Failed to get current sequence number"))
+
+				tx := ndau.NewComputeEAI(
+					acct.Address,
+					ad.Sequence+1,
+					acct.Transfer.Private,
+				)
+
+				resp, err := tool.ComputeEAICommit(tmnode(conf.Node), *tx)
+				finish(*verbose, resp, err, "compute-eai")
+			}
+		})
 	})
 
 	app.Command("transfer", "transfer ndau from one account to another", func(cmd *cli.Cmd) {
