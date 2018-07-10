@@ -82,6 +82,7 @@ type ChangeTransferKey struct {
 	NewKey     signature.PublicKey
 	SigningKey signature.PublicKey
 	KeyKind    SigningKeyKind
+	Sequence   uint64
 	Signature  signature.Signature
 }
 

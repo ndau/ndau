@@ -84,9 +84,9 @@ func (z *ChangeEscrowPeriod) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *ChangeTransferKey) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 5
+	// map header, size 6
 	// string "Target"
-	o = append(o, 0x85, 0xa6, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74)
+	o = append(o, 0x86, 0xa6, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		return
@@ -106,6 +106,9 @@ func (z *ChangeTransferKey) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "KeyKind"
 	o = append(o, 0xa7, 0x4b, 0x65, 0x79, 0x4b, 0x69, 0x6e, 0x64)
 	o = msgp.AppendByte(o, byte(z.KeyKind))
+	// string "Sequence"
+	o = append(o, 0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
+	o = msgp.AppendUint64(o, z.Sequence)
 	// string "Signature"
 	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
 	o, err = z.Signature.MarshalMsg(o)
@@ -155,6 +158,11 @@ func (z *ChangeTransferKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 				z.KeyKind = SigningKeyKind(zb0002)
 			}
+		case "Sequence":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				return
+			}
 		case "Signature":
 			bts, err = z.Signature.UnmarshalMsg(bts)
 			if err != nil {
@@ -173,7 +181,7 @@ func (z *ChangeTransferKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ChangeTransferKey) Msgsize() (s int) {
-	s = 1 + 7 + z.Target.Msgsize() + 7 + z.NewKey.Msgsize() + 11 + z.SigningKey.Msgsize() + 8 + msgp.ByteSize + 10 + z.Signature.Msgsize()
+	s = 1 + 7 + z.Target.Msgsize() + 7 + z.NewKey.Msgsize() + 11 + z.SigningKey.Msgsize() + 8 + msgp.ByteSize + 9 + msgp.Uint64Size + 10 + z.Signature.Msgsize()
 	return
 }
 
