@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 
 	cli "github.com/jawher/mow.cli"
-	"github.com/oneiro-ndev/ndautool/pkg/tool/config"
+	config "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )

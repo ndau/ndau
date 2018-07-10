@@ -18,6 +18,9 @@ import:
   version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
 - package: github.com/tinylib/msgp
   version: ^1.0.2
+- package: github.com/oneiro-ndev/noms-util
+  version: master
+  repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
   version: ~v0.6
@@ -26,7 +29,7 @@ import:
   version: ~v0.3
 - package: github.com/oneiro-ndev/ndaumath
   repo: git@github.com:oneiro-ndev/ndaumath.git
-  version: ~v0.2
+  version: ~v0.3
 - package: github.com/stretchr/testify
   version: ^1.2.1
   subpackages:
