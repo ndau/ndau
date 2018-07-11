@@ -71,7 +71,7 @@ jobs:
       - run:
           name: Push ndaunode
           command: |
-            if [ "${CIRCLE_BRANCH}" == "41-circle-ci-build-deploy" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
               commit_hash=${CIRCLE_SHA1: -7}
@@ -97,10 +97,10 @@ jobs:
       - run:
           name: Install kubectl, helm, upgrade test net
           command: |
-            if [ "${CIRCLE_BRANCH}" == "41-circle-ci-build-deploy" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
 
               # Clone the k-os repo
-              GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git -b use-dockerized-tendermint /root/k-os
+              GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git /root/k-os
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig helm del --purge mario luigi --tls || echo "mario and luigi could not be deleted" >&2
