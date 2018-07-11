@@ -45,12 +45,13 @@ func getTransfer(verbose *bool) func(*cli.Cmd) {
 				orQuit(fmt.Errorf("From acct transfer key not set"))
 			}
 
-			// query the account to get the current sequence
-			ad, _, err := tool.GetAccount(tmnode(conf.Node), from)
-			orQuit(errors.Wrap(err, "Failed to get current sequence number"))
-
 			// construct the transfer
-			transfer, err := ndau.NewTransfer(from, to, ndauQty, ad.Sequence+1, fromAcct.Transfer.Private)
+			transfer, err := ndau.NewTransfer(
+				from, to,
+				ndauQty,
+				sequence(conf, from),
+				fromAcct.Transfer.Private,
+			)
 			orQuit(errors.Wrap(err, "Failed to construct transfer"))
 
 			tresp, err := tool.TransferCommit(tmnode(conf.Node), *transfer)

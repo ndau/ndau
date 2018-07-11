@@ -102,6 +102,7 @@ func getAccountCTK(verbose *bool) func(*cli.Cmd) {
 			ctk := ndau.NewChangeTransferKey(
 				acct.Address,
 				public,
+				sequence(conf, acct.Address),
 				ndau.SigningKeyOwnership,
 				acct.Ownership.Public, acct.Ownership.Private,
 			)
@@ -161,7 +162,12 @@ func getAccountChangeEscrow(verbose *bool) func(*cli.Cmd) {
 				orQuit(errors.New("Address transfer key not set"))
 			}
 
-			cep, err := ndau.NewChangeEscrowPeriod(ad.Address, duration, ad.Transfer.Private)
+			cep, err := ndau.NewChangeEscrowPeriod(
+				ad.Address,
+				duration,
+				sequence(config, ad.Address),
+				ad.Transfer.Private,
+			)
 			orQuit(errors.Wrap(err, "Creating ChangeEscrowPeriod transaction"))
 
 			if *verbose {
@@ -208,13 +214,10 @@ func getAccountDelegate(verbose *bool) func(*cli.Cmd) {
 				)
 			}
 
-			// query the account to get the current sequence
-			ad, _, err := tool.GetAccount(tmnode(conf.Node), acct.Address)
-			orQuit(errors.Wrap(err, "Failed to get current sequence number"))
-
 			tx := ndau.NewDelegate(
 				acct.Address, node,
-				ad.Sequence+1, acct.Transfer.Private,
+				sequence(conf, acct.Address),
+				acct.Transfer.Private,
 			)
 
 			resp, err := tool.DelegateCommit(tmnode(conf.Node), *tx)
@@ -246,13 +249,9 @@ func getAccountComputeEAI(verbose *bool) func(*cli.Cmd) {
 				)
 			}
 
-			// query the account to get the current sequence
-			ad, _, err := tool.GetAccount(tmnode(conf.Node), acct.Address)
-			orQuit(errors.Wrap(err, "Failed to get current sequence number"))
-
 			tx := ndau.NewComputeEAI(
 				acct.Address,
-				ad.Sequence+1,
+				sequence(conf, acct.Address),
 				acct.Transfer.Private,
 			)
 

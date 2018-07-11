@@ -35,7 +35,11 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 			}
 			key := conf.RFEKeys[*index]
 
-			rfe, err := ndau.NewReleaseFromEndowment(ndauQty, address, key)
+			rfe, err := ndau.NewReleaseFromEndowment(
+				ndauQty,
+				address,
+				key,
+			)
 			orQuit(errors.Wrap(err, "generating Release from Endowment tx"))
 
 			result, err := tool.ReleaseFromEndowmentCommit(tmnode(conf.Node), rfe)
