@@ -1,5 +1,5 @@
 hash: faa8b90969db9deb5473eba49283dcdbb3fe0a2dfa0ddc500e783600c74ceb5c
-updated: 2018-07-09T20:19:34.525147+02:00
+updated: 2018-07-11T13:46:10.012389+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -91,7 +91,7 @@ imports:
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
 - name: github.com/ericlagergren/decimal
-  version: 46eab0ab997d31131e5e37c8725d56a067a21d94
+  version: 962b7749a459d36912e38ce057de39511566360d
   subpackages:
   - internal/arith
   - internal/arith/checked
@@ -159,7 +159,7 @@ imports:
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 6bebc190b931901af41aa0965988d992457654b5
+  version: eba07a014415676b8a635b7a98bd5eace4d750a1
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app

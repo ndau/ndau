@@ -7,7 +7,6 @@ import (
 
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
-	tc "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
@@ -25,11 +24,7 @@ func generateChaosMocks(ndauhome, configPath string) {
 		check(errors.New("associated data has wrong type for RFE keys"))
 	}
 
-	tconf, err := tc.LoadDefault(tc.GetConfigPath())
-	check(err)
-	tconf.RFEKeys = keys
-	err = tconf.Save()
-	check(err)
+	generateToolConf(conf, keys)
 
 	os.Exit(0)
 }
