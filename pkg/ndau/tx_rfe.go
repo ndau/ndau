@@ -73,6 +73,9 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "RFE.Validate signableBytes")
 	}
+	if txAcct.TransferKey == nil {
+		return errors.New("TxFeeAcct transfer key not set")
+	}
 	if !txAcct.TransferKey.Verify(sb, rfe.Signature) {
 		return errors.New("TxFeeAcct TransferKey does not validate Signature")
 	}
