@@ -4,14 +4,14 @@ import:
   subpackages:
   - ed25519
 - package: github.com/attic-labs/noms
-  version: 186e0939a5044b182bce9e60dea910bd6bcb5cd9
+  version: master
   repo: https://github.com/oneiro-ndev/noms.git
 - package: github.com/oneiro-ndev/noms-util
   repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/BurntSushi/toml
   version: ^0.3.0
 - package: github.com/oneiro-ndev/chaostool
-  version: ~v0.7.0
+  version: ~v0.8
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
@@ -25,17 +25,15 @@ import:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: ~v0.5.0
+  version: ~v0.6
 - package: github.com/satori/go.uuid
   version: master
 - package: github.com/tendermint/go-crypto
   version: v0.5.0
 - package: github.com/oneiro-ndev/ndaumath
   repo: git@github.com:oneiro-ndev/ndaumath.git
-  version: ~v0.2.0
+  version: ~v0.3
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
   version: ~v0.1.0
-- package: github.com/oneiro-ndev/ndautool
-  repo: git@github.com:oneiro-ndev/ndautool.git
-  version: ~v0.1.0
+

@@ -13,6 +13,7 @@ import (
 )
 
 var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data and exit")
+var makeChaosMocks = flag.Bool("make-chaos-mocks", false, "if set, make mock data on the chaos chain and exit")
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
 var socketAddr = flag.String("addr", "0.0.0.0:46658", "socket address for incoming connection from tendermint")
@@ -68,7 +69,11 @@ func main() {
 		generateMocks(ndauhome, configPath)
 	}
 
-	conf, err := config.LoadConfig(configPath)
+	if *makeChaosMocks {
+		generateChaosMocks(ndauhome, configPath)
+	}
+
+	conf, err := config.LoadDefault(configPath)
 	check(err)
 
 	app, err := ndau.NewApp(getDbSpec(), *conf)

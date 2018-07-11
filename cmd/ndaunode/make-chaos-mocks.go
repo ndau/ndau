@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -12,11 +11,13 @@ import (
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
-func generateMocks(ndauhome, configPath string) {
-	mockPath := config.DefaultMockPath(ndauhome)
-	fmt.Printf("Config: %s\n", configPath)
-	fmt.Printf("Mock:   %s\n", mockPath)
-	_, associated, err := config.MakeMock(configPath, mockPath)
+func generateChaosMocks(ndauhome, configPath string) {
+	conf, err := config.LoadDefault(configPath)
+	check(err)
+
+	associated, err := config.MakeChaosMock(conf)
+	check(err)
+	err = conf.Dump(configPath)
 	check(err)
 
 	keys, isKeys := associated[sv.ReleaseFromEndowmentKeysName].([]signature.PrivateKey)
@@ -24,10 +25,10 @@ func generateMocks(ndauhome, configPath string) {
 		check(errors.New("associated data has wrong type for RFE keys"))
 	}
 
-	conf, err := tc.LoadDefault(tc.GetConfigPath())
+	tconf, err := tc.LoadDefault(tc.GetConfigPath())
 	check(err)
-	conf.RFEKeys = keys
-	err = conf.Save()
+	tconf.RFEKeys = keys
+	err = tconf.Save()
 	check(err)
 
 	os.Exit(0)

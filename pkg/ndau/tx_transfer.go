@@ -104,8 +104,8 @@ func (t *Transfer) calculateQtyFromSource() (math.Ndau, error) {
 	return fromSource, nil
 }
 
-// IsValid satisfies metatx.Transactable
-func (t *Transfer) IsValid(appInt interface{}) error {
+// Validate satisfies metatx.Transactable
+func (t *Transfer) Validate(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
@@ -170,7 +170,10 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	state := app.GetState().(*backing.State)
 
 	source := state.Accounts[t.Source.String()]
-	dest := state.Accounts[t.Destination.String()]
+	dest, hasDest := state.Accounts[t.Destination.String()]
+	if !hasDest {
+		dest = backing.NewAccountData(app.blockTime)
+	}
 
 	// this source update will get persisted if the method exits without error
 	source.UpdateEscrow(app.blockTime)

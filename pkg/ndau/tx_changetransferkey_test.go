@@ -67,7 +67,7 @@ func TestCTKAddressFieldValidates(t *testing.T) {
 	ctk := NewChangeTransferKey(addr, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
 
 	// However, the resultant transaction must not be valid
-	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppCTK(t)
@@ -78,7 +78,7 @@ func TestCTKAddressFieldValidates(t *testing.T) {
 	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
 	require.NoError(t, err)
 	ctk = NewChangeTransferKey(fakeTarget, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
-	ctkBytes, err = tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err = tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 	resp = app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -89,7 +89,7 @@ func TestValidCTKOwnership(t *testing.T) {
 	require.NoError(t, err)
 
 	ctk := NewChangeTransferKey(targetAddress, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
-	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppCTK(t)
@@ -111,7 +111,7 @@ func TestValidCTKTransfer(t *testing.T) {
 	require.NoError(t, err)
 
 	ctk := NewChangeTransferKey(targetAddress, newPub, SigningKeyTransfer, transferPublic, transferPrivate)
-	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -128,7 +128,7 @@ func TestCTKNewTransferKeyNotEqualExistingTransferKey(t *testing.T) {
 	})
 
 	ctk := NewChangeTransferKey(targetAddress, transferPublic, SigningKeyTransfer, transferPublic, transferPrivate)
-	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -145,7 +145,7 @@ func TestCTKNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	})
 
 	ctk := NewChangeTransferKey(targetAddress, targetPublic, SigningKeyTransfer, transferPublic, transferPrivate)
-	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -158,7 +158,7 @@ func TestValidCTKUpdatesTransferKey(t *testing.T) {
 	require.NoError(t, err)
 
 	ctk := NewChangeTransferKey(targetAddress, newPublic, SigningKeyOwnership, targetPublic, targetPrivate)
-	ctkBytes, err := tx.TransactableToBytes(&ctk, TxIDs)
+	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppCTK(t)

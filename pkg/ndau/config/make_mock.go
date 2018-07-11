@@ -1,14 +1,19 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/oneiro-ndev/chaostool/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tinylib/msgp/msgp"
 	"golang.org/x/crypto/ed25519"
 )
@@ -34,6 +39,45 @@ func ensureDir(path string) error {
 // of the MockAssociated struct.
 type MockAssociated map[string]interface{}
 
+// MakeChaosMock loads mock system variables into the Chaos chain
+func MakeChaosMock(config *Config) (MockAssociated, error) {
+	if config.ChaosAddress == "" {
+		return nil, errors.New("chaos address not set in config")
+	}
+
+	bpcPublic, bpcPrivate, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	svi := makeMockSVI(bpcPublic, false)
+	chaosMock, ma, sviKey := makeMockChaos(bpcPublic, svi, false)
+	config.SystemVariableIndirect = *sviKey
+
+	// we don't iterate through the chaosMock map's outer layer,
+	// because we don't have appropriate private keys for everything.
+	// instead, we pick out the BPC namespace, set those, and then
+	// hope for the best.
+	node := client.NewHTTP(config.ChaosAddress, "/websocket")
+	bpcMap := chaosMock[string([]byte(bpcPublic))]
+	for keyString, valB := range bpcMap {
+		key := wkt.Bytes(keyString)
+		val := wkt.Bytes(valB)
+		err = tool.SetStructuredCommit(
+			node, key, val, []byte(bpcPublic), []byte(bpcPrivate),
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to set key %s", keyString))
+		}
+	}
+
+	// blank the UseMock field--after setting the actual chain mocks,
+	// we don't need the mock file anymore.
+	config.UseMock = ""
+
+	return ma, nil
+}
+
 // MakeMock creates a mock file with the specififed data.
 //
 // If `configPath == ""`, the config file is skipped. Otherwise,
@@ -45,8 +89,8 @@ func MakeMock(configPath, mockPath string) (config *Config, ma MockAssociated, e
 		return nil, nil, err
 	}
 
-	svi := makeMockSVI(bpc)
-	mock, ma, sviKey := makeMockChaos(bpc, svi)
+	svi := makeMockSVI(bpc, true)
+	mock, ma, sviKey := makeMockChaos(bpc, svi, true)
 
 	// make the mock file
 	err = mock.Dump(mockPath)
@@ -55,12 +99,12 @@ func MakeMock(configPath, mockPath string) (config *Config, ma MockAssociated, e
 	}
 
 	if configPath != "" {
-		config = &Config{
-			ChaosAddress:           "",
-			UseMock:                mockPath,
-			SystemVariableIndirect: *sviKey,
-			ChaosTimeout:           500,
+		config, err = LoadDefault(configPath)
+		if err != nil {
+			return nil, nil, err
 		}
+		config.UseMock = mockPath
+		config.SystemVariableIndirect = *sviKey
 		err = config.Dump(configPath)
 	}
 
@@ -89,17 +133,20 @@ func MakeTmpMock(tmpdir string) (config *Config, ma MockAssociated, err error) {
 }
 
 // mock up some chaos data
-func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, MockAssociated, *NamespacedKey) {
+func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, MockAssociated, *NamespacedKey) {
 	mock := make(ChaosMock)
-	mock.Sets(system, "one", wkt.String("system value one"))
-	mock.Sets(system, "two", wkt.String("system value two"))
-
-	mock.Sets(bpc, "one", wkt.String("bpc val one"))
-	mock.Sets(bpc, "bar", wkt.String("baz"))
 	var sviKey NamespacedKey
-	if svi != nil {
-		mock.Sets(bpc, "svi", svi)
-		sviKey = NewNamespacedKey(bpc, "svi")
+	if testVars {
+
+		mock.Sets(system, "one", wkt.String("system value one"))
+		mock.Sets(system, "two", wkt.String("system value two"))
+
+		mock.Sets(bpc, "one", wkt.String("bpc val one"))
+		mock.Sets(bpc, "bar", wkt.String("baz"))
+		if svi != nil {
+			mock.Sets(bpc, "svi", svi)
+			sviKey = NewNamespacedKey(bpc, "svi")
+		}
 	}
 
 	// prepare to return associated data
@@ -119,6 +166,10 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, MockAssociated, *
 	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
 	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
 
+	// set default rate tables
+	mock.Sets(bpc, sv.UnlockedRateTableName, eai.DefaultUnlockedEAI)
+	mock.Sets(bpc, sv.LockedRateTableName, eai.DefaultLockBonusEAI)
+
 	// make default escrow duration
 	ded := sv.DefaultEscrowDuration{Duration: math.Day * 15}
 	mock.Sets(bpc, sv.DefaultEscrowDurationName, ded)
@@ -127,27 +178,38 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler) (ChaosMock, MockAssociated, *
 }
 
 // mock up an SVI Map using most of its features
-func makeMockSVI(bpc []byte) SVIMap {
+func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi := make(SVIMap)
-	svi.set("one", NewNamespacedKey(bpc, "one"))
-	svi.SetOn(
-		"one",
-		NewNamespacedKey(system, "one"),
-		0,    // we're effectively at genesis right now
-		1000, // plan to give this variable to the sys var on 1000
-	)
+	if testVars {
+		svi.set("one", NewNamespacedKey(bpc, "one"))
+		svi.SetOn(
+			"one",
+			NewNamespacedKey(system, "one"),
+			0,    // we're effectively at genesis right now
+			1000, // plan to give this variable to the sys var on 1000
+		)
 
-	// simple case: associate a string with a namespaced key
-	svi.set("two", NewNamespacedKey(system, "two"))
+		// simple case: associate a string with a namespaced key
+		svi.set("two", NewNamespacedKey(system, "two"))
 
-	// demonstrate that aliasing is possible: the official system name may not
-	// be the same as the actual key name
-	svi.set("foo", NewNamespacedKey(bpc, "bar"))
+		// demonstrate that aliasing is possible: the official system name may not
+		// be the same as the actual key name
+		svi.set("foo", NewNamespacedKey(bpc, "bar"))
+	}
 
 	// set the ReleaseFromEndowmentsKeys indirect to a BPC variable
 	svi.set(
 		sv.ReleaseFromEndowmentKeysName,
 		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
+	)
+
+	// set the rate table indirects to a bpc variable
+	svi.set(
+		sv.UnlockedRateTableName,
+		NewNamespacedKey(bpc, sv.UnlockedRateTableName),
+	)
+	svi.set(sv.LockedRateTableName,
+		NewNamespacedKey(bpc, sv.LockedRateTableName),
 	)
 
 	svi.set(

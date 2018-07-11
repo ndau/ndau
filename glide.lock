@@ -1,5 +1,5 @@
-hash: 7bfa523270f25f35ef9f91a98e399e2d0844146a1f9ba4105d1cebe84b49aeea
-updated: 2018-06-22T16:12:04.58791+02:00
+hash: faa8b90969db9deb5473eba49283dcdbb3fe0a2dfa0ddc500e783600c74ceb5c
+updated: 2018-07-09T20:19:34.525147+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -90,6 +90,14 @@ imports:
   version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
+- name: github.com/ericlagergren/decimal
+  version: 46eab0ab997d31131e5e37c8725d56a067a21d94
+  subpackages:
+  - internal/arith
+  - internal/arith/checked
+  - internal/c
+  - math
+  - misc
 - name: github.com/go-ini/ini
   version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
@@ -138,7 +146,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaosnode
-  version: b7c7f63b60180453d7bf1b574e0f941adc27c094
+  version: cd76f45c367ea614f54d7cb89238b3fddf263697
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
@@ -146,12 +154,12 @@ imports:
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: 4fd025fa4117745cd5077c3e44dd2f8969fce322
+  version: fcecdb31584c0b999e1226922320bb68eaf689d8
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 75a18a0cfd8aca0dc1fd23502e9c99b6173e936b
+  version: 6bebc190b931901af41aa0965988d992457654b5
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -164,22 +172,19 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 2cc508e789e8dd1819625bc52920989ef8148688
+  version: 966e33463af68a339779a6459dec5280aa571567
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
+  - pkg/b32
   - pkg/constants
+  - pkg/eai
   - pkg/types
-- name: github.com/oneiro-ndev/ndautool
-  version: 84b1aaa59dd6b562285482cbb99a75edabf320bf
-  repo: git@github.com:oneiro-ndev/ndautool.git
-  subpackages:
-  - pkg/tool/config
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: 3a71b67b70b3b89dc62bf065c3655d26dd17b125
+  version: 98ba9626121c5676aa52ca4ebb315d53cf16753c
   repo: git@github.com:oneiro-ndev/signature.git
   subpackages:
   - pkg/signature

@@ -15,6 +15,8 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(2):    &ChangeTransferKey{},
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeEscrowPeriod{},
+	metatx.TxID(5):    &Delegate{},
+	metatx.TxID(6):    &ComputeEAI{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -125,3 +127,45 @@ type ChangeEscrowPeriod struct {
 }
 
 var _ metatx.Transactable = (*ChangeEscrowPeriod)(nil)
+
+// Delegate includes Signature type, for which the zero
+// value is intentionally invalid. We can't use the default tests there.
+//msgp:test ignore Delegate
+
+// A Delegate transaction is used to delegate the node which should
+// compute EAI for the specified account.
+//
+// The sequence number must be higher than that of the target Account
+type Delegate struct {
+	Account   address.Address
+	Delegate  address.Address
+	Sequence  uint64
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*Delegate)(nil)
+
+// ComputeEAI includes Signature type, for which the zero
+// value is intentionally invalid. We can't use the default tests there.
+//msgp:test ignore ComputeEAI
+
+// A ComputeEAI transaction is used to award EAI.
+//
+// This transaction is sent electively by any node which has accounts delegated
+// to it. It is expected that nodes will arrange to create this transaction on
+// a regular schedule.
+//
+// The transaction doesn't include the actual EAI computations. There are two
+// reasons for this:
+//   1. All nodes must perform the calculations anyway in order to verify that
+//      the transaction is valid. If you're doing the calculations anway, there's
+//      not much point in adding them to the transaction in the first place.
+//   2. The originating node can't know ahead of time what the official block
+//      time will be.
+type ComputeEAI struct {
+	Node      address.Address
+	Sequence  uint64
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*ComputeEAI)(nil)

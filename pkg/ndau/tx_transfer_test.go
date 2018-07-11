@@ -43,7 +43,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
-		acct.Balance = math.Ndau(1000000 * constants.QuantaPerUnit)
+		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
 		acct.TransferKey = &public
 	})
 
@@ -121,14 +121,16 @@ func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.Respon
 }
 
 func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int64) abci.ResponseDeliverTx {
-	bytes, err := tx.TransactableToBytes(transfer, TxIDs)
+	bytes, err := tx.Marshal(transfer, TxIDs)
 	require.NoError(t, err)
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: time,
 	}})
 	resp := app.DeliverTx(bytes)
-	t.Log(resp.Log)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
