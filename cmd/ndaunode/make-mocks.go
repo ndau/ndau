@@ -16,6 +16,7 @@ import (
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	tc "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	abci "github.com/tendermint/abci/types"
 )
 
 func generateMockRFEAccounts(conf *config.Config) []address.Address {
@@ -23,7 +24,13 @@ func generateMockRFEAccounts(conf *config.Config) []address.Address {
 	*useNh = true
 	app, err := ndau.NewApp(getDbSpec(), *conf)
 	check(err)
-	fmt.Println("mock:", conf.UseMock)
+	// we want to fetch the system variables, which means running
+	// beginning a block
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: time.Now().Unix(),
+	}})
+	// without the beginblock tx, we'd never actually load the mock
+	// system variables into the cache
 	rfeTransferKeys := make(sv.ReleaseFromEndowmentKeys, 0)
 	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfeTransferKeys)
 	check(err)
