@@ -11,6 +11,8 @@ jobs:
       ECR_ENDPOINT: 578681496768.dkr.ecr.us-east-1.amazonaws.com
       # Bump these versions, and commit to master to upload a new version to ECR
       NDAUNODE_CONTAINER_VERSION: 0.0.3
+      STARTING_PORT: "31000"
+      NODE_NAMES: "mario luigi"
     steps:
       - run:
           name: Transfer environment variables to files
@@ -102,10 +104,16 @@ jobs:
               GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git /root/k-os
 
               # Remove old test net
-              KUBECONFIG=/root/kubeconfig helm del --purge mario luigi --tls || echo "mario and luigi could not be deleted" >&2
+              KUBECONFIG=/root/kubeconfig \
+                helm del --purge $NODE_NAMES --tls ||\
+                  echo "Releases: $NODE_NAMES could not be deleted" >&2
 
               # create new multinode test net
-              KUBECONFIG=/root/kubeconfig /root/k-os/env/aws/multinode/ndau.js 30500 mario luigi
+              KUBECONFIG=/root/kubeconfig \
+              VERSION_TAG=$CHAOSNODE_CONTAINER_VERSION \
+                /root/k-os/env/aws/multinode/ndau.js \
+                  $STARTING_PORT \
+                  $NODE_NAMES
 
             fi
 
