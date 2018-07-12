@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,17 +28,59 @@ func getNdauhome() string {
 	return filepath.Join(os.ExpandEnv("$HOME"), ".ndau")
 }
 
-func tryDecode(slice []byte) string {
+type value struct {
+	V        json.RawMessage `json:"v"`
+	Encoding string          `json:"type"`
+}
+
+func (v value) json() []byte {
+	js, err := json.Marshal(v)
+	check(err)
+	return js
+}
+
+func tryDecode(slice []byte) value {
 	// try to interpret the first as msgp, then a raw string, then bytes
 	buffer := new(bytes.Buffer)
 	_, err := msgp.UnmarshalAsJSON(buffer, slice)
 	if err == nil {
-		return fmt.Sprintf("%s (msgp)", string(buffer.Bytes()))
+		return value{V: json.RawMessage(buffer.Bytes()), Encoding: "msgp"}
 	}
 	if utf8.ValidString(string(slice)) {
-		return fmt.Sprintf("%s (utf8)", string(slice))
+		return value{V: json.RawMessage(slice), Encoding: "utf8"}
 	}
-	return fmt.Sprintf("%s (bytes)", base64.StdEncoding.EncodeToString(slice))
+	return value{V: json.RawMessage(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(slice))), Encoding: "raw"}
+}
+
+func intoJSON(mock config.ChaosMock) string {
+	buffer := new(bytes.Buffer)
+	buffer.WriteRune('[')
+	nsIdx := 0
+	for outer, inner := range mock {
+		if nsIdx != 0 {
+			buffer.WriteRune(',')
+		}
+		nsIdx++
+		buffer.WriteRune('{')
+		buffer.WriteString("\"namespace\":")
+		buffer.Write(tryDecode([]byte(outer)).json())
+		buffer.WriteString(",\"data\":[")
+		innerIdx := 0
+		for key, value := range inner {
+			if innerIdx != 0 {
+				buffer.WriteRune(',')
+			}
+			innerIdx++
+			buffer.WriteString("{\"key\":")
+			buffer.Write(tryDecode([]byte(key)).json())
+			buffer.WriteString(",\"value\":")
+			buffer.Write(tryDecode(value).json())
+			buffer.WriteRune('}')
+		}
+		buffer.WriteString("]}")
+	}
+	buffer.WriteRune(']')
+	return string(buffer.Bytes())
 }
 
 func main() {
@@ -50,12 +93,5 @@ func main() {
 
 	mock, err := config.LoadMock(conf.UseMock)
 	check(err)
-
-	for outer, inner := range mock {
-		fmt.Printf("Namespace: %s\n", tryDecode([]byte(outer)))
-		for key, value := range inner {
-			fmt.Println("  Key:   ", tryDecode([]byte(key)))
-			fmt.Println("  Value: ", tryDecode(value))
-		}
-	}
+	fmt.Println(intoJSON(mock))
 }
