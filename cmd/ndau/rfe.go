@@ -30,15 +30,16 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 			}
 
 			conf := getConfig()
-			if len(conf.RFEKeys) <= *index {
+			if len(conf.RFE) <= *index {
 				orQuit(errors.New("not enough RFE keys in configuration"))
 			}
-			key := conf.RFEKeys[*index]
 
 			rfe, err := ndau.NewReleaseFromEndowment(
 				ndauQty,
 				address,
-				key,
+				conf.RFE[*index].Address,
+				sequence(conf, conf.RFE[*index].Address),
+				conf.RFE[*index].Key,
 			)
 			orQuit(errors.Wrap(err, "generating Release from Endowment tx"))
 
