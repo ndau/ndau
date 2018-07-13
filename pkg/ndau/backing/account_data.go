@@ -59,85 +59,85 @@ func (s *Stake) fromNomsStake(n nomsStake) (err error) {
 	return
 }
 
-// Escrow tracks a single transaction of incoming escrow
-type Escrow struct {
+// Settlement tracks a single inbound transaction not yet settled
+type Settlement struct {
 	Qty math.Ndau
 	// Expiry is when these funds are available to be sent
 	Expiry math.Timestamp
 }
 
-var _ marshal.Marshaler = (*Escrow)(nil)
-var _ marshal.Unmarshaler = (*Escrow)(nil)
+var _ marshal.Marshaler = (*Settlement)(nil)
+var _ marshal.Unmarshaler = (*Settlement)(nil)
 
-// MarshalNoms implements Marshaler for Escrow
-func (e Escrow) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
-	return marshal.Marshal(vrw, e.toNomsEscrow())
+// MarshalNoms implements Marshaler for Settlement
+func (e Settlement) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
+	return marshal.Marshal(vrw, e.toNomsSettlement())
 }
 
-// UnmarshalNoms implements Unmarshaler for Escrow
-func (e *Escrow) UnmarshalNoms(v nt.Value) error {
-	n := nomsEscrow{}
+// UnmarshalNoms implements Unmarshaler for Settlement
+func (e *Settlement) UnmarshalNoms(v nt.Value) error {
+	n := nomsSettlement{}
 	err := marshal.Unmarshal(v, &n)
 	if err != nil {
 		return err
 	}
-	e.fromNomsEscrow(n)
+	e.fromNomsSettlement(n)
 	return nil
 }
 
-type nomsEscrow struct {
+type nomsSettlement struct {
 	Qty    util.Int
 	Expiry util.Int
 }
 
-func (e Escrow) toNomsEscrow() nomsEscrow {
-	return nomsEscrow{
+func (e Settlement) toNomsSettlement() nomsSettlement {
+	return nomsSettlement{
 		Qty:    util.Int(e.Qty),
 		Expiry: util.Int(e.Expiry),
 	}
 }
 
-func (e *Escrow) fromNomsEscrow(n nomsEscrow) {
+func (e *Settlement) fromNomsSettlement(n nomsSettlement) {
 	e.Qty = math.Ndau(n.Qty)
 	e.Expiry = math.Timestamp(n.Expiry)
 }
 
-// EscrowSettings tracks the escrow settings for outbound transactions
-type EscrowSettings struct {
-	Duration  math.Duration
+// SettlementSettings tracks the settlement settings for outbound transactions
+type SettlementSettings struct {
+	Period    math.Duration
 	ChangesAt *math.Timestamp
 	Next      *math.Duration
 }
 
-var _ marshal.Marshaler = (*EscrowSettings)(nil)
-var _ marshal.Unmarshaler = (*EscrowSettings)(nil)
+var _ marshal.Marshaler = (*SettlementSettings)(nil)
+var _ marshal.Unmarshaler = (*SettlementSettings)(nil)
 
-// MarshalNoms implements Marshaler for EscrowSettings
-func (e EscrowSettings) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
-	return marshal.Marshal(vrw, e.toNomsEscrowSettings())
+// MarshalNoms implements Marshaler for SettlementSettings
+func (e SettlementSettings) MarshalNoms(vrw nt.ValueReadWriter) (val nt.Value, err error) {
+	return marshal.Marshal(vrw, e.toNomsSettlementSettings())
 }
 
-// UnmarshalNoms implements Unmarshaler for EscrowSettings
-func (e *EscrowSettings) UnmarshalNoms(v nt.Value) error {
-	n := nomsEscrowSettings{}
+// UnmarshalNoms implements Unmarshaler for SettlementSettings
+func (e *SettlementSettings) UnmarshalNoms(v nt.Value) error {
+	n := nomsSettlementSettings{}
 	err := marshal.Unmarshal(v, &n)
 	if err != nil {
 		return err
 	}
-	e.fromNomsEscrowSettings(n)
+	e.fromNomsSettlementSettings(n)
 	return nil
 }
 
-type nomsEscrowSettings struct {
+type nomsSettlementSettings struct {
 	Duration  util.Int
 	HasUpdate bool
 	ChangesAt util.Int
 	Next      util.Int
 }
 
-func (e EscrowSettings) toNomsEscrowSettings() nomsEscrowSettings {
-	nes := nomsEscrowSettings{
-		Duration:  util.Int(e.Duration),
+func (e SettlementSettings) toNomsSettlementSettings() nomsSettlementSettings {
+	nes := nomsSettlementSettings{
+		Duration:  util.Int(e.Period),
 		HasUpdate: e.ChangesAt != nil && e.Next != nil,
 	}
 	if nes.HasUpdate {
@@ -147,8 +147,8 @@ func (e EscrowSettings) toNomsEscrowSettings() nomsEscrowSettings {
 	return nes
 }
 
-func (e *EscrowSettings) fromNomsEscrowSettings(n nomsEscrowSettings) {
-	e.Duration = math.Duration(n.Duration)
+func (e *SettlementSettings) fromNomsSettlementSettings(n nomsSettlementSettings) {
+	e.Period = math.Duration(n.Duration)
 	if n.HasUpdate {
 		ts := math.Timestamp(n.ChangesAt)
 		e.ChangesAt = &ts
@@ -189,8 +189,8 @@ type AccountData struct {
 	LastWAAUpdate      math.Timestamp
 	WeightedAverageAge math.Duration
 	Sequence           uint64
-	Escrows            []Escrow
-	EscrowSettings     EscrowSettings
+	Settlements        []Settlement
+	SettlementSettings SettlementSettings
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
@@ -231,8 +231,8 @@ type nomsAccountData struct {
 	LastWAAUpdate      util.Int
 	WeightedAverageAge util.Int
 	Sequence           util.Int
-	Escrows            []Escrow
-	EscrowSettings     EscrowSettings
+	Settlements        []Settlement
+	SettlementSettings SettlementSettings
 }
 
 func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
@@ -247,8 +247,8 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		LastWAAUpdate:      util.Int(ad.LastWAAUpdate),
 		WeightedAverageAge: util.Int(ad.WeightedAverageAge),
 		Sequence:           util.Int(ad.Sequence),
-		Escrows:            ad.Escrows,
-		EscrowSettings:     ad.EscrowSettings,
+		Settlements:        ad.Settlements,
+		SettlementSettings: ad.SettlementSettings,
 	}
 	if nad.HasTransferKey {
 		tkBytes, err := ad.TransferKey.Marshal()
@@ -319,7 +319,7 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	ad.LastWAAUpdate = math.Timestamp(n.LastWAAUpdate)
 	ad.WeightedAverageAge = math.Duration(n.WeightedAverageAge)
 	ad.Sequence = uint64(n.Sequence)
-	ad.Escrows = n.Escrows
-	ad.EscrowSettings = n.EscrowSettings
+	ad.Settlements = n.Settlements
+	ad.SettlementSettings = n.SettlementSettings
 	return nil
 }

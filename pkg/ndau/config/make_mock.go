@@ -171,8 +171,8 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	mock.Sets(bpc, sv.LockedRateTableName, eai.DefaultLockBonusEAI)
 
 	// make default escrow duration
-	ded := sv.DefaultEscrowDuration{Duration: math.Day * 15}
-	mock.Sets(bpc, sv.DefaultEscrowDurationName, ded)
+	ded := sv.DefaultSettlementDuration{Duration: math.Day * 15}
+	mock.Sets(bpc, sv.DefaultSettlementDurationName, ded)
 
 	return mock, ma, &sviKey
 }
@@ -213,8 +213,8 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	)
 
 	svi.set(
-		sv.DefaultEscrowDurationName,
-		NewNamespacedKey(bpc, sv.DefaultEscrowDurationName),
+		sv.DefaultSettlementDurationName,
+		NewNamespacedKey(bpc, sv.DefaultSettlementDurationName),
 	)
 
 	return svi

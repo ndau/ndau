@@ -68,8 +68,8 @@ func BenchmarkUnmarshalAccountData(b *testing.B) {
 	}
 }
 
-func TestMarshalUnmarshalEscrow(t *testing.T) {
-	v := Escrow{}
+func TestMarshalUnmarshalSettlement(t *testing.T) {
+	v := Settlement{}
 	bts, err := v.MarshalMsg(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -91,8 +91,8 @@ func TestMarshalUnmarshalEscrow(t *testing.T) {
 	}
 }
 
-func BenchmarkMarshalMsgEscrow(b *testing.B) {
-	v := Escrow{}
+func BenchmarkMarshalMsgSettlement(b *testing.B) {
+	v := Settlement{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -100,8 +100,8 @@ func BenchmarkMarshalMsgEscrow(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgEscrow(b *testing.B) {
-	v := Escrow{}
+func BenchmarkAppendMsgSettlement(b *testing.B) {
+	v := Settlement{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalMsg(bts[0:0])
 	b.SetBytes(int64(len(bts)))
@@ -112,8 +112,8 @@ func BenchmarkAppendMsgEscrow(b *testing.B) {
 	}
 }
 
-func BenchmarkUnmarshalEscrow(b *testing.B) {
-	v := Escrow{}
+func BenchmarkUnmarshalSettlement(b *testing.B) {
+	v := Settlement{}
 	bts, _ := v.MarshalMsg(nil)
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))
@@ -126,8 +126,8 @@ func BenchmarkUnmarshalEscrow(b *testing.B) {
 	}
 }
 
-func TestMarshalUnmarshalEscrowSettings(t *testing.T) {
-	v := EscrowSettings{}
+func TestMarshalUnmarshalSettlementSettings(t *testing.T) {
+	v := SettlementSettings{}
 	bts, err := v.MarshalMsg(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -149,8 +149,8 @@ func TestMarshalUnmarshalEscrowSettings(t *testing.T) {
 	}
 }
 
-func BenchmarkMarshalMsgEscrowSettings(b *testing.B) {
-	v := EscrowSettings{}
+func BenchmarkMarshalMsgSettlementSettings(b *testing.B) {
+	v := SettlementSettings{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -158,8 +158,8 @@ func BenchmarkMarshalMsgEscrowSettings(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgEscrowSettings(b *testing.B) {
-	v := EscrowSettings{}
+func BenchmarkAppendMsgSettlementSettings(b *testing.B) {
+	v := SettlementSettings{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalMsg(bts[0:0])
 	b.SetBytes(int64(len(bts)))
@@ -170,8 +170,8 @@ func BenchmarkAppendMsgEscrowSettings(b *testing.B) {
 	}
 }
 
-func BenchmarkUnmarshalEscrowSettings(b *testing.B) {
-	v := EscrowSettings{}
+func BenchmarkUnmarshalSettlementSettings(b *testing.B) {
+	v := SettlementSettings{}
 	bts, _ := v.MarshalMsg(nil)
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))

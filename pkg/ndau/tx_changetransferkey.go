@@ -133,15 +133,15 @@ func (ct *ChangeTransferKey) Apply(appI interface{}) error {
 		ad.TransferKey = &ct.NewKey
 
 		// business rule: if we're changing with an ownership key, and the
-		// current escrow duration is zero, then we set the escrow duration
+		// current settlement period is zero, then we set the settlement period
 		// to the default
-		if ct.KeyKind == SigningKeyOwnership && ad.EscrowSettings.Duration == 0 {
-			defaultDuration := new(sv.DefaultEscrowDuration)
-			err := app.System(sv.DefaultEscrowDurationName, defaultDuration)
+		if ct.KeyKind == SigningKeyOwnership && ad.SettlementSettings.Period == 0 {
+			defaultDuration := new(sv.DefaultSettlementDuration)
+			err := app.System(sv.DefaultSettlementDurationName, defaultDuration)
 			if err != nil {
-				return state, errors.Wrap(err, "ChangeTransferKey.Apply get default escrow duration")
+				return state, errors.Wrap(err, "ChangeTransferKey.Apply get default settlement period")
 			}
-			ad.EscrowSettings.Duration = defaultDuration.Duration
+			ad.SettlementSettings.Period = defaultDuration.Duration
 		}
 
 		state.Accounts[ct.Target.String()] = ad
