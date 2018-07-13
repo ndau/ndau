@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
@@ -14,10 +15,15 @@ import (
 )
 
 func (rfe *ReleaseFromEndowment) signableBytes() ([]byte, error) {
-	bytes := make([]byte, 0, rfe.Destination.Msgsize()+rfe.Qty.Msgsize())
+	bytes := make([]byte, 8, rfe.Destination.Msgsize()+rfe.Qty.Msgsize()+rfe.TxFeeAcct.Msgsize()+8)
+	binary.BigEndian.PutUint64(bytes, rfe.Sequence)
 	bytes, err := rfe.Destination.MarshalMsg(bytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "Destination")
+	}
+	bytes, err = rfe.TxFeeAcct.MarshalMsg(bytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "TxFeeAcct")
 	}
 	bytes, err = rfe.Qty.MarshalMsg(bytes)
 	err = errors.Wrap(err, "Qty")
@@ -30,12 +36,15 @@ func (rfe *ReleaseFromEndowment) signableBytes() ([]byte, error) {
 // in the `ReleaseFromEndowmentKeys` system variable.
 func NewReleaseFromEndowment(
 	qty math.Ndau,
-	destination address.Address,
+	destination, txFeeAcct address.Address,
+	sequence uint64,
 	private signature.PrivateKey,
 ) (ReleaseFromEndowment, error) {
 	rfe := ReleaseFromEndowment{
 		Qty:         qty,
 		Destination: destination,
+		TxFeeAcct:   txFeeAcct,
+		Sequence:    sequence,
 	}
 	sb, err := rfe.signableBytes()
 	if err == nil {
@@ -52,14 +61,29 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 		return errors.New("RFE qty may not be <= 0")
 	}
 
-	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
-	err := app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
-	if err != nil {
-		return errors.Wrap(err, "RFE.Validate app.System err")
+	state := app.GetState().(*backing.State)
+	txAcct, hasAcct := state.Accounts[rfe.TxFeeAcct.String()]
+	if !hasAcct {
+		return errors.New("TxFeeAcct does not exist")
+	}
+	if rfe.Sequence <= txAcct.Sequence {
+		return errors.New("Sequence too low")
 	}
 	sb, err := rfe.signableBytes()
 	if err != nil {
 		return errors.Wrap(err, "RFE.Validate signableBytes")
+	}
+	if txAcct.TransferKey == nil {
+		return errors.New("TxFeeAcct transfer key not set")
+	}
+	if !txAcct.TransferKey.Verify(sb, rfe.Signature) {
+		return errors.New("TxFeeAcct TransferKey does not validate Signature")
+	}
+
+	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
+	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
+	if err != nil {
+		return errors.Wrap(err, "RFE.Validate app.System err")
 	}
 	valid := false
 	for _, public := range rfeKeys {
@@ -81,6 +105,10 @@ func (rfe *ReleaseFromEndowment) Apply(appI interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		var err error
 		state := stateI.(*backing.State)
+
+		txAcct := state.Accounts[rfe.TxFeeAcct.String()]
+		txAcct.Sequence = rfe.Sequence
+		state.Accounts[rfe.TxFeeAcct.String()] = txAcct
 
 		acct := state.Accounts[rfe.Destination.String()]
 		acct.Balance, err = acct.Balance.Add(rfe.Qty)

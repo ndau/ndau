@@ -33,11 +33,7 @@ func GetConfigPath() string {
 type Config struct {
 	Node     string              `toml:"node"`
 	Accounts map[string]*Account `toml:"accounts"`
-
-	// for non-node-operators, this will always be empty, but for testing
-	// purposes we want the ndau tool to be able to issue release from
-	// endowment transactions, so it needs to know about these.
-	RFEKeys []signature.PrivateKey `toml:"rfe_keys"`
+	RFE      []RFEAuth           `toml:"rfe"`
 }
 
 // NewConfig creates a new configuration with the given address
@@ -157,15 +153,15 @@ func (c Config) toToml() (tomlConfig, error) {
 	return tomlConfig{
 		Node:     c.Node,
 		Accounts: tacs,
-		RFEKeys:  c.RFEKeys,
+		RFE:      c.RFE,
 	}, nil
 }
 
 // Config represents all data from `ndautool.toml`
 type tomlConfig struct {
-	Node     string                 `toml:"node"`
-	Accounts []Account              `toml:"accounts"`
-	RFEKeys  []signature.PrivateKey `toml:"rfe_keys"`
+	Node     string    `toml:"node"`
+	Accounts []Account `toml:"accounts"`
+	RFE      []RFEAuth `toml:"rfe"`
 }
 
 func (tc tomlConfig) toConfig() (*Config, error) {
@@ -184,6 +180,6 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 	return &Config{
 		Node:     tc.Node,
 		Accounts: acts,
-		RFEKeys:  tc.RFEKeys,
+		RFE:      tc.RFE,
 	}, nil
 }

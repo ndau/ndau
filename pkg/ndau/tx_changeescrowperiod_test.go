@@ -21,7 +21,7 @@ func TestCEPStoresPendingEscrowChange(t *testing.T) {
 	addr, err := address.Validate(source)
 	require.NoError(t, err)
 
-	cep, err := NewChangeEscrowPeriod(addr, newDuration, private)
+	cep, err := NewChangeEscrowPeriod(addr, newDuration, acct.Sequence+1, private)
 	require.NoError(t, err)
 
 	ts := time.Now()

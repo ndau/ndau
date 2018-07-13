@@ -82,6 +82,7 @@ type ChangeTransferKey struct {
 	NewKey     signature.PublicKey
 	SigningKey signature.PublicKey
 	KeyKind    SigningKeyKind
+	Sequence   uint64
 	Signature  signature.Signature
 }
 
@@ -104,6 +105,8 @@ var _ metatx.Transactable = (*ChangeTransferKey)(nil)
 type ReleaseFromEndowment struct {
 	Destination address.Address
 	Qty         math.Ndau
+	TxFeeAcct   address.Address
+	Sequence    uint64
 	Signature   signature.Signature
 }
 
@@ -123,6 +126,7 @@ var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 type ChangeEscrowPeriod struct {
 	Target    address.Address
 	Period    math.Duration
+	Sequence  uint64
 	Signature signature.Signature
 }
 

@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 )
@@ -13,6 +16,16 @@ func getEmptyHash() string {
 	config, _, err := config.MakeTmpMock("")
 	check(err)
 	app, err := ndau.NewApp("mem", *config)
+	check(err)
+	return app.HashStr()
+}
+
+// get the hash of the current database
+func getHash(conf *config.Config) string {
+	app, err := ndau.NewApp(getDbSpec(), *conf)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "If noms is not running but it is on the local machine, consider the -use-ndauhome flag")
+	}
 	check(err)
 	return app.HashStr()
 }
