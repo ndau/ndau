@@ -1,5 +1,5 @@
-hash: b83759cdebf8da2594b7b6e44017759ce48c33ab0275e3b093e23c17b36501a5
-updated: 2018-07-10T12:45:33.005026+02:00
+hash: e4b4b1201b2768f548fccc396783d174f52f914449c598750002a23f06cb7b0d
+updated: 2018-07-13T11:36:47.887998+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -89,7 +89,7 @@ imports:
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
 - name: github.com/ericlagergren/decimal
-  version: 46eab0ab997d31131e5e37c8725d56a067a21d94
+  version: 962b7749a459d36912e38ce057de39511566360d
   subpackages:
   - internal/arith
   - internal/arith/checked
@@ -173,7 +173,7 @@ imports:
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 6bebc190b931901af41aa0965988d992457654b5
+  version: eba07a014415676b8a635b7a98bd5eace4d750a1
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -195,7 +195,7 @@ imports:
   - pkg/eai
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: 5a145a5913fa0b767c3bc78827b28645fcf9aed3
+  version: 1f67c24097de20cfd8c7da21a2a9af5b56b23db5
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
