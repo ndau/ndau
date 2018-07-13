@@ -19,6 +19,7 @@ var dbspec = flag.String("spec", "", "manually set the noms db spec")
 var socketAddr = flag.String("addr", "0.0.0.0:46658", "socket address for incoming connection from tendermint")
 var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and then quit")
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
+var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
 
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
@@ -75,6 +76,11 @@ func main() {
 
 	conf, err := config.LoadDefault(configPath)
 	check(err)
+
+	if *echoHash {
+		fmt.Println(getHash(conf))
+		os.Exit(0)
+	}
 
 	app, err := ndau.NewApp(getDbSpec(), *conf)
 	check(err)
