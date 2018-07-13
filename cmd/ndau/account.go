@@ -107,7 +107,7 @@ func getAccountCTK(verbose *bool) func(*cli.Cmd) {
 				acct.Ownership.Public, acct.Ownership.Private,
 			)
 
-			resp, err := tool.ChangeTransferKeyCommit(tmnode(conf.Node), ctk)
+			resp, err := tool.SendCommit(tmnode(conf.Node), &ctk)
 
 			// only persist this change if there was no error
 			if err == nil {
@@ -179,7 +179,7 @@ func getAccountChangeEscrow(verbose *bool) func(*cli.Cmd) {
 				)
 			}
 
-			resp, err := tool.ChangeEscrowPeriodCommit(tmnode(config.Node), cep)
+			resp, err := tool.SendCommit(tmnode(config.Node), &cep)
 			finish(*verbose, resp, err, "change-escrow-period")
 		}
 	}
@@ -220,7 +220,7 @@ func getAccountDelegate(verbose *bool) func(*cli.Cmd) {
 				acct.Transfer.Private,
 			)
 
-			resp, err := tool.DelegateCommit(tmnode(conf.Node), *tx)
+			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
 			finish(*verbose, resp, err, "delegate")
 		}
 	}
@@ -255,7 +255,7 @@ func getAccountComputeEAI(verbose *bool) func(*cli.Cmd) {
 				acct.Transfer.Private,
 			)
 
-			resp, err := tool.ComputeEAICommit(tmnode(conf.Node), *tx)
+			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
 			finish(*verbose, resp, err, "compute-eai")
 		}
 	}
