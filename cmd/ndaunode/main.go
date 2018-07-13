@@ -37,7 +37,7 @@ func getDbSpec() string {
 		return *dbspec
 	}
 	if *useNh {
-		return filepath.Join(getNdauConfigDir(), "data")
+		return filepath.Join(getNdauConfigDir(), "noms")
 	}
 	// default to noms server for dockerization
 	return "http://noms:8000"
