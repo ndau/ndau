@@ -8,16 +8,14 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
-	"github.com/oneiro-ndev/signature/pkg/signature"
-
 	cli "github.com/jawher/mow.cli"
 	"github.com/kentquirk/boneful"
+	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
+	config "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
+	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
-
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
-	"github.com/oneiro-ndev/ndautool/pkg/tool/config"
 )
 
 func main() {
@@ -35,7 +33,7 @@ func main() {
 		var addr = cmd.StringArg("ADDR", config.DefaultAddress, "Address of node to connect to")
 
 		cmd.Action = func() {
-			conf, err := config.Load()
+			conf, err := config.Load(config.GetConfigPath())
 			if err != nil && os.IsNotExist(err) {
 				conf = config.NewConfig(*addr)
 			} else {
@@ -166,6 +164,85 @@ func main() {
 				}
 			},
 		)
+
+		cmd.Command("delegate", "delegate EAI calculation to a node", func(subcmd *cli.Cmd) {
+			subcmd.Spec = fmt.Sprintf(
+				"NAME %s",
+				getAddressSpec("NODE"),
+			)
+
+			var name = subcmd.StringArg("NAME", "", "Name of account whose EAI calculations should be delegated")
+			getNode := getAddressClosure(subcmd, "NODE")
+
+			subcmd.Action = func() {
+				conf := getConfig()
+				acct, hasAcct := conf.Accounts[*name]
+				if !hasAcct {
+					orQuit(fmt.Errorf("No such account: %s", *name))
+				}
+				if acct.Transfer == nil {
+					orQuit(fmt.Errorf("Transfer key for %s not set", *name))
+				}
+
+				node := getNode()
+
+				if *verbose {
+					fmt.Printf(
+						"Delegating %s to node %s\n",
+						acct.Address.String(), node.String(),
+					)
+				}
+
+				// query the account to get the current sequence
+				ad, _, err := tool.GetAccount(tmnode(conf.Node), acct.Address)
+				orQuit(errors.Wrap(err, "Failed to get current sequence number"))
+
+				tx := ndau.NewDelegate(
+					acct.Address, node,
+					ad.Sequence+1, acct.Transfer.Private,
+				)
+
+				resp, err := tool.DelegateCommit(tmnode(conf.Node), *tx)
+				finish(*verbose, resp, err, "delegate")
+			}
+		})
+
+		cmd.Command("compute-eai", "compute EAI for accounts which have delegated to this one", func(subcmd *cli.Cmd) {
+			subcmd.Spec = "NAME"
+
+			var name = subcmd.StringArg("NAME", "", "Name of account whose delegates' EAI should be calculated")
+
+			subcmd.Action = func() {
+				conf := getConfig()
+				acct, hasAcct := conf.Accounts[*name]
+				if !hasAcct {
+					orQuit(fmt.Errorf("No such account: %s", *name))
+				}
+				if acct.Transfer == nil {
+					orQuit(fmt.Errorf("Transfer key for %s not set", *name))
+				}
+
+				if *verbose {
+					fmt.Printf(
+						"Calculating EAI for delegates to node %s\n",
+						acct.Address.String(),
+					)
+				}
+
+				// query the account to get the current sequence
+				ad, _, err := tool.GetAccount(tmnode(conf.Node), acct.Address)
+				orQuit(errors.Wrap(err, "Failed to get current sequence number"))
+
+				tx := ndau.NewComputeEAI(
+					acct.Address,
+					ad.Sequence+1,
+					acct.Transfer.Private,
+				)
+
+				resp, err := tool.ComputeEAICommit(tmnode(conf.Node), *tx)
+				finish(*verbose, resp, err, "compute-eai")
+			}
+		})
 	})
 
 	app.Command("transfer", "transfer ndau from one account to another", func(cmd *cli.Cmd) {
@@ -197,7 +274,7 @@ func main() {
 			// ensure we know the private transfer key of this account
 			fromAcct, hasAcct := conf.Accounts[from.String()]
 			if !hasAcct {
-				orQuit(fmt.Errorf("From account '%s' not found", fromAcct.String()))
+				orQuit(fmt.Errorf("From account '%s' not found", fromAcct.Name))
 			}
 			if fromAcct.Transfer == nil {
 				orQuit(fmt.Errorf("From acct transfer key not set"))
@@ -218,7 +295,7 @@ func main() {
 
 	app.Command("rfe", "release ndau from the endowment", func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf(
-			"%s %s RFE_KEY_INDEX",
+			"%s %s [RFE_KEY_INDEX]",
 			getNdauSpec(),
 			getAddressSpec(""),
 		)

@@ -1,5 +1,5 @@
-hash: b5515c969e20cf7134286be3b4ca529683ce2a057d4b8363878ae2c56524e80a
-updated: 2018-06-28T14:37:34.718049+02:00
+hash: b83759cdebf8da2594b7b6e44017759ce48c33ab0275e3b093e23c17b36501a5
+updated: 2018-07-10T12:45:33.005026+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -88,6 +88,14 @@ imports:
   version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
+- name: github.com/ericlagergren/decimal
+  version: 46eab0ab997d31131e5e37c8725d56a067a21d94
+  subpackages:
+  - internal/arith
+  - internal/arith/checked
+  - internal/c
+  - math
+  - misc
 - name: github.com/go-ini/ini
   version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
@@ -178,15 +186,16 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 20212b83cd70ef283e6dd2361675ae0b206af256
+  version: 966e33463af68a339779a6459dec5280aa571567
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
   - pkg/constants
+  - pkg/eai
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: 719e2b0da9dff1f04ba202beb908515aeab142b7
+  version: 5a145a5913fa0b767c3bc78827b28645fcf9aed3
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
@@ -194,11 +203,12 @@ imports:
   - pkg/ndau/cache
   - pkg/ndau/config
   - pkg/ndau/system_vars
+  - pkg/tool.config
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: 3a71b67b70b3b89dc62bf065c3655d26dd17b125
+  version: 98ba9626121c5676aa52ca4ebb315d53cf16753c
   repo: git@github.com:oneiro-ndev/signature.git
   subpackages:
   - pkg/signature
