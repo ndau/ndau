@@ -16,7 +16,7 @@ var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data an
 var makeChaosMocks = flag.Bool("make-chaos-mocks", false, "if set, make mock data on the chaos chain and exit")
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
-var socketAddr = flag.String("addr", "0.0.0.0:46658", "socket address for incoming connection from tendermint")
+var socketAddr = flag.String("addr", "0.0.0.0:26658", "socket address for incoming connection from tendermint")
 var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and then quit")
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
 
