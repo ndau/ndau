@@ -12,14 +12,14 @@ This tool needs to know the address of a ndau chain node.
 ndau conf [ADDR]
 ```
 
-`ADDR` must be the http address of a Tendermint node running the ndau chain. If unset, it defaults to the tendermint default port on localhost: `http://localhost:46657`
+`ADDR` must be the http address of a Tendermint node running the ndau chain. If unset, it defaults to the tendermint default port on localhost: `http://localhost:26657`
 
 No other `ndau` command will work until the initial configuration is written.
 
 If you're running a single ndau node, you can find which port it's running on from within the ndaunode directory with:
 
 ```sh
-bin/defaults.sh docker-compose port tendermint 46657
+bin/defaults.sh docker-compose port tendermint 26657
 ```
 
 That will generate something like this:
@@ -33,7 +33,7 @@ NDAUHOME=/Users/kentquirk/.ndau/
 Which you can apply this way:
 
 ```sh
-ndau conf $(bin/defaults.sh docker-compose port tendermint 46657 2>/dev/null)
+ndau conf $(bin/defaults.sh docker-compose port tendermint 26657 2>/dev/null)
 ```
 
 `bin/conf-docker.sh` is simply a shortcut to perform the above command.
@@ -310,7 +310,7 @@ This query should return JSON similar to the following:
             "type": "ed25519",
             "data": "767B6318D0DD94F6A24BC36A27D43C84E11943663C80874DB8B611A8D8C0BBCF"
         },
-        "listen_addr": "172.17.0.6:46656",
+        "listen_addr": "172.17.0.6:26656",
         "network": "test-chain-C4FkcS",
         "version": "0.18.0",
         "channels": "QCAhIiMwOAA=",
@@ -321,7 +321,7 @@ This query should return JSON similar to the following:
             "consensus_version=v1/0.2.2",
             "rpc_version=0.7.0/3",
             "tx_index=on",
-            "rpc_addr=tcp://0.0.0.0:46657"
+            "rpc_addr=tcp://0.0.0.0:26657"
         ]
     },
     "pub_key": {

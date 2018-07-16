@@ -18,7 +18,7 @@ import (
 )
 
 // DefaultAddress of the node to connect to
-const DefaultAddress string = "http://localhost:46657"
+const DefaultAddress string = "http://localhost:26657"
 
 // GetConfigPath returns the location at which configuration is stored
 func GetConfigPath() string {
