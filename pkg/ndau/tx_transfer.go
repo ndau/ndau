@@ -145,7 +145,7 @@ func (t *Transfer) Validate(appInt interface{}) error {
 	}
 
 	// the source update doesn't get persisted this time because this method is read-only
-	source.UpdateEscrow(app.blockTime)
+	source.UpdateSettlement(app.blockTime)
 
 	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {
@@ -176,7 +176,7 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	}
 
 	// this source update will get persisted if the method exits without error
-	source.UpdateEscrow(app.blockTime)
+	source.UpdateSettlement(app.blockTime)
 
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
@@ -194,12 +194,12 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	}
 	source.Balance -= fromSource
 	source.Sequence = t.Sequence
-	if source.EscrowSettings.Duration == 0 {
+	if source.SettlementSettings.Period == 0 {
 		dest.Balance += t.Qty
 	} else {
-		dest.Escrows = append(dest.Escrows, backing.Escrow{
+		dest.Settlements = append(dest.Settlements, backing.Settlement{
 			Qty:    t.Qty,
-			Expiry: app.blockTime.Add(source.EscrowSettings.Duration),
+			Expiry: app.blockTime.Add(source.SettlementSettings.Period),
 		})
 	}
 

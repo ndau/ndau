@@ -29,6 +29,10 @@ github_chaos_deploy
 # Editor customization
 .vscode/
 
-# Ignore the executable output of go build ndaunode, but not the actual folder
+# Ignore the executable output of go build, but not the actual folder
 ndaunode
 !*/ndaunode
+dump_mock
+!*/dump_mock
+load_tool_config
+!*/load_tool_config

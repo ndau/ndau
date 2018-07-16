@@ -1,5 +1,5 @@
 hash: c5efbba12772f6d1844522441177e0b993f111cfd7bbbd407c0fdd1aa2b6447f
-updated: 2018-07-16T15:56:31.749519+02:00
+updated: 2018-07-16T17:46:58.900162+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -264,6 +264,10 @@ imports:
   - leveldb/storage
   - leveldb/table
   - leveldb/util
+- name: github.com/tendermint/abci
+  version: 78a8905690ef54f9d57e3b2b0ee7ad3a04ef3f1f
+  subpackages:
+  - types
 - name: github.com/tendermint/ed25519
   version: d8387025d2b9d158cf4efb07e7ebf814bcce2057
   subpackages:
@@ -318,6 +322,11 @@ imports:
   - state/txindex/null
   - types
   - version
+- name: github.com/tendermint/tmlibs
+  version: 1b9b5652a199ab0be2e781393fb275b66377309d
+  subpackages:
+  - common
+  - log
 - name: github.com/tinylib/msgp
   version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
   subpackages:

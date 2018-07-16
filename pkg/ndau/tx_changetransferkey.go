@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
@@ -20,9 +21,10 @@ func (ct *ChangeTransferKey) signableBytes() []byte {
 	keyKind := byte(ct.KeyKind)
 
 	bytes := make(
-		[]byte, 0,
-		len(target)+len(newKey)+len(signingKey)+1,
+		[]byte, 8,
+		len(target)+len(newKey)+len(signingKey)+1+8,
 	)
+	binary.BigEndian.PutUint64(bytes, ct.Sequence)
 	bytes = append(bytes, target...)
 	bytes = append(bytes, newKey...)
 	bytes = append(bytes, signingKey...)
@@ -34,6 +36,7 @@ func (ct *ChangeTransferKey) signableBytes() []byte {
 func NewChangeTransferKey(
 	target address.Address,
 	newKey signature.PublicKey,
+	sequence uint64,
 	keyKind SigningKeyKind,
 	signingKey signature.PublicKey,
 	private signature.PrivateKey,
@@ -43,6 +46,7 @@ func NewChangeTransferKey(
 		NewKey:     newKey,
 		SigningKey: signingKey,
 		KeyKind:    keyKind,
+		Sequence:   sequence,
 	}
 	ct.Signature = private.Sign(ct.signableBytes())
 	return ct
@@ -58,6 +62,10 @@ func (ct *ChangeTransferKey) Validate(appI interface{}) (err error) {
 
 	app := appI.(*App)
 	acct := app.GetState().(*backing.State).Accounts[ct.Target.String()]
+
+	if ct.Sequence <= acct.Sequence {
+		return errors.New("Sequence too low")
+	}
 
 	// get the target address kind for later use:
 	// we need to generate addresses for the signing key, to verify it matches
@@ -120,18 +128,20 @@ func (ct *ChangeTransferKey) Apply(appI interface{}) error {
 		if !hasAd {
 			ad = backing.NewAccountData(app.blockTime)
 		}
+		ad.Sequence = ct.Sequence
+
 		ad.TransferKey = &ct.NewKey
 
 		// business rule: if we're changing with an ownership key, and the
-		// current escrow duration is zero, then we set the escrow duration
+		// current settlement period is zero, then we set the settlement period
 		// to the default
-		if ct.KeyKind == SigningKeyOwnership && ad.EscrowSettings.Duration == 0 {
-			defaultDuration := new(sv.DefaultEscrowDuration)
-			err := app.System(sv.DefaultEscrowDurationName, defaultDuration)
+		if ct.KeyKind == SigningKeyOwnership && ad.SettlementSettings.Period == 0 {
+			defaultDuration := new(sv.DefaultSettlementDuration)
+			err := app.System(sv.DefaultSettlementDurationName, defaultDuration)
 			if err != nil {
-				return state, errors.Wrap(err, "ChangeTransferKey.Apply get default escrow duration")
+				return state, errors.Wrap(err, "ChangeTransferKey.Apply get default settlement period")
 			}
-			ad.EscrowSettings.Duration = defaultDuration.Duration
+			ad.SettlementSettings.Period = defaultDuration.Duration
 		}
 
 		state.Accounts[ct.Target.String()] = ad
