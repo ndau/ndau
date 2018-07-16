@@ -1,5 +1,5 @@
-hash: b5515c969e20cf7134286be3b4ca529683ce2a057d4b8363878ae2c56524e80a
-updated: 2018-06-28T14:37:34.718049+02:00
+hash: 9681ded27806c913d8d71b3b3248a6088fe074118f33cf6ac55f32b1706416bf
+updated: 2018-07-16T16:59:55.165829+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -74,6 +74,10 @@ imports:
   - service/dynamodb
   - service/s3
   - service/sts
+- name: github.com/beorn7/perks
+  version: 3a771d992973f24aa725d07868b467d1ddfceafb
+  subpackages:
+  - quantile
 - name: github.com/btcsuite/btcd
   version: 86fed781132ac890ee03e906e4ecd5d6fa180c64
   subpackages:
@@ -88,6 +92,14 @@ imports:
   version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
+- name: github.com/ericlagergren/decimal
+  version: 962b7749a459d36912e38ce057de39511566360d
+  subpackages:
+  - internal/arith
+  - internal/arith/checked
+  - internal/c
+  - math
+  - misc
 - name: github.com/go-ini/ini
   version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
@@ -96,6 +108,10 @@ imports:
   - log
   - log/level
   - log/term
+  - metrics
+  - metrics/discard
+  - metrics/internal/lv
+  - metrics/prometheus
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
 - name: github.com/go-stack/stack
@@ -103,7 +119,7 @@ imports:
 - name: github.com/go-zoo/bone
   version: 9c7950ceaeb58228faa3bbde0ccf93b97b8ab08d
 - name: github.com/gogo/protobuf
-  version: 1adfc126b41513cc696b209667c8656ea7aac67c
+  version: 7d68e886eac4f7e34d0d82241a6273d6c304c5cf
   subpackages:
   - gogoproto
   - jsonpb
@@ -151,8 +167,12 @@ imports:
   version: 3803229ab933de2ae9bc4809a89295b28286cf36
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/matttproud/golang_protobuf_extensions
+  version: c12348ce28de40eed0136aa2b644d0ee0650e56c
+  subpackages:
+  - pbutil
 - name: github.com/oneiro-ndev/chaosnode
-  version: cd76f45c367ea614f54d7cb89238b3fddf263697
+  version: 1e4f9d93f2039263b9cfad81d0583000db773c2c
   repo: git@github.com:oneiro-ndev/chaosnode.git
   subpackages:
   - pkg/chaos
@@ -160,12 +180,12 @@ imports:
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: fcecdb31584c0b999e1226922320bb68eaf689d8
+  version: 32d937939dd53ce28d748051d57b9c89ebcf5895
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 6bebc190b931901af41aa0965988d992457654b5
+  version: 7d4e6df8f21a8bed8037429c0e4dda5877b2b6d7
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta.app
@@ -178,15 +198,16 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 20212b83cd70ef283e6dd2361675ae0b206af256
+  version: 966e33463af68a339779a6459dec5280aa571567
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
   - pkg/constants
+  - pkg/eai
   - pkg/types
 - name: github.com/oneiro-ndev/ndaunode
-  version: 719e2b0da9dff1f04ba202beb908515aeab142b7
+  version: 7d1db4681e2ab02e3aa39061fc33d2e7578dcdc7
   repo: git@github.com:oneiro-ndev/ndaunode.git
   subpackages:
   - pkg/ndau
@@ -198,7 +219,7 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/signature
-  version: 3a71b67b70b3b89dc62bf065c3655d26dd17b125
+  version: 98ba9626121c5676aa52ca4ebb315d53cf16753c
   repo: git@github.com:oneiro-ndev/signature.git
   subpackages:
   - pkg/signature
@@ -215,6 +236,27 @@ imports:
   version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
+- name: github.com/prometheus/client_golang
+  version: bcbbc08eb2ddff3af83bbf11e7ec13b4fd730b6e
+  subpackages:
+  - prometheus
+  - prometheus/promhttp
+- name: github.com/prometheus/client_model
+  version: 5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f
+  subpackages:
+  - go
+- name: github.com/prometheus/common
+  version: 7600349dcfe1abd18d72d3a1770870d9800a7801
+  subpackages:
+  - expfmt
+  - internal/bitbucket.org/ww/goautoneg
+  - model
+- name: github.com/prometheus/procfs
+  version: ae68e2d4c00fed4943b5f6698d504a5fe083da8a
+  subpackages:
+  - internal/util
+  - nfs
+  - xfs
 - name: github.com/rcrowley/go-metrics
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
@@ -245,40 +287,44 @@ imports:
   - leveldb/storage
   - leveldb/table
   - leveldb/util
-- name: github.com/tendermint/abci
-  version: 78a8905690ef54f9d57e3b2b0ee7ad3a04ef3f1f
-  subpackages:
-  - client
-  - example/code
-  - example/kvstore
-  - types
 - name: github.com/tendermint/ed25519
   version: d8387025d2b9d158cf4efb07e7ebf814bcce2057
   subpackages:
   - edwards25519
   - extra25519
-- name: github.com/tendermint/go-crypto
-  version: c3e19f3ea26f5c3357e0bcbb799b0761ef923755
-- name: github.com/tendermint/go-wire
-  version: fa721242b042ecd4c6ed1a934ee740db4f74e45c
-  repo: https://github.com/tendermint/go-amino.git
-  subpackages:
-  - data
+- name: github.com/tendermint/go-amino
+  version: 2106ca61d91029c931fd54968c2bb02dc96b1412
 - name: github.com/tendermint/tendermint
-  version: 4930b61a381b9fb9bc530eb5deb56ea6429a1c3a
+  version: c64a3c74c870d725ba1356f75b4afadf0928c297
   subpackages:
+  - abci/client
+  - abci/example/code
+  - abci/example/kvstore
+  - abci/types
   - blockchain
   - config
   - consensus
   - consensus/types
+  - crypto
+  - crypto/merkle
+  - crypto/tmhash
   - evidence
+  - libs/autofile
+  - libs/clist
+  - libs/common
+  - libs/db
+  - libs/events
+  - libs/flowrate
+  - libs/log
+  - libs/pubsub
+  - libs/pubsub/query
   - mempool
   - node
   - p2p
   - p2p/conn
   - p2p/pex
-  - p2p/trust
   - p2p/upnp
+  - privval
   - proxy
   - rpc/client
   - rpc/core
@@ -293,21 +339,7 @@ imports:
   - state/txindex/kv
   - state/txindex/null
   - types
-  - types/priv_validator
   - version
-  - wire
-- name: github.com/tendermint/tmlibs
-  version: 2e24b64fc121dcdf1cabceab8dc2f7257675483c
-  subpackages:
-  - autofile
-  - clist
-  - common
-  - db
-  - flowrate
-  - log
-  - merkle
-  - pubsub
-  - pubsub/query
 - name: github.com/tinylib/msgp
   version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
   subpackages:
@@ -337,6 +369,7 @@ imports:
   - http2/hpack
   - idna
   - internal/timeseries
+  - netutil
   - trace
 - name: golang.org/x/sys
   version: c11f84a56e43e20a78cee75a7c034031ecf57d1f
