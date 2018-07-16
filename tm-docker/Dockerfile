@@ -1,20 +1,20 @@
 # We don't _want_ to maintain a dockerfile for tendermint,
 # but we're currently forced to in order to get versions newer
-# than 0.15.0. See https://github.com/tendermint/tendermint/issues/1388
+# than 0.17.1. See https://github.com/tendermint/tendermint/issues/1388
 # As soon as that issue is resolved, we should just use their image
 # from docker-hub and remove this file.
 
-# This file is substantially derived from their 0.15 file, located at
+# This file is substantially derived from their 0.16 file, located at
 # https://github.com/tendermint/tendermint/blob/v0.16.0/DOCKER/Dockerfile
 
 FROM golang:1.10-alpine AS build
 
 # This is the release of tendermint to pull in.
-ENV TM_VERSION_TAG v0.18.0
+ENV TM_VERSION_TAG v0.22.4
 
 RUN apk add --no-cache git openssh-client
 
-# JSG 4/16/2018 Use dep instead of glide, glide no longer supported in TM v0.18.0
+# Use dep instead of glide, glide no longer supported in TM v0.18.0
 RUN go get -u github.com/golang/dep/... && \
     mkdir -p $GOPATH/src/github.com/tendermint && \
     git clone https://github.com/tendermint/tendermint.git \
@@ -27,7 +27,7 @@ RUN go get -u github.com/golang/dep/... && \
 
 
 FROM alpine:3.6
-ENV TM_VERSION 0.18.0
+ENV TM_VERSION 0.22.4
 # Tendermint will be looking for genesis file in /tendermint (unless you change
 # `genesis_file` in config.toml). You can put your config.toml and private
 # validator file into /tendermint.
@@ -55,9 +55,9 @@ COPY --from=build /bin/tendermint /bin/tendermint
 VOLUME $DATA_ROOT
 
 # p2p port
-EXPOSE 46656
+EXPOSE 26656
 # rpc port
-EXPOSE 46657
+EXPOSE 26657
 
 ENTRYPOINT ["tendermint"]
 

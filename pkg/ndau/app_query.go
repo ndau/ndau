@@ -1,7 +1,7 @@
 package ndau
 
 import (
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"

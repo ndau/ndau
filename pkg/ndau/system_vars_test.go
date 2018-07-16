@@ -11,7 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 func initApp(t *testing.T) (app *App, assc config.MockAssociated) {

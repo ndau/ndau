@@ -62,6 +62,6 @@ COPY --from=build /bin/ndaunode /bin/
 
 # ndaunode listens here for its requests
 # tendermint connects to this port
-EXPOSE 46658/TCP
+EXPOSE 26658/TCP
 
 ENTRYPOINT ["/bin/ndaunode"]

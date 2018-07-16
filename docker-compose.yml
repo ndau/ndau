@@ -20,7 +20,7 @@ services:
     # we need to expose the ndaunode ABCI port to services inside this container,
     # but not to anything external. the 'expose' command handles that.
     expose:
-      - "46658"
+      - "26658"
     depends_on:
       - noms
   tendermint:
@@ -28,8 +28,8 @@ services:
       context: ./tm-docker
     # expose the p2p and RPC ports to the outside world
     ports:
-      - "46656"
-      - "46657"
+      - "26656"
+      - "26657"
     depends_on:
       - ndaunode
     volumes:

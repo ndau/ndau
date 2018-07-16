@@ -10,7 +10,7 @@ jobs:
       # ECR's
       ECR_ENDPOINT: 578681496768.dkr.ecr.us-east-1.amazonaws.com
       # Bump these versions, and commit to master to upload a new version to ECR
-      NDAUNODE_CONTAINER_VERSION: 0.0.4
+      NDAUNODE_CONTAINER_VERSION: 0.0.5
       STARTING_PORT: "31000"
       NODE_NAMES: "mario luigi"
     steps:
