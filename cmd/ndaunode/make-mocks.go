@@ -16,7 +16,7 @@ import (
 	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
 	tc "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
 	"github.com/oneiro-ndev/signature/pkg/signature"
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func generateMockRFEAccounts(conf *config.Config) []address.Address {
