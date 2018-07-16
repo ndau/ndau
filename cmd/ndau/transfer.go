@@ -54,7 +54,7 @@ func getTransfer(verbose *bool) func(*cli.Cmd) {
 			)
 			orQuit(errors.Wrap(err, "Failed to construct transfer"))
 
-			tresp, err := tool.TransferCommit(tmnode(conf.Node), *transfer)
+			tresp, err := tool.SendCommit(tmnode(conf.Node), transfer)
 			finish(*verbose, tresp, err, "transfer")
 		}
 	}

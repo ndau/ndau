@@ -66,11 +66,10 @@ func sendGeneric(
 	node client.ABCIClient,
 	tx metatx.Transactable,
 	broadcast broadcaster,
-	name string,
 ) (interface{}, error) {
 	bytes, err := metatx.Marshal(tx, ndau.TxIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("%s failed to marshal transaction", name))
+		return nil, errors.Wrap(err, "failed to marshal transaction")
 	}
 
 	result, err := broadcast(node, bytes)
@@ -78,7 +77,7 @@ func sendGeneric(
 		if err.Error() == code.EncodingError.String() {
 			fmt.Fprintf(os.Stderr, "tx bytes: %x\n", bytes)
 		}
-		return nil, errors.Wrap(err, fmt.Sprintf("%s failed to broadcast transaction", name))
+		return nil, errors.Wrap(err, "failed to broadcast transaction")
 	}
 
 	return result, nil

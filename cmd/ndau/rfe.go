@@ -43,7 +43,7 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 			)
 			orQuit(errors.Wrap(err, "generating Release from Endowment tx"))
 
-			result, err := tool.ReleaseFromEndowmentCommit(tmnode(conf.Node), rfe)
+			result, err := tool.SendCommit(tmnode(conf.Node), &rfe)
 			finish(*verbose, result, err, "rfe")
 		}
 	}
