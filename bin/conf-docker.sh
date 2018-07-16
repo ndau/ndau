@@ -16,7 +16,7 @@ fi
 
 nn="$SCRIPTPATH/../../ndaunode"
 if cd "$nn"; then
-    $ndau conf $(bin/defaults.sh docker-compose port tendermint 46657)
+    $ndau conf $(bin/defaults.sh docker-compose port tendermint 26657)
 else
     echo "ndaunode not found"
     exit 1

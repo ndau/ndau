@@ -6,7 +6,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
-	crypto "github.com/tendermint/go-crypto"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
