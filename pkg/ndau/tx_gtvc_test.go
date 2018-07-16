@@ -7,7 +7,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/ed25519"
 )
 

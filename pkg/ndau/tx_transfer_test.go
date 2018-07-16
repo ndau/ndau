@@ -11,7 +11,7 @@ import (
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"

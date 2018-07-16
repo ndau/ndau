@@ -8,8 +8,8 @@ import (
 
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
-	"github.com/tendermint/abci/server"
-	tmlog "github.com/tendermint/tmlibs/log"
+	"github.com/tendermint/tendermint/abci/server"
+	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
 var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data and exit")

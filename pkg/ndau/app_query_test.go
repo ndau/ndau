@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
 
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestCanQueryAccountStatusSource(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func initAppRFE(t *testing.T) (*App, config.MockAssociated) {

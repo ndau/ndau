@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // Validate implements business logic determining if a GTValidatorChange is valid.
@@ -18,10 +18,7 @@ func (vc *GTValidatorChange) Validate(interface{}) error {
 
 // ToValidator converts this struct into a Validator
 func (vc *GTValidatorChange) ToValidator() abci.Validator {
-	return abci.Validator{
-		PubKey: vc.PublicKey,
-		Power:  vc.Power,
-	}
+	return abci.Ed25519Validator(vc.PublicKey, vc.Power)
 }
 
 // Apply this GTVC to the node state

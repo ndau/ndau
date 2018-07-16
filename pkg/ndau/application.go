@@ -1,6 +1,6 @@
 // This file contains the basic definition for an ABCI Application.
 //
-// Interface: https://godoc.org/github.com/tendermint/abci/types#Application
+// Interface: https://godoc.org/github.com/tendermint/tendermint/abci/types#Application
 
 package ndau
 
@@ -15,7 +15,7 @@ import (
 	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 // App is an ABCI application which implements the Ndau chain
