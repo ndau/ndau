@@ -7,7 +7,9 @@ import (
 	"unicode/utf8"
 
 	cli "github.com/jawher/mow.cli"
-	"github.com/oneiro-ndev/ndautool/pkg/tool/config"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	config "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
+	"github.com/oneiro-ndev/ndautool/pkg/tool"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )
@@ -20,7 +22,7 @@ func orQuit(err error) {
 }
 
 func getConfig() *config.Config {
-	config, err := config.Load()
+	config, err := config.LoadDefault(config.GetConfigPath())
 	orQuit(errors.Wrap(err, "Failed to load configuration"))
 	return config
 }
@@ -62,4 +64,14 @@ func finish(verbose bool, result interface{}, err error, cmdName string) {
 		orQuit(errors.Wrap(err, fmt.Sprintf("jsonify failed in %s subcommand", cmdName)))
 		fmt.Println(jsresult)
 	}
+}
+
+// query the account to get the current sequence
+func sequence(conf *config.Config, addr address.Address) uint64 {
+	ad, _, err := tool.GetAccount(tmnode(conf.Node), addr)
+	orQuit(errors.Wrap(
+		err,
+		fmt.Sprintf("Failed to get current sequence number for %s", addr),
+	))
+	return ad.Sequence + 1
 }

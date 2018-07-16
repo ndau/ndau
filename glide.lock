@@ -1,5 +1,5 @@
-hash: 9681ded27806c913d8d71b3b3248a6088fe074118f33cf6ac55f32b1706416bf
-updated: 2018-07-16T16:59:55.165829+02:00
+hash: 79cdebf5d44a5ea7de8d898419c741f37dc2dee74c3a00c812d3aaf6c5bfa4b6
+updated: 2018-07-16T18:12:08.70755+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -180,7 +180,7 @@ imports:
   - pkg/chaos/ns
   - pkg/chaos/query
 - name: github.com/oneiro-ndev/chaostool
-  version: 32d937939dd53ce28d748051d57b9c89ebcf5895
+  version: 97e41dd8d2415f584f810311e68c7215c582fc46
   repo: git@github.com:oneiro-ndev/chaostool.git
   subpackages:
   - pkg/tool
@@ -215,6 +215,7 @@ imports:
   - pkg/ndau/cache
   - pkg/ndau/config
   - pkg/ndau/system_vars
+  - pkg/tool.config
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
