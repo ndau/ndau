@@ -45,7 +45,7 @@ func TestCanQueryAccountStatusDest(t *testing.T) {
 }
 
 func TestQueryRunsUpdateBalance(t *testing.T) {
-	app, _, ts := initAppEscrow(t)
+	app, _, ts := initAppSettlement(t)
 	t.Log("timestamp after which escrows expire", ts)
 	t.Log("app blocktime", app.blockTime)
 	t.Log("comparison", app.blockTime.Compare(ts))
@@ -53,12 +53,12 @@ func TestQueryRunsUpdateBalance(t *testing.T) {
 
 	resp := app.Query(abci.RequestQuery{
 		Path: AccountEndpoint,
-		Data: []byte(escrowed),
+		Data: []byte(settled),
 	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	accountData := new(backing.AccountData)
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
 	require.NotEqual(t, math.Ndau(0), accountData.Balance)
-	require.Equal(t, 0, len(accountData.Escrows))
+	require.Equal(t, 0, len(accountData.Settlements))
 }

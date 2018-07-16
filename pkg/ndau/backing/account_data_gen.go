@@ -101,27 +101,27 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "Sequence"
 	o = append(o, 0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
 	o = msgp.AppendUint64(o, z.Sequence)
-	// string "Escrows"
-	o = append(o, 0xa7, 0x45, 0x73, 0x63, 0x72, 0x6f, 0x77, 0x73)
-	o = msgp.AppendArrayHeader(o, uint32(len(z.Escrows)))
-	for za0001 := range z.Escrows {
+	// string "Settlements"
+	o = append(o, 0xab, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Settlements)))
+	for za0001 := range z.Settlements {
 		// map header, size 2
 		// string "Qty"
 		o = append(o, 0x82, 0xa3, 0x51, 0x74, 0x79)
-		o, err = z.Escrows[za0001].Qty.MarshalMsg(o)
+		o, err = z.Settlements[za0001].Qty.MarshalMsg(o)
 		if err != nil {
 			return
 		}
 		// string "Expiry"
 		o = append(o, 0xa6, 0x45, 0x78, 0x70, 0x69, 0x72, 0x79)
-		o, err = z.Escrows[za0001].Expiry.MarshalMsg(o)
+		o, err = z.Settlements[za0001].Expiry.MarshalMsg(o)
 		if err != nil {
 			return
 		}
 	}
-	// string "EscrowSettings"
-	o = append(o, 0xae, 0x45, 0x73, 0x63, 0x72, 0x6f, 0x77, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73)
-	o, err = z.EscrowSettings.MarshalMsg(o)
+	// string "SettlementSettings"
+	o = append(o, 0xb2, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73)
+	o, err = z.SettlementSettings.MarshalMsg(o)
 	if err != nil {
 		return
 	}
@@ -274,18 +274,18 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "Escrows":
+		case "Settlements":
 			var zb0003 uint32
 			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if cap(z.Escrows) >= int(zb0003) {
-				z.Escrows = (z.Escrows)[:zb0003]
+			if cap(z.Settlements) >= int(zb0003) {
+				z.Settlements = (z.Settlements)[:zb0003]
 			} else {
-				z.Escrows = make([]Escrow, zb0003)
+				z.Settlements = make([]Settlement, zb0003)
 			}
-			for za0001 := range z.Escrows {
+			for za0001 := range z.Settlements {
 				var zb0004 uint32
 				zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
 				if err != nil {
@@ -299,12 +299,12 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					}
 					switch msgp.UnsafeString(field) {
 					case "Qty":
-						bts, err = z.Escrows[za0001].Qty.UnmarshalMsg(bts)
+						bts, err = z.Settlements[za0001].Qty.UnmarshalMsg(bts)
 						if err != nil {
 							return
 						}
 					case "Expiry":
-						bts, err = z.Escrows[za0001].Expiry.UnmarshalMsg(bts)
+						bts, err = z.Settlements[za0001].Expiry.UnmarshalMsg(bts)
 						if err != nil {
 							return
 						}
@@ -316,8 +316,8 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					}
 				}
 			}
-		case "EscrowSettings":
-			bts, err = z.EscrowSettings.UnmarshalMsg(bts)
+		case "SettlementSettings":
+			bts, err = z.SettlementSettings.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -364,16 +364,16 @@ func (z *AccountData) Msgsize() (s int) {
 	} else {
 		s += 1 + 6 + z.Stake.Point.Msgsize() + 8 + z.Stake.Address.Msgsize()
 	}
-	s += 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 8 + msgp.ArrayHeaderSize
-	for za0001 := range z.Escrows {
-		s += 1 + 4 + z.Escrows[za0001].Qty.Msgsize() + 7 + z.Escrows[za0001].Expiry.Msgsize()
+	s += 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 12 + msgp.ArrayHeaderSize
+	for za0001 := range z.Settlements {
+		s += 1 + 4 + z.Settlements[za0001].Qty.Msgsize() + 7 + z.Settlements[za0001].Expiry.Msgsize()
 	}
-	s += 15 + z.EscrowSettings.Msgsize()
+	s += 19 + z.SettlementSettings.Msgsize()
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *Escrow) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *Settlement) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 2
 	// string "Qty"
@@ -392,7 +392,7 @@ func (z *Escrow) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *Escrow) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *Settlement) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -429,18 +429,18 @@ func (z *Escrow) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *Escrow) Msgsize() (s int) {
+func (z *Settlement) Msgsize() (s int) {
 	s = 1 + 4 + z.Qty.Msgsize() + 7 + z.Expiry.Msgsize()
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *EscrowSettings) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *SettlementSettings) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
-	// string "Duration"
-	o = append(o, 0x83, 0xa8, 0x44, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e)
-	o, err = z.Duration.MarshalMsg(o)
+	// string "Period"
+	o = append(o, 0x83, 0xa6, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64)
+	o, err = z.Period.MarshalMsg(o)
 	if err != nil {
 		return
 	}
@@ -468,7 +468,7 @@ func (z *EscrowSettings) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *EscrowSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *SettlementSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -483,8 +483,8 @@ func (z *EscrowSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "Duration":
-			bts, err = z.Duration.UnmarshalMsg(bts)
+		case "Period":
+			bts, err = z.Period.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -532,8 +532,8 @@ func (z *EscrowSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *EscrowSettings) Msgsize() (s int) {
-	s = 1 + 9 + z.Duration.Msgsize() + 10
+func (z *SettlementSettings) Msgsize() (s int) {
+	s = 1 + 7 + z.Period.Msgsize() + 10
 	if z.ChangesAt == nil {
 		s += msgp.NilSize
 	} else {

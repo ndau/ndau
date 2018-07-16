@@ -14,14 +14,14 @@ import (
 func TestCEPStoresPendingEscrowChange(t *testing.T) {
 	app, private := initAppTx(t)
 	acct := app.GetState().(*backing.State).Accounts[source]
-	require.Equal(t, math.Duration(0), acct.EscrowSettings.Duration)
+	require.Equal(t, math.Duration(0), acct.SettlementSettings.Period)
 
 	const newDuration = math.Duration(1 * math.Day)
 
 	addr, err := address.Validate(source)
 	require.NoError(t, err)
 
-	cep, err := NewChangeEscrowPeriod(addr, newDuration, acct.Sequence+1, private)
+	cep, err := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, private)
 	require.NoError(t, err)
 
 	ts := time.Now()
@@ -38,9 +38,9 @@ func TestCEPStoresPendingEscrowChange(t *testing.T) {
 
 	// update the acct struct
 	acct = app.GetState().(*backing.State).Accounts[source]
-	acct.UpdateEscrow(mts)
+	acct.UpdateSettlement(mts)
 
-	require.Equal(t, newDuration, acct.EscrowSettings.Duration)
-	require.Nil(t, acct.EscrowSettings.Next)
-	require.Nil(t, acct.EscrowSettings.ChangesAt)
+	require.Equal(t, newDuration, acct.SettlementSettings.Period)
+	require.Nil(t, acct.SettlementSettings.Next)
+	require.Nil(t, acct.SettlementSettings.ChangesAt)
 }

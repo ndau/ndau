@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (cep *ChangeEscrowPeriod) signableBytes() []byte {
+func (cep *ChangeSettlementPeriod) signableBytes() []byte {
 	bytes := make([]byte, 8+8, len(cep.Target.String())+8+8)
 	binary.BigEndian.PutUint64(bytes[0:8], cep.Sequence)
 	binary.BigEndian.PutUint64(bytes[8:16], uint64(cep.Period))
@@ -19,14 +19,14 @@ func (cep *ChangeEscrowPeriod) signableBytes() []byte {
 	return bytes
 }
 
-// NewChangeEscrowPeriod creates a new signed escrow period change
-func NewChangeEscrowPeriod(
+// NewChangeSettlementPeriod creates a new signed settlement period change
+func NewChangeSettlementPeriod(
 	target address.Address,
 	newPeriod math.Duration,
 	sequence uint64,
 	privateTransferKey signature.PrivateKey,
-) (ChangeEscrowPeriod, error) {
-	cep := ChangeEscrowPeriod{
+) (ChangeSettlementPeriod, error) {
+	cep := ChangeSettlementPeriod{
 		Target:   target,
 		Period:   newPeriod,
 		Sequence: sequence,
@@ -37,11 +37,11 @@ func NewChangeEscrowPeriod(
 }
 
 // Validate implements metatx.Transactable
-func (cep *ChangeEscrowPeriod) Validate(appI interface{}) (err error) {
+func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	app := appI.(*App)
 
 	if cep.Period < 0 {
-		return errors.New("Negative escrow period")
+		return errors.New("Negative settlement period")
 	}
 
 	acct := app.GetState().(*backing.State).Accounts[cep.Target.String()]
@@ -62,17 +62,17 @@ func (cep *ChangeEscrowPeriod) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (cep *ChangeEscrowPeriod) Apply(appI interface{}) error {
+func (cep *ChangeSettlementPeriod) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		acct := state.Accounts[cep.Target.String()]
-		acct.UpdateEscrow(app.blockTime)
+		acct.UpdateSettlement(app.blockTime)
 		acct.Sequence = cep.Sequence
 
-		ca := app.blockTime.Add(acct.EscrowSettings.Duration)
-		acct.EscrowSettings.ChangesAt = &ca
-		acct.EscrowSettings.Next = &cep.Period
+		ca := app.blockTime.Add(acct.SettlementSettings.Period)
+		acct.SettlementSettings.ChangesAt = &ca
+		acct.SettlementSettings.Next = &cep.Period
 
 		state.Accounts[cep.Target.String()] = acct
 		return state, nil

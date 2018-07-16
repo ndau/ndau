@@ -9,7 +9,7 @@ import (
 )
 
 // MarshalMsg implements msgp.Marshaler
-func (z *ChangeEscrowPeriod) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *ChangeSettlementPeriod) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 4
 	// string "Target"
@@ -37,7 +37,7 @@ func (z *ChangeEscrowPeriod) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ChangeEscrowPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ChangeSettlementPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -84,7 +84,7 @@ func (z *ChangeEscrowPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *ChangeEscrowPeriod) Msgsize() (s int) {
+func (z *ChangeSettlementPeriod) Msgsize() (s int) {
 	s = 1 + 7 + z.Target.Msgsize() + 7 + z.Period.Msgsize() + 9 + msgp.Uint64Size + 10 + z.Signature.Msgsize()
 	return
 }

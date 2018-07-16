@@ -31,7 +31,7 @@ const dest = "ndam5v8hpv5b79zbxxcepih8d4km4a3j2ev8dpaegexpdest"
 
 // Private key:    73a1955a52d6e7e099607c1bcfe4825fd30632be9780c9d70c836d8c5044546a878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
 // Public key:     878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
-const escrowed = "ndap94hhwyik86x2na9m3hjtq4n5v9uj3qm4tfp4xuyescrw"
+const settled = "ndap94hhwyik86x2na9m3hjtq4n5v9uj3qm4tfp4xuyescrw"
 
 func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	app, _ := initApp(t)
@@ -56,7 +56,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 // should be valid
 //
 // It is guaranteed that all escrows expire in the interval (timestamp - 1 day : timestamp)
-func initAppEscrow(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
+func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	app, _ := initAppTx(t)
 
 	ts, err := math.TimestampFrom(time.Now())
@@ -68,10 +68,10 @@ func initAppEscrow(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 
 	const qtyEscrows = 10
 
-	modify(t, escrowed, app, func(acct *backing.AccountData) {
+	modify(t, settled, app, func(acct *backing.AccountData) {
 		// initialize the address with a bunch of ndau
 		for i := 1; i < qtyEscrows; i++ {
-			acct.Escrows = append(acct.Escrows, backing.Escrow{
+			acct.Settlements = append(acct.Settlements, backing.Settlement{
 				Qty:    math.Ndau(i * constants.QuantaPerUnit),
 				Expiry: ts.Sub(math.Duration(i)),
 			})
@@ -423,7 +423,7 @@ func TestSequenceMustIncrease(t *testing.T) {
 
 func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	// setup app
-	app, key, ts := initAppEscrow(t)
+	app, key, ts := initAppSettlement(t)
 	require.True(t, app.blockTime.Compare(ts) >= 0)
 	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
 	tn = tn.Add(1 * time.Second)
@@ -431,7 +431,7 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	// generate transfer
 	// because the escrowed funds have cleared,
 	// this should succeed
-	s, err := address.Validate(escrowed)
+	s, err := address.Validate(settled)
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
@@ -449,7 +449,7 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 
 func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	// setup app
-	app, key, ts := initAppEscrow(t)
+	app, key, ts := initAppSettlement(t)
 	// set app time to a day before the escrow expiry time
 	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
 	tn = tn.Add(time.Duration(-24 * time.Hour))
@@ -457,7 +457,7 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	// generate transfer
 	// because the escrowed funds have not yet cleared,
 	// this should fail
-	s, err := address.Validate(escrowed)
+	s, err := address.Validate(settled)
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)

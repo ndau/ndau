@@ -35,22 +35,22 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 	return false
 }
 
-// UpdateEscrow adds escrowed funds whose escrows have expired to the balance.
-func (ad *AccountData) UpdateEscrow(blockTime math.Timestamp) {
-	newEscrows := make([]Escrow, 0, len(ad.Escrows))
-	for _, escrow := range ad.Escrows {
-		if escrow.Expiry.Compare(blockTime) <= 0 {
-			ad.Balance += escrow.Qty
+// UpdateSettlement settles funds whose settlement periods have expired
+func (ad *AccountData) UpdateSettlement(blockTime math.Timestamp) {
+	newSettlements := make([]Settlement, 0, len(ad.Settlements))
+	for _, settlement := range ad.Settlements {
+		if settlement.Expiry.Compare(blockTime) <= 0 {
+			ad.Balance += settlement.Qty
 		} else {
-			newEscrows = append(newEscrows, escrow)
+			newSettlements = append(newSettlements, settlement)
 		}
 	}
-	ad.Escrows = newEscrows
+	ad.Settlements = newSettlements
 
 	// true if there exists a pending change which is less than or equal to the block time
-	if ad.EscrowSettings.ChangesAt != nil && blockTime.Compare(*ad.EscrowSettings.ChangesAt) >= 0 {
-		ad.EscrowSettings.Duration = *ad.EscrowSettings.Next
-		ad.EscrowSettings.ChangesAt = nil
-		ad.EscrowSettings.Next = nil
+	if ad.SettlementSettings.ChangesAt != nil && blockTime.Compare(*ad.SettlementSettings.ChangesAt) >= 0 {
+		ad.SettlementSettings.Period = *ad.SettlementSettings.Next
+		ad.SettlementSettings.ChangesAt = nil
+		ad.SettlementSettings.Next = nil
 	}
 }
