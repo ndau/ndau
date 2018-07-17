@@ -5,7 +5,7 @@ import (
 	"os"
 
 	cli "github.com/jawher/mow.cli"
-	config "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/pkg/errors"
 )
 

@@ -18,7 +18,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 )
 
 // Private key:    e283e6899f67fe424fc3dd61a79ed3b0860e9925413ccdcbe25422a89e69267088c3d538395e3945e3e6f267974cae362d70acd0389436288bf99422d69c25bb

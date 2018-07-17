@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
-	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 

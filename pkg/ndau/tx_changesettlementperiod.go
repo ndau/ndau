@@ -6,7 +6,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )

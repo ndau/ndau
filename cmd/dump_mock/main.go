@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/pkg/errors"
 	"github.com/tinylib/msgp/msgp"
 )

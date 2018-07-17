@@ -6,9 +6,9 @@ import (
 	"os"
 
 	cli "github.com/jawher/mow.cli"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
-	config "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )

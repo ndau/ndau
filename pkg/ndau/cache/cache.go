@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/tinylib/msgp/msgp"
 
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/pkg/errors"
 )
 

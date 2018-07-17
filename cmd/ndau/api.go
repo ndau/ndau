@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/pkg/errors"
 )
 

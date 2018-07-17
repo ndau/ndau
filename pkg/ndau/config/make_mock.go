@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/oneiro-ndev/chaostool/pkg/tool"
+	"github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	sv "github.com/oneiro-ndev/ndaunode/pkg/ndau/system_vars"
+	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"

@@ -8,7 +8,7 @@ import (
 	"github.com/bouk/monkey"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"

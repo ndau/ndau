@@ -10,7 +10,7 @@ import (
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 

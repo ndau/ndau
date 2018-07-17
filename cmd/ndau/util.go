@@ -8,8 +8,8 @@ import (
 
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	config "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )

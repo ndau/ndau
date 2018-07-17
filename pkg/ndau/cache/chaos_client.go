@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/oneiro-ndev/chaostool/pkg/tool"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+	"github.com/oneiro-ndev/chaos/pkg/tool"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/pkg/errors"
 	trpc "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tinylib/msgp/msgp"

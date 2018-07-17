@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	tc "github.com/oneiro-ndev/ndaunode/pkg/tool.config"
+	tc "github.com/oneiro-ndev/ndau/pkg/tool.config"
 )
 
 func check(err error) {

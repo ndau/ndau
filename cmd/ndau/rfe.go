@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	cli "github.com/jawher/mow.cli"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/pkg/errors"
 )
 

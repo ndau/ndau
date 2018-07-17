@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/tendermint/tendermint/abci/server"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 )

@@ -18,7 +18,7 @@ RUN chmod 0600 /root/.ssh/*
 RUN go get github.com/Masterminds/glide
 
 # Copy the context into the container and build the chaos application
-ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndaunode
+ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndau
 COPY ./pkg ${NDAU}/pkg
 COPY ./cmd ${NDAU}/cmd
 COPY ./glide.* ${NDAU}/

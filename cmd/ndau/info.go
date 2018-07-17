@@ -2,7 +2,7 @@ package main
 
 import (
 	cli "github.com/jawher/mow.cli"
-	"github.com/oneiro-ndev/ndautool/pkg/tool"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
 func info(cmd *cli.Cmd) {

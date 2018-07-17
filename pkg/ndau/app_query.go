@@ -5,7 +5,7 @@ import (
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaunode/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 )
 
 // AccountEndpoint is the endpoint at which Account queries live
