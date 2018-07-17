@@ -1,37 +1,43 @@
-package: github.com/oneiro-ndev/ndaunode
+package: github.com/oneiro-ndev/ndau
 import:
-- package: golang.org/x/crypto
-  subpackages:
-  - ed25519
+- package: github.com/BurntSushi/toml
+  version: ^0.3.0
 - package: github.com/attic-labs/noms
   version: master
   repo: https://github.com/oneiro-ndev/noms.git
-- package: github.com/oneiro-ndev/noms-util
-  repo: git@github.com:oneiro-ndev/noms-util.git
-- package: github.com/BurntSushi/toml
-  version: ^0.3.0
-- package: github.com/oneiro-ndev/chaostool
-  version: ~v0.9
-  repo: git@github.com:oneiro-ndev/chaostool.git
-  subpackages:
-  - pkg/tool
 - package: github.com/bouk/monkey
-- package: github.com/tendermint/tendermint
-  version: ~v0.22.4
-- package: github.com/tinylib/msgp
-  version: ^1.0.2
-- package: github.com/oneiro-ndev/msgp-well-known-types
-  version: ~0.1.0
-  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
+- package: github.com/google/go-cmp
+  version: ^0.2.0
+- package: github.com/oneiro-ndev/chaos
+  version: ~v0.10
+  repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
   version: ~v0.7
-- package: github.com/satori/go.uuid
-  version: master
+- package: github.com/oneiro-ndev/msgp-well-known-types
+  version: ~0.1.0
+  repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
 - package: github.com/oneiro-ndev/ndaumath
   repo: git@github.com:oneiro-ndev/ndaumath.git
   version: ~v0.3
+- package: github.com/oneiro-ndev/noms-util
+  version: master
+  repo: git@github.com:oneiro-ndev/noms-util.git
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
   version: ~v0.1.0
-
+- package: github.com/satori/go.uuid
+  version: master
+- package: github.com/stretchr/testify
+  version: ^1.2.1
+  subpackages:
+  - require
+- package: github.com/tendermint/tendermint
+  version: ~0.22.4
+- package: github.com/tinylib/msgp
+  version: ^1.0.2
+- package: github.com/ybbus/jsonrpc
+  version: ^1.0.1
+- package: golang.org/x/crypto
+  subpackages:
+  - ed25519

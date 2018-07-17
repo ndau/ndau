@@ -1,3 +1,4 @@
+
 # Ignore the vendor directory, which is currently some 13M of
 # .go files alone. This means that fresh clones will need to run
 # `dep ensure` before things will just work, but that should be
@@ -30,6 +31,8 @@ github_chaos_deploy
 .vscode/
 
 # Ignore the executable output of go build, but not the actual folder
+ndau
+!*/ndau
 ndaunode
 !*/ndaunode
 dump_mock
