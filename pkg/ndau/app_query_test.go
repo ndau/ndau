@@ -3,7 +3,7 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"

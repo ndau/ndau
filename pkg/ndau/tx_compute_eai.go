@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"

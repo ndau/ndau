@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	nt "github.com/attic-labs/noms/go/types"
-	meta "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
+	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 )
 
 const accountKey = "accounts"

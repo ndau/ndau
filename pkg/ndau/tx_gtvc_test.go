@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
