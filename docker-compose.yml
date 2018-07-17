@@ -1,0 +1,38 @@
+version: "3.2"
+services:
+  noms:
+    build:
+      context: ./noms-docker
+    expose:
+      - "8000"
+    volumes:
+      - type: bind
+        source: ${NDAUHOME:?NDAUHOME is required}/ndau/noms
+        target: /data
+  ndaunode:
+    build:
+      context: .
+    image: "ndaunode"
+    volumes:
+      - type: bind
+        source: ${NDAUHOME:?NDAUHOME is required}
+        target: /root/.ndau # command is run as root, so $HOME==/root
+    # we need to expose the ndaunode ABCI port to services inside this container,
+    # but not to anything external. the 'expose' command handles that.
+    expose:
+      - "26658"
+    depends_on:
+      - noms
+  tendermint:
+    build:
+      context: ./tm-docker
+    # expose the p2p and RPC ports to the outside world
+    ports:
+      - "26656"
+      - "26657"
+    depends_on:
+      - ndaunode
+    volumes:
+      - type: bind
+        source: ${TMHOME:?TMHOME is required}
+        target: /tendermint

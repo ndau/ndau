@@ -1,0 +1,119 @@
+version: 2
+jobs:
+  build:
+    working_directory: /app
+    docker:
+      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.4
+    environment:
+      # Used for ECR
+      AWS_DEFAULT_REGION: us-east-1
+      # ECR's
+      ECR_ENDPOINT: 578681496768.dkr.ecr.us-east-1.amazonaws.com
+      # Bump these versions, and commit to master to upload a new version to ECR
+      NDAUNODE_CONTAINER_VERSION: 0.0.5
+      STARTING_PORT: "31000"
+      NODE_NAMES: "mario luigi"
+    steps:
+      - run:
+          name: Transfer environment variables to files
+          command: |
+            # add ssh key to
+            mkdir -p /root/.ssh
+            echo -e "$gomu" > /root/.ssh/id_rsa
+            chmod 600 /root/.ssh/id_rsa
+
+            # install helm certs
+            mkdir -p /root/.helm
+            echo -e "$helm_ca_pem" > /root/.helm/ca.pem
+            echo -e "$helm_cert_pem" > /root/.helm/cert.pem
+            echo -e "$helm_key_pem" > /root/.helm/key.pem
+
+            # install kube config certs from environment variables
+            echo -e "$kube_config" > /root/kubeconfig
+      - run:
+          name: Checkout code
+          command: |
+            git clone $CIRCLE_REPOSITORY_URL -b $CIRCLE_BRANCH /app --depth=1
+            cp /root/.ssh/id_rsa /app/github_chaos_deploy
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build ndaunode-test image
+          command: |
+            # build ndaunode tests
+            docker build -t ndaunode-test . -f /app/ndaunode-test.docker
+            # cleanup
+            docker rmi ndaunode-test
+      - run:
+          name: AWS ECR Login
+          command: |
+            eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
+      - run:
+          name: Check ndaunode version on ECR
+          command: |
+            # Compare this container version with ECR. Fail build if version already exists.
+            version_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${NDAUNODE_CONTAINER_VERSION}\")")
+            if [ ! -z "$version_check" ]; then
+              echo "Ndaunode container version ${NDAUNODE_CONTAINER_VERSION} already exists." | tee -a /tmp/pushlog
+              exit 1
+            fi
+
+            # Look for this sha on ecr
+            sha=${CIRCLE_SHA1: -7}
+            sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
+            if [ ! -z "$sha_check" ]; then
+              echo "Ndaunode container version ${sha} already exists." >&2
+              exit 1
+            fi
+      - run:
+          name: Build ndaunode
+          command: |
+            docker build -t ndaunode .
+      - run:
+          name: Push ndaunode
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # Do not upload commit hash that already exists.
+              # Should never really happen as long as master is not tampered with.
+              commit_hash=${CIRCLE_SHA1: -7}
+              commit_hash_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${commit_hash}\")")
+              if [ ! -z "$commit_hash_check" ]; then
+                echo "Ndaunode container hash ${commit_hash} already exists. Will not push." >&2
+              else
+                commit_tag="${ECR_ENDPOINT}/ndaunode:${commit_hash}"
+                version_tag="${ECR_ENDPOINT}/ndaunode:${NDAUNODE_CONTAINER_VERSION}"
+                latest_tag="${ECR_ENDPOINT}/ndaunode:latest"
+
+                docker tag ndaunode $commit_tag
+                docker tag ndaunode $version_tag
+                docker tag ndaunode $latest_tag
+
+                docker push $commit_tag
+                docker push $version_tag
+                docker push $latest_tag
+
+                echo "Pushed ndaunode with tags :${commit_hash}, :${version_tag}, :latest." >&2
+              fi
+            fi
+      - run:
+          name: Redeploy testnet
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+
+              # Clone the k-os repo
+              GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git /root/k-os
+
+              # Remove old test net
+              KUBECONFIG=/root/kubeconfig \
+                helm del --purge $NODE_NAMES --tls ||\
+                  echo "Releases: $NODE_NAMES could not be deleted" >&2
+
+              # create new multinode test net
+              KUBECONFIG=/root/kubeconfig \
+              VERSION_TAG=$NDAUNODE_CONTAINER_VERSION \
+                /root/k-os/env/aws/multinode/ndau.js \
+                  $STARTING_PORT \
+                  $NODE_NAMES
+
+            fi
+
