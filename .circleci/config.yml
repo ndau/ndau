@@ -117,7 +117,7 @@ jobs:
               NOMS_VERSION=$NOMS_CONTAINER_VERSION \
               TM_VERSION=$TM_CONTAINER_VERSION \
               VERSION_TAG=$NDAUNODE_CONTAINER_VERSION \
-                /root/k-os/env/aws/multinode/ndau.js \
+                /root/k-os/testnet/ndau.js \
                   $STARTING_PORT \
                   $NODE_NAMES
 
