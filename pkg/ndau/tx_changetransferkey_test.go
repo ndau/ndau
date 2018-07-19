@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
-	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"

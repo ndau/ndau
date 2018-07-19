@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"

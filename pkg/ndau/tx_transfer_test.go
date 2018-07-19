@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 
@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
-	metast "github.com/oneiro-ndev/metanode/pkg/meta.app/meta.state"
-	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"

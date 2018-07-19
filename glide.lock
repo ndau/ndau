@@ -1,5 +1,5 @@
-hash: a2b61e5bd1039fc8f4fba908acd6d1051ca009701ae84815bc3556c2f83c748b
-updated: 2018-07-17T12:06:21.440455+02:00
+hash: 75c7051682fcc2deb0c0845a12519ee312d89c085bcbc2d4830989a5c2e0dd77
+updated: 2018-07-17T14:47:31.094206+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -94,6 +94,14 @@ imports:
   version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
+- name: github.com/ericlagergren/decimal
+  version: 962b7749a459d36912e38ce057de39511566360d
+  subpackages:
+  - internal/arith
+  - internal/arith/checked
+  - internal/c
+  - math
+  - misc
 - name: github.com/go-ini/ini
   version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
@@ -166,7 +174,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaos
-  version: a47424588a123a1b8925ba499dfda3998cec2019
+  version: 8e37e05e749f58cf44cfe369af924a046c28285d
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -175,13 +183,13 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 7d4e6df8f21a8bed8037429c0e4dda5877b2b6d7
+  version: 68c868d3a1306c91fa2feabc1186b35fbfe900f8
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
-  - pkg/meta.app
-  - pkg/meta.app/code
-  - pkg/meta.app/meta.state
-  - pkg/meta.transaction
+  - pkg/meta/app
+  - pkg/meta/app/code
+  - pkg/meta/state
+  - pkg/meta/transaction
 - name: github.com/oneiro-ndev/msgp-well-known-types
   version: 20dbc66cfaa097bf8cdf60b740e0ac37251d07c3
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
@@ -190,6 +198,12 @@ imports:
 - name: github.com/oneiro-ndev/ndaumath
   version: 966e33463af68a339779a6459dec5280aa571567
   repo: git@github.com:oneiro-ndev/ndaumath.git
+  subpackages:
+  - pkg/address
+  - pkg/b32
+  - pkg/constants
+  - pkg/eai
+  - pkg/types
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -236,6 +250,10 @@ imports:
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+- name: github.com/sigurn/crc16
+  version: da416fad5162ac0f3338ba24dccdb26e4da22485
+- name: github.com/sigurn/utils
+  version: f19e41f79f8f006116f682c1af454591bc278ad4
 - name: github.com/sirupsen/logrus
   version: 75068beb13ada9c0ddde611f678523fda7352650
 - name: github.com/stretchr/testify

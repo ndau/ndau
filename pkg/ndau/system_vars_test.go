@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/bouk/monkey"
-	meta "github.com/oneiro-ndev/metanode/pkg/meta.app"
+	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	log "github.com/sirupsen/logrus"

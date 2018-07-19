@@ -1,7 +1,7 @@
 package ndau
 
 import (
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"

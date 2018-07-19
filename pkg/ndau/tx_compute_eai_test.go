@@ -3,8 +3,8 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
-	tx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"

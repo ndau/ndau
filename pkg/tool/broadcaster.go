@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta.app/code"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta.transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 
 	"github.com/pkg/errors"
