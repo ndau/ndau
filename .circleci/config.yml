@@ -10,8 +10,11 @@ jobs:
       # ECR's
       ECR_ENDPOINT: 578681496768.dkr.ecr.us-east-1.amazonaws.com
       # Bump these versions, and commit to master to upload a new version to ECR
-      NDAUNODE_CONTAINER_VERSION: 0.0.5
+      TM_CONTAINER_VERSION: 0.0.2
+      NOMS_CONTAINER_VERSION: 0.0.1
       STARTING_PORT: "31000"
+      # These node names are removed first before new ones are installed.
+      # If these names change, the old names will have to be removed manually.
       NODE_NAMES: "mario luigi"
     steps:
       - run:
@@ -52,9 +55,9 @@ jobs:
           name: Check ndaunode version on ECR
           command: |
             # Compare this container version with ECR. Fail build if version already exists.
-            version_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${NDAUNODE_CONTAINER_VERSION}\")")
+            version_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${CIRCLE_TAG}\")")
             if [ ! -z "$version_check" ]; then
-              echo "Ndaunode container version ${NDAUNODE_CONTAINER_VERSION} already exists." | tee -a /tmp/pushlog
+              echo "Ndaunode container version ${CIRCLE_TAG} already exists." | tee -a /tmp/pushlog
               exit 1
             fi
 
@@ -81,7 +84,7 @@ jobs:
                 echo "Ndaunode container hash ${commit_hash} already exists. Will not push." >&2
               else
                 commit_tag="${ECR_ENDPOINT}/ndaunode:${commit_hash}"
-                version_tag="${ECR_ENDPOINT}/ndaunode:${NDAUNODE_CONTAINER_VERSION}"
+                version_tag="${ECR_ENDPOINT}/ndaunode:${CIRCLE_TAG}"
                 latest_tag="${ECR_ENDPOINT}/ndaunode:latest"
 
                 docker tag ndaunode $commit_tag
@@ -110,8 +113,10 @@ jobs:
 
               # create new multinode test net
               KUBECONFIG=/root/kubeconfig \
-              VERSION_TAG=$NDAUNODE_CONTAINER_VERSION \
-                /root/k-os/env/aws/multinode/ndau.js \
+              NOMS_VERSION=$NOMS_CONTAINER_VERSION \
+              TM_VERSION=$TM_CONTAINER_VERSION \
+              VERSION_TAG=$CIRCLE_TAG \
+                /root/k-os/testnet/ndau.js \
                   $STARTING_PORT \
                   $NODE_NAMES
 
