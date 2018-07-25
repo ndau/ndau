@@ -6,7 +6,8 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	"github.com/tendermint/tendermint/crypto"
+	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -18,19 +19,11 @@ import (
 func GTVC(node client.ABCIClient, key []byte, power int64) (
 	*rpctypes.ResultBroadcastTx, error,
 ) {
-	// we expect ed25519 public key inputs, and tendermint expects a
-	// type byte prefix on keys, so let's append that
-
-	ekb := append(
-		[]byte{0x01}, // see https://github.com/tendermint/go-crypto/blob/915416979bf70efa4bcbf1c6cd5d64c5fff9fc19/keys/keys.go#L14-L15
-		key...,
-	)
-
-	// validate the given public key
-	pk, err := crypto.PubKeyFromBytes(ekb)
-	if err != nil {
-		return nil, err
+	if len(key) != ed25519.PubKeyEd25519Size {
+		return nil, errors.New("Invalid size for ed25519 public key")
 	}
+	pk := ed25519.PubKeyEd25519{}
+	copy(pk[:], key)
 
 	gtvcTxID := metatx.TxIDMap{
 		metatx.TxID(0xff): &ndau.GTValidatorChange{},

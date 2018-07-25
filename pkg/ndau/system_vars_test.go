@@ -51,9 +51,12 @@ func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
 // If that doesn't work, you may need to just skip these tests.
 func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
 	app, _ = initApp(t)
-	monkey.PatchInstanceMethod(reflect.TypeOf(app.App), "Height", func(*meta.App) uint64 {
-		return atHeight
-	})
+	// patch only if required
+	if atHeight != 0 {
+		monkey.PatchInstanceMethod(reflect.TypeOf(app.App), "Height", func(*meta.App) uint64 {
+			return atHeight
+		})
+	}
 	app.InitChain(types.RequestInitChain{})
 	return
 }

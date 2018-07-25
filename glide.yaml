@@ -9,11 +9,11 @@ import:
 - package: github.com/google/go-cmp
   version: ^0.2.0
 - package: github.com/oneiro-ndev/chaos
-  version: ~v0.10
+  version: prgn-update-slow-blocks
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: ~v0.8
+  version: prgn-create-only-nonempty-blocks
 - package: github.com/oneiro-ndev/msgp-well-known-types
   version: ~0.1.0
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
@@ -23,6 +23,9 @@ import:
 - package: github.com/oneiro-ndev/noms-util
   version: master
   repo: git@github.com:oneiro-ndev/noms-util.git
+- package: github.com/oneiro-ndev/o11y
+  version: master
+  repo: git@github.com:oneiro-ndev/o11y.git
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
   version: ~v0.1.0
