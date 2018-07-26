@@ -35,18 +35,23 @@ RUN chmod 0600 /root/.ssh/*
 # use for dependency management
 RUN go get github.com/Masterminds/glide
 
-# Copy the context into the container and build the ndau application
+# set up working directory
 ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndau
-COPY ./pkg ${NDAU}/pkg
-COPY ./cmd ${NDAU}/cmd
-COPY ./glide.* ${NDAU}/
 WORKDIR ${NDAU}
 
-# note the concatenated command here. This is a special case:
-# we want to be absolutely sure that "glide install" doesn't use a cached version
-# when we build the app, so we &&-concatenate the commands.
-RUN glide install && \
-    CGO_ENABLED=0 GOOS=linux go install -a -ldflags '-extldflags "-static"' ./cmd/ndaunode
+# Copy the glide stuff into the container and fetch dependencies
+# Doing this will cache the deps so long as docker detects glide.lock
+# updates appropriately, but you'll still want to run production
+# builds with --no-cache
+COPY ./glide.* ${NDAU}/
+RUN git config --global url.git@github.com:.insteadof https://github.com/ && \
+    glide install
+
+# Copy the source into the container and build
+COPY ./pkg ${NDAU}/pkg
+COPY ./cmd ${NDAU}/cmd
+RUN CGO_ENABLED=0 GOOS=linux go install -a -ldflags '-extldflags "-static"' ./cmd/ndaunode
+
 # we need to copy the produced executable to a known path because the
 # $GOPATH environment variable doesn't persist into the run container
 RUN cp ${GOPATH}/bin/ndaunode /bin/
