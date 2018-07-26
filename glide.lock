@@ -1,5 +1,5 @@
-hash: abaa1ed0810eb7f0dd124fababab5bd8ddb2245eedf7af25f282a51336920f36
-updated: 2018-07-25T13:52:45.848327+02:00
+hash: 901e3e09c73189a6eff4d5392567860fb01ab3318212fd5e67dbf92b9629b83f
+updated: 2018-07-26T12:27:30.641869+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -78,8 +78,6 @@ imports:
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
   subpackages:
   - quantile
-- name: github.com/bouk/monkey
-  version: 5df1f207ff77e025801505ae4d903133a0b4353f
 - name: github.com/btcsuite/btcd
   version: 86fed781132ac890ee03e906e4ecd5d6fa180c64
   subpackages:
@@ -191,7 +189,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 7af2c6360b844e9305f40d5036627d7838a5f2dd
+  version: 9940eb561d9b3b298d40b15f43f4f614182dd1c0
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -297,7 +295,7 @@ imports:
 - name: github.com/tendermint/go-amino
   version: 2106ca61d91029c931fd54968c2bb02dc96b1412
 - name: github.com/tendermint/tendermint
-  version: 05a76fb517f50da27b4bfcdc7b4cf185fc61eff6
+  version: 5fdbcd70df57b71ffba71e1ff5f00d617852a9c0
   subpackages:
   - abci/client
   - abci/example/code

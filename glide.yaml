@@ -5,7 +5,6 @@ import:
 - package: github.com/attic-labs/noms
   version: master
   repo: https://github.com/oneiro-ndev/noms.git
-- package: github.com/bouk/monkey
 - package: github.com/google/go-cmp
   version: ^0.2.0
 - package: github.com/oneiro-ndev/chaos

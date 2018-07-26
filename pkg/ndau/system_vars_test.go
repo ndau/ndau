@@ -2,11 +2,8 @@ package ndau
 
 import (
 	"io/ioutil"
-	"reflect"
 	"testing"
 
-	"github.com/bouk/monkey"
-	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	log "github.com/sirupsen/logrus"
@@ -42,27 +39,16 @@ func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
 // definitely don't want to wait around for the chain to run for some
 // number of blocks.
 //
-// Monkey-patching is the answer! However, as this is definitely not
-// a normal go feature, it comes with a few more caveats than it would
-// in, say, Python. There's a whole list in the library readme:
-// https://github.com/bouk/monkey#notes
-//
-// In short, if these tests start crashing, try running them with -gcflags=-l.
-// If that doesn't work, you may need to just skip these tests.
+// We've solved this by making what should be a private method, public.
+// All we have to do now is call it.
 func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
 	app, _ = initApp(t)
-	// patch only if required
+	// adjust only if required
 	if atHeight != 0 {
-		monkey.PatchInstanceMethod(reflect.TypeOf(app.App), "Height", func(*meta.App) uint64 {
-			return atHeight
-		})
+		app.SetHeight(atHeight)
 	}
 	app.InitChain(types.RequestInitChain{})
 	return
-}
-
-func cleanupApp(app *App) {
-	monkey.UnpatchInstanceMethod(reflect.TypeOf(app), "Height")
 }
 
 func testSystem(t *testing.T, app *App, name, expect string) {
@@ -75,7 +61,6 @@ func testSystem(t *testing.T, app *App, name, expect string) {
 }
 func TestAppCanGetCurrentValueOfDeferredUpdate(t *testing.T) {
 	app := initAppAtHeight(t, 0)
-	defer cleanupApp(app)
 	// this fixture will switch from "bpc val one" to "system value one"
 	// at height 1000. Given that we just created this app and haven't
 	// run it, we can be confident that it is still at the first value
@@ -84,18 +69,15 @@ func TestAppCanGetCurrentValueOfDeferredUpdate(t *testing.T) {
 
 func TestAppCanGetFutureValueOnceHeightIsAppropriate(t *testing.T) {
 	app := initAppAtHeight(t, 1000)
-	defer cleanupApp(app)
 	testSystem(t, app, "one", "system value one")
 }
 
 func TestAppCanGetSimpleValue(t *testing.T) {
 	app := initAppAtHeight(t, 0)
-	defer cleanupApp(app)
 	testSystem(t, app, "two", "system value two")
 }
 
 func TestAppCanGetAliasedValue(t *testing.T) {
 	app := initAppAtHeight(t, 0)
-	defer cleanupApp(app)
 	testSystem(t, app, "foo", "baz")
 }
