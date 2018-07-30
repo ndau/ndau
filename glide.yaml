@@ -8,11 +8,11 @@ import:
 - package: github.com/google/go-cmp
   version: ^0.2.0
 - package: github.com/oneiro-ndev/chaos
-  version: prgn-update-slow-blocks
+  version: ~v0.10
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: prgn-create-only-nonempty-blocks
+  version: ~0.9
 - package: github.com/oneiro-ndev/msgp-well-known-types
   version: ~0.1.0
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git

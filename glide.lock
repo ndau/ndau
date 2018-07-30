@@ -1,5 +1,5 @@
-hash: 901e3e09c73189a6eff4d5392567860fb01ab3318212fd5e67dbf92b9629b83f
-updated: 2018-07-26T12:27:30.641869+02:00
+hash: d3e506bc7031207e3fa74cb07f748c54041c316ca793ad34f2e274758fbe009d
+updated: 2018-07-30T13:46:08.342468+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -180,7 +180,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaos
-  version: c26dcfc40dfec8d64eebab606de9db4ab2661628
+  version: 2ceaae45006c9ac0b287816400f44f704fbfcf35
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -189,7 +189,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 9940eb561d9b3b298d40b15f43f4f614182dd1c0
+  version: f51865350385b868120ac2692bd4dc91f76d3f3c
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -295,7 +295,7 @@ imports:
 - name: github.com/tendermint/go-amino
   version: 2106ca61d91029c931fd54968c2bb02dc96b1412
 - name: github.com/tendermint/tendermint
-  version: 5fdbcd70df57b71ffba71e1ff5f00d617852a9c0
+  version: d542d2c3945116697f60451e6a407082c41c3cc9
   subpackages:
   - abci/client
   - abci/example/code
