@@ -1,5 +1,5 @@
-hash: 75c7051682fcc2deb0c0845a12519ee312d89c085bcbc2d4830989a5c2e0dd77
-updated: 2018-07-17T14:47:31.094206+02:00
+hash: d3e506bc7031207e3fa74cb07f748c54041c316ca793ad34f2e274758fbe009d
+updated: 2018-07-30T13:46:08.342468+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -78,8 +78,6 @@ imports:
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
   subpackages:
   - quantile
-- name: github.com/bouk/monkey
-  version: 5df1f207ff77e025801505ae4d903133a0b4353f
 - name: github.com/btcsuite/btcd
   version: 86fed781132ac890ee03e906e4ecd5d6fa180c64
   subpackages:
@@ -102,6 +100,12 @@ imports:
   - internal/c
   - math
   - misc
+- name: github.com/facebookgo/clock
+  version: 600d898af40aa09a7a93ecb9265d87b0504b6f03
+- name: github.com/facebookgo/limitgroup
+  version: 6abd8d71ec01451d7f1929eacaa263bbe2935d05
+- name: github.com/facebookgo/muster
+  version: fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a
 - name: github.com/go-ini/ini
   version: 06f5f3d67269ccec1fe5fe4134ba6e982984f7f5
 - name: github.com/go-kit/kit
@@ -121,7 +125,7 @@ imports:
 - name: github.com/go-zoo/bone
   version: 9c7950ceaeb58228faa3bbde0ccf93b97b8ab08d
 - name: github.com/gogo/protobuf
-  version: 7d68e886eac4f7e34d0d82241a6273d6c304c5cf
+  version: 636bf0302bc95575d69441b25a2603156ffdddf1
   subpackages:
   - gogoproto
   - jsonpb
@@ -143,6 +147,8 @@ imports:
   version: 3af367b6b30c263d47e8895973edcca9a49cf029
 - name: github.com/gorilla/websocket
   version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
+- name: github.com/honeycombio/libhoney-go
+  version: 26d0d7dd8b07dae0d94a2b2b7abafd2401686ffa
 - name: github.com/jawher/mow.cli
   version: 123c8a60ff2f69b8c55b3e19b1383233321b316f
   subpackages:
@@ -174,7 +180,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaos
-  version: 8e37e05e749f58cf44cfe369af924a046c28285d
+  version: 2ceaae45006c9ac0b287816400f44f704fbfcf35
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -183,7 +189,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 68c868d3a1306c91fa2feabc1186b35fbfe900f8
+  version: f51865350385b868120ac2692bd4dc91f76d3f3c
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -207,6 +213,11 @@ imports:
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
+- name: github.com/oneiro-ndev/o11y
+  version: 27794fff7ce203d9f23b7d229eb2a39235bf3f10
+  repo: git@github.com:oneiro-ndev/o11y.git
+  subpackages:
+  - pkg/honeycomb
 - name: github.com/oneiro-ndev/signature
   version: 98ba9626121c5676aa52ca4ebb315d53cf16753c
   repo: git@github.com:oneiro-ndev/signature.git
@@ -284,7 +295,7 @@ imports:
 - name: github.com/tendermint/go-amino
   version: 2106ca61d91029c931fd54968c2bb02dc96b1412
 - name: github.com/tendermint/tendermint
-  version: c64a3c74c870d725ba1356f75b4afadf0928c297
+  version: d542d2c3945116697f60451e6a407082c41c3cc9
   subpackages:
   - abci/client
   - abci/example/code
@@ -296,7 +307,10 @@ imports:
   - consensus
   - consensus/types
   - crypto
+  - crypto/ed25519
+  - crypto/encoding/amino
   - crypto/merkle
+  - crypto/secp256k1
   - crypto/tmhash
   - evidence
   - libs/autofile
@@ -344,8 +358,6 @@ imports:
   - ed25519/internal/edwards25519
   - nacl/box
   - nacl/secretbox
-  - openpgp/armor
-  - openpgp/errors
   - poly1305
   - ripemd160
   - salsa20/salsa
@@ -403,4 +415,6 @@ imports:
   - status
   - tap
   - transport
+- name: gopkg.in/alexcesaro/statsd.v2
+  version: 7fea3f0d2fab1ad973e641e51dba45443a311a90
 testImports: []
