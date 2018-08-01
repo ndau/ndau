@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )
@@ -21,11 +21,12 @@ func NewDelegate(
 		Delegate: delegate,
 		Sequence: sequence,
 	}
-	dd.Signature = transferKey.Sign(dd.signableBytes())
+	dd.Signature = transferKey.Sign(dd.SignableBytes())
 	return dd
 }
 
-func (dd *Delegate) signableBytes() []byte {
+// SignableBytes implements Transactable
+func (dd *Delegate) SignableBytes() []byte {
 	bytes := make([]byte, 8, dd.Account.Msgsize()+dd.Delegate.Msgsize()+8)
 	binary.BigEndian.PutUint64(bytes, dd.Sequence)
 	bytes = append(bytes, []byte(dd.Account.String())...)
@@ -55,7 +56,7 @@ func (dd *Delegate) Validate(appI interface{}) error {
 	if acct.TransferKey == nil {
 		return errors.New("Transfer key not set")
 	}
-	if !acct.TransferKey.Verify(dd.signableBytes(), dd.Signature) {
+	if !acct.TransferKey.Verify(dd.SignableBytes(), dd.Signature) {
 		return errors.New("Invalid signature")
 	}
 

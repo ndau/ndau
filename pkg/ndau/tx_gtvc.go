@@ -42,6 +42,13 @@ func (vc *GTValidatorChange) Apply(appInt interface{}) error {
 	return nil
 }
 
+// SignableBytes implements Transactable
+func (vc *GTValidatorChange) SignableBytes() []byte {
+	bytes, err := vc.MarshalMsg(nil)
+	panicIfError(err, "GTVC signable bytes non nil error")
+	return bytes
+}
+
 func panicIfError(err error, msg string) {
 	if err != nil {
 		panic(msg)

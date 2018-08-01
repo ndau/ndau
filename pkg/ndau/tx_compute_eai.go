@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -19,11 +19,12 @@ import (
 // Most users will never need this.
 func NewComputeEAI(node address.Address, sequence uint64, key signature.PrivateKey) *ComputeEAI {
 	c := &ComputeEAI{Node: node, Sequence: sequence}
-	c.Signature = key.Sign(c.signableBytes())
+	c.Signature = key.Sign(c.SignableBytes())
 	return c
 }
 
-func (c *ComputeEAI) signableBytes() []byte {
+// SignableBytes implements Transactable
+func (c *ComputeEAI) SignableBytes() []byte {
 	bytes := make([]byte, 8, 8+len(c.Node.String()))
 	binary.BigEndian.PutUint64(bytes, c.Sequence)
 	bytes = append(bytes, c.Node.String()...)
@@ -47,7 +48,7 @@ func (c *ComputeEAI) Validate(appI interface{}) error {
 	if nodeData.TransferKey == nil {
 		return errors.New("Transfer key not set")
 	}
-	if !nodeData.TransferKey.Verify(c.signableBytes(), c.Signature) {
+	if !nodeData.TransferKey.Verify(c.SignableBytes(), c.Signature) {
 		return errors.New("Invalid signature")
 	}
 

@@ -54,7 +54,7 @@ func TestComputeEAINodeValidates(t *testing.T) {
 
 	// make the node field invalid
 	compute.Node = address.Address{}
-	compute.Signature = private.Sign(compute.signableBytes())
+	compute.Signature = private.Sign(compute.SignableBytes())
 
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)

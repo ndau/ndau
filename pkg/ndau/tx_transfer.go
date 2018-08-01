@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
@@ -34,10 +34,7 @@ func NewTransfer(
 		Qty:         q,
 		Sequence:    seq,
 	}
-	bytes, err := t.signableBytes()
-	if err != nil {
-		return nil, err
-	}
+	bytes := t.SignableBytes()
 	t.Signature, err = key.Sign(bytes).Marshal()
 
 	return t, err
@@ -49,28 +46,19 @@ func appendUint64(b []byte, i uint64) []byte {
 	return append(b, ib...)
 }
 
-func (t *Transfer) signableBytes() ([]byte, error) {
-	var err error
-	bytes := make([]byte, 0, t.Msgsize())
-	bytes, err = t.Timestamp.MarshalMsg(bytes)
-	if err != nil {
-		return nil, err
-	}
+// SignableBytes implements Transactable
+func (t *Transfer) SignableBytes() []byte {
+	bytes := make([]byte, 8+8, t.Msgsize()+8+8)
+	binary.BigEndian.PutUint64(bytes[0:8], uint64(t.Timestamp))
+	binary.BigEndian.PutUint64(bytes[8:16], uint64(t.Qty))
 	bytes = append(bytes, t.Source.String()...)
 	bytes = append(bytes, t.Destination.String()...)
-	bytes, err = t.Qty.MarshalMsg(bytes)
-	if err != nil {
-		return nil, err
-	}
 	bytes = appendUint64(bytes, t.Sequence)
-	return bytes, nil
+	return bytes
 }
 
 func (t *Transfer) signature(private signature.PrivateKey) ([]byte, error) {
-	bytes, err := t.signableBytes()
-	if err != nil {
-		return nil, err
-	}
+	bytes := t.SignableBytes()
 
 	sigB, err := private.Sign(bytes).Marshal()
 	if err != nil {
@@ -127,12 +115,9 @@ func (t *Transfer) Validate(appInt interface{}) error {
 	}
 	publicKey := *source.TransferKey
 
-	tBytes, err := t.signableBytes()
-	if err != nil {
-		return errors.Wrap(err, "signable bytes")
-	}
+	tBytes := t.SignableBytes()
 	sig := signature.Signature{}
-	err = (&sig).Unmarshal(t.Signature)
+	err := (&sig).Unmarshal(t.Signature)
 	if err != nil {
 		return errors.Wrap(err, "unmarshal signature")
 	}

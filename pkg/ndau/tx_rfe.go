@@ -5,29 +5,23 @@ import (
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
-
 	"github.com/pkg/errors"
 )
 
-func (rfe *ReleaseFromEndowment) signableBytes() ([]byte, error) {
-	bytes := make([]byte, 8, rfe.Destination.Msgsize()+rfe.Qty.Msgsize()+rfe.TxFeeAcct.Msgsize()+8)
-	binary.BigEndian.PutUint64(bytes, rfe.Sequence)
-	bytes, err := rfe.Destination.MarshalMsg(bytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "Destination")
-	}
-	bytes, err = rfe.TxFeeAcct.MarshalMsg(bytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "TxFeeAcct")
-	}
-	bytes, err = rfe.Qty.MarshalMsg(bytes)
-	err = errors.Wrap(err, "Qty")
-	return bytes, err
+// SignableBytes implements Transactable
+func (rfe *ReleaseFromEndowment) SignableBytes() []byte {
+	bytes := make([]byte, 8+8, rfe.Destination.Msgsize()+rfe.Qty.Msgsize()+rfe.TxFeeAcct.Msgsize()+8+8)
+	binary.BigEndian.PutUint64(bytes[0:8], rfe.Sequence)
+	binary.BigEndian.PutUint64(bytes[8:16], uint64(rfe.Qty))
+	bytes = append(bytes, []byte(rfe.Destination.String())...)
+	bytes = append(bytes, []byte(rfe.TxFeeAcct.String())...)
+	return bytes
 }
 
 // NewReleaseFromEndowment constructs a ReleaseFromEndowment transactable.
@@ -39,18 +33,15 @@ func NewReleaseFromEndowment(
 	destination, txFeeAcct address.Address,
 	sequence uint64,
 	private signature.PrivateKey,
-) (ReleaseFromEndowment, error) {
-	rfe := ReleaseFromEndowment{
+) (rfe ReleaseFromEndowment) {
+	rfe = ReleaseFromEndowment{
 		Qty:         qty,
 		Destination: destination,
 		TxFeeAcct:   txFeeAcct,
 		Sequence:    sequence,
 	}
-	sb, err := rfe.signableBytes()
-	if err == nil {
-		rfe.Signature = private.Sign(sb)
-	}
-	return rfe, err
+	rfe.Signature = metatx.Sign(&rfe, private)
+	return rfe
 }
 
 // Validate implements metatx.Transactable
@@ -69,10 +60,7 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	if rfe.Sequence <= txAcct.Sequence {
 		return errors.New("Sequence too low")
 	}
-	sb, err := rfe.signableBytes()
-	if err != nil {
-		return errors.Wrap(err, "RFE.Validate signableBytes")
-	}
+	sb := rfe.SignableBytes()
 	if txAcct.TransferKey == nil {
 		return errors.New("TxFeeAcct transfer key not set")
 	}
@@ -81,7 +69,7 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 
 	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
-	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
+	err := app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
 	if err != nil {
 		return errors.Wrap(err, "RFE.Validate app.System err")
 	}

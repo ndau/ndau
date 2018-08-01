@@ -34,14 +34,13 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 				orQuit(errors.New("not enough RFE keys in configuration"))
 			}
 
-			rfe, err := ndau.NewReleaseFromEndowment(
+			rfe := ndau.NewReleaseFromEndowment(
 				ndauQty,
 				address,
 				conf.RFE[*index].Address,
 				sequence(conf, conf.RFE[*index].Address),
 				conf.RFE[*index].Key,
 			)
-			orQuit(errors.Wrap(err, "generating Release from Endowment tx"))
 
 			result, err := tool.SendCommit(tmnode(conf.Node), &rfe)
 			finish(*verbose, result, err, "rfe")
