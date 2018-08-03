@@ -36,7 +36,7 @@ func (c *ComputeEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	nodeData, hasNode := state.Accounts[c.Node.String()]
+	nodeData, hasNode := state.GetAccount(c.Node, app.blockTime)
 	if !hasNode {
 		return errors.New("No such node")
 	}
@@ -71,14 +71,18 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		nodeData := state.Accounts[c.Node.String()]
+		nodeData, _ := state.GetAccount(c.Node, app.blockTime)
 		nodeData.Sequence = c.Sequence
 		state.Accounts[c.Node.String()] = nodeData
 
 		delegatedAccounts := state.Delegates[c.Node.String()]
 		var errorList []error
-		for accountAddr := range delegatedAccounts {
-			acctData, hasAcct := state.Accounts[accountAddr]
+		for accountAddrS := range delegatedAccounts {
+			accountAddr, err := address.Validate(accountAddrS)
+			if err != nil {
+				return state, errors.Wrap(err, "ComputeEAI: validating delegated account address")
+			}
+			acctData, hasAcct := state.GetAccount(accountAddr, app.blockTime)
 			if !hasAcct {
 				// accounts can sometimes be removed, i.e. due to 0 balance
 				// if we encounter that, don't worry about it
@@ -135,7 +139,7 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				continue
 			}
 			acctData.LastEAIUpdate = app.blockTime
-			state.Accounts[accountAddr] = acctData
+			state.Accounts[accountAddr.String()] = acctData
 		}
 		if len(errorList) > 0 {
 			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", c.Node.String())

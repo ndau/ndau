@@ -1,11 +1,13 @@
 package ndau
 
 import (
+	"fmt"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
 
 // AccountEndpoint is the endpoint at which Account queries live
@@ -26,12 +28,8 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 
 	state := app.GetState().(*backing.State)
 
-	ad, exists := state.Accounts[address.String()]
-	if exists {
-		response.Log = "exists"
-	} else {
-		response.Log = "does not exist"
-	}
+	ad, exists := state.GetAccount(address, app.blockTime)
+	response.Log = fmt.Sprintf("acct exists: %t", exists)
 	ad.UpdateSettlement(app.blockTime)
 	adBytes, err := ad.MarshalMsg(nil)
 	if err != nil {

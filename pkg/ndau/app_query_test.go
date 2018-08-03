@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -21,7 +20,7 @@ func TestCanQueryAccountStatusSource(t *testing.T) {
 		Data: []byte(source),
 	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "exists", resp.Log)
+	require.Equal(t, "acct exists: true", resp.Log)
 	accountData := new(backing.AccountData)
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
@@ -37,7 +36,7 @@ func TestCanQueryAccountStatusDest(t *testing.T) {
 		Data: []byte(dest),
 	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "does not exist", resp.Log)
+	require.Equal(t, "acct exists: false", resp.Log)
 	accountData := new(backing.AccountData)
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)

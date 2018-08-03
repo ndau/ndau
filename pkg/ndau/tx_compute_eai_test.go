@@ -5,10 +5,10 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
@@ -102,7 +102,10 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 	compute := NewComputeEAI(nA, 1, private)
 
 	state := app.GetState().(*backing.State)
-	sourceInitial := state.Accounts[source].Balance
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	acct, _ := state.GetAccount(sA, app.blockTime)
+	sourceInitial := acct.Balance
 
 	blockTime := math.Timestamp(45 * math.Day)
 	bt := constants.Epoch.Add(math.Duration(blockTime).TimeDuration())
@@ -114,7 +117,7 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 
 	// require that a positive EAI was applied
 	state = app.GetState().(*backing.State)
-	acct := state.Accounts[source]
+	acct, _ = state.GetAccount(sA, app.blockTime)
 	t.Log(acct.Balance)
 	// here, we don't bother testing _how much_ eai is applied: we have to
 	// trust that the ndaumath library is well tested. Instead, we just test

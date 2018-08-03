@@ -349,8 +349,7 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	tr := generateTransfer(t, qty, seq, key)
 	tr.Destination = tr.Source
 	bytes := tr.SignableBytes()
-	tr.Signature, err = key.Sign(bytes).Marshal()
-	require.NoError(t, err)
+	tr.Signature = key.Sign(bytes)
 
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -360,7 +359,9 @@ func TestSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
 	tr := generateTransfer(t, 1, 1, private)
 	// I'm almost completely certain that this will be an invalid signature
-	tr.Signature = []byte("foo bar bat baz")
+	sig, err := signature.RawSignature(signature.Ed25519, make([]byte, signature.Ed25519.SignatureSize()))
+	require.NoError(t, err)
+	tr.Signature = *sig
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

@@ -53,7 +53,7 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 
 	state := app.GetState().(*backing.State)
-	txAcct, hasAcct := state.Accounts[rfe.TxFeeAcct.String()]
+	txAcct, hasAcct := state.GetAccount(rfe.TxFeeAcct, app.blockTime)
 	if !hasAcct {
 		return errors.New("TxFeeAcct does not exist")
 	}
@@ -94,11 +94,11 @@ func (rfe *ReleaseFromEndowment) Apply(appI interface{}) error {
 		var err error
 		state := stateI.(*backing.State)
 
-		txAcct := state.Accounts[rfe.TxFeeAcct.String()]
+		txAcct, _ := state.GetAccount(rfe.TxFeeAcct, app.blockTime)
 		txAcct.Sequence = rfe.Sequence
 		state.Accounts[rfe.TxFeeAcct.String()] = txAcct
 
-		acct := state.Accounts[rfe.Destination.String()]
+		acct, _ := state.GetAccount(rfe.Destination, app.blockTime)
 		acct.Balance, err = acct.Balance.Add(rfe.Qty)
 		if err == nil {
 			state.Accounts[rfe.Destination.String()] = acct

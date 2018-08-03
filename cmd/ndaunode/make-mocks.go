@@ -8,13 +8,13 @@ import (
 	"github.com/pkg/errors"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	tc "github.com/oneiro-ndev/ndau/pkg/tool.config"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -51,14 +51,11 @@ func generateMockRFEAccounts(conf *config.Config) []address.Address {
 			}
 			addrs = append(addrs, addr)
 
-			acct, hasAcct := state.Accounts[addr.String()]
-			if !hasAcct {
-				now, err := math.TimestampFrom(time.Now())
-				if err != nil {
-					return state, err
-				}
-				acct = backing.NewAccountData(now)
+			ts, err := math.TimestampFrom(time.Now())
+			if err != nil {
+				return state, err
 			}
+			acct, _ := state.GetAccount(addr, ts)
 			trKeyCopy := trKey // copy so pointers work right
 			acct.TransferKey = &trKeyCopy
 

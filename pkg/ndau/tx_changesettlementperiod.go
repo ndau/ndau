@@ -67,7 +67,7 @@ func (cep *ChangeSettlementPeriod) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		acct := state.Accounts[cep.Target.String()]
+		acct, _ := state.GetAccount(cep.Target, app.blockTime)
 		acct.UpdateSettlement(app.blockTime)
 		acct.Sequence = cep.Sequence
 
