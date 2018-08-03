@@ -58,8 +58,10 @@ func (c *Lock) Validate(appI interface{}) error {
 			}
 		} else {
 			// if notified, lock is valid if it expires after the current unlock time
-			if accountData.Lock.UnlocksOn.Compare(app.blockTime.Add(c.Period)) > 0 {
-				return errors.New("Locked, notified accounts may be relocked only when new lock can't be unlocked earlier than current")
+			lockExpiry := app.blockTime.Add(c.Period)
+			uo := *accountData.Lock.UnlocksOn
+			if lockExpiry.Compare(uo) < 0 {
+				return errors.New("Locked, notified accounts may be relocked only when new lock min expiry >= current unlock time")
 			}
 		}
 	}
