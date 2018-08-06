@@ -41,6 +41,10 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 	if !hasAccount {
 		return errors.New("No such account")
 	}
+	_, err := address.Validate(c.Destination.String())
+	if err != nil {
+		return errors.Wrap(err, "Destination")
+	}
 	// is the tx sequence higher than the highest previous sequence?
 	if c.Sequence <= accountData.Sequence {
 		return errors.New("Sequence too low")
@@ -65,7 +69,11 @@ func (c *SetRewardsTarget) Apply(appI interface{}) error {
 		accountData, _ := state.GetAccount(c.Account, app.blockTime)
 		accountData.Sequence = c.Sequence
 
-		accountData.RewardsTarget = &c.Destination
+		if c.Account.String() == c.Destination.String() {
+			accountData.RewardsTarget = nil
+		} else {
+			accountData.RewardsTarget = &c.Destination
+		}
 
 		state.Accounts[c.Account.String()] = accountData
 		return state, nil
