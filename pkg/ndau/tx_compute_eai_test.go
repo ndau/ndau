@@ -127,3 +127,93 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 	require.Equal(t, blockTime, acct.LastEAIUpdate)
 	require.Equal(t, blockTime, acct.LastWAAUpdate)
 }
+
+func TestComputeEAIWithRewardsTargetChangesAppState(t *testing.T) {
+	app, private := initAppComputeEAI(t)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+	compute := NewComputeEAI(nA, 1, private)
+
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	state := app.GetState().(*backing.State)
+	sAcct, _ := state.GetAccount(sA, app.blockTime)
+	sourceInitial := sAcct.Balance
+
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	// verify that the dest account has nothing currently in it
+	dAcct, _ := state.GetAccount(dA, app.blockTime)
+	require.Equal(t, math.Ndau(0), dAcct.Balance)
+	// have the source acct send rewards to the dest acct
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.RewardsTarget = &dA
+	})
+
+	blockTime := math.Timestamp(45 * math.Day)
+	resp := deliverTrAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// require that a positive EAI was applied
+	state = app.GetState().(*backing.State)
+	sAcct, _ = state.GetAccount(sA, app.blockTime)
+	dAcct, dExists := state.GetAccount(dA, app.blockTime)
+	t.Log("src:  ", sAcct.Balance)
+	t.Log("dest: ", dAcct.Balance)
+	require.True(t, dExists)
+	// the source account must not be changed
+	require.Equal(t, sourceInitial, sAcct.Balance)
+	// the dest acct must now have a non-0 balance
+	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
+}
+
+func TestComputeEAIWithNotifiedRewardsTargetBurnsEAI(t *testing.T) {
+	app, private := initAppComputeEAI(t)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+	compute := NewComputeEAI(nA, 1, private)
+
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	state := app.GetState().(*backing.State)
+	sAcct, _ := state.GetAccount(sA, app.blockTime)
+	sourceInitial := sAcct.Balance
+
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	// verify that the dest account has nothing currently in it
+	dAcct, _ := state.GetAccount(dA, app.blockTime)
+	require.Equal(t, math.Ndau(0), dAcct.Balance)
+	// have the source acct send rewards to the dest acct
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.RewardsTarget = &dA
+	})
+	modify(t, dest, app, func(ad *backing.AccountData) {
+		uo := math.Timestamp(1 * math.Year)
+		ad.Lock = &backing.Lock{
+			NoticePeriod: math.Duration(1 * math.Year),
+			UnlocksOn:    &uo,
+		}
+	})
+
+	blockTime := math.Timestamp(45 * math.Day)
+	resp := deliverTrAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// require that eai was burned as the dest account was notified
+	state = app.GetState().(*backing.State)
+	sAcct, _ = state.GetAccount(sA, app.blockTime)
+	dAcct, _ = state.GetAccount(dA, app.blockTime)
+	t.Log("src:  ", sAcct.Balance)
+	t.Log("dest: ", dAcct.Balance)
+	// the source account must not be changed
+	require.Equal(t, sourceInitial, sAcct.Balance)
+	// the dest acct must still have a 0 balance
+	require.Equal(t, math.Ndau(0), dAcct.Balance)
+}

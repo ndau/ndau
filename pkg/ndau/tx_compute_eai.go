@@ -130,7 +130,20 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				err = nil
 				continue
 			}
-			acctData.Balance, err = acctData.Balance.Add(eaiAward)
+
+			// EAI may be awarded into different accounts
+			if acctData.RewardsTarget != nil {
+				rAcctData, _ := state.GetAccount(*acctData.RewardsTarget, app.blockTime)
+				if !rAcctData.IsNotified(app.blockTime) {
+					rAcctData.Balance, err = rAcctData.Balance.Add(eaiAward)
+					if err == nil {
+						state.Accounts[acctData.RewardsTarget.String()] = rAcctData
+					}
+				}
+				// if rAcctData is notified, the EAI is burned
+			} else {
+				acctData.Balance, err = acctData.Balance.Add(eaiAward)
+			}
 			if err != nil {
 				// same deal: we either panic, or just log the error and soldier on
 				logger.WithError(err).WithField("eaiAward", eaiAward).Error("error updating account balance")
