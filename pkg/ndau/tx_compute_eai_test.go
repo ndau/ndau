@@ -170,7 +170,7 @@ func TestComputeEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
 }
 
-func TestComputeEAIWithNotifiedRewardsTargetBurnsEAI(t *testing.T) {
+func TestComputeEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
@@ -206,7 +206,7 @@ func TestComputeEAIWithNotifiedRewardsTargetBurnsEAI(t *testing.T) {
 	}
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	// require that eai was burned as the dest account was notified
+	// require that eai was deposited despite the dest acct being notified
 	state = app.GetState().(*backing.State)
 	sAcct, _ = state.GetAccount(sA, app.blockTime)
 	dAcct, _ = state.GetAccount(dA, app.blockTime)
@@ -214,6 +214,6 @@ func TestComputeEAIWithNotifiedRewardsTargetBurnsEAI(t *testing.T) {
 	t.Log("dest: ", dAcct.Balance)
 	// the source account must not be changed
 	require.Equal(t, sourceInitial, sAcct.Balance)
-	// the dest acct must still have a 0 balance
-	require.Equal(t, math.Ndau(0), dAcct.Balance)
+	// the dest acct must have had some EAI credited
+	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
 }

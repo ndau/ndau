@@ -131,19 +131,14 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				continue
 			}
 
-			// EAI may be awarded into different accounts
+			destAcct := accountAddr
+			destAcctData := acctData
 			if acctData.RewardsTarget != nil {
-				rAcctData, _ := state.GetAccount(*acctData.RewardsTarget, app.blockTime)
-				if !rAcctData.IsNotified(app.blockTime) {
-					rAcctData.Balance, err = rAcctData.Balance.Add(eaiAward)
-					if err == nil {
-						state.Accounts[acctData.RewardsTarget.String()] = rAcctData
-					}
-				}
-				// if rAcctData is notified, the EAI is burned
-			} else {
-				acctData.Balance, err = acctData.Balance.Add(eaiAward)
+				destAcct = *acctData.RewardsTarget
+				destAcctData, _ = state.GetAccount(destAcct, app.blockTime)
 			}
+
+			destAcctData.Balance, err = destAcctData.Balance.Add(eaiAward)
 			if err != nil {
 				// same deal: we either panic, or just log the error and soldier on
 				logger.WithError(err).WithField("eaiAward", eaiAward).Error("error updating account balance")
@@ -152,6 +147,14 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				continue
 			}
 			acctData.LastEAIUpdate = app.blockTime
+
+			if destAcct.String() == accountAddr.String() {
+				// special case: just update the acctData balance, and
+				// make a single state update
+				acctData.Balance = destAcctData.Balance
+			} else {
+				state.Accounts[destAcct.String()] = destAcctData
+			}
 			state.Accounts[accountAddr.String()] = acctData
 		}
 		if len(errorList) > 0 {
