@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -55,6 +56,19 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 		return errors.New("Invalid signature")
 	}
 
+	// source account must not be receiving rewards from any other account
+	if len(accountData.IncomingRewardsFrom) > 0 {
+		return fmt.Errorf("Accounts may not both send and receive rewards. Source receives rewards from these accounts: %s", accountData.IncomingRewardsFrom)
+	}
+
+	if c.Destination.String() != c.Account.String() {
+		// dest account must not be sending rewards to any other account
+		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
+		if targetData.RewardsTarget != nil {
+			return fmt.Errorf("Accounts may not both send and receive rewards. Destination sends rewards to %s", *targetData.RewardsTarget)
+		}
+	}
+
 	return nil
 }
 
@@ -67,10 +81,28 @@ func (c *SetRewardsTarget) Apply(appI interface{}) error {
 		accountData, _ := state.GetAccount(c.Account, app.blockTime)
 		accountData.Sequence = c.Sequence
 
+		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
+
+		// update inbound of rewards target
+		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != c.Account.String() {
+			oldTargetData, _ := state.GetAccount(*accountData.RewardsTarget, app.blockTime)
+			// remove account from current target inbounds list
+			inbounds := make([]address.Address, 0, len(oldTargetData.IncomingRewardsFrom)-1)
+			for _, addr := range oldTargetData.IncomingRewardsFrom {
+				if c.Account.String() != addr.String() {
+					inbounds = append(inbounds, addr)
+				}
+			}
+			oldTargetData.IncomingRewardsFrom = inbounds
+			state.Accounts[accountData.RewardsTarget.String()] = oldTargetData
+		}
+
 		if c.Account.String() == c.Destination.String() {
 			accountData.RewardsTarget = nil
 		} else {
 			accountData.RewardsTarget = &c.Destination
+			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, c.Account)
+			state.Accounts[c.Destination.String()] = targetData
 		}
 
 		state.Accounts[c.Account.String()] = accountData
