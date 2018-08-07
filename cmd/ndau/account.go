@@ -60,8 +60,14 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 
 		cmd.Command(
 			"lock",
-			"lock this account for a specified period",
+			"lock this account with a specified notice period",
 			getLock(verbose),
+		)
+
+		cmd.Command(
+			"notify",
+			"notify that this account should be unlocked once its notice period expires",
+			getNotify(verbose),
 		)
 	}
 }
@@ -305,6 +311,41 @@ func getLock(verbose *bool) func(*cli.Cmd) {
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
 			finish(*verbose, resp, err, "lock")
+		}
+	}
+}
+
+func getNotify(verbose *bool) func(*cli.Cmd) {
+	return func(subcmd *cli.Cmd) {
+		subcmd.Spec = "NAME"
+
+		var name = subcmd.StringArg("NAME", "", "Name of account to lock")
+
+		subcmd.Action = func() {
+			conf := getConfig()
+			acct, hasAcct := conf.Accounts[*name]
+			if !hasAcct {
+				orQuit(fmt.Errorf("No such account: %s", *name))
+			}
+			if acct.Transfer == nil {
+				orQuit(fmt.Errorf("Transfer key for %s not set", *name))
+			}
+
+			if *verbose {
+				fmt.Printf(
+					"Notifying acct %s\n",
+					acct.Address,
+				)
+			}
+
+			tx := ndau.NewNotify(
+				acct.Address,
+				sequence(conf, acct.Address),
+				acct.Transfer.Private,
+			)
+
+			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
+			finish(*verbose, resp, err, "notify")
 		}
 	}
 }
