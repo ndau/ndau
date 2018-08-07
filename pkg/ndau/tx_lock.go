@@ -12,8 +12,6 @@ import (
 )
 
 // NewLock creates a new Lock transaction
-//
-// Most users will never need this.
 func NewLock(account address.Address, period math.Duration, sequence uint64, key signature.PrivateKey) *Lock {
 	c := &Lock{Account: account, Period: period, Sequence: sequence}
 	c.Signature = key.Sign(c.SignableBytes())

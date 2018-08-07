@@ -11,8 +11,6 @@ import (
 )
 
 // NewSetRewardsTarget creates a new SetRewardsTarget transaction
-//
-// Most users will never need this.
 func NewSetRewardsTarget(account, destination address.Address, sequence uint64, key signature.PrivateKey) *SetRewardsTarget {
 	c := &SetRewardsTarget{
 		Account:     account,

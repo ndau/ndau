@@ -20,7 +20,7 @@ func argFor(id string) string {
 	if id == "" {
 		return "a address"
 	}
-	return strings.ToLower(fmt.Sprintf("%s_address", id))
+	return strings.ToLower(fmt.Sprintf("%s-address", id))
 }
 
 func getAddressSpec(id string) string {

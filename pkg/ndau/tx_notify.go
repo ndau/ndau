@@ -11,8 +11,6 @@ import (
 )
 
 // NewNotify creates a new Notify transaction
-//
-// Most users will never need this.
 func NewNotify(account address.Address, sequence uint64, key signature.PrivateKey) *Notify {
 	c := &Notify{Account: account, Sequence: sequence}
 	c.Signature = key.Sign(c.SignableBytes())
