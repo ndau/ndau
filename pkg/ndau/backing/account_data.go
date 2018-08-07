@@ -4,6 +4,7 @@ import (
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/pkg/errors"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -179,18 +180,19 @@ func NewAccountData(blockTime math.Timestamp) AccountData {
 //
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
-	Balance            math.Ndau
-	TransferKey        *signature.PublicKey
-	RewardsTarget      *address.Address
-	DelegationNode     *address.Address
-	Lock               *Lock
-	Stake              *Stake
-	LastEAIUpdate      math.Timestamp
-	LastWAAUpdate      math.Timestamp
-	WeightedAverageAge math.Duration
-	Sequence           uint64
-	Settlements        []Settlement
-	SettlementSettings SettlementSettings
+	Balance             math.Ndau
+	TransferKey         *signature.PublicKey
+	RewardsTarget       *address.Address
+	IncomingRewardsFrom []address.Address
+	DelegationNode      *address.Address
+	Lock                *Lock
+	Stake               *Stake
+	LastEAIUpdate       math.Timestamp
+	LastWAAUpdate       math.Timestamp
+	WeightedAverageAge  math.Duration
+	Sequence            uint64
+	Settlements         []Settlement
+	SettlementSettings  SettlementSettings
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
@@ -216,23 +218,24 @@ func (ad *AccountData) UnmarshalNoms(v nt.Value) error {
 }
 
 type nomsAccountData struct {
-	Balance            util.Int
-	HasTransferKey     bool
-	TransferKey        nt.Blob
-	HasRewardsTarget   bool
-	RewardsTarget      nt.String
-	HasDelegationNode  bool
-	DelegationNode     nt.String
-	HasLock            bool
-	Lock               Lock
-	HasStake           bool
-	Stake              Stake
-	LastEAIUpdate      util.Int
-	LastWAAUpdate      util.Int
-	WeightedAverageAge util.Int
-	Sequence           util.Int
-	Settlements        []Settlement
-	SettlementSettings SettlementSettings
+	Balance             util.Int
+	HasTransferKey      bool
+	TransferKey         nt.Blob
+	HasRewardsTarget    bool
+	RewardsTarget       nt.String
+	IncomingRewardsFrom []nt.String
+	HasDelegationNode   bool
+	DelegationNode      nt.String
+	HasLock             bool
+	Lock                Lock
+	HasStake            bool
+	Stake               Stake
+	LastEAIUpdate       util.Int
+	LastWAAUpdate       util.Int
+	WeightedAverageAge  util.Int
+	Sequence            util.Int
+	Settlements         []Settlement
+	SettlementSettings  SettlementSettings
 }
 
 func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
@@ -261,6 +264,9 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 	}
 	if nad.HasRewardsTarget {
 		nad.RewardsTarget = nt.String(ad.RewardsTarget.String())
+	}
+	for _, irf := range ad.IncomingRewardsFrom {
+		nad.IncomingRewardsFrom = append(nad.IncomingRewardsFrom, nt.String(irf.String()))
 	}
 	if nad.HasDelegationNode {
 		nad.DelegationNode = nt.String(ad.DelegationNode.String())
@@ -296,6 +302,14 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 			*ad = AccountData{}
 			return err
 		}
+	}
+	for _, irf := range n.IncomingRewardsFrom {
+		addr, err := address.Validate(string(irf))
+		if err != nil {
+			*ad = AccountData{}
+			return errors.Wrap(err, "invalid incoming rewards from: "+string(irf))
+		}
+		ad.IncomingRewardsFrom = append(ad.IncomingRewardsFrom, addr)
 	}
 	if n.HasDelegationNode {
 		ad.DelegationNode = new(address.Address)
