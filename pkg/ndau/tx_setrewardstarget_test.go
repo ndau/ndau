@@ -116,6 +116,8 @@ func TestSetRewardsTargetChangesAppState(t *testing.T) {
 	state := app.GetState().(*backing.State)
 	// we must have updated the source's rewards target
 	require.Equal(t, &dA, state.Accounts[source].RewardsTarget)
+	// we must have updated the dest's inbound rewards targets
+	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
 
 	// resetting to source address saves as "nil" dest address
 	srt = NewSetRewardsTarget(sA, sA, 2, private)
@@ -124,6 +126,8 @@ func TestSetRewardsTargetChangesAppState(t *testing.T) {
 	state = app.GetState().(*backing.State)
 	// we must have updated the source's rewards target
 	require.Nil(t, state.Accounts[source].RewardsTarget)
+	// we mut have removed the source from the dest's inbound rewards targets
+	require.Empty(t, state.Accounts[dest].IncomingRewardsFrom)
 }
 
 func TestSetRewardsTargetInvalidIfDestinationAlsoSends(t *testing.T) {
