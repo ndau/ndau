@@ -175,3 +175,37 @@ func TestSetRewardsTargetInvalidIfSourceAlsoReceives(t *testing.T) {
 	resp := app.CheckTx(bytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestReSetRewardsTargetChangesAppState(t *testing.T) {
+	// set up accounts
+	app, private := initAppTx(t)
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+	tA, err := address.Validate(settled)
+	require.NoError(t, err)
+
+	// set up fixture: sA -> nA
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.RewardsTarget = &nA
+	})
+	modify(t, eaiNode, app, func(ad *backing.AccountData) {
+		ad.IncomingRewardsFrom = []address.Address{sA, tA}
+	})
+
+	// deliver transaction
+	srt := NewSetRewardsTarget(sA, dA, 1, private)
+	resp := deliverTr(t, app, srt)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	state := app.GetState().(*backing.State)
+	// we must have updated the source's rewards target
+	require.Equal(t, &dA, state.Accounts[source].RewardsTarget)
+	// we must have updated the dest's inbound rewards targets
+	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
+	// we must have removed the prev target's inbound targets
+	require.Equal(t, []address.Address{tA}, state.Accounts[eaiNode].IncomingRewardsFrom)
+}
