@@ -124,5 +124,50 @@ func TestSetRewardsTargetChangesAppState(t *testing.T) {
 	state = app.GetState().(*backing.State)
 	// we must have updated the source's rewards target
 	require.Nil(t, state.Accounts[source].RewardsTarget)
+}
 
+func TestSetRewardsTargetInvalidIfDestinationAlsoSends(t *testing.T) {
+	app, private := initAppTx(t)
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+
+	// when the destination has a rewards target set...
+	modify(t, dest, app, func(ad *backing.AccountData) {
+		ad.RewardsTarget = &nA
+	})
+
+	srt := NewSetRewardsTarget(sA, dA, 1, private)
+
+	// ...srt must be invalid
+	bytes, err := tx.Marshal(srt, TxIDs)
+	require.NoError(t, err)
+	resp := app.CheckTx(bytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestSetRewardsTargetInvalidIfSourceAlsoReceives(t *testing.T) {
+	app, private := initAppTx(t)
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+
+	// when the source is receiving rewards from another account
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.IncomingRewardsFrom = []address.Address{nA}
+	})
+
+	srt := NewSetRewardsTarget(sA, dA, 1, private)
+
+	// ...srt must be invalid
+	bytes, err := tx.Marshal(srt, TxIDs)
+	require.NoError(t, err)
+	resp := app.CheckTx(bytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
