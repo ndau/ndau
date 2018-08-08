@@ -125,7 +125,7 @@ func (ct *ChangeTransferKey) Apply(appI interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
-		ad, hasAd := state.Accounts[ct.Target.String()]
+		ad, hasAd := state.GetAccount(ct.Target, app.blockTime)
 		if !hasAd {
 			ad = backing.NewAccountData(app.blockTime)
 		}

@@ -5,6 +5,8 @@ import (
 
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 const accountKey = "accounts"
@@ -132,4 +134,22 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		}
 	})
 	return err
+}
+
+// GetAccount returns the account at the requested address.
+//
+// If the account does not already exist, a fresh one is created.
+//
+// This function is necessary because account zero values are not valid:
+// the `Last*Update` fields must be initialized with the current block time.
+//
+// The boolean return value is true when the account previously existed;
+// false when it is new.
+func (s *State) GetAccount(address address.Address, blockTime math.Timestamp) (AccountData, bool) {
+	data, hasAccount := s.Accounts[address.String()]
+	if !hasAccount {
+		data.LastEAIUpdate = blockTime
+		data.LastWAAUpdate = blockTime
+	}
+	return data, hasAccount
 }

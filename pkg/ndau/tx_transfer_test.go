@@ -117,15 +117,17 @@ func modifyDest(t *testing.T, app *App, f func(*backing.AccountData)) {
 }
 
 func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.ResponseDeliverTx {
-	return deliverTrAt(t, app, transfer, time.Now().Unix())
+	timestamp, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	return deliverTrAt(t, app, transfer, timestamp)
 }
 
-func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time int64) abci.ResponseDeliverTx {
+func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time math.Timestamp) abci.ResponseDeliverTx {
 	bytes, err := tx.Marshal(transfer, TxIDs)
 	require.NoError(t, err)
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time,
+		Time: time.AsTime().Unix(),
 	}})
 	resp := app.DeliverTx(bytes)
 	if resp.Log != "" {
@@ -211,9 +213,7 @@ func TestTransfersFromNotifiedAddressesAreInvalid(t *testing.T) {
 }
 
 func TestTransfersUpdateDestWAA(t *testing.T) {
-	now := time.Now()
-	unixTime := now.Unix()
-	timestamp, err := math.TimestampFrom(now)
+	timestamp, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
 	app, private := initAppTx(t)
@@ -224,7 +224,7 @@ func TestTransfersUpdateDestWAA(t *testing.T) {
 	})
 
 	tr := generateTransfer(t, 50, 1, private)
-	resp := deliverTrAt(t, app, tr, unixTime)
+	resp := deliverTrAt(t, app, tr, timestamp)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// because we're doing integer math on times here, we won't get
@@ -255,9 +255,7 @@ func TestTransfersUpdateDestWAA(t *testing.T) {
 }
 
 func TestTransfersUpdateDestLastWAAUpdate(t *testing.T) {
-	now := time.Now()
-	unixTime := now.Unix()
-	timestamp, err := math.TimestampFrom(now)
+	timestamp, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
 	// truncate timestamp to the nearest second:
@@ -273,7 +271,7 @@ func TestTransfersUpdateDestLastWAAUpdate(t *testing.T) {
 	})
 
 	tr := generateTransfer(t, 50, 1, private)
-	resp := deliverTrAt(t, app, tr, unixTime)
+	resp := deliverTrAt(t, app, tr, timestamp)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// not actually modifying the dest here; this is just the
@@ -349,8 +347,7 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	tr := generateTransfer(t, qty, seq, key)
 	tr.Destination = tr.Source
 	bytes := tr.SignableBytes()
-	tr.Signature, err = key.Sign(bytes).Marshal()
-	require.NoError(t, err)
+	tr.Signature = key.Sign(bytes)
 
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -360,7 +357,9 @@ func TestSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
 	tr := generateTransfer(t, 1, 1, private)
 	// I'm almost completely certain that this will be an invalid signature
-	tr.Signature = []byte("foo bar bat baz")
+	sig, err := signature.RawSignature(signature.Ed25519, make([]byte, signature.Ed25519.SignatureSize()))
+	require.NoError(t, err)
+	tr.Signature = *sig
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -424,8 +423,7 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	// setup app
 	app, key, ts := initAppSettlement(t)
 	require.True(t, app.blockTime.Compare(ts) >= 0)
-	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
-	tn = tn.Add(1 * time.Second)
+	tn := ts.Add(1 * math.Second)
 
 	// generate transfer
 	// because the escrowed funds have cleared,
@@ -442,7 +440,7 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	require.NoError(t, err)
 
 	// send transfer
-	resp := deliverTrAt(t, app, tr, tn.Unix())
+	resp := deliverTrAt(t, app, tr, tn)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -450,8 +448,7 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	// setup app
 	app, key, ts := initAppSettlement(t)
 	// set app time to a day before the escrow expiry time
-	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
-	tn = tn.Add(time.Duration(-24 * time.Hour))
+	tn := ts.Add(math.Duration(-24 * 3600 * math.Second))
 
 	// generate transfer
 	// because the escrowed funds have not yet cleared,
@@ -468,6 +465,6 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	require.NoError(t, err)
 
 	// send transfer
-	resp := deliverTrAt(t, app, tr, tn.Unix())
+	resp := deliverTrAt(t, app, tr, tn)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

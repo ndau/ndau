@@ -7,7 +7,10 @@ import (
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
-//go:generate msgp -io=0
+// We disable tests because every transaction except GTValidatorChange
+// uses the Signature type, which blows up the msgp-generated tests because
+// it doesn't work with nil values.
+//go:generate msgp -io=0 -tests=0
 
 // TxIDs is a map which defines canonical numeric ids for each transactable type.
 var TxIDs = map[metatx.TxID]metatx.Transactable{
@@ -17,6 +20,9 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(4):    &ChangeSettlementPeriod{},
 	metatx.TxID(5):    &Delegate{},
 	metatx.TxID(6):    &ComputeEAI{},
+	metatx.TxID(7):    &Lock{},
+	metatx.TxID(8):    &Notify{},
+	metatx.TxID(9):    &SetRewardsTarget{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -48,7 +54,7 @@ type Transfer struct {
 	Destination address.Address
 	Qty         math.Ndau
 	Sequence    uint64
-	Signature   []byte
+	Signature   signature.Signature
 }
 
 // static assert that GTValidatorChange is metatx.Transactable
@@ -63,15 +69,6 @@ const (
 	// SigningKeyTransfer indicates that the previous transfer key is used to sign the ChangeTransferKey transaction
 	SigningKeyTransfer SigningKeyKind = 0x02
 )
-
-// ChangeTransferKeys include Key and Signature types, for which the zero
-// value is intentionally invalid. Unfortunately for us, the auto-generated
-// tests use the zero value as a test value, and it turns out that if you
-// run MarshalMsg on the zero value of one of those, it panics.
-//
-// It's a good way to keep that sort of behavior out of the real codebase,
-// but it means we have to avoid writing these tests.
-//msgp:test ignore ChangeTransferKey
 
 // A ChangeTransferKey transaction is used to set a transfer key
 //
@@ -88,15 +85,6 @@ type ChangeTransferKey struct {
 
 var _ metatx.Transactable = (*ChangeTransferKey)(nil)
 
-// ReleaseFromEndowment includes a Signature field, for which the zero
-// value is intentionally invalid. Unfortunately for us, the auto-generated
-// tests use the zero value as a test value, and it turns out that if you
-// run MarshalMsg on the zero value of one of those, it panics.
-//
-// It's a good way to keep that sort of behavior out of the real codebase,
-// but it means we have to avoid writing these tests.
-//msgp:test ignore ReleaseFromEndowment
-
 // A ReleaseFromEndowment transaction is used to release funds from the
 // endowment into an individual account.
 //
@@ -112,15 +100,6 @@ type ReleaseFromEndowment struct {
 
 var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 
-// ChangeSettlementPeriod includes a Signature field, for which the zero
-// value is intentionally invalid. Unfortunately for us, the auto-generated
-// tests use the zero value as a test value, and it turns out that if you
-// run MarshalMsg on the zero value of one of those, it panics.
-//
-// It's a good way to keep that sort of behavior out of the real codebase,
-// but it means we have to avoid writing these tests.
-//msgp:test ignore ChangeSettlementPeriod
-
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
 type ChangeSettlementPeriod struct {
@@ -131,10 +110,6 @@ type ChangeSettlementPeriod struct {
 }
 
 var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
-
-// Delegate includes Signature type, for which the zero
-// value is intentionally invalid. We can't use the default tests there.
-//msgp:test ignore Delegate
 
 // A Delegate transaction is used to delegate the node which should
 // compute EAI for the specified account.
@@ -148,10 +123,6 @@ type Delegate struct {
 }
 
 var _ metatx.Transactable = (*Delegate)(nil)
-
-// ComputeEAI includes Signature type, for which the zero
-// value is intentionally invalid. We can't use the default tests there.
-//msgp:test ignore ComputeEAI
 
 // A ComputeEAI transaction is used to award EAI.
 //
@@ -173,3 +144,40 @@ type ComputeEAI struct {
 }
 
 var _ metatx.Transactable = (*ComputeEAI)(nil)
+
+// Lock transactions lock the specfied account.
+//
+// Locked accounts may still receive ndau but may not be the source for transfers.
+type Lock struct {
+	Account   address.Address
+	Period    math.Duration
+	Sequence  uint64
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*Lock)(nil)
+
+// Notify transactions notify that the specified account should be unlocked once
+// its notice period expires.
+//
+// Notified accounts may not receive ndau.
+type Notify struct {
+	Account   address.Address
+	Sequence  uint64
+	Signature signature.Signature
+}
+
+var _ metatx.Transactable = (*Notify)(nil)
+
+// SetRewardsTarget transactions update the rewards target for the specified account.
+//
+// When the rewards target is empty, EAI and other rewards are deposited to the
+// origin account. Otherwise, they are deposited to the specified destination.
+type SetRewardsTarget struct {
+	Account     address.Address
+	Destination address.Address
+	Sequence    uint64
+	Signature   signature.Signature
+}
+
+var _ metatx.Transactable = (*SetRewardsTarget)(nil)

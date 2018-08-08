@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,11 +24,10 @@ func TestCEPStoresPendingEscrowChange(t *testing.T) {
 	cep, err := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, private)
 	require.NoError(t, err)
 
-	ts := time.Now()
-	mts, err := math.TimestampFrom(ts)
+	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
-	resp := deliverTrAt(t, app, &cep, ts.Unix())
+	resp := deliverTrAt(t, app, &cep, ts)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// the state of UpdateBalance is formally undefined at this point:
@@ -38,7 +37,7 @@ func TestCEPStoresPendingEscrowChange(t *testing.T) {
 
 	// update the acct struct
 	acct = app.GetState().(*backing.State).Accounts[source]
-	acct.UpdateSettlement(mts)
+	acct.UpdateSettlement(ts)
 
 	require.Equal(t, newDuration, acct.SettlementSettings.Period)
 	require.Nil(t, acct.SettlementSettings.Next)

@@ -71,7 +71,7 @@ func (dd *Delegate) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		as := dd.Account.String()
 		ds := dd.Delegate.String()
-		acct, hasAcct := state.Accounts[as]
+		acct, hasAcct := state.GetAccount(dd.Account, app.blockTime)
 		if !hasAcct {
 			return state, errors.New("Account does not exist")
 		}

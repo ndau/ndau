@@ -5,10 +5,9 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
@@ -102,11 +101,13 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 	compute := NewComputeEAI(nA, 1, private)
 
 	state := app.GetState().(*backing.State)
-	sourceInitial := state.Accounts[source].Balance
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	acct, _ := state.GetAccount(sA, app.blockTime)
+	sourceInitial := acct.Balance
 
 	blockTime := math.Timestamp(45 * math.Day)
-	bt := constants.Epoch.Add(math.Duration(blockTime).TimeDuration())
-	resp := deliverTrAt(t, app, compute, bt.Unix())
+	resp := deliverTrAt(t, app, compute, blockTime)
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
@@ -114,7 +115,7 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 
 	// require that a positive EAI was applied
 	state = app.GetState().(*backing.State)
-	acct := state.Accounts[source]
+	acct, _ = state.GetAccount(sA, app.blockTime)
 	t.Log(acct.Balance)
 	// here, we don't bother testing _how much_ eai is applied: we have to
 	// trust that the ndaumath library is well tested. Instead, we just test
@@ -125,4 +126,94 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 	// be different.
 	require.Equal(t, blockTime, acct.LastEAIUpdate)
 	require.Equal(t, blockTime, acct.LastWAAUpdate)
+}
+
+func TestComputeEAIWithRewardsTargetChangesAppState(t *testing.T) {
+	app, private := initAppComputeEAI(t)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+	compute := NewComputeEAI(nA, 1, private)
+
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	state := app.GetState().(*backing.State)
+	sAcct, _ := state.GetAccount(sA, app.blockTime)
+	sourceInitial := sAcct.Balance
+
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	// verify that the dest account has nothing currently in it
+	dAcct, _ := state.GetAccount(dA, app.blockTime)
+	require.Equal(t, math.Ndau(0), dAcct.Balance)
+	// have the source acct send rewards to the dest acct
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.RewardsTarget = &dA
+	})
+
+	blockTime := math.Timestamp(45 * math.Day)
+	resp := deliverTrAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// require that a positive EAI was applied
+	state = app.GetState().(*backing.State)
+	sAcct, _ = state.GetAccount(sA, app.blockTime)
+	dAcct, dExists := state.GetAccount(dA, app.blockTime)
+	t.Log("src:  ", sAcct.Balance)
+	t.Log("dest: ", dAcct.Balance)
+	require.True(t, dExists)
+	// the source account must not be changed
+	require.Equal(t, sourceInitial, sAcct.Balance)
+	// the dest acct must now have a non-0 balance
+	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
+}
+
+func TestComputeEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
+	app, private := initAppComputeEAI(t)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+	compute := NewComputeEAI(nA, 1, private)
+
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	state := app.GetState().(*backing.State)
+	sAcct, _ := state.GetAccount(sA, app.blockTime)
+	sourceInitial := sAcct.Balance
+
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+	// verify that the dest account has nothing currently in it
+	dAcct, _ := state.GetAccount(dA, app.blockTime)
+	require.Equal(t, math.Ndau(0), dAcct.Balance)
+	// have the source acct send rewards to the dest acct
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.RewardsTarget = &dA
+	})
+	modify(t, dest, app, func(ad *backing.AccountData) {
+		uo := math.Timestamp(1 * math.Year)
+		ad.Lock = &backing.Lock{
+			NoticePeriod: math.Duration(1 * math.Year),
+			UnlocksOn:    &uo,
+		}
+	})
+
+	blockTime := math.Timestamp(45 * math.Day)
+	resp := deliverTrAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// require that eai was deposited despite the dest acct being notified
+	state = app.GetState().(*backing.State)
+	sAcct, _ = state.GetAccount(sA, app.blockTime)
+	dAcct, _ = state.GetAccount(dA, app.blockTime)
+	t.Log("src:  ", sAcct.Balance)
+	t.Log("dest: ", dAcct.Balance)
+	// the source account must not be changed
+	require.Equal(t, sourceInitial, sAcct.Balance)
+	// the dest acct must have had some EAI credited
+	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
 }

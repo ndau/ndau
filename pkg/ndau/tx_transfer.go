@@ -35,7 +35,7 @@ func NewTransfer(
 		Sequence:    seq,
 	}
 	bytes := t.SignableBytes()
-	t.Signature, err = key.Sign(bytes).Marshal()
+	t.Signature = key.Sign(bytes)
 
 	return t, err
 }
@@ -105,7 +105,7 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source := state.Accounts[t.Source.String()]
+	source, _ := state.GetAccount(t.Source, app.blockTime)
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
 	}
@@ -116,12 +116,8 @@ func (t *Transfer) Validate(appInt interface{}) error {
 	publicKey := *source.TransferKey
 
 	tBytes := t.SignableBytes()
-	sig := signature.Signature{}
-	err := (&sig).Unmarshal(t.Signature)
-	if err != nil {
-		return errors.Wrap(err, "unmarshal signature")
-	}
-	if !publicKey.Verify(tBytes, sig) {
+
+	if !publicKey.Verify(tBytes, t.Signature) {
 		return errors.New("invalid signature")
 	}
 
@@ -140,7 +136,7 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		return errors.New("insufficient balance in source")
 	}
 
-	dest := state.Accounts[t.Destination.String()]
+	dest, _ := state.GetAccount(t.Destination, app.blockTime)
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
@@ -154,11 +150,8 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
-	source := state.Accounts[t.Source.String()]
-	dest, hasDest := state.Accounts[t.Destination.String()]
-	if !hasDest {
-		dest = backing.NewAccountData(app.blockTime)
-	}
+	source, _ := state.GetAccount(t.Source, app.blockTime)
+	dest, _ := state.GetAccount(t.Destination, app.blockTime)
 
 	// this source update will get persisted if the method exits without error
 	source.UpdateSettlement(app.blockTime)
