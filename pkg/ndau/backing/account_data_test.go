@@ -61,6 +61,7 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					// transfer key may not be equal if algorithm pointers are unequal
 					require.Equal(t, account.TransferKey.Bytes(), recoveredAccount.TransferKey.Bytes())
 					require.Equal(t, account.RewardsTarget, recoveredAccount.RewardsTarget)
+					require.Equal(t, account.IncomingRewardsFrom, recoveredAccount.IncomingRewardsFrom)
 					require.Equal(t, account.DelegationNode, recoveredAccount.DelegationNode)
 					require.Equal(t, account.Lock, recoveredAccount.Lock)
 					require.Equal(t, account.Stake, recoveredAccount.Stake)
@@ -126,6 +127,9 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	if randBool() {
 		addr := randAddress()
 		ad.DelegationNode = &addr
+	}
+	for i := 0; i < 5; i++ {
+		ad.IncomingRewardsFrom = append(ad.IncomingRewardsFrom, randAddress())
 	}
 	if hasLock {
 		ad.Lock = generateLock(randBool())
