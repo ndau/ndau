@@ -2,11 +2,13 @@ package ndau
 
 import (
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
@@ -208,4 +210,33 @@ func TestReSetRewardsTargetChangesAppState(t *testing.T) {
 	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
 	// we must have removed the prev target's inbound targets
 	require.Equal(t, []address.Address{tA}, state.Accounts[eaiNode].IncomingRewardsFrom)
+}
+
+func TestNotifiedDestinationsAreInvalid(t *testing.T) {
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	app, private := initAppTx(t)
+	app.blockTime = ts
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	dA, err := address.Validate(dest)
+	require.NoError(t, err)
+
+	// fixture: destination must be notified
+	modify(t, dest, app, func(ad *backing.AccountData) {
+		uo := math.Timestamp(ts + 1)
+		ad.Lock = &backing.Lock{
+			NoticePeriod: math.Duration(2),
+			UnlocksOn:    &uo,
+		}
+	})
+
+	srt := NewSetRewardsTarget(sA, dA, 1, private)
+
+	// srt must be invalid
+	bytes, err := tx.Marshal(srt, TxIDs)
+	require.NoError(t, err)
+	resp := app.CheckTx(bytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
