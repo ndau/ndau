@@ -16,9 +16,9 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 )
 
 // Private key:    e283e6899f67fe424fc3dd61a79ed3b0860e9925413ccdcbe25422a89e69267088c3d538395e3945e3e6f267974cae362d70acd0389436288bf99422d69c25bb
@@ -348,8 +348,7 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	// layer rejects deserialized transfers which are invalid.
 	tr := generateTransfer(t, qty, seq, key)
 	tr.Destination = tr.Source
-	bytes, err := tr.signableBytes()
-	require.NoError(t, err)
+	bytes := tr.SignableBytes()
 	tr.Signature, err = key.Sign(bytes).Marshal()
 	require.NoError(t, err)
 

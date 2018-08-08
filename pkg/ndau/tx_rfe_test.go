@@ -7,11 +7,11 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/stretchr/testify/require"
@@ -52,14 +52,13 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 		txFeeAddr := assc[rfeAddrs].([]address.Address)[i]
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("private key: %x", private.Bytes()), func(t *testing.T) {
-			rfe, err := NewReleaseFromEndowment(
+			rfe := NewReleaseFromEndowment(
 				math.Ndau(1),
 				targetAddress,
 				txFeeAddr,
 				1,
 				private,
 			)
-			require.NoError(t, err)
 
 			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 			require.NoError(t, err)
@@ -78,14 +77,13 @@ func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 	_, private, err := signature.Generate(signature.Ed25519, nil)
 	txFeeAddr := assc[rfeAddrs].([]address.Address)[0]
 
-	rfe, err := NewReleaseFromEndowment(
+	rfe := NewReleaseFromEndowment(
 		math.Ndau(1),
 		targetAddress,
 		txFeeAddr,
 		1,
 		private,
 	)
-	require.NoError(t, err)
 
 	rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 	require.NoError(t, err)
@@ -106,14 +104,13 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 				ad.Balance = math.Ndau(10)
 			})
 
-			rfe, err := NewReleaseFromEndowment(
+			rfe := NewReleaseFromEndowment(
 				math.Ndau(1),
 				targetAddress,
 				txFeeAddr,
 				1,
 				private,
 			)
-			require.NoError(t, err)
 
 			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 			require.NoError(t, err)
@@ -151,14 +148,13 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			targetAddress, err := address.Generate(address.KindUser, public.Bytes())
 			require.NoError(t, err)
 
-			rfe, err := NewReleaseFromEndowment(
+			rfe := NewReleaseFromEndowment(
 				math.Ndau(1),
 				targetAddress,
 				txFeeAddr,
 				1,
 				private,
 			)
-			require.NoError(t, err)
 
 			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
 			require.NoError(t, err)

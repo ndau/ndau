@@ -6,15 +6,16 @@ import (
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/pkg/errors"
 )
 
-func (ct *ChangeTransferKey) signableBytes() []byte {
+// SignableBytes implements Transactable
+func (ct *ChangeTransferKey) SignableBytes() []byte {
 	target := []byte(ct.Target.String())
 	newKey := ct.NewKey.Bytes()
 	signingKey := ct.SigningKey.Bytes()
@@ -48,7 +49,7 @@ func NewChangeTransferKey(
 		KeyKind:    keyKind,
 		Sequence:   sequence,
 	}
-	ct.Signature = private.Sign(ct.signableBytes())
+	ct.Signature = private.Sign(ct.SignableBytes())
 	return ct
 }
 
@@ -98,7 +99,7 @@ func (ct *ChangeTransferKey) Validate(appI interface{}) (err error) {
 	}
 
 	// ensure the signature validates the signing key
-	if !ct.SigningKey.Verify(ct.signableBytes(), ct.Signature) {
+	if !ct.SigningKey.Verify(ct.SignableBytes(), ct.Signature) {
 		return fmt.Errorf("Invalid signature")
 	}
 

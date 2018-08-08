@@ -1,5 +1,5 @@
-hash: d3e506bc7031207e3fa74cb07f748c54041c316ca793ad34f2e274758fbe009d
-updated: 2018-07-30T13:46:08.342468+02:00
+hash: 1ea7c771039f3abbb6dbc7810717d0560d1cfba70e4d3ab5856fa4fcfbdea824
+updated: 2018-08-08T11:00:48.770784+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -150,7 +150,7 @@ imports:
 - name: github.com/honeycombio/libhoney-go
   version: 26d0d7dd8b07dae0d94a2b2b7abafd2401686ffa
 - name: github.com/jawher/mow.cli
-  version: 123c8a60ff2f69b8c55b3e19b1383233321b316f
+  version: 2f22195f169da29d54624afd9eb83ada5c9e4ee9
   subpackages:
   - internal/container
   - internal/flow
@@ -180,7 +180,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaos
-  version: 2ceaae45006c9ac0b287816400f44f704fbfcf35
+  version: 02bbd86e36f269f0c0a496a999e47cb5fc6f90f1
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -189,7 +189,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: f51865350385b868120ac2692bd4dc91f76d3f3c
+  version: 6948fbd8ce6388f29b052164197f06dca9c150c2
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -202,13 +202,15 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 966e33463af68a339779a6459dec5280aa571567
+  version: 14a8c54ea54ccd4ea5062ad447293222f0495b89
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
   - pkg/constants
   - pkg/eai
+  - pkg/ndauerr
+  - pkg/signed
   - pkg/types
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8

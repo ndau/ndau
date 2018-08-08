@@ -12,7 +12,7 @@ import:
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: ~0.9
+  version: ~v0.10
 - package: github.com/oneiro-ndev/msgp-well-known-types
   version: ~0.1.0
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git

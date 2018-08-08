@@ -41,7 +41,7 @@ func TestDelegateAccountValidates(t *testing.T) {
 
 	// make the account field invalid
 	d.Account = address.Address{}
-	d.Signature = private.Sign(d.signableBytes())
+	d.Signature = private.Sign(d.SignableBytes())
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -60,7 +60,7 @@ func TestDelegateDelegateValidates(t *testing.T) {
 
 	// make the account field invalid
 	d.Delegate = address.Address{}
-	d.Signature = private.Sign(d.signableBytes())
+	d.Signature = private.Sign(d.SignableBytes())
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)

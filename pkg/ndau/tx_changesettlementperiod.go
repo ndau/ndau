@@ -4,14 +4,15 @@ import (
 	"encoding/binary"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )
 
-func (cep *ChangeSettlementPeriod) signableBytes() []byte {
+// SignableBytes implements Transactable
+func (cep *ChangeSettlementPeriod) SignableBytes() []byte {
 	bytes := make([]byte, 8+8, len(cep.Target.String())+8+8)
 	binary.BigEndian.PutUint64(bytes[0:8], cep.Sequence)
 	binary.BigEndian.PutUint64(bytes[8:16], uint64(cep.Period))
@@ -31,7 +32,7 @@ func NewChangeSettlementPeriod(
 		Period:   newPeriod,
 		Sequence: sequence,
 	}
-	sb := cep.signableBytes()
+	sb := cep.SignableBytes()
 	cep.Signature = privateTransferKey.Sign(sb)
 	return cep, nil
 }
@@ -53,7 +54,7 @@ func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	if acct.TransferKey == nil {
 		return errors.New("Target transfer key not set")
 	}
-	sb := cep.signableBytes()
+	sb := cep.SignableBytes()
 	if !acct.TransferKey.Verify(sb, cep.Signature) {
 		return errors.New("Invalid message signature")
 	}
