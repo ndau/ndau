@@ -61,11 +61,19 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 		return fmt.Errorf("Accounts may not both send and receive rewards. Source receives rewards from these accounts: %s", accountData.IncomingRewardsFrom)
 	}
 
+	// if dest is the same as source, we're resetting the EAI to accumulate
+	// in its account of origin.
+	// neither destination rule appllies in that case.
 	if c.Destination.String() != c.Account.String() {
 		// dest account must not be sending rewards to any other account
 		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
 		if targetData.RewardsTarget != nil {
 			return fmt.Errorf("Accounts may not both send and receive rewards. Destination sends rewards to %s", *targetData.RewardsTarget)
+		}
+
+		// dest account must not be notified
+		if targetData.IsNotified(app.blockTime) {
+			return errors.New("Destination is currently notified and may not receive new rewards until it unlocks")
 		}
 	}
 
