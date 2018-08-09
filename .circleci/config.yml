@@ -55,12 +55,6 @@ jobs:
           name: Check ndaunode version on ECR
           command: |
             # Compare this container version with ECR. Fail build if version already exists.
-            version_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${CIRCLE_TAG}\")")
-            if [ ! -z "$version_check" ]; then
-              echo "Ndaunode container version ${CIRCLE_TAG} already exists." | tee -a /tmp/pushlog
-              exit 1
-            fi
-
             # Look for this sha on ecr
             sha=${CIRCLE_SHA1: -7}
             sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
@@ -75,36 +69,35 @@ jobs:
       - run:
           name: Push ndaunode
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "josh/5-fix-circle" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
-              commit_hash=${CIRCLE_SHA1: -7}
-              commit_hash_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${commit_hash}\")")
-              if [ ! -z "$commit_hash_check" ]; then
-                echo "Ndaunode container hash ${commit_hash} already exists. Will not push." >&2
+              sha=${CIRCLE_SHA1: -7}
+              sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
+              if [ ! -z "$sha_check" ]; then
+                echo "Ndaunode container hash ${sha} already exists. Will not push." >&2
               else
-                commit_tag="${ECR_ENDPOINT}/ndaunode:${commit_hash}"
-                version_tag="${ECR_ENDPOINT}/ndaunode:${CIRCLE_TAG}"
+                commit_tag="${ECR_ENDPOINT}/ndaunode:${sha}"
                 latest_tag="${ECR_ENDPOINT}/ndaunode:latest"
 
                 docker tag ndaunode $commit_tag
-                docker tag ndaunode $version_tag
                 docker tag ndaunode $latest_tag
 
                 docker push $commit_tag
-                docker push $version_tag
                 docker push $latest_tag
 
-                echo "Pushed ndaunode with tags :${commit_hash}, :${version_tag}, :latest." >&2
+                echo "Pushed ndaunode with tags :${sha}, :latest." >&2
               fi
             fi
       - run:
           name: Redeploy testnet
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "josh/5-fix-circle" ]; then
 
-              # Clone the k-os repo
-              GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git /root/k-os
+              sha=${CIRCLE_SHA1: -7}
+
+              # Clone the k-os repo master branch
+              GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git /root/k-os -b josh/48-minikube-testnet
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig \
@@ -115,7 +108,7 @@ jobs:
               KUBECONFIG=/root/kubeconfig \
               NOMS_VERSION=$NOMS_CONTAINER_VERSION \
               TM_VERSION=$TM_CONTAINER_VERSION \
-              VERSION_TAG=$CIRCLE_TAG \
+              VERSION_TAG=$sha  \
                 /root/k-os/testnet/ndau.js \
                   $STARTING_PORT \
                   $NODE_NAMES
