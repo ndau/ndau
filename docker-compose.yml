@@ -10,6 +10,9 @@ services:
         source: ${NDAUHOME:?NDAUHOME is required}/ndau/noms
         target: /data
   ndaunode:
+    environment:
+      - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
+      - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
     build:
       context: .
     image: "ndaunode"
@@ -24,6 +27,9 @@ services:
     depends_on:
       - noms
   tendermint:
+    environment:
+      - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
+      - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
     build:
       context: ./tm-docker
     # expose the p2p and RPC ports to the outside world

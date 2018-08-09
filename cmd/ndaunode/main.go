@@ -86,7 +86,7 @@ func main() {
 	check(err)
 
 	logger := app.GetLogger()
-	logger = logger.WithField("bin", "chaosnode")
+	logger = logger.WithField("bin", "ndaunode")
 	app.SetLogger(logger)
 	app.LogState()
 
