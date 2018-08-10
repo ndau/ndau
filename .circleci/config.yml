@@ -23,11 +23,6 @@ jobs:
       - run:
           name: Transfer environment variables to files
           command: |
-            # add ssh key to
-            mkdir -p /root/.ssh
-            echo -e "$gomu" > /root/.ssh/id_rsa
-            chmod 600 /root/.ssh/id_rsa
-
             # install helm certs
             mkdir -p /root/.helm
             echo -e "$helm_ca_pem" > /root/.helm/ca.pem
@@ -40,7 +35,7 @@ jobs:
           name: Checkout code
           command: |
             git clone $CIRCLE_REPOSITORY_URL -b $CIRCLE_BRANCH /app --depth=1
-            cp /root/.ssh/id_rsa /app/github_chaos_deploy
+            echo -e "$gomu" > /app/github_chaos_deploy
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -72,7 +67,7 @@ jobs:
       - run:
           name: Push ndaunode
           command: |
-            if [ "${CIRCLE_BRANCH}" == "josh/5-fix-circle" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
               sha=${CIRCLE_SHA1: -7}
@@ -95,12 +90,12 @@ jobs:
       - run:
           name: Redeploy testnet
           command: |
-            if [ "${CIRCLE_BRANCH}" == "josh/5-fix-circle" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
 
               sha=${CIRCLE_SHA1: -7}
 
               # Clone the k-os repo master branch
-              git clone git@github.com:oneiro-ndev/k-os.git /root/k-os -b josh/48-minikube-testnet
+              git clone git@github.com:oneiro-ndev/k-os.git /root/k-os
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig \
