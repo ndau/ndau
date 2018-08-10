@@ -12,7 +12,24 @@ FROM golang:1.10-alpine AS build
 # This is the release of tendermint to pull in.
 ENV TM_VERSION_TAG v0.22.4
 
-RUN apk add --no-cache git openssh-client
+RUN apk add --no-cache git openssh-client bash
+
+# Normally there is a very clear rule:
+# DO NOT DO THIS.
+# If we copy a keyfile into a container, its contents can be
+# recovered later, even if we delete the file from the container.
+#
+# Multi-stage builds change that rule. We still want to be careful
+# about how we handle the keyfile, but the general rule is now that
+# non-terminal stages vanish irrecoverably from the final container.
+# This means that it's not only easier to get compact containers, but
+# it's no longer a huge security issue to pass in a keyfile to a non-
+# terminal container.
+ARG SSH_KEY_FILE="github_chaos_deploy"
+COPY ${SSH_KEY_FILE} /root/.ssh/id_rsa
+COPY ./bin/check-github-fingerprint.sh /root/
+RUN /root/check-github-fingerprint.sh
+RUN chmod 0600 /root/.ssh/*
 
 # Use dep instead of glide, glide no longer supported in TM v0.18.0
 RUN go get -u github.com/golang/dep/... && \
@@ -20,11 +37,22 @@ RUN go get -u github.com/golang/dep/... && \
     git clone https://github.com/tendermint/tendermint.git \
     $GOPATH/src/github.com/tendermint/tendermint && \
     cd $GOPATH/src/github.com/tendermint/tendermint && \
-    git checkout ${TM_VERSION_TAG} && \
-    dep ensure && \
+    git checkout ${TM_VERSION_TAG}
+
+# We're going to apply a patch before building, so first get the patch file
+COPY *.go.patch /patch/
+RUN patch  -i /patch/main.go.patch $GOPATH/src/github.com/tendermint/tendermint/cmd/tendermint/main.go
+RUN patch  -i /patch/root.go.patch $GOPATH/src/github.com/tendermint/tendermint/cmd/tendermint/commands/root.go
+
+# now we can build
+WORKDIR $GOPATH/src/github.com/tendermint/tendermint
+
+RUN dep ensure && \
     CGO_ENABLED=0 GOOS=linux go install -v -a -ldflags '-extldflags "-static"' ./cmd/tendermint && \
     cp $GOPATH/bin/tendermint /bin/tendermint
 
+# Remove the secret just in case its directory gets copied below.
+RUN rm -vf /root/.ssh/id_rsa
 
 FROM alpine:3.6
 ENV TM_VERSION 0.22.4

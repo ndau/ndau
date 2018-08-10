@@ -8,6 +8,8 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/o11y/pkg/honeycomb"
+	"github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/server"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 )
@@ -91,7 +93,21 @@ func main() {
 	app.LogState()
 
 	server := server.NewSocketServer(*socketAddr, app)
-	server.SetLogger(tmlog.NewTMLogger(os.Stderr))
+
+	// it's not entirely ideal that we have to generate a separate logger
+	// here, but tendermint loggers have an interface incompatible with
+	// logrus loggers
+	// server.SetLogger(tmlog.NewTMLogger(os.Stderr))
+	if logwriter, err := honeycomb.NewWriter(); err != nil {
+		server.SetLogger(tmlog.NewTMLogger(os.Stderr))
+		app.GetLogger().WithFields(logrus.Fields{
+			"warning":       "Unable to initialize Honeycomb for tm server",
+			"originalError": err,
+		}).Warn("InitServerLog")
+		fmt.Println("Can't init server logger for tm: ", err)
+	} else {
+		server.SetLogger(tmlog.NewTMJSONLogger(logwriter))
+	}
 
 	err = server.Start()
 	check(err)
