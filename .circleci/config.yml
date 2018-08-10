@@ -19,7 +19,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "e0:90:5a:ec:8c:e6:20:d8:4c:fb:a4:9c:5d:f9:da:f2"
+            - "97:67:2b:f6:0c:ea:af:56:dd:04:1d:c1:28:54:ba:37"
       - run:
           name: Transfer environment variables to files
           command: |
