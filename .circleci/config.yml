@@ -17,6 +17,9 @@ jobs:
       # If these names change, the old names will have to be removed manually.
       NODE_NAMES: "mario luigi"
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "e0:90:5a:ec:8c:e6:20:d8:4c:fb:a4:9c:5d:f9:da:f2"
       - run:
           name: Transfer environment variables to files
           command: |
@@ -97,7 +100,7 @@ jobs:
               sha=${CIRCLE_SHA1: -7}
 
               # Clone the k-os repo master branch
-              GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa' git clone git@github.com:oneiro-ndev/k-os.git /root/k-os -b josh/48-minikube-testnet
+              git clone git@github.com:oneiro-ndev/k-os.git /root/k-os -b josh/48-minikube-testnet
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig \
