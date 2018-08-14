@@ -41,7 +41,6 @@ RUN go get -u github.com/golang/dep/... && \
 
 # We're going to apply a patch before building, so first get the patch file
 COPY *.go.patch /patch/
-RUN patch  -i /patch/main.go.patch $GOPATH/src/github.com/tendermint/tendermint/cmd/tendermint/main.go
 RUN patch  -i /patch/root.go.patch $GOPATH/src/github.com/tendermint/tendermint/cmd/tendermint/commands/root.go
 
 # now we can build
