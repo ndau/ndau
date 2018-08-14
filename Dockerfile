@@ -61,6 +61,8 @@ RUN rm -vf /root/.ssh/id_rsa
 
 # Terminal build stage: should only contain the static executable
 FROM alpine:3.7
+# Add the ca certs so that we can do outbound connections to https sites (honeycomb)
+RUN apk add --no-cache  ca-certificates
 
 # only copy the binary artifacts we produced earlier
 COPY --from=build /bin/ndaunode /bin/

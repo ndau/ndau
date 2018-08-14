@@ -3,31 +3,28 @@
 # this script depends on jq, sed, and docker-compose
 # let's make sure that each is installed before going anywhere with this
 dependencies=(jq sed docker-compose)
-for tool in ${dependencies[@]}; do
-    which $tool > /dev/null
-    if [ $? != 0 ]; then
+for tool in "${dependencies[@]}"; do
+    if ! command -v "$tool" > /dev/null  ; then
         (>&2 echo "This script depends on $tool. Install it and try again.")
         exit 1
     fi
 done
 # gnu sed is required
-sed=sed
-sed --version > /dev/null 2>&1
-if [ $? != 0 ]; then
-    which gsed >/dev/null
-    if [ $? != 0 ]; then
+sed="sed"
+if ! sed --version > /dev/null 2>&1 ; then
+    if ! command -v gsed >/dev/null; then
         (
             >&2 echo "You have a broken version of sed, and gsed is not installed"
-            >&2 echo "This is common on OSX. Try `brew install gnu-sed`"
+            >&2 echo 'This is common on OSX. Try "brew install gnu-sed"'
             exit 1
         )
     fi
-    sed=gsed
+    sed="gsed"
     echo "using $sed as sed"
 fi
 
-SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P )"
-source $SCRIPTPATH/defaults.sh
+SCRIPTPATH="$(cd "$(dirname "$0")" && pwd -P )"
+source "$SCRIPTPATH/defaults.sh"
 
 # get tendermint initialized
 docker-compose run --rm --no-deps tendermint init
@@ -35,7 +32,7 @@ docker-compose run --rm --no-deps tendermint init
 # we need tendermint to look for its application at a machine named ndaunode
 config=$TMHOME/config/config.toml
 config_backup=${config}.bak
-cp $config $config_backup
+cp "$config" "$config_backup"
 $sed -E \
     -e '/^proxy_app/s|://[^:]*:|://ndaunode:|' \
     -e '/^create_empty_blocks_interval/s/[[:digit:]]+/10/' \
@@ -44,10 +41,10 @@ $sed -E \
             s/(.*)/# \1/
             i # tendermint respects create_empty_blocks *OR* create_empty_blocks_interval
         }' \
-    $config_backup > $config
+    "$config_backup" > "$config"
 echo "diff config:"
-diff $config_backup $config
-rm $config_backup
+diff "$config_backup" "$config"
+rm "$config_backup"
 
 # ndaunode, unlike chaosnode, needs a configuration file to work right
 # in a real node, we'd need to specify parameters such as where to connect
@@ -68,18 +65,18 @@ fi
 genesis=$TMHOME/config/genesis.json
 genesis_backup=${genesis}.bak
 # unminify so the diff is cleaner later
-jq '.' $genesis > $genesis_backup
+jq '.' "$genesis" > "$genesis_backup"
 
 # though we haven't actually started the database yet, it's not empty:
 # -make-mocks has added some mock data. We therefore want to use its
 # current hash as the base empty hash
 empty_hash=$(
-    docker-compose run --rm --no-deps ndaunode --echo-hash --use-ndauhome |\
+    docker-compose run --rm --no-deps ndaunode --echo-hash --use-ndauhome 2>/dev/null |\
     tr -d '\r'
 )
 echo "Empty hash: $empty_hash"
-jq ".app_hash=\"$empty_hash\"" $genesis_backup > $genesis
+jq ".app_hash=\"$empty_hash\"" "$genesis_backup" > "$genesis"
 
 echo "diff genesis:"
-diff $genesis_backup $genesis
-rm -f $genesis_backup
+diff "$genesis_backup" "$genesis"
+rm -f "$genesis_backup"

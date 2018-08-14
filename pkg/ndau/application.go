@@ -5,14 +5,15 @@
 package ndau
 
 import (
+	"io/ioutil"
 	"time"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/types"
@@ -36,7 +37,20 @@ type App struct {
 
 // NewApp prepares a new Ndau App
 func NewApp(dbSpec string, config config.Config) (*App, error) {
-	metaapp, err := meta.NewApp(dbSpec, "ndau", new(backing.State), TxIDs)
+	return NewAppWithLogger(dbSpec, config, nil)
+}
+
+// NewAppSilent prepares a new Ndau App which doesn't log
+func NewAppSilent(dbSpec string, config config.Config) (*App, error) {
+	logger := log.New()
+	logger.Out = ioutil.Discard
+
+	return NewAppWithLogger(dbSpec, config, logger)
+}
+
+// NewAppWithLogger prepares a new Ndau App with the specified logger
+func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogger) (*App, error) {
+	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
 	}
