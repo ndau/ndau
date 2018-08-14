@@ -15,7 +15,7 @@ import (
 )
 
 // SignableBytes implements Transactable
-func (ct *ChangeTransferKey) SignableBytes() []byte {
+func (ct *ChangeTransferKeys) SignableBytes() []byte {
 	target := []byte(ct.Target.String())
 	newKey := ct.NewKey.Bytes()
 	signingKey := ct.SigningKey.Bytes()
@@ -33,16 +33,16 @@ func (ct *ChangeTransferKey) SignableBytes() []byte {
 	return bytes
 }
 
-// NewChangeTransferKey creates a new signed transfer key from its data and a private key
-func NewChangeTransferKey(
+// NewChangeTransferKeys creates a new signed transfer key from its data and a private key
+func NewChangeTransferKeys(
 	target address.Address,
 	newKey signature.PublicKey,
 	sequence uint64,
 	keyKind SigningKeyKind,
 	signingKey signature.PublicKey,
 	private signature.PrivateKey,
-) ChangeTransferKey {
-	ct := ChangeTransferKey{
+) ChangeTransferKeys {
+	ct := ChangeTransferKeys{
 		Target:     target,
 		NewKey:     newKey,
 		SigningKey: signingKey,
@@ -54,7 +54,7 @@ func NewChangeTransferKey(
 }
 
 // Validate implements metatx.Transactable
-func (ct *ChangeTransferKey) Validate(appI interface{}) (err error) {
+func (ct *ChangeTransferKeys) Validate(appI interface{}) (err error) {
 	ct.Target, err = address.Validate(ct.Target.String())
 	if err != nil {
 		return
@@ -120,7 +120,7 @@ func (ct *ChangeTransferKey) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (ct *ChangeTransferKey) Apply(appI interface{}) error {
+func (ct *ChangeTransferKeys) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
@@ -140,7 +140,7 @@ func (ct *ChangeTransferKey) Apply(appI interface{}) error {
 			defaultDuration := new(sv.DefaultSettlementDuration)
 			err := app.System(sv.DefaultSettlementDurationName, defaultDuration)
 			if err != nil {
-				return state, errors.Wrap(err, "ChangeTransferKey.Apply get default settlement period")
+				return state, errors.Wrap(err, "ChangeTransferKeys.Apply get default settlement period")
 			}
 			ad.SettlementSettings.Period = defaultDuration.Duration
 		}

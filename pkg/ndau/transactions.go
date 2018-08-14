@@ -15,7 +15,7 @@ import (
 // TxIDs is a map which defines canonical numeric ids for each transactable type.
 var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):    &Transfer{},
-	metatx.TxID(2):    &ChangeTransferKey{},
+	metatx.TxID(2):    &ChangeTransferKeys{},
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeSettlementPeriod{},
 	metatx.TxID(5):    &Delegate{},
@@ -60,21 +60,21 @@ type Transfer struct {
 // static assert that GTValidatorChange is metatx.Transactable
 var _ metatx.Transactable = (*Transfer)(nil)
 
-// SigningKeyKind is the kind of key used to sign a ChangeTransferKey
+// SigningKeyKind is the kind of key used to sign a ChangeTransferKeys
 type SigningKeyKind byte
 
 const (
-	// SigningKeyOwnership indicates that the ownership key is used to sign the ChangeTransferKey transaction
+	// SigningKeyOwnership indicates that the ownership key is used to sign the ChangeTransferKeys transaction
 	SigningKeyOwnership SigningKeyKind = 0x01
-	// SigningKeyTransfer indicates that the previous transfer key is used to sign the ChangeTransferKey transaction
+	// SigningKeyTransfer indicates that the previous transfer key is used to sign the ChangeTransferKeys transaction
 	SigningKeyTransfer SigningKeyKind = 0x02
 )
 
-// A ChangeTransferKey transaction is used to set a transfer key
+// A ChangeTransferKeys transaction is used to set a transfer key
 //
 // It may be signed with the account ownership key or the previous public key.
 // KeyKind is used to identify which of these are in use.
-type ChangeTransferKey struct {
+type ChangeTransferKeys struct {
 	Target     address.Address
 	NewKey     signature.PublicKey
 	SigningKey signature.PublicKey
@@ -83,7 +83,7 @@ type ChangeTransferKey struct {
 	Signature  signature.Signature
 }
 
-var _ metatx.Transactable = (*ChangeTransferKey)(nil)
+var _ metatx.Transactable = (*ChangeTransferKeys)(nil)
 
 // A ReleaseFromEndowment transaction is used to release funds from the
 // endowment into an individual account.
