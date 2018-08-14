@@ -58,8 +58,11 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					// require equality for known fields by name so we know what's
 					// unequal, if anything is
 					require.Equal(t, account.Balance, recoveredAccount.Balance)
-					// transfer key may not be equal if algorithm pointers are unequal
-					require.Equal(t, account.TransferKey.Bytes(), recoveredAccount.TransferKey.Bytes())
+					require.Equal(t, len(account.TransferKeys), len(recoveredAccount.TransferKeys))
+					for idx := range account.TransferKeys {
+						// transfer key may not be equal if algorithm pointers are unequal
+						require.Equal(t, account.TransferKeys[idx].Bytes(), recoveredAccount.TransferKeys[idx].Bytes())
+					}
 					require.Equal(t, account.RewardsTarget, recoveredAccount.RewardsTarget)
 					require.Equal(t, account.IncomingRewardsFrom, recoveredAccount.IncomingRewardsFrom)
 					require.Equal(t, account.DelegationNode, recoveredAccount.DelegationNode)
@@ -114,7 +117,6 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	name := fmt.Sprintf("<Account (bal: %d; lock: %v; stake: %v)>", int64(balance), hasLock, hasStake)
 	ad := AccountData{
 		Balance:            balance,
-		TransferKey:        randKey(),
 		LastWAAUpdate:      randTimestamp(),
 		WeightedAverageAge: randDuration(),
 		Sequence:           rand.Uint64(),
@@ -129,6 +131,8 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		ad.DelegationNode = &addr
 	}
 	for i := 0; i < 5; i++ {
+		key := randKey()
+		ad.TransferKeys = append(ad.TransferKeys, *key)
 		ad.IncomingRewardsFrom = append(ad.IncomingRewardsFrom, randAddress())
 	}
 	if hasLock {

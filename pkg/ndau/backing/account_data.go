@@ -181,7 +181,7 @@ func NewAccountData(blockTime math.Timestamp) AccountData {
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
 	Balance             math.Ndau
-	TransferKey         *signature.PublicKey
+	TransferKeys        []signature.PublicKey
 	RewardsTarget       *address.Address
 	IncomingRewardsFrom []address.Address
 	DelegationNode      *address.Address
@@ -219,8 +219,7 @@ func (ad *AccountData) UnmarshalNoms(v nt.Value) error {
 
 type nomsAccountData struct {
 	Balance             util.Int
-	HasTransferKey      bool
-	TransferKey         nt.Blob
+	TransferKeys        []nt.Blob
 	HasRewardsTarget    bool
 	RewardsTarget       nt.String
 	IncomingRewardsFrom []nt.String
@@ -241,7 +240,6 @@ type nomsAccountData struct {
 func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
 	nad := nomsAccountData{
 		Balance:            util.Int(ad.Balance),
-		HasTransferKey:     ad.TransferKey != nil,
 		HasRewardsTarget:   ad.RewardsTarget != nil,
 		HasDelegationNode:  ad.DelegationNode != nil,
 		HasLock:            ad.Lock != nil,
@@ -253,14 +251,12 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		Settlements:        ad.Settlements,
 		SettlementSettings: ad.SettlementSettings,
 	}
-	if nad.HasTransferKey {
-		tkBytes, err := ad.TransferKey.Marshal()
+	for _, tk := range ad.TransferKeys {
+		tkBytes, err := tk.Marshal()
 		if err != nil {
 			return nomsAccountData{}, err
 		}
-		nad.TransferKey = util.Blob(vrw, tkBytes)
-	} else {
-		nad.TransferKey = nt.NewBlob(vrw)
+		nad.TransferKeys = append(nad.TransferKeys, util.Blob(vrw, tkBytes))
 	}
 	if nad.HasRewardsTarget {
 		nad.RewardsTarget = nt.String(ad.RewardsTarget.String())
@@ -286,14 +282,19 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 		*ad = AccountData{}
 		return err
 	}
-	if n.HasTransferKey {
-		tkBytes, err := util.Unblob(n.TransferKey)
+	for _, ntk := range n.TransferKeys {
+		tkBytes, err := util.Unblob(ntk)
 		if err != nil {
 			*ad = AccountData{}
 			return err
 		}
-		ad.TransferKey = &signature.PublicKey{}
-		err = ad.TransferKey.Unmarshal(tkBytes)
+		tk := signature.PublicKey{}
+		err = tk.Unmarshal(tkBytes)
+		if err != nil {
+			*ad = AccountData{}
+			return err
+		}
+		ad.TransferKeys = append(ad.TransferKeys, tk)
 	}
 	if n.HasRewardsTarget {
 		ad.RewardsTarget = new(address.Address)
