@@ -6,6 +6,7 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -50,7 +51,7 @@ func getTransfer(verbose *bool) func(*cli.Cmd) {
 				from, to,
 				ndauQty,
 				sequence(conf, from),
-				fromAcct.Transfer.Private,
+				[]signature.PrivateKey{fromAcct.Transfer.Private},
 			)
 			orQuit(errors.Wrap(err, "Failed to construct transfer"))
 

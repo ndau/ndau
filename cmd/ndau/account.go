@@ -184,7 +184,7 @@ func getAccountChangeSettlement(verbose *bool) func(*cli.Cmd) {
 				ad.Address,
 				duration,
 				sequence(config, ad.Address),
-				ad.Transfer.Private,
+				[]signature.PrivateKey{ad.Transfer.Private},
 			)
 			orQuit(errors.Wrap(err, "Creating ChangeEscrowPeriod transaction"))
 
@@ -235,7 +235,7 @@ func getAccountDelegate(verbose *bool) func(*cli.Cmd) {
 			tx := ndau.NewDelegate(
 				acct.Address, node,
 				sequence(conf, acct.Address),
-				acct.Transfer.Private,
+				[]signature.PrivateKey{acct.Transfer.Private},
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
@@ -270,7 +270,7 @@ func getAccountComputeEAI(verbose *bool) func(*cli.Cmd) {
 			tx := ndau.NewComputeEAI(
 				acct.Address,
 				sequence(conf, acct.Address),
-				acct.Transfer.Private,
+				[]signature.PrivateKey{acct.Transfer.Private},
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
@@ -311,7 +311,7 @@ func getLock(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				duration,
 				sequence(conf, acct.Address),
-				acct.Transfer.Private,
+				[]signature.PrivateKey{acct.Transfer.Private},
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
@@ -346,7 +346,7 @@ func getNotify(verbose *bool) func(*cli.Cmd) {
 			tx := ndau.NewNotify(
 				acct.Address,
 				sequence(conf, acct.Address),
-				acct.Transfer.Private,
+				[]signature.PrivateKey{acct.Transfer.Private},
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
@@ -385,7 +385,7 @@ func getSetRewardsTarget(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				dest,
 				sequence(conf, acct.Address),
-				acct.Transfer.Private,
+				[]signature.PrivateKey{acct.Transfer.Private},
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
