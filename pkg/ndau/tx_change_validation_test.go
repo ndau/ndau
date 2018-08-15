@@ -64,7 +64,7 @@ func TestCTKAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	// the address is invalid, but newCTK doesn't validate this
-	ctk := NewChangeTransferKeys(addr, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
+	ctk := NewChangeValidation(addr, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
 
 	// However, the resultant transaction must not be valid
 	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
@@ -77,7 +77,7 @@ func TestCTKAddressFieldValidates(t *testing.T) {
 	// what about an address which is valid but doesn't already exist?
 	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
 	require.NoError(t, err)
-	ctk = NewChangeTransferKeys(fakeTarget, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
+	ctk = NewChangeValidation(fakeTarget, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
 	ctkBytes, err = tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 	resp = app.CheckTx(ctkBytes)
@@ -88,7 +88,7 @@ func TestValidCTKOwnership(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	ctk := NewChangeTransferKeys(targetAddress, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
+	ctk := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
 	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
@@ -110,7 +110,7 @@ func TestValidCTKTransfer(t *testing.T) {
 	newPub, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	ctk := NewChangeTransferKeys(targetAddress, []signature.PublicKey{newPub}, 1, []signature.PrivateKey{targetPrivate})
+	ctk := NewChangeValidation(targetAddress, []signature.PublicKey{newPub}, 1, []signature.PrivateKey{targetPrivate})
 	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
@@ -127,7 +127,7 @@ func TestCTKNewTransferKeyNotEqualExistingTransferKey(t *testing.T) {
 		acct.TransferKeys = []signature.PublicKey{transferPublic}
 	})
 
-	ctk := NewChangeTransferKeys(targetAddress, []signature.PublicKey{transferPublic}, 1, []signature.PrivateKey{targetPrivate})
+	ctk := NewChangeValidation(targetAddress, []signature.PublicKey{transferPublic}, 1, []signature.PrivateKey{targetPrivate})
 	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
@@ -144,7 +144,7 @@ func TestCTKNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 		acct.TransferKeys = []signature.PublicKey{transferPublic}
 	})
 
-	ctk := NewChangeTransferKeys(targetAddress, []signature.PublicKey{targetPublic}, 1, []signature.PrivateKey{transferPrivate})
+	ctk := NewChangeValidation(targetAddress, []signature.PublicKey{targetPublic}, 1, []signature.PrivateKey{transferPrivate})
 	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 
@@ -157,7 +157,7 @@ func TestValidCTKUpdatesTransferKey(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	ctk := NewChangeTransferKeys(targetAddress, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
+	ctk := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, 1, []signature.PrivateKey{targetPrivate})
 	ctkBytes, err := tx.Marshal(&ctk, TxIDs)
 	require.NoError(t, err)
 

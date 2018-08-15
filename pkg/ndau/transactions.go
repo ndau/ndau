@@ -15,7 +15,7 @@ import (
 // TxIDs is a map which defines canonical numeric ids for each transactable type.
 var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):    &Transfer{},
-	metatx.TxID(2):    &ChangeTransferKeys{},
+	metatx.TxID(2):    &ChangeValidation{},
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeSettlementPeriod{},
 	metatx.TxID(5):    &Delegate{},
@@ -60,18 +60,18 @@ type Transfer struct {
 // static assert that GTValidatorChange is metatx.Transactable
 var _ metatx.Transactable = (*Transfer)(nil)
 
-// A ChangeTransferKeys transaction is used to set a transfer key
+// A ChangeValidation transaction is used to set a transfer key
 //
 // It may be signed with the account ownership key or the previous public key.
 // KeyKind is used to identify which of these are in use.
-type ChangeTransferKeys struct {
+type ChangeValidation struct {
 	Target     address.Address
 	NewKeys    []signature.PublicKey
 	Sequence   uint64
 	Signatures []signature.Signature
 }
 
-var _ metatx.Transactable = (*ChangeTransferKeys)(nil)
+var _ metatx.Transactable = (*ChangeValidation)(nil)
 
 // A ReleaseFromEndowment transaction is used to release funds from the
 // endowment into an individual account.

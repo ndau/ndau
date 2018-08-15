@@ -13,7 +13,7 @@ import (
 )
 
 // SignableBytes implements Transactable
-func (ct *ChangeTransferKeys) SignableBytes() []byte {
+func (ct *ChangeValidation) SignableBytes() []byte {
 	blen := 0
 	blen += address.AddrLength
 	for _, key := range ct.NewKeys {
@@ -31,14 +31,14 @@ func (ct *ChangeTransferKeys) SignableBytes() []byte {
 	return bytes
 }
 
-// NewChangeTransferKeys creates a new signed transfer key from its data and a private key
-func NewChangeTransferKeys(
+// NewChangeValidation creates a new signed transfer key from its data and a private key
+func NewChangeValidation(
 	target address.Address,
 	newKeys []signature.PublicKey,
 	sequence uint64,
 	privates []signature.PrivateKey,
-) ChangeTransferKeys {
-	ct := ChangeTransferKeys{
+) ChangeValidation {
+	ct := ChangeValidation{
 		Target:   target,
 		NewKeys:  newKeys,
 		Sequence: sequence,
@@ -50,7 +50,7 @@ func NewChangeTransferKeys(
 }
 
 // Validate implements metatx.Transactable
-func (ct *ChangeTransferKeys) Validate(appI interface{}) (err error) {
+func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
 	ct.Target, err = address.Validate(ct.Target.String())
 	if err != nil {
 		return
@@ -94,7 +94,7 @@ func (ct *ChangeTransferKeys) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (ct *ChangeTransferKeys) Apply(appI interface{}) error {
+func (ct *ChangeValidation) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)

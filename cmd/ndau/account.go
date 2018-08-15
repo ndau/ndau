@@ -118,7 +118,7 @@ func getAccountCTK(verbose *bool) func(*cli.Cmd) {
 
 			public, private, err := signature.Generate(signature.Ed25519, nil)
 			orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
-			ctk := ndau.NewChangeTransferKeys(
+			ctk := ndau.NewChangeValidation(
 				acct.Address,
 				[]signature.PublicKey{public},
 				sequence(conf, acct.Address),
