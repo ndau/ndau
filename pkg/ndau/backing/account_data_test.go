@@ -3,6 +3,7 @@ package backing
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
@@ -258,4 +260,73 @@ func TestUpdateEscrowPersistsPendingPeriodChange(t *testing.T) {
 	require.Equal(t, stD, acct.SettlementSettings.Period)
 	require.Equal(t, &chD, acct.SettlementSettings.Next)
 	require.Equal(t, &chTs, acct.SettlementSettings.ChangesAt)
+}
+
+func TestAccountData_ValidateSignatures(t *testing.T) {
+	data := make([]byte, 512)
+	_, err := rand.Read(data)
+	require.NoError(t, err)
+
+	const keypairQty = 8
+	type keypairsig struct {
+		public    signature.PublicKey
+		private   signature.PrivateKey
+		signature signature.Signature
+	}
+	keypairs := make([]keypairsig, 0, keypairQty)
+	for i := 0; i < keypairQty; i++ {
+		public, private, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+
+		kp := keypairsig{public: public, private: private}
+		kp.signature = private.Sign(data)
+		keypairs = append(keypairs, kp)
+	}
+
+	tests := []struct {
+		name  string
+		keys  []signature.PublicKey
+		sigs  []signature.Signature
+		want  bool
+		want1 *bitset256.Bitset256
+	}{
+		{
+			"1 valid",
+			[]signature.PublicKey{keypairs[0].public},
+			[]signature.Signature{keypairs[0].signature},
+			true, bitset256.New(0),
+		},
+		{
+			"1 invalid",
+			[]signature.PublicKey{keypairs[1].public},
+			[]signature.Signature{keypairs[2].signature},
+			false, bitset256.New(),
+		},
+		{
+			"2 valid out of order",
+			[]signature.PublicKey{keypairs[3].public, keypairs[4].public},
+			[]signature.Signature{keypairs[4].signature, keypairs[3].signature},
+			true, bitset256.New(0, 1),
+		},
+		{
+			"any invalid sig invalidates all",
+			[]signature.PublicKey{keypairs[5].public, keypairs[6].public, keypairs[7].public},
+			[]signature.Signature{keypairs[7].signature, keypairs[3].signature, keypairs[6].signature},
+			false, bitset256.New(1, 2),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ad := &AccountData{
+				TransferKeys: tt.keys,
+			}
+			got, got1 := ad.ValidateSignatures(data, tt.sigs)
+			if got != tt.want {
+				t.Errorf("AccountData.ValidateSignatures() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("AccountData.ValidateSignatures() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
 }
