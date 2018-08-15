@@ -17,9 +17,11 @@ import (
 // NewComputeEAI creates a new ComputeEAI transaction
 //
 // Most users will never need this.
-func NewComputeEAI(node address.Address, sequence uint64, key signature.PrivateKey) *ComputeEAI {
+func NewComputeEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *ComputeEAI {
 	c := &ComputeEAI{Node: node, Sequence: sequence}
-	c.Signature = key.Sign(c.SignableBytes())
+	for _, key := range keys {
+		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
+	}
 	return c
 }
 
@@ -41,7 +43,7 @@ func (c *ComputeEAI) Validate(appI interface{}) error {
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
-		[]signature.Signature{c.Signature},
+		c.Signatures,
 	)
 	if err != nil {
 		return err

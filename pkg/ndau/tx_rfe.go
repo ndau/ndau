@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -32,7 +31,7 @@ func NewReleaseFromEndowment(
 	qty math.Ndau,
 	destination, txFeeAcct address.Address,
 	sequence uint64,
-	private signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) (rfe ReleaseFromEndowment) {
 	rfe = ReleaseFromEndowment{
 		Qty:         qty,
@@ -40,7 +39,9 @@ func NewReleaseFromEndowment(
 		TxFeeAcct:   txFeeAcct,
 		Sequence:    sequence,
 	}
-	rfe.Signature = metatx.Sign(&rfe, private)
+	for _, key := range keys {
+		rfe.Signatures = append(rfe.Signatures, key.Sign(rfe.SignableBytes()))
+	}
 	return rfe
 }
 
@@ -58,7 +59,7 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 		app.blockTime,
 		rfe.Sequence,
 		rfe.SignableBytes(),
-		[]signature.Signature{rfe.Signature},
+		rfe.Signatures,
 	)
 	if err != nil {
 		return err
@@ -73,12 +74,17 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "RFE.Validate app.System err")
 	}
-	valid := false
+	// all signatures must be validated by keys in the rfeKeys list
+	valid := true
 	for _, public := range rfeKeys {
-		if public.Verify(rfe.SignableBytes(), rfe.Signature) {
-			valid = true
-			break
+		match := false
+		for _, sig := range rfe.Signatures {
+			if public.Verify(rfe.SignableBytes(), sig) {
+				match = true
+				break
+			}
 		}
+		valid = valid && match
 	}
 	if !valid {
 		return fmt.Errorf("No public key in %s verifies RFE signature", sv.ReleaseFromEndowmentKeysName)

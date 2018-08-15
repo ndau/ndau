@@ -54,7 +54,7 @@ type Transfer struct {
 	Destination address.Address
 	Qty         math.Ndau
 	Sequence    uint64
-	Signature   signature.Signature
+	Signatures  []signature.Signature
 }
 
 // static assert that GTValidatorChange is metatx.Transactable
@@ -83,7 +83,7 @@ type ReleaseFromEndowment struct {
 	Qty         math.Ndau
 	TxFeeAcct   address.Address
 	Sequence    uint64
-	Signature   signature.Signature
+	Signatures  []signature.Signature
 }
 
 var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
@@ -91,10 +91,10 @@ var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
 type ChangeSettlementPeriod struct {
-	Target    address.Address
-	Period    math.Duration
-	Sequence  uint64
-	Signature signature.Signature
+	Target     address.Address
+	Period     math.Duration
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
@@ -104,10 +104,10 @@ var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Account   address.Address
-	Delegate  address.Address
-	Sequence  uint64
-	Signature signature.Signature
+	Account    address.Address
+	Delegate   address.Address
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Delegate)(nil)
@@ -126,9 +126,9 @@ var _ metatx.Transactable = (*Delegate)(nil)
 //   2. The originating node can't know ahead of time what the official block
 //      time will be.
 type ComputeEAI struct {
-	Node      address.Address
-	Sequence  uint64
-	Signature signature.Signature
+	Node       address.Address
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*ComputeEAI)(nil)
@@ -137,10 +137,10 @@ var _ metatx.Transactable = (*ComputeEAI)(nil)
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Account   address.Address
-	Period    math.Duration
-	Sequence  uint64
-	Signature signature.Signature
+	Account    address.Address
+	Period     math.Duration
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Lock)(nil)
@@ -150,9 +150,9 @@ var _ metatx.Transactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Account   address.Address
-	Sequence  uint64
-	Signature signature.Signature
+	Account    address.Address
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Notify)(nil)
@@ -165,7 +165,7 @@ type SetRewardsTarget struct {
 	Account     address.Address
 	Destination address.Address
 	Sequence    uint64
-	Signature   signature.Signature
+	Signatures  []signature.Signature
 }
 
 var _ metatx.Transactable = (*SetRewardsTarget)(nil)

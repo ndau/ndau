@@ -12,9 +12,11 @@ import (
 )
 
 // NewLock creates a new Lock transaction
-func NewLock(account address.Address, period math.Duration, sequence uint64, key signature.PrivateKey) *Lock {
+func NewLock(account address.Address, period math.Duration, sequence uint64, keys []signature.PrivateKey) *Lock {
 	c := &Lock{Account: account, Period: period, Sequence: sequence}
-	c.Signature = key.Sign(c.SignableBytes())
+	for _, key := range keys {
+		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
+	}
 	return c
 }
 
@@ -37,7 +39,7 @@ func (c *Lock) Validate(appI interface{}) error {
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
-		[]signature.Signature{c.Signature},
+		c.Signatures,
 	)
 	if err != nil {
 		return err

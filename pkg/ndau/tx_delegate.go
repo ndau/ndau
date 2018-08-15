@@ -14,14 +14,16 @@ import (
 func NewDelegate(
 	account, delegate address.Address,
 	sequence uint64,
-	transferKey signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) *Delegate {
 	dd := &Delegate{
 		Account:  account,
 		Delegate: delegate,
 		Sequence: sequence,
 	}
-	dd.Signature = transferKey.Sign(dd.SignableBytes())
+	for _, key := range keys {
+		dd.Signatures = append(dd.Signatures, key.Sign(dd.SignableBytes()))
+	}
 	return dd
 }
 
@@ -51,7 +53,7 @@ func (dd *Delegate) Validate(appI interface{}) error {
 		app.blockTime,
 		dd.Sequence,
 		dd.SignableBytes(),
-		[]signature.Signature{dd.Signature},
+		dd.Signatures,
 	)
 	if err != nil {
 		return err

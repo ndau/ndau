@@ -25,7 +25,7 @@ func NewChangeSettlementPeriod(
 	target address.Address,
 	newPeriod math.Duration,
 	sequence uint64,
-	privateTransferKey signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) (ChangeSettlementPeriod, error) {
 	cep := ChangeSettlementPeriod{
 		Target:   target,
@@ -33,7 +33,9 @@ func NewChangeSettlementPeriod(
 		Sequence: sequence,
 	}
 	sb := cep.SignableBytes()
-	cep.Signature = privateTransferKey.Sign(sb)
+	for _, key := range keys {
+		cep.Signatures = append(cep.Signatures, key.Sign(sb))
+	}
 	return cep, nil
 }
 
@@ -49,7 +51,7 @@ func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 		app.blockTime,
 		cep.Sequence,
 		cep.SignableBytes(),
-		[]signature.Signature{cep.Signature},
+		cep.Signatures,
 	)
 	if err != nil {
 		return err

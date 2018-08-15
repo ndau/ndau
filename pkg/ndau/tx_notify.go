@@ -11,9 +11,11 @@ import (
 )
 
 // NewNotify creates a new Notify transaction
-func NewNotify(account address.Address, sequence uint64, key signature.PrivateKey) *Notify {
+func NewNotify(account address.Address, sequence uint64, keys []signature.PrivateKey) *Notify {
 	c := &Notify{Account: account, Sequence: sequence}
-	c.Signature = key.Sign(c.SignableBytes())
+	for _, key := range keys {
+		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
+	}
 	return c
 }
 
@@ -35,7 +37,7 @@ func (c *Notify) Validate(appI interface{}) error {
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
-		[]signature.Signature{c.Signature},
+		c.Signatures,
 	)
 	if err != nil {
 		return err

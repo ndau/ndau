@@ -57,7 +57,7 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 				targetAddress,
 				txFeeAddr,
 				1,
-				private,
+				[]signature.PrivateKey{private},
 			)
 
 			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
@@ -82,7 +82,7 @@ func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 		targetAddress,
 		txFeeAddr,
 		1,
-		private,
+		[]signature.PrivateKey{private},
 	)
 
 	rfeBytes, err := tx.Marshal(&rfe, TxIDs)
@@ -109,7 +109,7 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 				targetAddress,
 				txFeeAddr,
 				1,
-				private,
+				[]signature.PrivateKey{private},
 			)
 
 			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
@@ -153,7 +153,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 				targetAddress,
 				txFeeAddr,
 				1,
-				private,
+				[]signature.PrivateKey{private},
 			)
 
 			rfeBytes, err := tx.Marshal(&rfe, TxIDs)

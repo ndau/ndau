@@ -18,7 +18,7 @@ func NewTransfer(
 	s address.Address, d address.Address,
 	q math.Ndau,
 	seq uint64,
-	key signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) (*Transfer, error) {
 	if s == d {
 		return nil, errors.New("source may not equal destination")
@@ -35,7 +35,9 @@ func NewTransfer(
 		Sequence:    seq,
 	}
 	bytes := t.SignableBytes()
-	t.Signature = key.Sign(bytes)
+	for _, key := range keys {
+		t.Signatures = append(t.Signatures, key.Sign(bytes))
+	}
 
 	return t, err
 }
@@ -110,7 +112,7 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		app.blockTime,
 		t.Sequence,
 		t.SignableBytes(),
-		[]signature.Signature{t.Signature},
+		t.Signatures,
 	)
 	if err != nil {
 		return err

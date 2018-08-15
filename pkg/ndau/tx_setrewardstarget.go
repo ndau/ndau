@@ -12,13 +12,15 @@ import (
 )
 
 // NewSetRewardsTarget creates a new SetRewardsTarget transaction
-func NewSetRewardsTarget(account, destination address.Address, sequence uint64, key signature.PrivateKey) *SetRewardsTarget {
+func NewSetRewardsTarget(account, destination address.Address, sequence uint64, keys []signature.PrivateKey) *SetRewardsTarget {
 	c := &SetRewardsTarget{
 		Account:     account,
 		Destination: destination,
 		Sequence:    sequence,
 	}
-	c.Signature = key.Sign(c.SignableBytes())
+	for _, key := range keys {
+		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
+	}
 	return c
 }
 
@@ -41,7 +43,7 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
-		[]signature.Signature{c.Signature},
+		c.Signatures,
 	)
 	if err != nil {
 		return err
