@@ -120,10 +120,9 @@ func getAccountCTK(verbose *bool) func(*cli.Cmd) {
 			orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
 			ctk := ndau.NewChangeTransferKeys(
 				acct.Address,
-				public,
+				[]signature.PublicKey{public},
 				sequence(conf, acct.Address),
-				ndau.SigningKeyOwnership,
-				acct.Ownership.Public, acct.Ownership.Private,
+				[]signature.PrivateKey{acct.Ownership.Private},
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), &ctk)
