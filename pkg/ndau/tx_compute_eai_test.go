@@ -29,7 +29,7 @@ func initAppComputeEAI(t *testing.T) (*App, signature.PrivateKey) {
 	require.NoError(t, err)
 	// assign this keypair
 	modify(t, eaiNode, app, func(data *backing.AccountData) {
-		data.TransferKey = &public
+		data.TransferKeys = []signature.PublicKey{public}
 	})
 	return app, private
 }

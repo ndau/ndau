@@ -46,18 +46,18 @@ func (dd *Delegate) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	acct, hasAcct := app.GetState().(*backing.State).Accounts[dd.Account.String()]
-	if !hasAcct {
+	_, hasAccount, err := app.GetState().(*backing.State).GetValidAccount(
+		dd.Account,
+		app.blockTime,
+		dd.Sequence,
+		dd.SignableBytes(),
+		[]signature.Signature{dd.Signature},
+	)
+	if err != nil {
+		return err
+	}
+	if !hasAccount {
 		return errors.New("Account does not exist")
-	}
-	if dd.Sequence <= acct.Sequence {
-		return errors.New("Sequence too low")
-	}
-	if acct.TransferKey == nil {
-		return errors.New("Transfer key not set")
-	}
-	if !acct.TransferKey.Verify(dd.SignableBytes(), dd.Signature) {
-		return errors.New("Invalid signature")
 	}
 
 	return nil

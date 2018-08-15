@@ -36,24 +36,22 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	accountData, hasAccount := state.GetAccount(c.Account, app.blockTime)
+	accountData, hasAccount, err := state.GetValidAccount(
+		c.Account,
+		app.blockTime,
+		c.Sequence,
+		c.SignableBytes(),
+		[]signature.Signature{c.Signature},
+	)
+	if err != nil {
+		return err
+	}
 	if !hasAccount {
 		return errors.New("No such account")
 	}
-	_, err := address.Validate(c.Destination.String())
+	_, err = address.Validate(c.Destination.String())
 	if err != nil {
 		return errors.Wrap(err, "Destination")
-	}
-	// is the tx sequence higher than the highest previous sequence?
-	if c.Sequence <= accountData.Sequence {
-		return errors.New("Sequence too low")
-	}
-	// does the signature check out?
-	if accountData.TransferKey == nil {
-		return errors.New("Transfer key not set")
-	}
-	if !accountData.TransferKey.Verify(c.SignableBytes(), c.Signature) {
-		return errors.New("Invalid signature")
 	}
 
 	// source account must not be receiving rewards from any other account

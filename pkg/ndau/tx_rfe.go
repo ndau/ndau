@@ -53,29 +53,29 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 
 	state := app.GetState().(*backing.State)
-	txAcct, hasAcct := state.GetAccount(rfe.TxFeeAcct, app.blockTime)
+	_, hasAcct, err := state.GetValidAccount(
+		rfe.TxFeeAcct,
+		app.blockTime,
+		rfe.Sequence,
+		rfe.SignableBytes(),
+		[]signature.Signature{rfe.Signature},
+	)
+	if err != nil {
+		return err
+	}
+
 	if !hasAcct {
 		return errors.New("TxFeeAcct does not exist")
 	}
-	if rfe.Sequence <= txAcct.Sequence {
-		return errors.New("Sequence too low")
-	}
-	sb := rfe.SignableBytes()
-	if txAcct.TransferKey == nil {
-		return errors.New("TxFeeAcct transfer key not set")
-	}
-	if !txAcct.TransferKey.Verify(sb, rfe.Signature) {
-		return errors.New("TxFeeAcct TransferKey does not validate Signature")
-	}
 
 	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
-	err := app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
+	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
 	if err != nil {
 		return errors.Wrap(err, "RFE.Validate app.System err")
 	}
 	valid := false
 	for _, public := range rfeKeys {
-		if public.Verify(sb, rfe.Signature) {
+		if public.Verify(rfe.SignableBytes(), rfe.Signature) {
 			valid = true
 			break
 		}

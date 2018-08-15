@@ -36,7 +36,7 @@ func initAppRFE(t *testing.T) (*App, config.MockAssociated) {
 		// ensure that this address is tied to a real account
 		modify(t, addr.String(), app, func(acct *backing.AccountData) {
 			copy := public // make a copy so pointers are independent
-			acct.TransferKey = &copy
+			acct.TransferKeys = []signature.PublicKey{copy}
 		})
 	}
 	assc[rfeAddrs] = addresses

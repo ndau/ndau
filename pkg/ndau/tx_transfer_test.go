@@ -44,7 +44,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
 		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
-		acct.TransferKey = &public
+		acct.TransferKeys = []signature.PublicKey{public}
 	})
 
 	return app, private
@@ -76,7 +76,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 				Expiry: ts.Sub(math.Duration(i)),
 			})
 		}
-		acct.TransferKey = &public
+		acct.TransferKeys = []signature.PublicKey{public}
 	})
 
 	// add 1 second to the timestamp to get past unix time rounding errors

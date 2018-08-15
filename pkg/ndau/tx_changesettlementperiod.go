@@ -44,19 +44,15 @@ func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	if cep.Period < 0 {
 		return errors.New("Negative settlement period")
 	}
-
-	acct := app.GetState().(*backing.State).Accounts[cep.Target.String()]
-
-	if cep.Sequence <= acct.Sequence {
-		return errors.New("Sequence too low")
-	}
-
-	if acct.TransferKey == nil {
-		return errors.New("Target transfer key not set")
-	}
-	sb := cep.SignableBytes()
-	if !acct.TransferKey.Verify(sb, cep.Signature) {
-		return errors.New("Invalid message signature")
+	_, _, err = app.GetState().(*backing.State).GetValidAccount(
+		cep.Target,
+		app.blockTime,
+		cep.Sequence,
+		cep.SignableBytes(),
+		[]signature.Signature{cep.Signature},
+	)
+	if err != nil {
+		return err
 	}
 
 	return nil

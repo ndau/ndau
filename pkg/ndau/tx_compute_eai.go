@@ -36,20 +36,19 @@ func (c *ComputeEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	nodeData, hasNode := state.GetAccount(c.Node, app.blockTime)
+	_, hasNode, err := state.GetValidAccount(
+		c.Node,
+		app.blockTime,
+		c.Sequence,
+		c.SignableBytes(),
+		[]signature.Signature{c.Signature},
+	)
+	if err != nil {
+		return err
+	}
+
 	if !hasNode {
 		return errors.New("No such node")
-	}
-	// is the tx sequence higher than the highest previous sequence?
-	if c.Sequence <= nodeData.Sequence {
-		return errors.New("Sequence too low")
-	}
-	// does the signature check out?
-	if nodeData.TransferKey == nil {
-		return errors.New("Transfer key not set")
-	}
-	if !nodeData.TransferKey.Verify(c.SignableBytes(), c.Signature) {
-		return errors.New("Invalid signature")
 	}
 
 	return nil

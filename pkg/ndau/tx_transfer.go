@@ -105,24 +105,19 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, _ := state.GetAccount(t.Source, app.blockTime)
+	source, _, err := state.GetValidAccount(
+		t.Source,
+		app.blockTime,
+		t.Sequence,
+		t.SignableBytes(),
+		[]signature.Signature{t.Signature},
+	)
+	if err != nil {
+		return err
+	}
+
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
-	}
-
-	if source.TransferKey == nil {
-		return errors.New("source.TransferKey not set")
-	}
-	publicKey := *source.TransferKey
-
-	tBytes := t.SignableBytes()
-
-	if !publicKey.Verify(tBytes, t.Signature) {
-		return errors.New("invalid signature")
-	}
-
-	if t.Sequence <= source.Sequence {
-		return errors.New("sequence number too low")
 	}
 
 	// the source update doesn't get persisted this time because this method is read-only
