@@ -18,28 +18,36 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-const rfeAddrs = "RFE addresses"
+const rfeAddr = "RFE tx fee address"
 
 func initAppRFE(t *testing.T) (*App, config.MockAssociated) {
 	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
-	rfePublic := make(sv.ReleaseFromEndowmentKeys, 0)
-	err := app.System(sv.ReleaseFromEndowmentKeysName, &rfePublic)
+	// the nature of an RFE tx fee account must be that
+	// 1. it contains enough ndau to pay the tx fee of the RFE
+	// 2. each of its transfer keys is also listed in the RFEKeys system variable
+	//
+	// There can be an arbitrary number of these, but for testing purposes,
+	// we only need one.
+
+	// create an arbitrary public key in order to create an address for our
+	// rfe tx fee account
+	public, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	addr, err := address.Generate(address.KindEndowment, public.Bytes())
 	require.NoError(t, err)
 
-	addresses := make([]address.Address, 0, len(rfePublic))
-	for _, public := range rfePublic {
-		addr, err := address.Generate(address.KindEndowment, public.Bytes())
-		require.NoError(t, err)
-		addresses = append(addresses, addr)
-		// ensure that this address is tied to a real account
-		modify(t, addr.String(), app, func(acct *backing.AccountData) {
-			copy := public // make a copy so pointers are independent
-			acct.TransferKeys = []signature.PublicKey{copy}
-		})
-	}
-	assc[rfeAddrs] = addresses
+	// fetch the RFE keys system variable
+	rfePublic := make(sv.ReleaseFromEndowmentKeys, 0)
+	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfePublic)
+	require.NoError(t, err)
+
+	modify(t, addr.String(), app, func(acct *backing.AccountData) {
+		acct.TransferKeys = rfePublic
+	})
+
+	assc[rfeAddr] = addr
 
 	return app, assc
 }
@@ -49,9 +57,9 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 	privateKeys := assc[sv.ReleaseFromEndowmentKeysName].([]signature.PrivateKey)
 
 	for i := 0; i < len(privateKeys); i++ {
-		txFeeAddr := assc[rfeAddrs].([]address.Address)[i]
+		txFeeAddr := assc[rfeAddr].(address.Address)
 		private := privateKeys[i]
-		t.Run(fmt.Sprintf("private key: %x", private.Bytes()), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			rfe := NewReleaseFromEndowment(
 				math.Ndau(1),
 				targetAddress,
@@ -75,7 +83,7 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 	app, assc := initAppRFE(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
-	txFeeAddr := assc[rfeAddrs].([]address.Address)[0]
+	txFeeAddr := assc[rfeAddr].(address.Address)
 
 	rfe := NewReleaseFromEndowment(
 		math.Ndau(1),
@@ -97,9 +105,9 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 	privateKeys := assc[sv.ReleaseFromEndowmentKeysName].([]signature.PrivateKey)
 
 	for i := 0; i < len(privateKeys); i++ {
-		txFeeAddr := assc[rfeAddrs].([]address.Address)[i]
+		txFeeAddr := assc[rfeAddr].(address.Address)
 		private := privateKeys[i]
-		t.Run(fmt.Sprintf("private key: %x", private.Bytes()), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
 				ad.Balance = math.Ndau(10)
 			})
@@ -108,7 +116,7 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 				math.Ndau(1),
 				targetAddress,
 				txFeeAddr,
-				1,
+				uint64(i+1),
 				[]signature.PrivateKey{private},
 			)
 
@@ -116,6 +124,9 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
+			if resp.Log != "" {
+				t.Log(resp.Log)
+			}
 			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 			app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
@@ -139,9 +150,9 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 	privateKeys := assc[sv.ReleaseFromEndowmentKeysName].([]signature.PrivateKey)
 
 	for i := 0; i < len(privateKeys); i++ {
-		txFeeAddr := assc[rfeAddrs].([]address.Address)[i]
+		txFeeAddr := assc[rfeAddr].(address.Address)
 		private := privateKeys[i]
-		t.Run(fmt.Sprintf("private key: %x", private.Bytes()), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			public, _, err := signature.Generate(signature.Ed25519, nil)
 			require.NoError(t, err)
 
@@ -152,7 +163,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 				math.Ndau(1),
 				targetAddress,
 				txFeeAddr,
-				1,
+				uint64(i+1),
 				[]signature.PrivateKey{private},
 			)
 
@@ -160,6 +171,9 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
+			if resp.Log != "" {
+				t.Log(resp.Log)
+			}
 			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 			app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{

@@ -76,9 +76,9 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 	// all signatures must be validated by keys in the rfeKeys list
 	valid := true
-	for _, public := range rfeKeys {
+	for _, sig := range rfe.Signatures {
 		match := false
-		for _, sig := range rfe.Signatures {
+		for _, public := range rfeKeys {
 			if public.Verify(rfe.SignableBytes(), sig) {
 				match = true
 				break
