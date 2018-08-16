@@ -55,7 +55,12 @@ func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	// validation for NewKey, SigningKey, Signature happens on deserialization
+
+	// business rule: there must be at least 1 and no more than a const
+	// transfer keys set in this tx
+	if len(ct.NewKeys) < 1 || len(ct.NewKeys) > backing.MaxKeysInAccount {
+		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(ct.NewKeys))
+	}
 
 	app := appI.(*App)
 	_, _, err = app.GetState().(*backing.State).GetValidAccount(

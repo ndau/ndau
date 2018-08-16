@@ -155,3 +155,35 @@ func TestChangeValidationChain(t *testing.T) {
 	resp = deliverTr(t, app, &cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
+
+func TestChangeValidationNoTransferKeys(t *testing.T) {
+	app := initAppChangeValidation(t)
+
+	cv := NewChangeValidation(targetAddress, []signature.PublicKey{}, 1, []signature.PrivateKey{transferPrivate})
+	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestChangeValidationTooManyTransferKeys(t *testing.T) {
+	app := initAppChangeValidation(t)
+
+	noKeys := backing.MaxKeysInAccount + 1
+	newKeys := make([]signature.PublicKey, 0, noKeys)
+	for i := 0; i < noKeys; i++ {
+		key, _, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+		newKeys = append(newKeys, key)
+	}
+
+	cv := NewChangeValidation(targetAddress, newKeys, 1, []signature.PrivateKey{transferPrivate})
+	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
