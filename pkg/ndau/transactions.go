@@ -23,6 +23,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(7):    &Lock{},
 	metatx.TxID(8):    &Notify{},
 	metatx.TxID(9):    &SetRewardsTarget{},
+	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -60,10 +61,7 @@ type Transfer struct {
 // static assert that GTValidatorChange is metatx.Transactable
 var _ metatx.Transactable = (*Transfer)(nil)
 
-// A ChangeValidation transaction is used to set a transfer key
-//
-// It may be signed with the account ownership key or the previous public key.
-// KeyKind is used to identify which of these are in use.
+// A ChangeValidation transaction is used to set transfer keys
 type ChangeValidation struct {
 	Target     address.Address
 	NewKeys    []signature.PublicKey
@@ -169,3 +167,18 @@ type SetRewardsTarget struct {
 }
 
 var _ metatx.Transactable = (*SetRewardsTarget)(nil)
+
+// A ClaimAccount transaction is used to set the initial transfer keys for an account.
+//
+// It is the only type of transaction which may be signed with the ownership key.
+//
+// It has no sequence, because if the account's sequence is not 0, then it must
+// already have been claimed, so this is an invalid transaction.
+type ClaimAccount struct {
+	Account      address.Address
+	Ownership    signature.PublicKey
+	TransferKeys []signature.PublicKey
+	Signature    signature.Signature
+}
+
+var _ metatx.Transactable = (*ClaimAccount)(nil)

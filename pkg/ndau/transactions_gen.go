@@ -227,6 +227,109 @@ func (z *ChangeValidation) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
+func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 4
+	// string "Account"
+	o = append(o, 0x84, 0xa7, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74)
+	o, err = z.Account.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "Ownership"
+	o = append(o, 0xa9, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x68, 0x69, 0x70)
+	o, err = z.Ownership.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	// string "TransferKeys"
+	o = append(o, 0xac, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x4b, 0x65, 0x79, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.TransferKeys)))
+	for za0001 := range z.TransferKeys {
+		o, err = z.TransferKeys[za0001].MarshalMsg(o)
+		if err != nil {
+			return
+		}
+	}
+	// string "Signature"
+	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
+	o, err = z.Signature.MarshalMsg(o)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "Account":
+			bts, err = z.Account.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "Ownership":
+			bts, err = z.Ownership.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		case "TransferKeys":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				return
+			}
+			if cap(z.TransferKeys) >= int(zb0002) {
+				z.TransferKeys = (z.TransferKeys)[:zb0002]
+			} else {
+				z.TransferKeys = make([]signature.PublicKey, zb0002)
+			}
+			for za0001 := range z.TransferKeys {
+				bts, err = z.TransferKeys[za0001].UnmarshalMsg(bts)
+				if err != nil {
+					return
+				}
+			}
+		case "Signature":
+			bts, err = z.Signature.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *ClaimAccount) Msgsize() (s int) {
+	s = 1 + 8 + z.Account.Msgsize() + 10 + z.Ownership.Msgsize() + 13 + msgp.ArrayHeaderSize
+	for za0001 := range z.TransferKeys {
+		s += z.TransferKeys[za0001].Msgsize()
+	}
+	s += 10 + z.Signature.Msgsize()
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *ComputeEAI) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
