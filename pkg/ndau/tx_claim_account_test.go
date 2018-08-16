@@ -116,3 +116,33 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 		require.Equal(t, newPublic.Bytes(), ad.TransferKeys[0].Bytes())
 	})
 }
+
+func TestClaimAccountNoTransferKeys(t *testing.T) {
+	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{}, targetPrivate)
+	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	require.NoError(t, err)
+
+	app := initAppClaimAccount(t)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestClaimAccountTooManyTransferKeys(t *testing.T) {
+	noKeys := backing.MaxKeysInAccount + 1
+	newKeys := make([]signature.PublicKey, 0, noKeys)
+	for i := 0; i < noKeys; i++ {
+		key, _, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+		newKeys = append(newKeys, key)
+	}
+
+	ca := NewClaimAccount(targetAddress, targetPublic, newKeys, targetPrivate)
+	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	require.NoError(t, err)
+
+	app := initAppClaimAccount(t)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}

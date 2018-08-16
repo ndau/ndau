@@ -67,6 +67,12 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		return errors.New("Invalid ownership signature")
 	}
 
+	// business rule: there must be at least 1 and no more than a const
+	// transfer keys set in this tx
+	if len(tx.TransferKeys) < 1 || len(tx.TransferKeys) > backing.MaxKeysInAccount {
+		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.TransferKeys))
+	}
+
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
