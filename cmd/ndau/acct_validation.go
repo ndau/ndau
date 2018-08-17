@@ -2,11 +2,13 @@ package main
 
 import (
 	cli "github.com/jawher/mow.cli"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
+	rpc "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 func getAccountValidation(verbose *bool) func(*cli.Cmd) {
@@ -55,7 +57,7 @@ func getReset(verbose *bool, name *string) func(*cli.Cmd) {
 			resp, err := tool.SendCommit(tmnode(conf.Node), &cv)
 
 			// only persist this change if there was no error
-			if err == nil {
+			if err == nil && code.ReturnCode(resp.(*rpc.ResultBroadcastTxCommit).DeliverTx.Code) == code.OK {
 				acct.Transfer = []config.Keypair{config.Keypair{Public: public, Private: private}}
 				conf.SetAccount(*acct)
 				err = conf.Save()
@@ -92,13 +94,13 @@ func getAdd(verbose *bool, name *string) func(*cli.Cmd) {
 			resp, err := tool.SendCommit(tmnode(conf.Node), &cv)
 
 			// only persist this change if there was no error
-			if err == nil {
+			if err == nil && code.ReturnCode(resp.(*rpc.ResultBroadcastTxCommit).DeliverTx.Code) == code.OK {
 				acct.Transfer = append(acct.Transfer, config.Keypair{Public: public, Private: private})
 				conf.SetAccount(*acct)
 				err = conf.Save()
 				orQuit(errors.Wrap(err, "saving config"))
 			}
-			finish(*verbose, resp, err, "account validation reset")
+			finish(*verbose, resp, err, "account validation add")
 		}
 	}
 }

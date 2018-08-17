@@ -14,7 +14,7 @@ if [ -z "$ndau" ]; then
     exit 1
 fi
 
-nn="$SCRIPTPATH/../../ndaunode"
+nn="$SCRIPTPATH/.."
 if cd "$nn"; then
     $ndau conf $(bin/defaults.sh docker-compose port tendermint 26657)
 else

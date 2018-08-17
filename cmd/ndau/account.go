@@ -19,6 +19,12 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 		)
 
 		cmd.Command(
+			"claim",
+			"claim this account on the blockchain",
+			getAccountClaim(verbose),
+		)
+
+		cmd.Command(
 			"validation",
 			"change the account's validation",
 			getAccountValidation(verbose),
