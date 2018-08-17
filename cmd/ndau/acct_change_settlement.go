@@ -6,7 +6,6 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -36,7 +35,7 @@ func getAccountChangeSettlement(verbose *bool) func(*cli.Cmd) {
 				ad.Address,
 				duration,
 				sequence(config, ad.Address),
-				[]signature.PrivateKey{ad.Transfer.Private},
+				ad.TransferPrivate(),
 			)
 			orQuit(errors.Wrap(err, "Creating ChangeEscrowPeriod transaction"))
 

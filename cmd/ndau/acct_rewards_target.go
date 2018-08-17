@@ -6,7 +6,6 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
 func getSetRewardsTarget(verbose *bool) func(*cli.Cmd) {
@@ -39,7 +38,7 @@ func getSetRewardsTarget(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				dest,
 				sequence(conf, acct.Address),
-				[]signature.PrivateKey{acct.Transfer.Private},
+				acct.TransferPrivate(),
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)

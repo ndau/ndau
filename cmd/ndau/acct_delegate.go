@@ -6,7 +6,6 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
 func getAccountDelegate(verbose *bool) func(*cli.Cmd) {
@@ -41,7 +40,7 @@ func getAccountDelegate(verbose *bool) func(*cli.Cmd) {
 			tx := ndau.NewDelegate(
 				acct.Address, node,
 				sequence(conf, acct.Address),
-				[]signature.PrivateKey{acct.Transfer.Private},
+				acct.TransferPrivate(),
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)

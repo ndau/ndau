@@ -19,9 +19,9 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 		)
 
 		cmd.Command(
-			"change-validation",
-			"change the account's transfer keys",
-			getAccountChangeValidation(verbose),
+			"validation",
+			"change the account's validation",
+			getAccountValidation(verbose),
 		)
 
 		cmd.Command(
