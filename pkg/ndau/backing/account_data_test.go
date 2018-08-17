@@ -267,7 +267,7 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 	_, err := rand.Read(data)
 	require.NoError(t, err)
 
-	const keypairQty = 8
+	const keypairQty = 12
 	type keypairsig struct {
 		public    signature.PublicKey
 		private   signature.PrivateKey
@@ -283,6 +283,22 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 		keypairs = append(keypairs, kp)
 	}
 
+	kpPublic := func(idxs ...int) []signature.PublicKey {
+		keys := make([]signature.PublicKey, 0, len(idxs))
+		for _, idx := range idxs {
+			keys = append(keys, keypairs[idx].public)
+		}
+		return keys
+	}
+
+	kpSignature := func(idxs ...int) []signature.Signature {
+		keys := make([]signature.Signature, 0, len(idxs))
+		for _, idx := range idxs {
+			keys = append(keys, keypairs[idx].signature)
+		}
+		return keys
+	}
+
 	tests := []struct {
 		name  string
 		keys  []signature.PublicKey
@@ -292,27 +308,33 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 	}{
 		{
 			"1 valid",
-			[]signature.PublicKey{keypairs[0].public},
-			[]signature.Signature{keypairs[0].signature},
+			kpPublic(0),
+			kpSignature(0),
 			true, bitset256.New(0),
 		},
 		{
 			"1 invalid",
-			[]signature.PublicKey{keypairs[1].public},
-			[]signature.Signature{keypairs[2].signature},
+			kpPublic(1),
+			kpSignature(2),
 			false, bitset256.New(),
 		},
 		{
 			"2 valid out of order",
-			[]signature.PublicKey{keypairs[3].public, keypairs[4].public},
-			[]signature.Signature{keypairs[4].signature, keypairs[3].signature},
+			kpPublic(3, 4),
+			kpSignature(4, 3),
 			true, bitset256.New(0, 1),
 		},
 		{
 			"any invalid sig invalidates all",
-			[]signature.PublicKey{keypairs[5].public, keypairs[6].public, keypairs[7].public},
-			[]signature.Signature{keypairs[7].signature, keypairs[3].signature, keypairs[6].signature},
+			kpPublic(5, 6, 7),
+			kpSignature(7, 3, 6),
 			false, bitset256.New(1, 2),
+		},
+		{
+			"valid subset is valid",
+			kpPublic(8, 9, 10, 11),
+			kpSignature(10, 8),
+			true, bitset256.New(0, 2),
 		},
 	}
 	for _, tt := range tests {
