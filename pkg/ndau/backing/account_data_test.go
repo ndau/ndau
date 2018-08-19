@@ -3,6 +3,7 @@ package backing
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
@@ -58,8 +60,11 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					// require equality for known fields by name so we know what's
 					// unequal, if anything is
 					require.Equal(t, account.Balance, recoveredAccount.Balance)
-					// transfer key may not be equal if algorithm pointers are unequal
-					require.Equal(t, account.TransferKey.Bytes(), recoveredAccount.TransferKey.Bytes())
+					require.Equal(t, len(account.TransferKeys), len(recoveredAccount.TransferKeys))
+					for idx := range account.TransferKeys {
+						// transfer key may not be equal if algorithm pointers are unequal
+						require.Equal(t, account.TransferKeys[idx].Bytes(), recoveredAccount.TransferKeys[idx].Bytes())
+					}
 					require.Equal(t, account.RewardsTarget, recoveredAccount.RewardsTarget)
 					require.Equal(t, account.IncomingRewardsFrom, recoveredAccount.IncomingRewardsFrom)
 					require.Equal(t, account.DelegationNode, recoveredAccount.DelegationNode)
@@ -114,7 +119,6 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	name := fmt.Sprintf("<Account (bal: %d; lock: %v; stake: %v)>", int64(balance), hasLock, hasStake)
 	ad := AccountData{
 		Balance:            balance,
-		TransferKey:        randKey(),
 		LastWAAUpdate:      randTimestamp(),
 		WeightedAverageAge: randDuration(),
 		Sequence:           rand.Uint64(),
@@ -129,6 +133,8 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		ad.DelegationNode = &addr
 	}
 	for i := 0; i < 5; i++ {
+		key := randKey()
+		ad.TransferKeys = append(ad.TransferKeys, *key)
 		ad.IncomingRewardsFrom = append(ad.IncomingRewardsFrom, randAddress())
 	}
 	if hasLock {
@@ -254,4 +260,95 @@ func TestUpdateEscrowPersistsPendingPeriodChange(t *testing.T) {
 	require.Equal(t, stD, acct.SettlementSettings.Period)
 	require.Equal(t, &chD, acct.SettlementSettings.Next)
 	require.Equal(t, &chTs, acct.SettlementSettings.ChangesAt)
+}
+
+func TestAccountData_ValidateSignatures(t *testing.T) {
+	data := make([]byte, 512)
+	_, err := rand.Read(data)
+	require.NoError(t, err)
+
+	const keypairQty = 12
+	type keypairsig struct {
+		public    signature.PublicKey
+		private   signature.PrivateKey
+		signature signature.Signature
+	}
+	keypairs := make([]keypairsig, 0, keypairQty)
+	for i := 0; i < keypairQty; i++ {
+		public, private, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+
+		kp := keypairsig{public: public, private: private}
+		kp.signature = private.Sign(data)
+		keypairs = append(keypairs, kp)
+	}
+
+	kpPublic := func(idxs ...int) []signature.PublicKey {
+		keys := make([]signature.PublicKey, 0, len(idxs))
+		for _, idx := range idxs {
+			keys = append(keys, keypairs[idx].public)
+		}
+		return keys
+	}
+
+	kpSignature := func(idxs ...int) []signature.Signature {
+		keys := make([]signature.Signature, 0, len(idxs))
+		for _, idx := range idxs {
+			keys = append(keys, keypairs[idx].signature)
+		}
+		return keys
+	}
+
+	tests := []struct {
+		name  string
+		keys  []signature.PublicKey
+		sigs  []signature.Signature
+		want  bool
+		want1 *bitset256.Bitset256
+	}{
+		{
+			"1 valid",
+			kpPublic(0),
+			kpSignature(0),
+			true, bitset256.New(0),
+		},
+		{
+			"1 invalid",
+			kpPublic(1),
+			kpSignature(2),
+			false, bitset256.New(),
+		},
+		{
+			"2 valid out of order",
+			kpPublic(3, 4),
+			kpSignature(4, 3),
+			true, bitset256.New(0, 1),
+		},
+		{
+			"any invalid sig invalidates all",
+			kpPublic(5, 6, 7),
+			kpSignature(7, 3, 6),
+			false, bitset256.New(1, 2),
+		},
+		{
+			"valid subset is valid",
+			kpPublic(8, 9, 10, 11),
+			kpSignature(10, 8),
+			true, bitset256.New(0, 2),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ad := &AccountData{
+				TransferKeys: tt.keys,
+			}
+			got, got1 := ad.ValidateSignatures(data, tt.sigs)
+			if got != tt.want {
+				t.Errorf("AccountData.ValidateSignatures() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("AccountData.ValidateSignatures() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
 }

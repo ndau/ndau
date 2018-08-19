@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -32,7 +31,7 @@ func NewReleaseFromEndowment(
 	qty math.Ndau,
 	destination, txFeeAcct address.Address,
 	sequence uint64,
-	private signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) (rfe ReleaseFromEndowment) {
 	rfe = ReleaseFromEndowment{
 		Qty:         qty,
@@ -40,7 +39,9 @@ func NewReleaseFromEndowment(
 		TxFeeAcct:   txFeeAcct,
 		Sequence:    sequence,
 	}
-	rfe.Signature = metatx.Sign(&rfe, private)
+	for _, key := range keys {
+		rfe.Signatures = append(rfe.Signatures, key.Sign(rfe.SignableBytes()))
+	}
 	return rfe
 }
 
@@ -53,32 +54,37 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 
 	state := app.GetState().(*backing.State)
-	txAcct, hasAcct := state.GetAccount(rfe.TxFeeAcct, app.blockTime)
+	_, hasAcct, err := state.GetValidAccount(
+		rfe.TxFeeAcct,
+		app.blockTime,
+		rfe.Sequence,
+		rfe.SignableBytes(),
+		rfe.Signatures,
+	)
+	if err != nil {
+		return err
+	}
+
 	if !hasAcct {
 		return errors.New("TxFeeAcct does not exist")
 	}
-	if rfe.Sequence <= txAcct.Sequence {
-		return errors.New("Sequence too low")
-	}
-	sb := rfe.SignableBytes()
-	if txAcct.TransferKey == nil {
-		return errors.New("TxFeeAcct transfer key not set")
-	}
-	if !txAcct.TransferKey.Verify(sb, rfe.Signature) {
-		return errors.New("TxFeeAcct TransferKey does not validate Signature")
-	}
 
 	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
-	err := app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
+	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
 	if err != nil {
 		return errors.Wrap(err, "RFE.Validate app.System err")
 	}
-	valid := false
-	for _, public := range rfeKeys {
-		if public.Verify(sb, rfe.Signature) {
-			valid = true
-			break
+	// all signatures must be validated by keys in the rfeKeys list
+	valid := true
+	for _, sig := range rfe.Signatures {
+		match := false
+		for _, public := range rfeKeys {
+			if public.Verify(rfe.SignableBytes(), sig) {
+				match = true
+				break
+			}
 		}
+		valid = valid && match
 	}
 	if !valid {
 		return fmt.Errorf("No public key in %s verifies RFE signature", sv.ReleaseFromEndowmentKeysName)

@@ -27,7 +27,7 @@ func TestValidNotifyTxIsValid(t *testing.T) {
 	app, private := initAppNotify(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -38,11 +38,11 @@ func TestNotifyAccountValidates(t *testing.T) {
 	app, private := initAppNotify(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
 	notify.Account = address.Address{}
-	notify.Signature = private.Sign(notify.SignableBytes())
+	notify.Signatures = []signature.Signature{private.Sign(notify.SignableBytes())}
 
 	// compute must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
@@ -55,7 +55,7 @@ func TestNotifySequenceValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 0, private)
+	notify := NewNotify(sA, 0, []signature.PrivateKey{private})
 
 	// notify must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
@@ -68,14 +68,14 @@ func TestNotifySignatureValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
 
 	// flip a single bit in the signature
-	sigBytes := notify.Signature.Bytes()
+	sigBytes := notify.Signatures[0].Bytes()
 	sigBytes[0] = sigBytes[0] ^ 1
 	wrongSignature, err := signature.RawSignature(signature.Ed25519, sigBytes)
 	require.NoError(t, err)
-	notify.Signature = *wrongSignature
+	notify.Signatures[0] = *wrongSignature
 
 	// notify must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
@@ -88,7 +88,7 @@ func TestNotifyChangesAppState(t *testing.T) {
 	app, private := initAppNotify(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
 
 	state := app.GetState().(*backing.State)
 	acct, _ := state.GetAccount(sA, app.blockTime)

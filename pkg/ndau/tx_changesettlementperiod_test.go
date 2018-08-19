@@ -8,6 +8,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,7 @@ func TestCEPStoresPendingEscrowChange(t *testing.T) {
 	addr, err := address.Validate(source)
 	require.NoError(t, err)
 
-	cep, err := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, private)
+	cep, err := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, []signature.PrivateKey{private})
 	require.NoError(t, err)
 
 	ts, err := math.TimestampFrom(time.Now())

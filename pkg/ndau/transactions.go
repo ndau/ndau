@@ -15,7 +15,7 @@ import (
 // TxIDs is a map which defines canonical numeric ids for each transactable type.
 var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):    &Transfer{},
-	metatx.TxID(2):    &ChangeTransferKey{},
+	metatx.TxID(2):    &ChangeValidation{},
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeSettlementPeriod{},
 	metatx.TxID(5):    &Delegate{},
@@ -23,6 +23,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(7):    &Lock{},
 	metatx.TxID(8):    &Notify{},
 	metatx.TxID(9):    &SetRewardsTarget{},
+	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -54,36 +55,21 @@ type Transfer struct {
 	Destination address.Address
 	Qty         math.Ndau
 	Sequence    uint64
-	Signature   signature.Signature
+	Signatures  []signature.Signature
 }
 
 // static assert that GTValidatorChange is metatx.Transactable
 var _ metatx.Transactable = (*Transfer)(nil)
 
-// SigningKeyKind is the kind of key used to sign a ChangeTransferKey
-type SigningKeyKind byte
-
-const (
-	// SigningKeyOwnership indicates that the ownership key is used to sign the ChangeTransferKey transaction
-	SigningKeyOwnership SigningKeyKind = 0x01
-	// SigningKeyTransfer indicates that the previous transfer key is used to sign the ChangeTransferKey transaction
-	SigningKeyTransfer SigningKeyKind = 0x02
-)
-
-// A ChangeTransferKey transaction is used to set a transfer key
-//
-// It may be signed with the account ownership key or the previous public key.
-// KeyKind is used to identify which of these are in use.
-type ChangeTransferKey struct {
+// A ChangeValidation transaction is used to set transfer keys
+type ChangeValidation struct {
 	Target     address.Address
-	NewKey     signature.PublicKey
-	SigningKey signature.PublicKey
-	KeyKind    SigningKeyKind
+	NewKeys    []signature.PublicKey
 	Sequence   uint64
-	Signature  signature.Signature
+	Signatures []signature.Signature
 }
 
-var _ metatx.Transactable = (*ChangeTransferKey)(nil)
+var _ metatx.Transactable = (*ChangeValidation)(nil)
 
 // A ReleaseFromEndowment transaction is used to release funds from the
 // endowment into an individual account.
@@ -95,7 +81,7 @@ type ReleaseFromEndowment struct {
 	Qty         math.Ndau
 	TxFeeAcct   address.Address
 	Sequence    uint64
-	Signature   signature.Signature
+	Signatures  []signature.Signature
 }
 
 var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
@@ -103,10 +89,10 @@ var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
 type ChangeSettlementPeriod struct {
-	Target    address.Address
-	Period    math.Duration
-	Sequence  uint64
-	Signature signature.Signature
+	Target     address.Address
+	Period     math.Duration
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
@@ -116,10 +102,10 @@ var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Account   address.Address
-	Delegate  address.Address
-	Sequence  uint64
-	Signature signature.Signature
+	Account    address.Address
+	Delegate   address.Address
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Delegate)(nil)
@@ -138,9 +124,9 @@ var _ metatx.Transactable = (*Delegate)(nil)
 //   2. The originating node can't know ahead of time what the official block
 //      time will be.
 type ComputeEAI struct {
-	Node      address.Address
-	Sequence  uint64
-	Signature signature.Signature
+	Node       address.Address
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*ComputeEAI)(nil)
@@ -149,10 +135,10 @@ var _ metatx.Transactable = (*ComputeEAI)(nil)
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Account   address.Address
-	Period    math.Duration
-	Sequence  uint64
-	Signature signature.Signature
+	Account    address.Address
+	Period     math.Duration
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Lock)(nil)
@@ -162,9 +148,9 @@ var _ metatx.Transactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Account   address.Address
-	Sequence  uint64
-	Signature signature.Signature
+	Account    address.Address
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Notify)(nil)
@@ -177,7 +163,22 @@ type SetRewardsTarget struct {
 	Account     address.Address
 	Destination address.Address
 	Sequence    uint64
-	Signature   signature.Signature
+	Signatures  []signature.Signature
 }
 
 var _ metatx.Transactable = (*SetRewardsTarget)(nil)
+
+// A ClaimAccount transaction is used to set the initial transfer keys for an account.
+//
+// It is the only type of transaction which may be signed with the ownership key.
+//
+// It has no sequence, because if the account's sequence is not 0, then it must
+// already have been claimed, so this is an invalid transaction.
+type ClaimAccount struct {
+	Account      address.Address
+	Ownership    signature.PublicKey
+	TransferKeys []signature.PublicKey
+	Signature    signature.Signature
+}
+
+var _ metatx.Transactable = (*ClaimAccount)(nil)

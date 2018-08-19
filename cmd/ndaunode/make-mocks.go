@@ -57,7 +57,7 @@ func generateMockRFEAccounts(conf *config.Config) []address.Address {
 			}
 			acct, _ := state.GetAccount(addr, ts)
 			trKeyCopy := trKey // copy so pointers work right
-			acct.TransferKey = &trKeyCopy
+			acct.TransferKeys = []signature.PublicKey{trKeyCopy}
 
 			state.Accounts[addr.String()] = acct
 		}

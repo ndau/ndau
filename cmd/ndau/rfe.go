@@ -6,6 +6,7 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +40,7 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 				address,
 				conf.RFE[*index].Address,
 				sequence(conf, conf.RFE[*index].Address),
-				conf.RFE[*index].Key,
+				[]signature.PrivateKey{conf.RFE[*index].Key},
 			)
 
 			result, err := tool.SendCommit(tmnode(conf.Node), &rfe)

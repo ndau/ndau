@@ -14,14 +14,16 @@ import (
 func NewDelegate(
 	account, delegate address.Address,
 	sequence uint64,
-	transferKey signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) *Delegate {
 	dd := &Delegate{
 		Account:  account,
 		Delegate: delegate,
 		Sequence: sequence,
 	}
-	dd.Signature = transferKey.Sign(dd.SignableBytes())
+	for _, key := range keys {
+		dd.Signatures = append(dd.Signatures, key.Sign(dd.SignableBytes()))
+	}
 	return dd
 }
 
@@ -46,18 +48,18 @@ func (dd *Delegate) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	acct, hasAcct := app.GetState().(*backing.State).Accounts[dd.Account.String()]
-	if !hasAcct {
+	_, hasAccount, err := app.GetState().(*backing.State).GetValidAccount(
+		dd.Account,
+		app.blockTime,
+		dd.Sequence,
+		dd.SignableBytes(),
+		dd.Signatures,
+	)
+	if err != nil {
+		return err
+	}
+	if !hasAccount {
 		return errors.New("Account does not exist")
-	}
-	if dd.Sequence <= acct.Sequence {
-		return errors.New("Sequence too low")
-	}
-	if acct.TransferKey == nil {
-		return errors.New("Transfer key not set")
-	}
-	if !acct.TransferKey.Verify(dd.SignableBytes(), dd.Signature) {
-		return errors.New("Invalid signature")
 	}
 
 	return nil

@@ -79,9 +79,8 @@ func (app *App) updateSystemVariableCache() {
 	// update system variable cache
 	err := app.systemCache.Update(app.Height(), app.GetLogger())
 	if err != nil {
-		app.GetLogger().Error(
+		app.GetLogger().WithError(err).Error(
 			"failed update of system variable cache",
-			"err", err.Error(),
 		)
 		// given that the system hasn't properly come up yet, I feel no shame
 		// simply aborting here

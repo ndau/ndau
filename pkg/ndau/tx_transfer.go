@@ -18,7 +18,7 @@ func NewTransfer(
 	s address.Address, d address.Address,
 	q math.Ndau,
 	seq uint64,
-	key signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) (*Transfer, error) {
 	if s == d {
 		return nil, errors.New("source may not equal destination")
@@ -35,7 +35,9 @@ func NewTransfer(
 		Sequence:    seq,
 	}
 	bytes := t.SignableBytes()
-	t.Signature = key.Sign(bytes)
+	for _, key := range keys {
+		t.Signatures = append(t.Signatures, key.Sign(bytes))
+	}
 
 	return t, err
 }
@@ -105,24 +107,19 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, _ := state.GetAccount(t.Source, app.blockTime)
+	source, _, err := state.GetValidAccount(
+		t.Source,
+		app.blockTime,
+		t.Sequence,
+		t.SignableBytes(),
+		t.Signatures,
+	)
+	if err != nil {
+		return err
+	}
+
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
-	}
-
-	if source.TransferKey == nil {
-		return errors.New("source.TransferKey not set")
-	}
-	publicKey := *source.TransferKey
-
-	tBytes := t.SignableBytes()
-
-	if !publicKey.Verify(tBytes, t.Signature) {
-		return errors.New("invalid signature")
-	}
-
-	if t.Sequence <= source.Sequence {
-		return errors.New("sequence number too low")
 	}
 
 	// the source update doesn't get persisted this time because this method is read-only

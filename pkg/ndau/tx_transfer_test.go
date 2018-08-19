@@ -44,7 +44,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
 		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
-		acct.TransferKey = &public
+		acct.TransferKeys = []signature.PublicKey{public}
 	})
 
 	return app, private
@@ -76,7 +76,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 				Expiry: ts.Sub(math.Duration(i)),
 			})
 		}
-		acct.TransferKey = &public
+		acct.TransferKeys = []signature.PublicKey{public}
 	})
 
 	// add 1 second to the timestamp to get past unix time rounding errors
@@ -139,7 +139,7 @@ func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time math
 	return resp
 }
 
-func generateTransfer(t *testing.T, qty int64, seq uint64, key signature.PrivateKey) *Transfer {
+func generateTransfer(t *testing.T, qty int64, seq uint64, keys []signature.PrivateKey) *Transfer {
 	s, err := address.Validate(source)
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
@@ -147,7 +147,7 @@ func generateTransfer(t *testing.T, qty int64, seq uint64, key signature.Private
 	tr, err := NewTransfer(
 		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, key,
+		seq, keys,
 	)
 	require.NoError(t, err)
 	return tr
@@ -157,7 +157,7 @@ func TestTransfersWhoseQtyLTE0AreInvalid(t *testing.T) {
 	app, private := initAppTx(t)
 
 	for idx, negQty := range []int64{0, -1, -2} {
-		tr := generateTransfer(t, negQty, uint64(idx+1), private)
+		tr := generateTransfer(t, negQty, uint64(idx+1), []signature.PrivateKey{private})
 		resp := deliverTr(t, app, tr)
 		require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	}
@@ -171,7 +171,7 @@ func TestTransfersFromLockedAddressesProhibited(t *testing.T) {
 		}
 	})
 
-	tr := generateTransfer(t, 1, 1, private)
+	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -189,7 +189,7 @@ func TestTransfersFromLockedButExpiredAddressesAreValid(t *testing.T) {
 		}
 	})
 
-	tr := generateTransfer(t, 1, 1, private)
+	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -207,7 +207,7 @@ func TestTransfersFromNotifiedAddressesAreInvalid(t *testing.T) {
 		}
 	})
 
-	tr := generateTransfer(t, 1, 1, private)
+	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -223,7 +223,7 @@ func TestTransfersUpdateDestWAA(t *testing.T) {
 		acct.LastWAAUpdate = timestamp.Sub(math.Duration(30 * math.Day))
 	})
 
-	tr := generateTransfer(t, 50, 1, private)
+	tr := generateTransfer(t, 50, 1, []signature.PrivateKey{private})
 	resp := deliverTrAt(t, app, tr, timestamp)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -270,7 +270,7 @@ func TestTransfersUpdateDestLastWAAUpdate(t *testing.T) {
 		acct.LastWAAUpdate = timestamp.Sub(math.Duration(30 * math.Day))
 	})
 
-	tr := generateTransfer(t, 50, 1, private)
+	tr := generateTransfer(t, 50, 1, []signature.PrivateKey{private})
 	resp := deliverTrAt(t, app, tr, timestamp)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -291,7 +291,7 @@ func TestTransfersDeductBalanceFromSource(t *testing.T) {
 
 	const deltaNapu = 50 * constants.QuantaPerUnit
 
-	tr := generateTransfer(t, 50, 1, private)
+	tr := generateTransfer(t, 50, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -310,7 +310,7 @@ func TestTransfersAddBalanceToDest(t *testing.T) {
 
 	const deltaNapu = 123 * constants.QuantaPerUnit
 
-	tr := generateTransfer(t, 123, 1, private)
+	tr := generateTransfer(t, 123, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -320,7 +320,7 @@ func TestTransfersAddBalanceToDest(t *testing.T) {
 }
 
 func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
-	app, key := initAppTx(t)
+	app, private := initAppTx(t)
 
 	qty := int64(1)
 	seq := uint64(1)
@@ -334,7 +334,7 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	_, err = NewTransfer(
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, key,
+		seq, []signature.PrivateKey{private},
 	)
 	require.Error(t, err)
 
@@ -344,10 +344,10 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	// However, what if someone builds one from scratch?
 	// We need to ensure that the application
 	// layer rejects deserialized transfers which are invalid.
-	tr := generateTransfer(t, qty, seq, key)
+	tr := generateTransfer(t, qty, seq, []signature.PrivateKey{private})
 	tr.Destination = tr.Source
 	bytes := tr.SignableBytes()
-	tr.Signature = key.Sign(bytes)
+	tr.Signatures = []signature.Signature{private.Sign(bytes)}
 
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -355,11 +355,11 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 
 func TestSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
-	tr := generateTransfer(t, 1, 1, private)
+	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	// I'm almost completely certain that this will be an invalid signature
 	sig, err := signature.RawSignature(signature.Ed25519, make([]byte, signature.Ed25519.SignatureSize()))
 	require.NoError(t, err)
-	tr.Signature = *sig
+	tr.Signatures = []signature.Signature{*sig}
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -380,7 +380,7 @@ func TestInvalidTransactionDoesntAffectAnyBalance(t *testing.T) {
 	})
 
 	// invalid: sequence 0
-	tr := generateTransfer(t, 1, 0, private)
+	tr := generateTransfer(t, 1, 0, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
@@ -400,18 +400,18 @@ func TestTransfersOfMoreThanSourceBalanceAreInvalid(t *testing.T) {
 	modifySource(t, app, func(src *backing.AccountData) {
 		src.Balance = 1 * constants.QuantaPerUnit
 	})
-	tr := generateTransfer(t, 2, 1, private)
+	tr := generateTransfer(t, 2, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
 func TestSequenceMustIncrease(t *testing.T) {
 	app, private := initAppTx(t)
-	invalidZero := generateTransfer(t, 1, 0, private)
+	invalidZero := generateTransfer(t, 1, 0, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, invalidZero)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	// valid now, because its sequence is greater than the account sequence
-	tr := generateTransfer(t, 1, 1, private)
+	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	resp = deliverTr(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	// invalid now because account sequence must have been updated
@@ -435,7 +435,7 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	tr, err := NewTransfer(
 		s, d,
 		math.Ndau(1),
-		1, key,
+		1, []signature.PrivateKey{key},
 	)
 	require.NoError(t, err)
 
@@ -460,7 +460,7 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	tr, err := NewTransfer(
 		s, d,
 		math.Ndau(1),
-		1, key,
+		1, []signature.PrivateKey{key},
 	)
 	require.NoError(t, err)
 

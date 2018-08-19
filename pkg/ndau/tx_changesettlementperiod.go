@@ -25,7 +25,7 @@ func NewChangeSettlementPeriod(
 	target address.Address,
 	newPeriod math.Duration,
 	sequence uint64,
-	privateTransferKey signature.PrivateKey,
+	keys []signature.PrivateKey,
 ) (ChangeSettlementPeriod, error) {
 	cep := ChangeSettlementPeriod{
 		Target:   target,
@@ -33,7 +33,9 @@ func NewChangeSettlementPeriod(
 		Sequence: sequence,
 	}
 	sb := cep.SignableBytes()
-	cep.Signature = privateTransferKey.Sign(sb)
+	for _, key := range keys {
+		cep.Signatures = append(cep.Signatures, key.Sign(sb))
+	}
 	return cep, nil
 }
 
@@ -44,19 +46,15 @@ func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	if cep.Period < 0 {
 		return errors.New("Negative settlement period")
 	}
-
-	acct := app.GetState().(*backing.State).Accounts[cep.Target.String()]
-
-	if cep.Sequence <= acct.Sequence {
-		return errors.New("Sequence too low")
-	}
-
-	if acct.TransferKey == nil {
-		return errors.New("Target transfer key not set")
-	}
-	sb := cep.SignableBytes()
-	if !acct.TransferKey.Verify(sb, cep.Signature) {
-		return errors.New("Invalid message signature")
+	_, _, err = app.GetState().(*backing.State).GetValidAccount(
+		cep.Target,
+		app.blockTime,
+		cep.Sequence,
+		cep.SignableBytes(),
+		cep.Signatures,
+	)
+	if err != nil {
+		return err
 	}
 
 	return nil

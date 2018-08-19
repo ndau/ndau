@@ -17,9 +17,11 @@ import (
 // NewComputeEAI creates a new ComputeEAI transaction
 //
 // Most users will never need this.
-func NewComputeEAI(node address.Address, sequence uint64, key signature.PrivateKey) *ComputeEAI {
+func NewComputeEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *ComputeEAI {
 	c := &ComputeEAI{Node: node, Sequence: sequence}
-	c.Signature = key.Sign(c.SignableBytes())
+	for _, key := range keys {
+		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
+	}
 	return c
 }
 
@@ -36,20 +38,19 @@ func (c *ComputeEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	nodeData, hasNode := state.GetAccount(c.Node, app.blockTime)
+	_, hasNode, err := state.GetValidAccount(
+		c.Node,
+		app.blockTime,
+		c.Sequence,
+		c.SignableBytes(),
+		c.Signatures,
+	)
+	if err != nil {
+		return err
+	}
+
 	if !hasNode {
 		return errors.New("No such node")
-	}
-	// is the tx sequence higher than the highest previous sequence?
-	if c.Sequence <= nodeData.Sequence {
-		return errors.New("Sequence too low")
-	}
-	// does the signature check out?
-	if nodeData.TransferKey == nil {
-		return errors.New("Transfer key not set")
-	}
-	if !nodeData.TransferKey.Verify(c.SignableBytes(), c.Signature) {
-		return errors.New("Invalid signature")
 	}
 
 	return nil

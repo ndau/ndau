@@ -50,7 +50,7 @@ func getTransfer(verbose *bool) func(*cli.Cmd) {
 				from, to,
 				ndauQty,
 				sequence(conf, from),
-				fromAcct.Transfer.Private,
+				fromAcct.TransferPrivate(),
 			)
 			orQuit(errors.Wrap(err, "Failed to construct transfer"))
 

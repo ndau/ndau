@@ -5,8 +5,8 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func TestValidDelegateTxIsValid(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -37,11 +37,11 @@ func TestDelegateAccountValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
 	d.Account = address.Address{}
-	d.Signature = private.Sign(d.SignableBytes())
+	d.Signatures = []signature.Signature{private.Sign(d.SignableBytes())}
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -56,11 +56,11 @@ func TestDelegateDelegateValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
 	d.Delegate = address.Address{}
-	d.Signature = private.Sign(d.SignableBytes())
+	d.Signatures = []signature.Signature{private.Sign(d.SignableBytes())}
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -75,7 +75,7 @@ func TestDelegateSequenceValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 0, private)
+	d := NewDelegate(sA, nA, 0, []signature.PrivateKey{private})
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -90,14 +90,14 @@ func TestDelegateSignatureValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	// flip a single bit in the signature
-	sigBytes := d.Signature.Bytes()
+	sigBytes := d.Signatures[0].Bytes()
 	sigBytes[0] = sigBytes[0] ^ 1
 	wrongSignature, err := signature.RawSignature(signature.Ed25519, sigBytes)
 	require.NoError(t, err)
-	d.Signature = *wrongSignature
+	d.Signatures[0] = *wrongSignature
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -112,7 +112,7 @@ func TestDelegateChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	resp := deliverTr(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -132,7 +132,7 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	resp := deliverTr(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -140,7 +140,7 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	// now create a new delegation transaction
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	d = NewDelegate(sA, dA, 2, private)
+	d = NewDelegate(sA, dA, 2, []signature.PrivateKey{private})
 	resp = deliverTr(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 

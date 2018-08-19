@@ -20,7 +20,7 @@ func initAppComputeEAI(t *testing.T) (*App, signature.PrivateKey) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -29,7 +29,7 @@ func initAppComputeEAI(t *testing.T) (*App, signature.PrivateKey) {
 	require.NoError(t, err)
 	// assign this keypair
 	modify(t, eaiNode, app, func(data *backing.AccountData) {
-		data.TransferKey = &public
+		data.TransferKeys = []signature.PublicKey{public}
 	})
 	return app, private
 }
@@ -38,7 +38,7 @@ func TestValidComputeEAITxIsValid(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, private)
+	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -49,11 +49,11 @@ func TestComputeEAINodeValidates(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 2, private)
+	compute := NewComputeEAI(nA, 2, []signature.PrivateKey{private})
 
 	// make the node field invalid
 	compute.Node = address.Address{}
-	compute.Signature = private.Sign(compute.SignableBytes())
+	compute.Signatures = []signature.Signature{private.Sign(compute.SignableBytes())}
 
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
@@ -66,7 +66,7 @@ func TestComputeEAISequenceValidates(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 0, private)
+	compute := NewComputeEAI(nA, 0, []signature.PrivateKey{private})
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
@@ -78,14 +78,14 @@ func TestComputeEAISignatureValidates(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 0, private)
+	compute := NewComputeEAI(nA, 0, []signature.PrivateKey{private})
 
 	// flip a single bit in the signature
-	sigBytes := compute.Signature.Bytes()
+	sigBytes := compute.Signatures[0].Bytes()
 	sigBytes[0] = sigBytes[0] ^ 1
 	wrongSignature, err := signature.RawSignature(signature.Ed25519, sigBytes)
 	require.NoError(t, err)
-	compute.Signature = *wrongSignature
+	compute.Signatures[0] = *wrongSignature
 
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
@@ -98,7 +98,7 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, private)
+	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
 
 	state := app.GetState().(*backing.State)
 	sA, err := address.Validate(source)
@@ -132,7 +132,7 @@ func TestComputeEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, private)
+	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
 
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
@@ -174,7 +174,7 @@ func TestComputeEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	app, private := initAppComputeEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, private)
+	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
 
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
