@@ -13,7 +13,7 @@ import (
 
 // NewLock creates a new Lock transaction
 func NewLock(account address.Address, period math.Duration, sequence uint64, keys []signature.PrivateKey) *Lock {
-	c := &Lock{Account: account, Period: period, Sequence: sequence}
+	c := &Lock{Target: account, Period: period, Sequence: sequence}
 	for _, key := range keys {
 		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
 	}
@@ -22,10 +22,10 @@ func NewLock(account address.Address, period math.Duration, sequence uint64, key
 
 // SignableBytes implements Transactable
 func (c *Lock) SignableBytes() []byte {
-	bytes := make([]byte, 8+8, 8+8+len(c.Account.String()))
+	bytes := make([]byte, 8+8, 8+8+len(c.Target.String()))
 	binary.BigEndian.PutUint64(bytes[0:8], c.Sequence)
 	binary.BigEndian.PutUint64(bytes[8:16], uint64(c.Period))
-	bytes = append(bytes, c.Account.String()...)
+	bytes = append(bytes, c.Target.String()...)
 	return bytes
 }
 
@@ -35,7 +35,7 @@ func (c *Lock) Validate(appI interface{}) error {
 	state := app.GetState().(*backing.State)
 
 	accountData, hasAccount, err := state.GetValidAccount(
-		c.Account,
+		c.Target,
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
@@ -74,14 +74,14 @@ func (c *Lock) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(c.Account, app.blockTime)
+		accountData, _ := state.GetAccount(c.Target, app.blockTime)
 		accountData.Sequence = c.Sequence
 
 		accountData.Lock = &backing.Lock{
 			NoticePeriod: c.Period,
 		}
 
-		state.Accounts[c.Account.String()] = accountData
+		state.Accounts[c.Target.String()] = accountData
 		return state, nil
 	})
 }

@@ -135,7 +135,7 @@ var _ metatx.Transactable = (*ComputeEAI)(nil)
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Account    address.Address
+	Target     address.Address
 	Period     math.Duration
 	Sequence   uint64
 	Signatures []signature.Signature

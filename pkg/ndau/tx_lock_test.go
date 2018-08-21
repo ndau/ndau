@@ -30,7 +30,7 @@ func TestLockAccountValidates(t *testing.T) {
 	lock := NewLock(sA, math.Duration(30*math.Day), 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
-	lock.Account = address.Address{}
+	lock.Target = address.Address{}
 	lock.Signatures = []signature.Signature{private.Sign(lock.SignableBytes())}
 
 	// compute must be invalid
