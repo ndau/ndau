@@ -148,7 +148,7 @@ var _ metatx.Transactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Account    address.Address
+	Target     address.Address
 	Sequence   uint64
 	Signatures []signature.Signature
 }

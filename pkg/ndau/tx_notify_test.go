@@ -41,7 +41,7 @@ func TestNotifyAccountValidates(t *testing.T) {
 	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
-	notify.Account = address.Address{}
+	notify.Target = address.Address{}
 	notify.Signatures = []signature.Signature{private.Sign(notify.SignableBytes())}
 
 	// compute must be invalid
