@@ -13,13 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidSetRewardsTargetTxIsValid(t *testing.T) {
+func TestValidSetRewardsDestinationTxIsValid(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// srt must be valid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -29,16 +29,16 @@ func TestValidSetRewardsTargetTxIsValid(t *testing.T) {
 
 }
 
-func TestSetRewardsTargetAccountValidates(t *testing.T) {
+func TestSetRewardsDestinationAccountValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
-	srt.Account = address.Address{}
+	srt.Source = address.Address{}
 	srt.Signatures = []signature.Signature{private.Sign(srt.SignableBytes())}
 
 	// srt must be invalid
@@ -48,13 +48,13 @@ func TestSetRewardsTargetAccountValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSetRewardsTargetDestinationValidates(t *testing.T) {
+func TestSetRewardsDestinationDestinationValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
 	srt.Destination = address.Address{}
@@ -67,13 +67,13 @@ func TestSetRewardsTargetDestinationValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSetRewardsTargetSequenceValidates(t *testing.T) {
+func TestSetRewardsDestinationSequenceValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsTarget(sA, dA, 0, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 0, []signature.PrivateKey{private})
 
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -82,13 +82,13 @@ func TestSetRewardsTargetSequenceValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSetRewardsTargetSignatureValidates(t *testing.T) {
+func TestSetRewardsDestinationSignatureValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// flip a single bit in the signature
 	sigBytes := srt.Signatures[0].Bytes()
@@ -104,13 +104,13 @@ func TestSetRewardsTargetSignatureValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSetRewardsTargetChangesAppState(t *testing.T) {
+func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	resp := deliverTr(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -122,7 +122,7 @@ func TestSetRewardsTargetChangesAppState(t *testing.T) {
 	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
 
 	// resetting to source address saves as "nil" dest address
-	srt = NewSetRewardsTarget(sA, sA, 2, []signature.PrivateKey{private})
+	srt = NewSetRewardsDestination(sA, sA, 2, []signature.PrivateKey{private})
 	resp = deliverTr(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	state = app.GetState().(*backing.State)
@@ -132,7 +132,7 @@ func TestSetRewardsTargetChangesAppState(t *testing.T) {
 	require.Empty(t, state.Accounts[dest].IncomingRewardsFrom)
 }
 
-func TestSetRewardsTargetInvalidIfDestinationAlsoSends(t *testing.T) {
+func TestSetRewardsDestinationInvalidIfDestinationAlsoSends(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestSetRewardsTargetInvalidIfDestinationAlsoSends(t *testing.T) {
 		ad.RewardsTarget = &nA
 	})
 
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -155,7 +155,7 @@ func TestSetRewardsTargetInvalidIfDestinationAlsoSends(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSetRewardsTargetInvalidIfSourceAlsoReceives(t *testing.T) {
+func TestSetRewardsDestinationInvalidIfSourceAlsoReceives(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
@@ -169,7 +169,7 @@ func TestSetRewardsTargetInvalidIfSourceAlsoReceives(t *testing.T) {
 		ad.IncomingRewardsFrom = []address.Address{nA}
 	})
 
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -178,7 +178,7 @@ func TestSetRewardsTargetInvalidIfSourceAlsoReceives(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestReSetRewardsTargetChangesAppState(t *testing.T) {
+func TestReSetRewardsDestinationChangesAppState(t *testing.T) {
 	// set up accounts
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
@@ -199,7 +199,7 @@ func TestReSetRewardsTargetChangesAppState(t *testing.T) {
 	})
 
 	// deliver transaction
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -232,7 +232,7 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 		}
 	})
 
-	srt := NewSetRewardsTarget(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)

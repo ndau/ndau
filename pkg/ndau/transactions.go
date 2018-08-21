@@ -19,10 +19,10 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(3):    &ReleaseFromEndowment{},
 	metatx.TxID(4):    &ChangeSettlementPeriod{},
 	metatx.TxID(5):    &Delegate{},
-	metatx.TxID(6):    &ComputeEAI{},
+	metatx.TxID(6):    &CreditEAI{},
 	metatx.TxID(7):    &Lock{},
 	metatx.TxID(8):    &Notify{},
-	metatx.TxID(9):    &SetRewardsTarget{},
+	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
@@ -102,15 +102,15 @@ var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Account    address.Address
-	Delegate   address.Address
+	Target     address.Address
+	Node       address.Address
 	Sequence   uint64
 	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Delegate)(nil)
 
-// A ComputeEAI transaction is used to award EAI.
+// A CreditEAI transaction is used to award EAI.
 //
 // This transaction is sent electively by any node which has accounts delegated
 // to it. It is expected that nodes will arrange to create this transaction on
@@ -123,19 +123,19 @@ var _ metatx.Transactable = (*Delegate)(nil)
 //      not much point in adding them to the transaction in the first place.
 //   2. The originating node can't know ahead of time what the official block
 //      time will be.
-type ComputeEAI struct {
+type CreditEAI struct {
 	Node       address.Address
 	Sequence   uint64
 	Signatures []signature.Signature
 }
 
-var _ metatx.Transactable = (*ComputeEAI)(nil)
+var _ metatx.Transactable = (*CreditEAI)(nil)
 
 // Lock transactions lock the specfied account.
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Account    address.Address
+	Target     address.Address
 	Period     math.Duration
 	Sequence   uint64
 	Signatures []signature.Signature
@@ -148,25 +148,25 @@ var _ metatx.Transactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Account    address.Address
+	Target     address.Address
 	Sequence   uint64
 	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Notify)(nil)
 
-// SetRewardsTarget transactions update the rewards target for the specified account.
+// SetRewardsDestination transactions update the rewards target for the specified account.
 //
 // When the rewards target is empty, EAI and other rewards are deposited to the
 // origin account. Otherwise, they are deposited to the specified destination.
-type SetRewardsTarget struct {
-	Account     address.Address
+type SetRewardsDestination struct {
+	Source      address.Address
 	Destination address.Address
 	Sequence    uint64
 	Signatures  []signature.Signature
 }
 
-var _ metatx.Transactable = (*SetRewardsTarget)(nil)
+var _ metatx.Transactable = (*SetRewardsDestination)(nil)
 
 // A ClaimAccount transaction is used to set the initial transfer keys for an account.
 //

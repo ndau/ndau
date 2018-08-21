@@ -7,7 +7,7 @@ This is the implementation of the Ndau chain. See the Ndau design whitepaper for
 - ReleaseFromEndowment
 - ChangeEscrowPeriod
 - Delegate
-- ComputeEAI
+- CreditEAI
 - GTValidatorChange
 
 

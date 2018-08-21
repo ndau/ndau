@@ -12,7 +12,7 @@ import (
 
 // NewNotify creates a new Notify transaction
 func NewNotify(account address.Address, sequence uint64, keys []signature.PrivateKey) *Notify {
-	c := &Notify{Account: account, Sequence: sequence}
+	c := &Notify{Target: account, Sequence: sequence}
 	for _, key := range keys {
 		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
 	}
@@ -21,9 +21,9 @@ func NewNotify(account address.Address, sequence uint64, keys []signature.Privat
 
 // SignableBytes implements Transactable
 func (c *Notify) SignableBytes() []byte {
-	bytes := make([]byte, 8, 8+len(c.Account.String()))
+	bytes := make([]byte, 8, 8+len(c.Target.String()))
 	binary.BigEndian.PutUint64(bytes[0:8], c.Sequence)
-	bytes = append(bytes, c.Account.String()...)
+	bytes = append(bytes, c.Target.String()...)
 	return bytes
 }
 
@@ -33,7 +33,7 @@ func (c *Notify) Validate(appI interface{}) error {
 	state := app.GetState().(*backing.State)
 
 	accountData, hasAccount, err := state.GetValidAccount(
-		c.Account,
+		c.Target,
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
@@ -63,12 +63,12 @@ func (c *Notify) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(c.Account, app.blockTime)
+		accountData, _ := state.GetAccount(c.Target, app.blockTime)
 		accountData.Sequence = c.Sequence
 		uo := app.blockTime.Add(accountData.Lock.NoticePeriod)
 		accountData.Lock.UnlocksOn = &uo
 
-		state.Accounts[c.Account.String()] = accountData
+		state.Accounts[c.Target.String()] = accountData
 		return state, nil
 	})
 }

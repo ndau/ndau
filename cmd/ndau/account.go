@@ -49,9 +49,9 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 		)
 
 		cmd.Command(
-			"compute-eai",
-			"compute EAI for accounts which have delegated to this one",
-			getAccountComputeEAI(verbose),
+			"credit-eai",
+			"credit EAI for accounts which have delegated to this one",
+			getAccountCreditEAI(verbose),
 		)
 
 		cmd.Command(
@@ -69,7 +69,7 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 		cmd.Command(
 			"set-rewards-target",
 			"set the rewards target for this account",
-			getSetRewardsTarget(verbose),
+			getSetRewardsDestination(verbose),
 		)
 	}
 }

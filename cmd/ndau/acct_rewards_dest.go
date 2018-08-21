@@ -8,7 +8,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
-func getSetRewardsTarget(verbose *bool) func(*cli.Cmd) {
+func getSetRewardsDestination(verbose *bool) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf("NAME %s", getAddressSpec("DESTINATION"))
 		getAddress := getAddressClosure(cmd, "DESTINATION")
@@ -34,7 +34,7 @@ func getSetRewardsTarget(verbose *bool) func(*cli.Cmd) {
 				)
 			}
 
-			tx := ndau.NewSetRewardsTarget(
+			tx := ndau.NewSetRewardsDestination(
 				acct.Address,
 				dest,
 				sequence(conf, acct.Address),
