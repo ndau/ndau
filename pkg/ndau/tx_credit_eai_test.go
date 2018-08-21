@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func initAppComputeEAI(t *testing.T) (*App, signature.PrivateKey) {
+func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	app, private := initAppTx(t)
 
 	// delegate source to eaiNode
@@ -34,22 +34,22 @@ func initAppComputeEAI(t *testing.T) (*App, signature.PrivateKey) {
 	return app, private
 }
 
-func TestValidComputeEAITxIsValid(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestValidCreditEAITxIsValid(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestComputeEAINodeValidates(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestCreditEAINodeValidates(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 2, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 2, []signature.PrivateKey{private})
 
 	// make the node field invalid
 	compute.Node = address.Address{}
@@ -62,11 +62,11 @@ func TestComputeEAINodeValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestComputeEAISequenceValidates(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestCreditEAISequenceValidates(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 0, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 0, []signature.PrivateKey{private})
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
@@ -74,11 +74,11 @@ func TestComputeEAISequenceValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestComputeEAISignatureValidates(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestCreditEAISignatureValidates(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 0, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 0, []signature.PrivateKey{private})
 
 	// flip a single bit in the signature
 	sigBytes := compute.Signatures[0].Bytes()
@@ -94,11 +94,11 @@ func TestComputeEAISignatureValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestComputeEAIChangesAppState(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestCreditEAIChangesAppState(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
 
 	state := app.GetState().(*backing.State)
 	sA, err := address.Validate(source)
@@ -128,11 +128,11 @@ func TestComputeEAIChangesAppState(t *testing.T) {
 	require.Equal(t, blockTime, acct.LastWAAUpdate)
 }
 
-func TestComputeEAIWithRewardsTargetChangesAppState(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
 
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
@@ -170,11 +170,11 @@ func TestComputeEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
 }
 
-func TestComputeEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
-	app, private := initAppComputeEAI(t)
+func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
+	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewComputeEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
 
 	sA, err := address.Validate(source)
 	require.NoError(t, err)

@@ -14,11 +14,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// NewComputeEAI creates a new ComputeEAI transaction
+// NewCreditEAI creates a new CreditEAI transaction
 //
 // Most users will never need this.
-func NewComputeEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *ComputeEAI {
-	c := &ComputeEAI{Node: node, Sequence: sequence}
+func NewCreditEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *CreditEAI {
+	c := &CreditEAI{Node: node, Sequence: sequence}
 	for _, key := range keys {
 		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
 	}
@@ -26,7 +26,7 @@ func NewComputeEAI(node address.Address, sequence uint64, keys []signature.Priva
 }
 
 // SignableBytes implements Transactable
-func (c *ComputeEAI) SignableBytes() []byte {
+func (c *CreditEAI) SignableBytes() []byte {
 	bytes := make([]byte, 8, 8+len(c.Node.String()))
 	binary.BigEndian.PutUint64(bytes, c.Sequence)
 	bytes = append(bytes, c.Node.String()...)
@@ -34,7 +34,7 @@ func (c *ComputeEAI) SignableBytes() []byte {
 }
 
 // Validate implements metatx.Transactable
-func (c *ComputeEAI) Validate(appI interface{}) error {
+func (c *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
@@ -57,17 +57,17 @@ func (c *ComputeEAI) Validate(appI interface{}) error {
 }
 
 // Apply implements metatx.Transactable
-func (c *ComputeEAI) Apply(appI interface{}) error {
+func (c *CreditEAI) Apply(appI interface{}) error {
 	app := appI.(*App)
 	unlockedTable := new(eai.RateTable)
 	err := app.System(sv.UnlockedRateTableName, unlockedTable)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in ComputeEAI.Apply", sv.UnlockedRateTableName))
+		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 	}
 	lockedTable := new(eai.RateTable)
 	err = app.System(sv.LockedRateTableName, lockedTable)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in ComputeEAI.Apply", sv.UnlockedRateTableName))
+		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
@@ -81,7 +81,7 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 		for accountAddrS := range delegatedAccounts {
 			accountAddr, err := address.Validate(accountAddrS)
 			if err != nil {
-				return state, errors.Wrap(err, "ComputeEAI: validating delegated account address")
+				return state, errors.Wrap(err, "CreditEAI: validating delegated account address")
 			}
 			acctData, hasAcct := state.GetAccount(accountAddr, app.blockTime)
 			if !hasAcct {
@@ -92,7 +92,7 @@ func (c *ComputeEAI) Apply(appI interface{}) error {
 				continue
 			}
 			logger := app.GetLogger().WithFields(log.Fields{
-				"tx":            "ComputeEAI",
+				"tx":            "CreditEAI",
 				"acct":          accountAddr,
 				"node":          c.Node.String(),
 				"acctData":      acctData,

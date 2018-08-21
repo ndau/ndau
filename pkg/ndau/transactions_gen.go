@@ -330,7 +330,7 @@ func (z *ClaimAccount) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *ComputeEAI) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *CreditEAI) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
 	// string "Node"
@@ -355,7 +355,7 @@ func (z *ComputeEAI) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ComputeEAI) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *CreditEAI) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -409,7 +409,7 @@ func (z *ComputeEAI) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *ComputeEAI) Msgsize() (s int) {
+func (z *CreditEAI) Msgsize() (s int) {
 	s = 1 + 5 + z.Node.Msgsize() + 9 + msgp.Uint64Size + 11 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
