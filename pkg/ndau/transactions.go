@@ -50,7 +50,6 @@ var _ metatx.Transactable = (*GTValidatorChange)(nil)
 
 // A Transfer is the fundamental transaction of the Ndau chain.
 type Transfer struct {
-	Timestamp   math.Timestamp
 	Source      address.Address
 	Destination address.Address
 	Qty         math.Ndau

@@ -2,7 +2,6 @@ package ndau
 
 import (
 	"encoding/binary"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -23,12 +22,7 @@ func NewTransfer(
 	if s == d {
 		return nil, errors.New("source may not equal destination")
 	}
-	ts, err := math.TimestampFrom(time.Now())
-	if err != nil {
-		return nil, err
-	}
 	t := &Transfer{
-		Timestamp:   ts,
 		Source:      s,
 		Destination: d,
 		Qty:         q,
@@ -39,7 +33,7 @@ func NewTransfer(
 		t.Signatures = append(t.Signatures, key.Sign(bytes))
 	}
 
-	return t, err
+	return t, nil
 }
 
 func appendUint64(b []byte, i uint64) []byte {
@@ -50,9 +44,8 @@ func appendUint64(b []byte, i uint64) []byte {
 
 // SignableBytes implements Transactable
 func (t *Transfer) SignableBytes() []byte {
-	bytes := make([]byte, 8+8, t.Msgsize()+8+8)
-	binary.BigEndian.PutUint64(bytes[0:8], uint64(t.Timestamp))
-	binary.BigEndian.PutUint64(bytes[8:16], uint64(t.Qty))
+	bytes := make([]byte, 8, t.Msgsize()+8)
+	binary.BigEndian.PutUint64(bytes, uint64(t.Qty))
 	bytes = append(bytes, t.Source.String()...)
 	bytes = append(bytes, t.Destination.String()...)
 	bytes = appendUint64(bytes, t.Sequence)
