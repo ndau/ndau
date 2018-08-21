@@ -73,6 +73,17 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.TransferKeys))
 	}
 
+	// no transfer key may be equal to the ownership key
+	for _, tk := range tx.TransferKeys {
+		tkAddress, err := address.Generate(kind, tk.Bytes())
+		if err != nil {
+			return errors.Wrap(err, "generating address for transfer key")
+		}
+		if tkAddress.String() == ownershipAddress.String() {
+			return errors.New("Ownership key may not be used as a transfer key")
+		}
+	}
+
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
@@ -84,11 +95,8 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		app.blockTime,
 	)
 
-	if acct.Sequence > 0 {
-		return errors.New("sequence must be 0 to claim account")
-	}
-	if len(acct.TransferKeys) > 0 {
-		return errors.New("no transfer keys may be set to claim account")
+	if len(acct.TransferKeys) > 1 {
+		return errors.New("no more than one transfer key may be set to claim account")
 	}
 
 	return nil

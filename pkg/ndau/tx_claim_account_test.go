@@ -18,9 +18,6 @@ func initAppClaimAccount(t *testing.T) *App {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
-	// this ensures the target address exists
-	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {})
-
 	return app
 }
 
@@ -73,12 +70,7 @@ func TestValidClaimAccount(t *testing.T) {
 }
 
 func TestClaimAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
-	transferPublic, _, err := signature.Generate(signature.Ed25519, nil)
-	require.NoError(t, err)
 	app := initAppClaimAccount(t)
-	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
-		acct.TransferKeys = []signature.PublicKey{transferPublic}
-	})
 
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{targetPublic}, targetPrivate)
 	ctkBytes, err := tx.Marshal(&ca, TxIDs)
@@ -142,6 +134,49 @@ func TestClaimAccountTooManyTransferKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppClaimAccount(t)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestClaimAccountOverwritesOneTransferKey(t *testing.T) {
+	app := initAppClaimAccount(t)
+
+	existing, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
+		ad.TransferKeys = []signature.PublicKey{existing}
+	})
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, targetPrivate)
+	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
+	app := initAppClaimAccount(t)
+
+	existing1, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	existing2, _, err := signature.Generate(signature.Ed25519, nil)
+	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
+		ad.TransferKeys = []signature.PublicKey{existing1, existing2}
+	})
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, targetPrivate)
+	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	require.NoError(t, err)
+
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
