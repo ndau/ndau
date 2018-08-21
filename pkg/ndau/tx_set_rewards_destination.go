@@ -11,10 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewSetRewardsTarget creates a new SetRewardsTarget transaction
-func NewSetRewardsTarget(account, destination address.Address, sequence uint64, keys []signature.PrivateKey) *SetRewardsTarget {
-	c := &SetRewardsTarget{
-		Account:     account,
+// NewSetRewardsDestination creates a new SetRewardsDestination transaction
+func NewSetRewardsDestination(account, destination address.Address, sequence uint64, keys []signature.PrivateKey) *SetRewardsDestination {
+	c := &SetRewardsDestination{
+		Source:      account,
 		Destination: destination,
 		Sequence:    sequence,
 	}
@@ -25,21 +25,21 @@ func NewSetRewardsTarget(account, destination address.Address, sequence uint64, 
 }
 
 // SignableBytes implements Transactable
-func (c *SetRewardsTarget) SignableBytes() []byte {
-	bytes := make([]byte, 8, 8+len(c.Account.String())+len(c.Destination.String()))
+func (c *SetRewardsDestination) SignableBytes() []byte {
+	bytes := make([]byte, 8, 8+len(c.Source.String())+len(c.Destination.String()))
 	binary.BigEndian.PutUint64(bytes[0:8], c.Sequence)
-	bytes = append(bytes, c.Account.String()...)
+	bytes = append(bytes, c.Source.String()...)
 	bytes = append(bytes, c.Destination.String()...)
 	return bytes
 }
 
 // Validate implements metatx.Transactable
-func (c *SetRewardsTarget) Validate(appI interface{}) error {
+func (c *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
 	accountData, hasAccount, err := state.GetValidAccount(
-		c.Account,
+		c.Source,
 		app.blockTime,
 		c.Sequence,
 		c.SignableBytes(),
@@ -64,7 +64,7 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 	// if dest is the same as source, we're resetting the EAI to accumulate
 	// in its account of origin.
 	// neither destination rule appllies in that case.
-	if c.Destination.String() != c.Account.String() {
+	if c.Destination.String() != c.Source.String() {
 		// dest account must not be sending rewards to any other account
 		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
 		if targetData.RewardsTarget != nil {
@@ -81,23 +81,23 @@ func (c *SetRewardsTarget) Validate(appI interface{}) error {
 }
 
 // Apply implements metatx.Transactable
-func (c *SetRewardsTarget) Apply(appI interface{}) error {
+func (c *SetRewardsDestination) Apply(appI interface{}) error {
 	app := appI.(*App)
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(c.Account, app.blockTime)
+		accountData, _ := state.GetAccount(c.Source, app.blockTime)
 		accountData.Sequence = c.Sequence
 
 		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
 
 		// update inbound of rewards target
-		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != c.Account.String() {
+		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != c.Source.String() {
 			oldTargetData, _ := state.GetAccount(*accountData.RewardsTarget, app.blockTime)
 			// remove account from current target inbounds list
 			inbounds := make([]address.Address, 0, len(oldTargetData.IncomingRewardsFrom)-1)
 			for _, addr := range oldTargetData.IncomingRewardsFrom {
-				if c.Account.String() != addr.String() {
+				if c.Source.String() != addr.String() {
 					inbounds = append(inbounds, addr)
 				}
 			}
@@ -105,15 +105,15 @@ func (c *SetRewardsTarget) Apply(appI interface{}) error {
 			state.Accounts[accountData.RewardsTarget.String()] = oldTargetData
 		}
 
-		if c.Account.String() == c.Destination.String() {
+		if c.Source.String() == c.Destination.String() {
 			accountData.RewardsTarget = nil
 		} else {
 			accountData.RewardsTarget = &c.Destination
-			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, c.Account)
+			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, c.Source)
 			state.Accounts[c.Destination.String()] = targetData
 		}
 
-		state.Accounts[c.Account.String()] = accountData
+		state.Accounts[c.Source.String()] = accountData
 		return state, nil
 	})
 }

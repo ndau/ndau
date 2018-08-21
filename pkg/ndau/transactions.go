@@ -22,7 +22,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(6):    &ComputeEAI{},
 	metatx.TxID(7):    &Lock{},
 	metatx.TxID(8):    &Notify{},
-	metatx.TxID(9):    &SetRewardsTarget{},
+	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
@@ -155,18 +155,18 @@ type Notify struct {
 
 var _ metatx.Transactable = (*Notify)(nil)
 
-// SetRewardsTarget transactions update the rewards target for the specified account.
+// SetRewardsDestination transactions update the rewards target for the specified account.
 //
 // When the rewards target is empty, EAI and other rewards are deposited to the
 // origin account. Otherwise, they are deposited to the specified destination.
-type SetRewardsTarget struct {
-	Account     address.Address
+type SetRewardsDestination struct {
+	Source      address.Address
 	Destination address.Address
 	Sequence    uint64
 	Signatures  []signature.Signature
 }
 
-var _ metatx.Transactable = (*SetRewardsTarget)(nil)
+var _ metatx.Transactable = (*SetRewardsDestination)(nil)
 
 // A ClaimAccount transaction is used to set the initial transfer keys for an account.
 //
