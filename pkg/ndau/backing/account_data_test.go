@@ -199,6 +199,7 @@ func TestUpdateEscrow(t *testing.T) {
 	acct.Settlements = nil
 	const qtyEscrows = 20
 	for i := 1; i <= qtyEscrows/2; i++ {
+		acct.Balance += math.Ndau(2 * i)
 		acct.Settlements = append(
 			acct.Settlements,
 			Settlement{
@@ -215,7 +216,9 @@ func TestUpdateEscrow(t *testing.T) {
 		)
 	}
 
-	acct.UpdateSettlement(baseTimestamp)
+	acct.UpdateSettlements(baseTimestamp)
+	available, err := acct.AvailableBalance()
+	require.NoError(t, err)
 
 	// half of the escrows are after the base timestamp
 	require.Equal(t, qtyEscrows/2, len(acct.Settlements))
@@ -224,7 +227,8 @@ func TestUpdateEscrow(t *testing.T) {
 	for i := 1; i <= qtyEscrows/2; i++ {
 		expectedNdau += i
 	}
-	require.Equal(t, math.Ndau(expectedNdau), acct.Balance)
+
+	require.Equal(t, math.Ndau(expectedNdau), available)
 }
 
 func TestUpdateEscrowUpdatesPendingPeriodChange(t *testing.T) {
@@ -237,7 +241,7 @@ func TestUpdateEscrowUpdatesPendingPeriodChange(t *testing.T) {
 	acct.SettlementSettings.ChangesAt = &chTs
 	acct.SettlementSettings.Next = &chD
 
-	acct.UpdateSettlement(chTs)
+	acct.UpdateSettlements(chTs)
 
 	require.Equal(t, chD, acct.SettlementSettings.Period)
 	require.Nil(t, acct.SettlementSettings.Next)
@@ -255,7 +259,7 @@ func TestUpdateEscrowPersistsPendingPeriodChange(t *testing.T) {
 	acct.SettlementSettings.ChangesAt = &chTs
 	acct.SettlementSettings.Next = &chD
 
-	acct.UpdateSettlement(chTs.Sub(math.Duration(1)))
+	acct.UpdateSettlements(chTs.Sub(math.Duration(1)))
 
 	require.Equal(t, stD, acct.SettlementSettings.Period)
 	require.Equal(t, &chD, acct.SettlementSettings.Next)

@@ -4,6 +4,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/pkg/errors"
 )
 
 // MaxKeysInAccount is the maximum number of keys allowed to be associated
@@ -44,13 +45,12 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 	return false
 }
 
-// UpdateSettlement settles funds whose settlement periods have expired
-func (ad *AccountData) UpdateSettlement(blockTime math.Timestamp) {
+// UpdateSettlements settles funds whose settlement periods have expired
+func (ad *AccountData) UpdateSettlements(blockTime math.Timestamp) {
 	newSettlements := make([]Settlement, 0, len(ad.Settlements))
 	for _, settlement := range ad.Settlements {
-		if settlement.Expiry.Compare(blockTime) <= 0 {
-			ad.Balance += settlement.Qty
-		} else {
+		if settlement.Expiry.Compare(blockTime) > 0 {
+			// blockTime > settlement.Expiry
 			newSettlements = append(newSettlements, settlement)
 		}
 	}
@@ -62,6 +62,21 @@ func (ad *AccountData) UpdateSettlement(blockTime math.Timestamp) {
 		ad.SettlementSettings.ChangesAt = nil
 		ad.SettlementSettings.Next = nil
 	}
+}
+
+// AvailableBalance computes the balance available
+//
+// Normally one would wish to call UpdateSettlements shortly before calling this
+func (ad *AccountData) AvailableBalance() (math.Ndau, error) {
+	balance := ad.Balance
+	var err error
+	for _, settlement := range ad.Settlements {
+		balance, err = balance.Sub(settlement.Qty)
+		if err != nil {
+			return math.Ndau(0), errors.Wrap(err, "available balance")
+		}
+	}
+	return balance, nil
 }
 
 // ValidateSignatures returns `true` if signature quantity makes sense and

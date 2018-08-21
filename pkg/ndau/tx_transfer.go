@@ -3,13 +3,12 @@ package ndau
 import (
 	"encoding/binary"
 
-	"github.com/pkg/errors"
-
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/pkg/errors"
 )
 
 // NewTransfer creates a new signed transfer transactable
@@ -44,22 +43,12 @@ func appendUint64(b []byte, i uint64) []byte {
 
 // SignableBytes implements Transactable
 func (t *Transfer) SignableBytes() []byte {
-	bytes := make([]byte, 8, t.Msgsize()+8)
-	binary.BigEndian.PutUint64(bytes, uint64(t.Qty))
+	bytes := make([]byte, 0, t.Msgsize())
 	bytes = append(bytes, t.Source.String()...)
 	bytes = append(bytes, t.Destination.String()...)
+	bytes = appendUint64(bytes, uint64(t.Qty))
 	bytes = appendUint64(bytes, t.Sequence)
 	return bytes
-}
-
-func (t *Transfer) signature(private signature.PrivateKey) ([]byte, error) {
-	bytes := t.SignableBytes()
-
-	sigB, err := private.Sign(bytes).Marshal()
-	if err != nil {
-		return nil, err
-	}
-	return sigB, nil
 }
 
 func (t *Transfer) calculateTxFee() math.Ndau {
@@ -116,13 +105,17 @@ func (t *Transfer) Validate(appInt interface{}) error {
 	}
 
 	// the source update doesn't get persisted this time because this method is read-only
-	source.UpdateSettlement(app.blockTime)
+	source.UpdateSettlements(app.blockTime)
+	availableBalance, err := source.AvailableBalance()
+	if err != nil {
+		return err
+	}
 
 	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {
 		return err
 	}
-	if source.Balance.Compare(fromSource) < 0 {
+	if availableBalance.Compare(fromSource) < 0 {
 		return errors.New("insufficient balance in source")
 	}
 
@@ -144,7 +137,7 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	dest, _ := state.GetAccount(t.Destination, app.blockTime)
 
 	// this source update will get persisted if the method exits without error
-	source.UpdateSettlement(app.blockTime)
+	source.UpdateSettlements(app.blockTime)
 
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
@@ -162,9 +155,9 @@ func (t *Transfer) Apply(appInt interface{}) error {
 	}
 	source.Balance -= fromSource
 	source.Sequence = t.Sequence
-	if source.SettlementSettings.Period == 0 {
-		dest.Balance += t.Qty
-	} else {
+
+	dest.Balance += t.Qty
+	if source.SettlementSettings.Period != 0 {
 		dest.Settlements = append(dest.Settlements, backing.Settlement{
 			Qty:    t.Qty,
 			Expiry: app.blockTime.Add(source.SettlementSettings.Period),

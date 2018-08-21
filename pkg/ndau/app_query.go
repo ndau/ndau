@@ -30,7 +30,7 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 
 	ad, exists := state.GetAccount(address, app.blockTime)
 	response.Log = fmt.Sprintf("acct exists: %t", exists)
-	ad.UpdateSettlement(app.blockTime)
+	ad.UpdateSettlements(app.blockTime)
 	adBytes, err := ad.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "serializing account data")
