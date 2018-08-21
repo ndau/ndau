@@ -1,5 +1,5 @@
 hash: f572f462e11af3f41c877fa925a8c59d7b5f10733edeeba7e4d893563f8aa139
-updated: 2018-08-21T13:33:59.384203-04:00
+updated: 2018-08-21T16:26:42.925152-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 4d828cba40c246216411746ce920a0fb44d286ce
+  version: f26268b77ea9619d95b1d04b6f3e3c5a03b61110
   subpackages:
   - aws
   - aws/awserr
@@ -190,7 +190,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: b2b86210c8872c89d42e137c0910567c34c5f433
+  version: 6b81a20b08efc805e54d2034132fc95fdc6db791
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app

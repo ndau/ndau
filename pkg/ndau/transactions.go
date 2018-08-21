@@ -27,6 +27,12 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
+// GetID returns the ID associated with a transaction
+func GetID(tx metatx.Transactable) (byte, error) {
+	txid, err := metatx.TxIDOf(tx, TxIDs)
+	return byte(txid), err
+}
+
 // A GTValidatorChange is a Globally Trusted Validator Change.
 //
 // No attempt is made to validate the validator change;
