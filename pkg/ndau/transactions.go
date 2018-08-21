@@ -102,8 +102,8 @@ var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Account    address.Address
-	Delegate   address.Address
+	Target     address.Address
+	Node       address.Address
 	Sequence   uint64
 	Signatures []signature.Signature
 }

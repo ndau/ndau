@@ -40,7 +40,7 @@ func TestDelegateAccountValidates(t *testing.T) {
 	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
-	d.Account = address.Address{}
+	d.Target = address.Address{}
 	d.Signatures = []signature.Signature{private.Sign(d.SignableBytes())}
 
 	// d must be invalid
@@ -59,7 +59,7 @@ func TestDelegateDelegateValidates(t *testing.T) {
 	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
-	d.Delegate = address.Address{}
+	d.Node = address.Address{}
 	d.Signatures = []signature.Signature{private.Sign(d.SignableBytes())}
 
 	// d must be invalid

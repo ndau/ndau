@@ -17,8 +17,8 @@ func NewDelegate(
 	keys []signature.PrivateKey,
 ) *Delegate {
 	dd := &Delegate{
-		Account:  account,
-		Delegate: delegate,
+		Target:   account,
+		Node:     delegate,
 		Sequence: sequence,
 	}
 	for _, key := range keys {
@@ -29,27 +29,27 @@ func NewDelegate(
 
 // SignableBytes implements Transactable
 func (dd *Delegate) SignableBytes() []byte {
-	bytes := make([]byte, 8, dd.Account.Msgsize()+dd.Delegate.Msgsize()+8)
+	bytes := make([]byte, 8, dd.Target.Msgsize()+dd.Node.Msgsize()+8)
 	binary.BigEndian.PutUint64(bytes, dd.Sequence)
-	bytes = append(bytes, []byte(dd.Account.String())...)
-	bytes = append(bytes, []byte(dd.Delegate.String())...)
+	bytes = append(bytes, []byte(dd.Target.String())...)
+	bytes = append(bytes, []byte(dd.Node.String())...)
 	return bytes
 }
 
 // Validate implements metatx.Transactable
 func (dd *Delegate) Validate(appI interface{}) error {
-	_, err := address.Validate(dd.Account.String())
+	_, err := address.Validate(dd.Target.String())
 	if err != nil {
 		return errors.Wrap(err, "Account")
 	}
-	_, err = address.Validate(dd.Delegate.String())
+	_, err = address.Validate(dd.Node.String())
 	if err != nil {
 		return errors.Wrap(err, "Delegate")
 	}
 
 	app := appI.(*App)
 	_, hasAccount, err := app.GetState().(*backing.State).GetValidAccount(
-		dd.Account,
+		dd.Target,
 		app.blockTime,
 		dd.Sequence,
 		dd.SignableBytes(),
@@ -71,9 +71,9 @@ func (dd *Delegate) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		as := dd.Account.String()
-		ds := dd.Delegate.String()
-		acct, hasAcct := state.GetAccount(dd.Account, app.blockTime)
+		as := dd.Target.String()
+		ds := dd.Node.String()
+		acct, hasAcct := state.GetAccount(dd.Target, app.blockTime)
 		if !hasAcct {
 			return state, errors.New("Account does not exist")
 		}
@@ -91,7 +91,7 @@ func (dd *Delegate) Apply(appI interface{}) error {
 		}
 
 		// set its delegate
-		acct.DelegationNode = &dd.Delegate
+		acct.DelegationNode = &dd.Node
 		state.Accounts[as] = acct
 
 		// update the target delegate's set
