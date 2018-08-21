@@ -971,15 +971,9 @@ func (z *SetRewardsDestination) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Transfer) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 6
-	// string "Timestamp"
-	o = append(o, 0x86, 0xa9, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70)
-	o, err = z.Timestamp.MarshalMsg(o)
-	if err != nil {
-		return
-	}
+	// map header, size 5
 	// string "Source"
-	o = append(o, 0xa6, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65)
+	o = append(o, 0x85, 0xa6, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65)
 	o, err = z.Source.MarshalMsg(o)
 	if err != nil {
 		return
@@ -1027,11 +1021,6 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "Timestamp":
-			bts, err = z.Timestamp.UnmarshalMsg(bts)
-			if err != nil {
-				return
-			}
 		case "Source":
 			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
@@ -1082,7 +1071,7 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Transfer) Msgsize() (s int) {
-	s = 1 + 10 + z.Timestamp.Msgsize() + 7 + z.Source.Msgsize() + 12 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 9 + msgp.Uint64Size + 11 + msgp.ArrayHeaderSize
+	s = 1 + 7 + z.Source.Msgsize() + 12 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 9 + msgp.Uint64Size + 11 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}
