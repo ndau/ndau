@@ -166,6 +166,7 @@ func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
 	existing1, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	existing2, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
 		ad.TransferKeys = []signature.PublicKey{existing1, existing2}
 	})
