@@ -1,5 +1,5 @@
-hash: 1ea7c771039f3abbb6dbc7810717d0560d1cfba70e4d3ab5856fa4fcfbdea824
-updated: 2018-08-16T16:22:18.019567-04:00
+hash: f572f462e11af3f41c877fa925a8c59d7b5f10733edeeba7e4d893563f8aa139
+updated: 2018-08-21T16:26:42.925152-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 4ca017cbfa0c7222115f75baad53f0999b6cc9c9
+  version: f26268b77ea9619d95b1d04b6f3e3c5a03b61110
   subpackages:
   - aws
   - aws/awserr
@@ -108,7 +108,7 @@ imports:
 - name: github.com/facebookgo/muster
   version: fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a
 - name: github.com/go-ini/ini
-  version: d58d458bec3cb5adec4b7ddb41131855eac0b33f
+  version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
 - name: github.com/go-kit/kit
   version: 9bf23341289dc5ecc1c4bb9dbad72265fbdfdd94
   subpackages:
@@ -126,7 +126,7 @@ imports:
 - name: github.com/go-zoo/bone
   version: c6b9d00069e0797f1454e738811b95dad24d9b96
 - name: github.com/gogo/protobuf
-  version: 5e816401ac7168a24541712714d3d057341d7b46
+  version: 98f6aa8b3bcf03e45b1a8b48257c754766d5c3c8
   subpackages:
   - gogoproto
   - jsonpb
@@ -135,7 +135,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: aa810b61a9c79d51363740d207bb46cf8e620ed5
+  version: b27b920f9e71b439b873b17bf99f56467623814a
   subpackages:
   - proto
   - ptypes
@@ -147,7 +147,7 @@ imports:
 - name: github.com/google/go-cmp
   version: 3af367b6b30c263d47e8895973edcca9a49cf029
 - name: github.com/gorilla/websocket
-  version: 5ed622c449da6d44c3c8329331ff47a9e5844f71
+  version: 3ff3320c2a1756a3691521efc290b4701575147c
 - name: github.com/honeycombio/libhoney-go
   version: 741c87cf6e228e5c509705847b67a3245bc79b8b
 - name: github.com/jawher/mow.cli
@@ -190,7 +190,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: b2b86210c8872c89d42e137c0910567c34c5f433
+  version: 6b81a20b08efc805e54d2034132fc95fdc6db791
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -203,11 +203,12 @@ imports:
   subpackages:
   - wkt
 - name: github.com/oneiro-ndev/ndaumath
-  version: 14a8c54ea54ccd4ea5062ad447293222f0495b89
+  version: bfa50431959e5aa3e5d459739b1878871a1c1942
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
+  - pkg/bitset256
   - pkg/constants
   - pkg/eai
   - pkg/ndauerr
@@ -240,7 +241,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 5b23715facdef1452016bae512489c3cdf82458c
+  version: 29e6500a95d6ab373cae935d8615527ca38be74f
   subpackages:
   - prometheus
   - prometheus/promhttp
@@ -269,7 +270,7 @@ imports:
 - name: github.com/sigurn/utils
   version: f19e41f79f8f006116f682c1af454591bc278ad4
 - name: github.com/sirupsen/logrus
-  version: e4b0c6d7829bcf64435536c4a88f4088a3c76203
+  version: fc587f31c804fe6853cd90f0d8d90af588eca5bd
 - name: github.com/stretchr/testify
   version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
@@ -296,7 +297,7 @@ imports:
   - edwards25519
   - extra25519
 - name: github.com/tendermint/go-amino
-  version: 2106ca61d91029c931fd54968c2bb02dc96b1412
+  version: faa6e731944e2b7b6a46ad202902851e8ce85bee
 - name: github.com/tendermint/tendermint
   version: d542d2c3945116697f60451e6a407082c41c3cc9
   subpackages:
@@ -354,7 +355,7 @@ imports:
 - name: github.com/ybbus/jsonrpc
   version: 649ede3181b7a6d7329afc6612b494434c641499
 - name: golang.org/x/crypto
-  version: de0752318171da717af4ce24d0a2e8626afaeb11
+  version: 614d502a4dac94afa3a6ce146bd1736da82514c6
   subpackages:
   - curve25519
   - ed25519
@@ -367,7 +368,7 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: aaf60122140d3fcf75376d319f0554393160eb50
+  version: 922f4815f713f213882e8ef45e0d315b164d705c
   subpackages:
   - context
   - http/httpguts
@@ -378,7 +379,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 1c9583448a9c3aa0f9a6a5241bf73c0bd8aafded
+  version: 3b58ed4ad3395d483fc92d5d14123ce2c3581fec
   subpackages:
   - unix
   - windows
@@ -390,7 +391,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: d0a8f471bba2dbb160885b0000d814ee5d559bad
+  version: c66870c02cf823ceb633bcd05be3c7cda29976f4
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc

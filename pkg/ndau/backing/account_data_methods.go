@@ -82,18 +82,24 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 	// the field, causing us to check 128 signatures instead of 256. For these
 	// values of N, I'm not sure that the work we'd save would actually pay for
 	// the increase in setup cost. Instead, we're going to go with the simple
-	// dumb solution: just check every key against every signature.
+	// dumb solution: just check every signature against every key that has
+	// not already been used.
 	allKeysValidate := true
 	for _, signature := range signatures {
 		foundValidatingKey := false
 		for idx, key := range ad.TransferKeys {
-			if key.Verify(data, signature) {
-				foundValidatingKey = true
-				signatureSet.Set(idx)
-				break
+			// don't attempt to verify keys we've already verified
+			if !signatureSet.Get(byte(idx)) {
+				if key.Verify(data, signature) {
+					foundValidatingKey = true
+					signatureSet.Set(byte(idx))
+					break
+				}
 			}
 		}
 		allKeysValidate = allKeysValidate && foundValidatingKey
 	}
-	return allKeysValidate, signatureSet
+	// If everything validated but the signatureSet doesn't have as many bits set as
+	// there were signatures, then we must have had duplicates, which is bad.
+	return allKeysValidate && signatureSet.Count() != len(signatures), signatureSet
 }
