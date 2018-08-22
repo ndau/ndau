@@ -96,7 +96,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	)
 
 	if len(acct.TransferKeys) > 1 {
-		return errors.New("no more than one transfer key may be set to claim account")
+		return errors.New("claim account is not valid if there are 2 or more transfer keys")
 	}
 
 	return nil
