@@ -14,9 +14,9 @@ import (
 
 // Lock keeps track of an account's Lock information
 type Lock struct {
-	NoticePeriod math.Duration `msg:"notice"`
+	NoticePeriod math.Duration `msg:"notice" chain:"91,Lock_NoticePeriod"`
 	// if a lock has not been notified, this is nil
-	UnlocksOn *math.Timestamp `msg:"unlock"`
+	UnlocksOn *math.Timestamp `msg:"unlock" chain:"92,Lock_UnlocksOn"`
 }
 
 // GetNoticePeriod implements eai.Lock

@@ -18,8 +18,8 @@ import (
 
 // Stake keeps track of an account's staking information
 type Stake struct {
-	Point   math.Timestamp
-	Address address.Address
+	Point   math.Timestamp  `chain:"101,Stake_Point"`
+	Address address.Address `chain:"102,Stake_Address"`
 }
 
 var _ marshal.Marshaler = (*Stake)(nil)
@@ -62,9 +62,9 @@ func (s *Stake) fromNomsStake(n nomsStake) (err error) {
 
 // Settlement tracks a single inbound transaction not yet settled
 type Settlement struct {
-	Qty math.Ndau
+	Qty math.Ndau `chain:"81,Settlement_Quantity"`
 	// Expiry is when these funds are available to be sent
-	Expiry math.Timestamp
+	Expiry math.Timestamp `chain:"82,Settlement_Expiry"`
 }
 
 var _ marshal.Marshaler = (*Settlement)(nil)
@@ -105,9 +105,9 @@ func (e *Settlement) fromNomsSettlement(n nomsSettlement) {
 
 // SettlementSettings tracks the settlement settings for outbound transactions
 type SettlementSettings struct {
-	Period    math.Duration
-	ChangesAt *math.Timestamp
-	Next      *math.Duration
+	Period    math.Duration   `chain:"111,SettlementSettings_Period"`
+	ChangesAt *math.Timestamp `chain:"112,SettlementSettings_ChangesAt"`
+	Next      *math.Duration  `chain:"113,SettlementSettings_Next"`
 }
 
 var _ marshal.Marshaler = (*SettlementSettings)(nil)
@@ -180,19 +180,19 @@ func NewAccountData(blockTime math.Timestamp) AccountData {
 //
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
-	Balance             math.Ndau
-	TransferKeys        []signature.PublicKey
-	RewardsTarget       *address.Address
-	IncomingRewardsFrom []address.Address
-	DelegationNode      *address.Address
-	Lock                *Lock
-	Stake               *Stake
-	LastEAIUpdate       math.Timestamp
-	LastWAAUpdate       math.Timestamp
-	WeightedAverageAge  math.Duration
+	Balance             math.Ndau             `chain:"61,Acct_Balance"`
+	TransferKeys        []signature.PublicKey `chain:"62,Acct_TransferKeys"`
+	RewardsTarget       *address.Address      `chain:"63,Acct_RewardsTarget"`
+	IncomingRewardsFrom []address.Address     `chain:"64,Acct_IncomingRewardsFrom"`
+	DelegationNode      *address.Address      `chain:"65,Acct_DelegationNode"`
+	Lock                *Lock                 `chain:"."`
+	Stake               *Stake                `chain:"."`
+	LastEAIUpdate       math.Timestamp        `chain:"66,Acct_LastEAIUpdate"`
+	LastWAAUpdate       math.Timestamp        `chain:"67,Acct_LastWAAUpdate"`
+	WeightedAverageAge  math.Duration         `chain:"68,Acct_WeightedAverageAge"`
 	Sequence            uint64
-	Settlements         []Settlement
-	SettlementSettings  SettlementSettings
+	Settlements         []Settlement       `chain:"."`
+	SettlementSettings  SettlementSettings `chain:"."`
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
