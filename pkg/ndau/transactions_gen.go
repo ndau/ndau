@@ -229,10 +229,10 @@ func (z *ChangeValidation) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 4
-	// string "Account"
-	o = append(o, 0x84, 0xa7, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74)
-	o, err = z.Account.MarshalMsg(o)
+	// map header, size 5
+	// string "Target"
+	o = append(o, 0x85, 0xa6, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74)
+	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		return
 	}
@@ -251,6 +251,9 @@ func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
 			return
 		}
 	}
+	// string "Sequence"
+	o = append(o, 0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
+	o = msgp.AppendUint64(o, z.Sequence)
 	// string "Signature"
 	o = append(o, 0xa9, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65)
 	o, err = z.Signature.MarshalMsg(o)
@@ -276,8 +279,8 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "Account":
-			bts, err = z.Account.UnmarshalMsg(bts)
+		case "Target":
+			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -303,6 +306,11 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 			}
+		case "Sequence":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				return
+			}
 		case "Signature":
 			bts, err = z.Signature.UnmarshalMsg(bts)
 			if err != nil {
@@ -321,11 +329,11 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ClaimAccount) Msgsize() (s int) {
-	s = 1 + 8 + z.Account.Msgsize() + 10 + z.Ownership.Msgsize() + 13 + msgp.ArrayHeaderSize
+	s = 1 + 7 + z.Target.Msgsize() + 10 + z.Ownership.Msgsize() + 13 + msgp.ArrayHeaderSize
 	for za0001 := range z.TransferKeys {
 		s += z.TransferKeys[za0001].Msgsize()
 	}
-	s += 10 + z.Signature.Msgsize()
+	s += 9 + msgp.Uint64Size + 10 + z.Signature.Msgsize()
 	return
 }
 

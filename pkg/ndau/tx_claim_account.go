@@ -13,7 +13,7 @@ import (
 // NewClaimAccount creates a ClaimAccount transaction
 func NewClaimAccount(account address.Address, ownership signature.PublicKey, transferKeys []signature.PublicKey, ownerPrivate signature.PrivateKey) ClaimAccount {
 	ca := ClaimAccount{
-		Account:      account,
+		Target:       account,
 		Ownership:    ownership,
 		TransferKeys: transferKeys,
 	}
@@ -29,14 +29,16 @@ func (tx *ClaimAccount) SignableBytes() []byte {
 	for _, key := range tx.TransferKeys {
 		bnum += key.Size()
 	}
+	bnum += 8
 
 	bytes := make([]byte, 0, bnum)
 
-	bytes = append(bytes, tx.Account.String()...)
+	bytes = append(bytes, tx.Target.String()...)
 	bytes = append(bytes, tx.Ownership.Bytes()...)
 	for _, key := range tx.TransferKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
+	bytes = appendUint64(bytes, tx.Sequence)
 
 	return bytes
 }
@@ -46,11 +48,11 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	// we need to verify that the ownership key submitted actually generates
 	// the address being claimed
 	// get the address kind:
-	_, err := address.Validate(tx.Account.String())
+	_, err := address.Validate(tx.Target.String())
 	if err != nil {
 		return errors.Wrap(err, "Account address invalid")
 	}
-	kind := address.Kind(string(tx.Account.String()[2]))
+	kind := address.Kind(string(tx.Target.String()[2]))
 	if !address.IsValidKind(kind) {
 		return fmt.Errorf("Account has invalid address kind: %s", kind)
 	}
@@ -59,7 +61,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		return errors.Wrap(err, "generating address for ownership key")
 	}
 
-	if tx.Account.String() != ownershipAddress.String() {
+	if tx.Target.String() != ownershipAddress.String() {
 		return errors.New("Ownership key and address do not match")
 	}
 
@@ -91,9 +93,13 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	// sequence validation is unusual, and we explicitly require no transfer
 	// keys to be set
 	acct, _ := state.GetAccount(
-		tx.Account,
+		tx.Target,
 		app.blockTime,
 	)
+
+	if tx.Sequence <= acct.Sequence {
+		return errors.New("sequence is too low")
+	}
 
 	if len(acct.TransferKeys) > 1 {
 		return errors.New("claim account is not valid if there are 2 or more transfer keys")
@@ -108,9 +114,10 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
-		acct, _ := st.GetAccount(tx.Account, app.blockTime)
+		acct, _ := st.GetAccount(tx.Target, app.blockTime)
 		acct.TransferKeys = tx.TransferKeys
-		st.Accounts[tx.Account.String()] = acct
+		st.Accounts[tx.Target.String()] = acct
+		acct.Sequence = tx.Sequence
 
 		return st, nil
 	})
