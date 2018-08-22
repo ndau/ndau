@@ -70,7 +70,11 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 
 	modify(t, settled, app, func(acct *backing.AccountData) {
 		// initialize the address with a bunch of ndau
+		// incoming funds are added to the balance and the settlements;
+		// it's just that the available balance is reduced by the sum
+		// of the uncleared settlements
 		for i := 1; i < qtyEscrows; i++ {
+			acct.Balance += math.Ndau(i * constants.QuantaPerUnit)
 			acct.Settlements = append(acct.Settlements, backing.Settlement{
 				Qty:    math.Ndau(i * constants.QuantaPerUnit),
 				Expiry: ts.Sub(math.Duration(i)),

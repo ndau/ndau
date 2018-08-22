@@ -38,7 +38,7 @@ func TestCEPStoresPendingEscrowChange(t *testing.T) {
 
 	// update the acct struct
 	acct = app.GetState().(*backing.State).Accounts[source]
-	acct.UpdateSettlement(ts)
+	acct.UpdateSettlements(ts)
 
 	require.Equal(t, newDuration, acct.SettlementSettings.Period)
 	require.Nil(t, acct.SettlementSettings.Next)
