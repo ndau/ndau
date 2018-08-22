@@ -116,5 +116,5 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 	}
 	// If everything validated but the signatureSet doesn't have as many bits set as
 	// there were signatures, then we must have had duplicates, which is bad.
-	return allKeysValidate && signatureSet.Count() != len(signatures), signatureSet
+	return allKeysValidate && signatureSet.Count() == len(signatures), signatureSet
 }
