@@ -37,7 +37,7 @@ func NewTransfer(
 
 func appendUint64(b []byte, i uint64) []byte {
 	ib := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, i)
+	binary.BigEndian.PutUint64(ib, i)
 	return append(b, ib...)
 }
 
