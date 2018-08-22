@@ -56,9 +56,9 @@ var _ metatx.Transactable = (*GTValidatorChange)(nil)
 
 // A Transfer is the fundamental transaction of the Ndau chain.
 type Transfer struct {
-	Source      address.Address
-	Destination address.Address
-	Qty         math.Ndau
+	Source      address.Address `chain:"1,Tx_Source"`
+	Destination address.Address `chain:"2,Tx_Destination"`
+	Qty         math.Ndau       `chain:"11,Tx_Quantity"`
 	Sequence    uint64
 	Signatures  []signature.Signature
 }
@@ -68,8 +68,8 @@ var _ metatx.Transactable = (*Transfer)(nil)
 
 // A ChangeValidation transaction is used to set transfer keys
 type ChangeValidation struct {
-	Target     address.Address
-	NewKeys    []signature.PublicKey
+	Target     address.Address       `chain:"3,Tx_Target"`
+	NewKeys    []signature.PublicKey `chain:"31,Tx_NewKeys"`
 	Sequence   uint64
 	Signatures []signature.Signature
 }
@@ -82,9 +82,9 @@ var _ metatx.Transactable = (*ChangeValidation)(nil)
 // It must be signed with the private key corresponding to one of the public
 // keys listed in the system variable `ReleaseFromEndowmentKeys`.
 type ReleaseFromEndowment struct {
-	Destination address.Address
-	Qty         math.Ndau
-	TxFeeAcct   address.Address
+	Destination address.Address `chain:"2,Tx_Destination"`
+	Qty         math.Ndau       `chain:"11,Tx_Quantity"`
+	TxFeeAcct   address.Address `chain:"5,Tx_FeeAccount"`
 	Sequence    uint64
 	Signatures  []signature.Signature
 }
@@ -94,8 +94,8 @@ var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
 type ChangeSettlementPeriod struct {
-	Target     address.Address
-	Period     math.Duration
+	Target     address.Address `chain:"3,Tx_Target"`
+	Period     math.Duration   `chain:"21,Tx_Period"`
 	Sequence   uint64
 	Signatures []signature.Signature
 }
@@ -107,8 +107,8 @@ var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Target     address.Address
-	Node       address.Address
+	Target     address.Address `chain:"3,Tx_Target"`
+	Node       address.Address `chain:"4,Tx_Node"`
 	Sequence   uint64
 	Signatures []signature.Signature
 }
@@ -129,7 +129,7 @@ var _ metatx.Transactable = (*Delegate)(nil)
 //   2. The originating node can't know ahead of time what the official block
 //      time will be.
 type CreditEAI struct {
-	Node       address.Address
+	Node       address.Address `chain:"4,Tx_Node"`
 	Sequence   uint64
 	Signatures []signature.Signature
 }
@@ -140,8 +140,8 @@ var _ metatx.Transactable = (*CreditEAI)(nil)
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Target     address.Address
-	Period     math.Duration
+	Target     address.Address `chain:"3,Tx_Target"`
+	Period     math.Duration   `chain:"21,Tx_Period"`
 	Sequence   uint64
 	Signatures []signature.Signature
 }
@@ -153,7 +153,7 @@ var _ metatx.Transactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Target     address.Address
+	Target     address.Address `chain:"3,Tx_Target"`
 	Sequence   uint64
 	Signatures []signature.Signature
 }
@@ -165,8 +165,8 @@ var _ metatx.Transactable = (*Notify)(nil)
 // When the rewards target is empty, EAI and other rewards are deposited to the
 // origin account. Otherwise, they are deposited to the specified destination.
 type SetRewardsDestination struct {
-	Source      address.Address
-	Destination address.Address
+	Source      address.Address `chain:"1,Tx_Source"`
+	Destination address.Address `chain:"2,Tx_Destination"`
 	Sequence    uint64
 	Signatures  []signature.Signature
 }
@@ -176,13 +176,11 @@ var _ metatx.Transactable = (*SetRewardsDestination)(nil)
 // A ClaimAccount transaction is used to set the initial transfer keys for an account.
 //
 // It is the only type of transaction which may be signed with the ownership key.
-//
-// It has no sequence, because if the account's sequence is not 0, then it must
-// already have been claimed, so this is an invalid transaction.
 type ClaimAccount struct {
-	Account      address.Address
+	Target       address.Address
 	Ownership    signature.PublicKey
 	TransferKeys []signature.PublicKey
+	Sequence     uint64
 	Signature    signature.Signature
 }
 

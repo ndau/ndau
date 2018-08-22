@@ -2,7 +2,6 @@ package ndau
 
 // NOTE: THIS FILE WAS PRODUCED BY THE
 // MSGP CODE GENERATION TOOL (github.com/tinylib/msgp)
-// DO NOT EDIT
 
 import (
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -232,7 +231,7 @@ func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	// map header, size 4
 	// string "Account"
 	o = append(o, 0x84, 0xa7, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74)
-	o, err = z.Account.MarshalMsg(o)
+	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		return
 	}
@@ -277,7 +276,7 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 		}
 		switch msgp.UnsafeString(field) {
 		case "Account":
-			bts, err = z.Account.UnmarshalMsg(bts)
+			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -321,7 +320,7 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ClaimAccount) Msgsize() (s int) {
-	s = 1 + 8 + z.Account.Msgsize() + 10 + z.Ownership.Msgsize() + 13 + msgp.ArrayHeaderSize
+	s = 1 + 8 + z.Target.Msgsize() + 10 + z.Ownership.Msgsize() + 13 + msgp.ArrayHeaderSize
 	for za0001 := range z.TransferKeys {
 		s += z.TransferKeys[za0001].Msgsize()
 	}
