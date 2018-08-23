@@ -11,11 +11,12 @@ import (
 )
 
 // NewClaimAccount creates a ClaimAccount transaction
-func NewClaimAccount(account address.Address, ownership signature.PublicKey, transferKeys []signature.PublicKey, ownerPrivate signature.PrivateKey) ClaimAccount {
+func NewClaimAccount(account address.Address, ownership signature.PublicKey, transferKeys []signature.PublicKey, sequence uint64, ownerPrivate signature.PrivateKey) ClaimAccount {
 	ca := ClaimAccount{
 		Target:       account,
 		Ownership:    ownership,
 		TransferKeys: transferKeys,
+		Sequence:     sequence,
 	}
 	ca.Signature = ownerPrivate.Sign(ca.SignableBytes())
 	return ca
