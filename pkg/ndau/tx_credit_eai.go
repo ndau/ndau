@@ -38,7 +38,7 @@ func (c *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	_, hasNode, err := state.GetValidAccount(
+	_, hasNode, _, err := state.GetValidAccount(
 		c.Node,
 		app.blockTime,
 		c.Sequence,

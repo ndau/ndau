@@ -48,7 +48,7 @@ func (dd *Delegate) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	_, hasAccount, err := app.GetState().(*backing.State).GetValidAccount(
+	_, hasAccount, _, err := app.GetState().(*backing.State).GetValidAccount(
 		dd.Target,
 		app.blockTime,
 		dd.Sequence,

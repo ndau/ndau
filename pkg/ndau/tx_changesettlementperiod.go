@@ -46,7 +46,7 @@ func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	if cep.Period < 0 {
 		return errors.New("Negative settlement period")
 	}
-	_, _, err = app.GetState().(*backing.State).GetValidAccount(
+	_, _, _, err = app.GetState().(*backing.State).GetValidAccount(
 		cep.Target,
 		app.blockTime,
 		cep.Sequence,

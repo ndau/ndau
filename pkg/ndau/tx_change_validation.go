@@ -63,7 +63,7 @@ func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
 	}
 
 	app := appI.(*App)
-	_, _, err = app.GetState().(*backing.State).GetValidAccount(
+	_, _, _, err = app.GetState().(*backing.State).GetValidAccount(
 		ct.Target,
 		app.blockTime,
 		ct.Sequence,

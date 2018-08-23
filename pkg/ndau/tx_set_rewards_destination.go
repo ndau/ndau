@@ -38,7 +38,7 @@ func (c *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	accountData, hasAccount, err := state.GetValidAccount(
+	accountData, hasAccount, _, err := state.GetValidAccount(
 		c.Source,
 		app.blockTime,
 		c.Sequence,

@@ -54,7 +54,7 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 
 	state := app.GetState().(*backing.State)
-	_, hasAcct, err := state.GetValidAccount(
+	_, hasAcct, _, err := state.GetValidAccount(
 		rfe.TxFeeAcct,
 		app.blockTime,
 		rfe.Sequence,
