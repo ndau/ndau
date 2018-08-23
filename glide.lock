@@ -1,5 +1,5 @@
-hash: f572f462e11af3f41c877fa925a8c59d7b5f10733edeeba7e4d893563f8aa139
-updated: 2018-08-21T16:26:42.925152-04:00
+hash: 57c955d8487e2ca100fadbb321f385c3a711e42e702bc656f3d2f5c3a8720a33
+updated: 2018-08-23T12:17:55.92903-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -180,6 +180,12 @@ imports:
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
   - pbutil
+- name: github.com/oneiro-ndev/chaincode
+  version: d3bb4788f7b7eb757a0fa98588bd11e82d04d0ed
+  repo: git@github.com:oneiro-ndev/chaincode.git
+  subpackages:
+  - pkg/chain
+  - pkg/vm
 - name: github.com/oneiro-ndev/chaos
   version: 365f6f25e2b7e634d5b5b7eae67d4ea64e11ae28
   repo: git@github.com:oneiro-ndev/chaos.git
