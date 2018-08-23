@@ -89,11 +89,10 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, _, sigset, err := state.GetValidAccount(
+	source, _, _, err := app.getTxAccount(
+		t,
 		t.Source,
-		app.blockTime,
 		t.Sequence,
-		t.SignableBytes(),
 		t.Signatures,
 	)
 	if err != nil {
@@ -123,24 +122,6 @@ func (t *Transfer) Validate(appInt interface{}) error {
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
-	}
-
-	if len(source.ValidationScript) > 0 {
-		vm, err := BuildVMForTxValidation(source.ValidationScript, source, t, sigset, app.blockTime)
-		if err != nil {
-			return errors.Wrap(err, "couldn't build vm for source validation script")
-		}
-		err = vm.Run(false)
-		if err != nil {
-			return errors.Wrap(err, "source validation script")
-		}
-		vmReturn, err := vm.Stack().PopAsInt64()
-		if err != nil {
-			return errors.Wrap(err, "src validation script exited with non-numeric exit code")
-		}
-		if vmReturn != 0 {
-			return errors.New("source validation script exited with non-0 exit code")
-		}
 	}
 
 	return nil
