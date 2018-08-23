@@ -18,7 +18,8 @@ func (tx *ChangeValidation) SignableBytes() []byte {
 	for _, key := range tx.NewKeys {
 		blen += key.Size()
 	}
-	blen += 8
+	blen += len(tx.ValidationScript)
+	blen += 8 // sequence
 	bytes := make([]byte, 0, blen)
 
 	bytes = appendUint64(bytes, tx.Sequence)
@@ -26,6 +27,7 @@ func (tx *ChangeValidation) SignableBytes() []byte {
 	for _, key := range tx.NewKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
+	bytes = append(bytes, tx.ValidationScript...)
 
 	return bytes
 }
@@ -34,13 +36,15 @@ func (tx *ChangeValidation) SignableBytes() []byte {
 func NewChangeValidation(
 	target address.Address,
 	newKeys []signature.PublicKey,
+	validationScript []byte,
 	sequence uint64,
 	privates []signature.PrivateKey,
 ) ChangeValidation {
 	tx := ChangeValidation{
-		Target:   target,
-		NewKeys:  newKeys,
-		Sequence: sequence,
+		Target:           target,
+		NewKeys:          newKeys,
+		ValidationScript: validationScript,
+		Sequence:         sequence,
 	}
 	for _, private := range privates {
 		tx.Signatures = append(tx.Signatures, private.Sign(tx.SignableBytes()))
@@ -59,6 +63,10 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// transfer keys set in this tx
 	if len(tx.NewKeys) < 1 || len(tx.NewKeys) > backing.MaxKeysInAccount {
 		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
+	}
+
+	if len(tx.ValidationScript) > 0 && !IsChaincode(tx.ValidationScript) {
+		return errors.New("Validation script must be chaincode")
 	}
 
 	app := appI.(*App)
@@ -109,6 +117,7 @@ func (tx *ChangeValidation) Apply(appI interface{}) error {
 		ad.Sequence = tx.Sequence
 
 		ad.TransferKeys = tx.NewKeys
+		ad.ValidationScript = tx.ValidationScript
 
 		state.Accounts[tx.Target.String()] = ad
 		return state, nil

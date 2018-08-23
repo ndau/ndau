@@ -21,6 +21,12 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 	}
 }
 
+// IsChaincode is true when the supplied bytes appear to be chaincode
+func IsChaincode(code []byte) bool {
+	tvm := vm.ChaincodeVM{}
+	return tvm.PreLoad(*buildBinary(code, "", "")) == nil
+}
+
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate
 // handler for the given transaction type. All that needs to happen after this is to call Run().
 func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Transactable,
