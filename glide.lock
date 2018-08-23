@@ -1,5 +1,5 @@
 hash: 57c955d8487e2ca100fadbb321f385c3a711e42e702bc656f3d2f5c3a8720a33
-updated: 2018-08-23T12:17:55.92903-04:00
+updated: 2018-08-23T14:09:39.800961-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -196,7 +196,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 6b81a20b08efc805e54d2034132fc95fdc6db791
+  version: bf4d5637e3576f9525e8aecefbaa12a769676ef5
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app

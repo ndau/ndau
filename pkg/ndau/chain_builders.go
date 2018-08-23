@@ -1,8 +1,6 @@
 package ndau
 
 import (
-	"errors"
-
 	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -57,20 +55,22 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 	if err != nil {
 		return nil, err
 	}
+	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	if err != nil {
+		return nil, err
+	}
+	txID, err := metatx.TxIDOf(tx, TxIDs)
+	if err != nil {
+		return nil, err
+	}
+	txIndex := byte(txID)
 
-	var bin *vm.ChasmBinary
+	bin := buildBinary(code, metatx.NameOf(tx), "")
 
-	txIndex := byte(0)
 	switch tx.(type) {
-	case *Transfer:
-		bin = buildBinary(code, "Transfer", "")
-		txIndex, err = GetID(tx)
-		if err != nil {
-			return nil, err
-		}
-		nower, _ = vm.NewCachingNow(vm.NewTimestamp(ts))
 	default:
-		return nil, errors.New("unhandled transactable type")
+		// nothing as yet: the point of this switch is to override behaviors
+		// for transactions which may require it.
 	}
 	theVM, err := vm.New(*bin)
 	if err != nil {
