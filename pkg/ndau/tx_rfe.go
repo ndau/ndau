@@ -1,7 +1,6 @@
 package ndau
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -14,12 +13,12 @@ import (
 )
 
 // SignableBytes implements Transactable
-func (rfe *ReleaseFromEndowment) SignableBytes() []byte {
-	bytes := make([]byte, 8+8, rfe.Destination.Msgsize()+rfe.Qty.Msgsize()+rfe.TxFeeAcct.Msgsize()+8+8)
-	binary.BigEndian.PutUint64(bytes[0:8], rfe.Sequence)
-	binary.BigEndian.PutUint64(bytes[8:16], uint64(rfe.Qty))
-	bytes = append(bytes, []byte(rfe.Destination.String())...)
-	bytes = append(bytes, []byte(rfe.TxFeeAcct.String())...)
+func (tx *ReleaseFromEndowment) SignableBytes() []byte {
+	bytes := make([]byte, 0, tx.Destination.Msgsize()+tx.Qty.Msgsize()+tx.TxFeeAcct.Msgsize()+8+8)
+	bytes = appendUint64(bytes, tx.Sequence)
+	bytes = appendUint64(bytes, uint64(tx.Qty))
+	bytes = append(bytes, []byte(tx.Destination.String())...)
+	bytes = append(bytes, []byte(tx.TxFeeAcct.String())...)
 	return bytes
 }
 
@@ -32,34 +31,32 @@ func NewReleaseFromEndowment(
 	destination, txFeeAcct address.Address,
 	sequence uint64,
 	keys []signature.PrivateKey,
-) (rfe ReleaseFromEndowment) {
-	rfe = ReleaseFromEndowment{
+) (tx ReleaseFromEndowment) {
+	tx = ReleaseFromEndowment{
 		Qty:         qty,
 		Destination: destination,
 		TxFeeAcct:   txFeeAcct,
 		Sequence:    sequence,
 	}
 	for _, key := range keys {
-		rfe.Signatures = append(rfe.Signatures, key.Sign(rfe.SignableBytes()))
+		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
 	}
-	return rfe
+	return tx
 }
 
 // Validate implements metatx.Transactable
-func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
+func (tx *ReleaseFromEndowment) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	if rfe.Qty <= 0 {
+	if tx.Qty <= 0 {
 		return errors.New("RFE qty may not be <= 0")
 	}
 
-	state := app.GetState().(*backing.State)
-	_, hasAcct, _, err := state.GetValidAccount(
-		rfe.TxFeeAcct,
-		app.blockTime,
-		rfe.Sequence,
-		rfe.SignableBytes(),
-		rfe.Signatures,
+	_, hasAcct, _, err := app.getTxAccount(
+		tx,
+		tx.TxFeeAcct,
+		tx.Sequence,
+		tx.Signatures,
 	)
 	if err != nil {
 		return err
@@ -76,10 +73,10 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 	}
 	// all signatures must be validated by keys in the rfeKeys list
 	valid := true
-	for _, sig := range rfe.Signatures {
+	for _, sig := range tx.Signatures {
 		match := false
 		for _, public := range rfeKeys {
-			if public.Verify(rfe.SignableBytes(), sig) {
+			if public.Verify(tx.SignableBytes(), sig) {
 				match = true
 				break
 			}
@@ -94,20 +91,20 @@ func (rfe *ReleaseFromEndowment) Validate(appI interface{}) error {
 }
 
 // Apply implements metatx.Transactable
-func (rfe *ReleaseFromEndowment) Apply(appI interface{}) error {
+func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		var err error
 		state := stateI.(*backing.State)
 
-		txAcct, _ := state.GetAccount(rfe.TxFeeAcct, app.blockTime)
-		txAcct.Sequence = rfe.Sequence
-		state.Accounts[rfe.TxFeeAcct.String()] = txAcct
+		txAcct, _ := state.GetAccount(tx.TxFeeAcct, app.blockTime)
+		txAcct.Sequence = tx.Sequence
+		state.Accounts[tx.TxFeeAcct.String()] = txAcct
 
-		acct, _ := state.GetAccount(rfe.Destination, app.blockTime)
-		acct.Balance, err = acct.Balance.Add(rfe.Qty)
+		acct, _ := state.GetAccount(tx.Destination, app.blockTime)
+		acct.Balance, err = acct.Balance.Add(tx.Qty)
 		if err == nil {
-			state.Accounts[rfe.Destination.String()] = acct
+			state.Accounts[tx.Destination.String()] = acct
 		}
 		return state, err
 	})

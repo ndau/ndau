@@ -1,7 +1,6 @@
 package ndau
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -13,18 +12,18 @@ import (
 )
 
 // SignableBytes implements Transactable
-func (ct *ChangeValidation) SignableBytes() []byte {
+func (tx *ChangeValidation) SignableBytes() []byte {
 	blen := 0
 	blen += address.AddrLength
-	for _, key := range ct.NewKeys {
+	for _, key := range tx.NewKeys {
 		blen += key.Size()
 	}
 	blen += 8
-	bytes := make([]byte, 8, blen)
+	bytes := make([]byte, 0, blen)
 
-	binary.BigEndian.PutUint64(bytes, ct.Sequence)
-	bytes = append(bytes, ct.Target.String()...)
-	for _, key := range ct.NewKeys {
+	bytes = appendUint64(bytes, tx.Sequence)
+	bytes = append(bytes, tx.Target.String()...)
+	for _, key := range tx.NewKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
 
@@ -38,37 +37,36 @@ func NewChangeValidation(
 	sequence uint64,
 	privates []signature.PrivateKey,
 ) ChangeValidation {
-	ct := ChangeValidation{
+	tx := ChangeValidation{
 		Target:   target,
 		NewKeys:  newKeys,
 		Sequence: sequence,
 	}
 	for _, private := range privates {
-		ct.Signatures = append(ct.Signatures, private.Sign(ct.SignableBytes()))
+		tx.Signatures = append(tx.Signatures, private.Sign(tx.SignableBytes()))
 	}
-	return ct
+	return tx
 }
 
 // Validate implements metatx.Transactable
-func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
-	ct.Target, err = address.Validate(ct.Target.String())
+func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
+	tx.Target, err = address.Validate(tx.Target.String())
 	if err != nil {
 		return
 	}
 
 	// business rule: there must be at least 1 and no more than a const
 	// transfer keys set in this tx
-	if len(ct.NewKeys) < 1 || len(ct.NewKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(ct.NewKeys))
+	if len(tx.NewKeys) < 1 || len(tx.NewKeys) > backing.MaxKeysInAccount {
+		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
 	}
 
 	app := appI.(*App)
-	_, _, _, err = app.GetState().(*backing.State).GetValidAccount(
-		ct.Target,
-		app.blockTime,
-		ct.Sequence,
-		ct.SignableBytes(),
-		ct.Signatures,
+	_, _, _, err = app.getTxAccount(
+		tx,
+		tx.Target,
+		tx.Sequence,
+		tx.Signatures,
 	)
 	if err != nil {
 		return err
@@ -78,19 +76,19 @@ func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
 	// we need to generate addresses for the signing key, to verify it matches
 	// the actual ownership key, if used, and for the new transfer key,
 	// to ensure it's not equal to the actual ownership key
-	kind := address.Kind(string(ct.Target.String()[2]))
+	kind := address.Kind(string(tx.Target.String()[2]))
 	if !address.IsValidKind(kind) {
 		return fmt.Errorf("Target has invalid address kind: %s", kind)
 	}
 
 	// per-key validation
-	for _, tk := range ct.NewKeys {
+	for _, tk := range tx.NewKeys {
 		// new transfer key must not equal ownership key
 		ntAddr, err := address.Generate(kind, tk.Bytes())
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate address from new transfer key")
 		}
-		if ct.Target.String() == ntAddr.String() {
+		if tx.Target.String() == ntAddr.String() {
 			return fmt.Errorf("New transfer key must not equal ownership key")
 		}
 	}
@@ -99,20 +97,20 @@ func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (ct *ChangeValidation) Apply(appI interface{}) error {
+func (tx *ChangeValidation) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
-		ad, hasAd := state.GetAccount(ct.Target, app.blockTime)
+		ad, hasAd := state.GetAccount(tx.Target, app.blockTime)
 		if !hasAd {
 			ad = backing.NewAccountData(app.blockTime)
 		}
-		ad.Sequence = ct.Sequence
+		ad.Sequence = tx.Sequence
 
-		ad.TransferKeys = ct.NewKeys
+		ad.TransferKeys = tx.NewKeys
 
-		state.Accounts[ct.Target.String()] = ad
+		state.Accounts[tx.Target.String()] = ad
 		return state, nil
 	})
 }

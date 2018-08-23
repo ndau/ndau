@@ -1,7 +1,6 @@
 package ndau
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -18,32 +17,30 @@ import (
 //
 // Most users will never need this.
 func NewCreditEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *CreditEAI {
-	c := &CreditEAI{Node: node, Sequence: sequence}
+	tx := &CreditEAI{Node: node, Sequence: sequence}
 	for _, key := range keys {
-		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
+		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
 	}
-	return c
+	return tx
 }
 
 // SignableBytes implements Transactable
-func (c *CreditEAI) SignableBytes() []byte {
-	bytes := make([]byte, 8, 8+len(c.Node.String()))
-	binary.BigEndian.PutUint64(bytes, c.Sequence)
-	bytes = append(bytes, c.Node.String()...)
+func (tx *CreditEAI) SignableBytes() []byte {
+	bytes := make([]byte, 0, 8+len(tx.Node.String()))
+	bytes = appendUint64(bytes, tx.Sequence)
+	bytes = append(bytes, tx.Node.String()...)
 	return bytes
 }
 
 // Validate implements metatx.Transactable
-func (c *CreditEAI) Validate(appI interface{}) error {
+func (tx *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
-	state := app.GetState().(*backing.State)
 
-	_, hasNode, _, err := state.GetValidAccount(
-		c.Node,
-		app.blockTime,
-		c.Sequence,
-		c.SignableBytes(),
-		c.Signatures,
+	_, hasNode, _, err := app.getTxAccount(
+		tx,
+		tx.Node,
+		tx.Sequence,
+		tx.Signatures,
 	)
 	if err != nil {
 		return err
@@ -57,7 +54,7 @@ func (c *CreditEAI) Validate(appI interface{}) error {
 }
 
 // Apply implements metatx.Transactable
-func (c *CreditEAI) Apply(appI interface{}) error {
+func (tx *CreditEAI) Apply(appI interface{}) error {
 	app := appI.(*App)
 	unlockedTable := new(eai.RateTable)
 	err := app.System(sv.UnlockedRateTableName, unlockedTable)
@@ -72,11 +69,11 @@ func (c *CreditEAI) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		nodeData, _ := state.GetAccount(c.Node, app.blockTime)
-		nodeData.Sequence = c.Sequence
-		state.Accounts[c.Node.String()] = nodeData
+		nodeData, _ := state.GetAccount(tx.Node, app.blockTime)
+		nodeData.Sequence = tx.Sequence
+		state.Accounts[tx.Node.String()] = nodeData
 
-		delegatedAccounts := state.Delegates[c.Node.String()]
+		delegatedAccounts := state.Delegates[tx.Node.String()]
 		var errorList []error
 		for accountAddrS := range delegatedAccounts {
 			accountAddr, err := address.Validate(accountAddrS)
@@ -94,7 +91,7 @@ func (c *CreditEAI) Apply(appI interface{}) error {
 			logger := app.GetLogger().WithFields(log.Fields{
 				"tx":            "CreditEAI",
 				"acct":          accountAddr,
-				"node":          c.Node.String(),
+				"node":          tx.Node.String(),
 				"acctData":      acctData,
 				"blockTime":     app.blockTime,
 				"unlockedTable": unlockedTable,
@@ -159,7 +156,7 @@ func (c *CreditEAI) Apply(appI interface{}) error {
 			state.Accounts[accountAddr.String()] = acctData
 		}
 		if len(errorList) > 0 {
-			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", c.Node.String())
+			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
 			for idx, err := range errorList {
 				if idx != 0 {
 					errStr += ", "
