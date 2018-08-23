@@ -193,6 +193,7 @@ type AccountData struct {
 	Sequence            uint64
 	Settlements         []Settlement       `chain:"."`
 	SettlementSettings  SettlementSettings `chain:"."`
+	ValidationScript    []byte             `chain:"69,Acct_ValidationScript"`
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
