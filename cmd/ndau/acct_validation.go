@@ -50,7 +50,6 @@ func getReset(verbose *bool, name *string) func(*cli.Cmd) {
 			cv := ndau.NewChangeValidation(
 				acct.Address,
 				[]signature.PublicKey{public},
-				[]byte{},
 				sequence(conf, acct.Address),
 				acct.TransferPrivate(),
 			)
@@ -88,7 +87,6 @@ func getAdd(verbose *bool, name *string) func(*cli.Cmd) {
 			cv := ndau.NewChangeValidation(
 				acct.Address,
 				append(acct.TransferPublic(), public),
-				[]byte{},
 				sequence(conf, acct.Address),
 				acct.TransferPrivate(),
 			)

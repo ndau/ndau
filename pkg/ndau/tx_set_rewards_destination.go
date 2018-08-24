@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -12,36 +13,37 @@ import (
 
 // NewSetRewardsDestination creates a new SetRewardsDestination transaction
 func NewSetRewardsDestination(account, destination address.Address, sequence uint64, keys []signature.PrivateKey) *SetRewardsDestination {
-	tx := &SetRewardsDestination{
+	c := &SetRewardsDestination{
 		Source:      account,
 		Destination: destination,
 		Sequence:    sequence,
 	}
 	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
+		c.Signatures = append(c.Signatures, key.Sign(c.SignableBytes()))
 	}
-	return tx
+	return c
 }
 
 // SignableBytes implements Transactable
-func (tx *SetRewardsDestination) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Source.String())+len(tx.Destination.String()))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.Destination.String()...)
+func (c *SetRewardsDestination) SignableBytes() []byte {
+	bytes := make([]byte, 8, 8+len(c.Source.String())+len(c.Destination.String()))
+	binary.BigEndian.PutUint64(bytes[0:8], c.Sequence)
+	bytes = append(bytes, c.Source.String()...)
+	bytes = append(bytes, c.Destination.String()...)
 	return bytes
 }
 
 // Validate implements metatx.Transactable
-func (tx *SetRewardsDestination) Validate(appI interface{}) error {
+func (c *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	accountData, hasAccount, _, err := app.getTxAccount(
-		tx,
-		tx.Source,
-		tx.Sequence,
-		tx.Signatures,
+	accountData, hasAccount, err := state.GetValidAccount(
+		c.Source,
+		app.blockTime,
+		c.Sequence,
+		c.SignableBytes(),
+		c.Signatures,
 	)
 	if err != nil {
 		return err
@@ -49,7 +51,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	if !hasAccount {
 		return errors.New("No such account")
 	}
-	_, err = address.Validate(tx.Destination.String())
+	_, err = address.Validate(c.Destination.String())
 	if err != nil {
 		return errors.Wrap(err, "Destination")
 	}
@@ -62,9 +64,9 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	// if dest is the same as source, we're resetting the EAI to accumulate
 	// in its account of origin.
 	// neither destination rule appllies in that case.
-	if tx.Destination.String() != tx.Source.String() {
+	if c.Destination.String() != c.Source.String() {
 		// dest account must not be sending rewards to any other account
-		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
+		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
 		if targetData.RewardsTarget != nil {
 			return fmt.Errorf("Accounts may not both send and receive rewards. Destination sends rewards to %s", *targetData.RewardsTarget)
 		}
@@ -79,23 +81,23 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 }
 
 // Apply implements metatx.Transactable
-func (tx *SetRewardsDestination) Apply(appI interface{}) error {
+func (c *SetRewardsDestination) Apply(appI interface{}) error {
 	app := appI.(*App)
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(tx.Source, app.blockTime)
-		accountData.Sequence = tx.Sequence
+		accountData, _ := state.GetAccount(c.Source, app.blockTime)
+		accountData.Sequence = c.Sequence
 
-		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
+		targetData, _ := state.GetAccount(c.Destination, app.blockTime)
 
 		// update inbound of rewards target
-		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != tx.Source.String() {
+		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != c.Source.String() {
 			oldTargetData, _ := state.GetAccount(*accountData.RewardsTarget, app.blockTime)
 			// remove account from current target inbounds list
 			inbounds := make([]address.Address, 0, len(oldTargetData.IncomingRewardsFrom)-1)
 			for _, addr := range oldTargetData.IncomingRewardsFrom {
-				if tx.Source.String() != addr.String() {
+				if c.Source.String() != addr.String() {
 					inbounds = append(inbounds, addr)
 				}
 			}
@@ -103,15 +105,15 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 			state.Accounts[accountData.RewardsTarget.String()] = oldTargetData
 		}
 
-		if tx.Source.String() == tx.Destination.String() {
+		if c.Source.String() == c.Destination.String() {
 			accountData.RewardsTarget = nil
 		} else {
-			accountData.RewardsTarget = &tx.Destination
-			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, tx.Source)
-			state.Accounts[tx.Destination.String()] = targetData
+			accountData.RewardsTarget = &c.Destination
+			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, c.Source)
+			state.Accounts[c.Destination.String()] = targetData
 		}
 
-		state.Accounts[tx.Source.String()] = accountData
+		state.Accounts[c.Source.String()] = accountData
 		return state, nil
 	})
 }
