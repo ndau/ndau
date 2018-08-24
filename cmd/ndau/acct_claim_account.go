@@ -35,7 +35,6 @@ func getAccountClaim(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				acct.Ownership.Public,
 				[]signature.PublicKey{public},
-				[]byte{},
 				sequence(conf, acct.Address),
 				acct.Ownership.Private,
 			)

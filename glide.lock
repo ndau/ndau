@@ -1,5 +1,5 @@
-hash: 51eb4ef1e6fb6343b461f36627ef6726d8a648cfd60c0f94338cae8df53738a9
-updated: 2018-08-24T10:00:29.279617-04:00
+hash: f572f462e11af3f41c877fa925a8c59d7b5f10733edeeba7e4d893563f8aa139
+updated: 2018-08-21T16:26:42.925152-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: cf65abf76f2fcf683caaae2893bac6f237639eaa
+  version: f26268b77ea9619d95b1d04b6f3e3c5a03b61110
   subpackages:
   - aws
   - aws/awserr
@@ -80,7 +80,7 @@ imports:
   subpackages:
   - quantile
 - name: github.com/btcsuite/btcd
-  version: 79e00513b1011888b1e675157ab89f527f901cae
+  version: f899737d7f2764dc13e4d01ff00108ec58f766a9
   subpackages:
   - btcec
 - name: github.com/BurntSushi/toml
@@ -110,7 +110,7 @@ imports:
 - name: github.com/go-ini/ini
   version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
 - name: github.com/go-kit/kit
-  version: 4914a6960de6e1a81504d2b8a9dd9f207d20c757
+  version: 9bf23341289dc5ecc1c4bb9dbad72265fbdfdd94
   subpackages:
   - log
   - log/level
@@ -147,7 +147,7 @@ imports:
 - name: github.com/google/go-cmp
   version: 3af367b6b30c263d47e8895973edcca9a49cf029
 - name: github.com/gorilla/websocket
-  version: b378caee5b2a673abe3897c40fde529bff7b986e
+  version: 3ff3320c2a1756a3691521efc290b4701575147c
 - name: github.com/honeycombio/libhoney-go
   version: 741c87cf6e228e5c509705847b67a3245bc79b8b
 - name: github.com/jawher/mow.cli
@@ -180,12 +180,6 @@ imports:
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
   - pbutil
-- name: github.com/oneiro-ndev/chaincode
-  version: b0412f084247cb4a9258d24477bfd42aa458f47a
-  repo: git@github.com:oneiro-ndev/chaincode.git
-  subpackages:
-  - pkg/chain
-  - pkg/vm
 - name: github.com/oneiro-ndev/chaos
   version: 365f6f25e2b7e634d5b5b7eae67d4ea64e11ae28
   repo: git@github.com:oneiro-ndev/chaos.git
@@ -196,7 +190,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: bf4d5637e3576f9525e8aecefbaa12a769676ef5
+  version: 6b81a20b08efc805e54d2034132fc95fdc6db791
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -247,7 +241,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 4eb539fa85a2688054063c3b01d9e86eb01bf999
+  version: 29e6500a95d6ab373cae935d8615527ca38be74f
   subpackages:
   - prometheus
   - prometheus/promhttp
@@ -374,7 +368,7 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: faa378e6dbaed88bd8100f8bcf09939375c6e8fa
+  version: 922f4815f713f213882e8ef45e0d315b164d705c
   subpackages:
   - context
   - http/httpguts
@@ -385,7 +379,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 11551d06cbcc94edc80a0facaccbda56473c19c1
+  version: 3b58ed4ad3395d483fc92d5d14123ce2c3581fec
   subpackages:
   - unix
   - windows
@@ -401,7 +395,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: e00d24941bcee35dd163f4377d5371349f14baaf
+  version: 9907ae0e57ce159e835381ed54eb271206bf7b12
   subpackages:
   - balancer
   - balancer/base

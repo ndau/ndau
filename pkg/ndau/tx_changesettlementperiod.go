@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"encoding/binary"
+
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -10,11 +12,11 @@ import (
 )
 
 // SignableBytes implements Transactable
-func (tx *ChangeSettlementPeriod) SignableBytes() []byte {
-	bytes := make([]byte, 0, len(tx.Target.String())+8+8)
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = appendUint64(bytes, uint64(tx.Period))
-	bytes = append(bytes, []byte(tx.Target.String())...)
+func (cep *ChangeSettlementPeriod) SignableBytes() []byte {
+	bytes := make([]byte, 8+8, len(cep.Target.String())+8+8)
+	binary.BigEndian.PutUint64(bytes[0:8], cep.Sequence)
+	binary.BigEndian.PutUint64(bytes[8:16], uint64(cep.Period))
+	bytes = append(bytes, []byte(cep.Target.String())...)
 	return bytes
 }
 
@@ -25,30 +27,31 @@ func NewChangeSettlementPeriod(
 	sequence uint64,
 	keys []signature.PrivateKey,
 ) (ChangeSettlementPeriod, error) {
-	tx := ChangeSettlementPeriod{
+	cep := ChangeSettlementPeriod{
 		Target:   target,
 		Period:   newPeriod,
 		Sequence: sequence,
 	}
-	sb := tx.SignableBytes()
+	sb := cep.SignableBytes()
 	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(sb))
+		cep.Signatures = append(cep.Signatures, key.Sign(sb))
 	}
-	return tx, nil
+	return cep, nil
 }
 
 // Validate implements metatx.Transactable
-func (tx *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
+func (cep *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	app := appI.(*App)
 
-	if tx.Period < 0 {
+	if cep.Period < 0 {
 		return errors.New("Negative settlement period")
 	}
-	_, _, _, err = app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
+	_, _, err = app.GetState().(*backing.State).GetValidAccount(
+		cep.Target,
+		app.blockTime,
+		cep.Sequence,
+		cep.SignableBytes(),
+		cep.Signatures,
 	)
 	if err != nil {
 		return err
@@ -58,19 +61,19 @@ func (tx *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (tx *ChangeSettlementPeriod) Apply(appI interface{}) error {
+func (cep *ChangeSettlementPeriod) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		acct, _ := state.GetAccount(tx.Target, app.blockTime)
+		acct, _ := state.GetAccount(cep.Target, app.blockTime)
 		acct.UpdateSettlements(app.blockTime)
-		acct.Sequence = tx.Sequence
+		acct.Sequence = cep.Sequence
 
 		ca := app.blockTime.Add(acct.SettlementSettings.Period)
 		acct.SettlementSettings.ChangesAt = &ca
-		acct.SettlementSettings.Next = &tx.Period
+		acct.SettlementSettings.Next = &cep.Period
 
-		state.Accounts[tx.Target.String()] = acct
+		state.Accounts[cep.Target.String()] = acct
 		return state, nil
 	})
 }
