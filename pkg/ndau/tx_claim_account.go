@@ -11,20 +11,12 @@ import (
 )
 
 // NewClaimAccount creates a ClaimAccount transaction
-func NewClaimAccount(
-	account address.Address,
-	ownership signature.PublicKey,
-	transferKeys []signature.PublicKey,
-	validationScript []byte,
-	sequence uint64,
-	ownerPrivate signature.PrivateKey,
-) ClaimAccount {
+func NewClaimAccount(account address.Address, ownership signature.PublicKey, transferKeys []signature.PublicKey, sequence uint64, ownerPrivate signature.PrivateKey) ClaimAccount {
 	ca := ClaimAccount{
-		Target:           account,
-		Ownership:        ownership,
-		TransferKeys:     transferKeys,
-		ValidationScript: validationScript,
-		Sequence:         sequence,
+		Target:       account,
+		Ownership:    ownership,
+		TransferKeys: transferKeys,
+		Sequence:     sequence,
 	}
 	ca.Signature = ownerPrivate.Sign(ca.SignableBytes())
 	return ca
@@ -38,8 +30,7 @@ func (tx *ClaimAccount) SignableBytes() []byte {
 	for _, key := range tx.TransferKeys {
 		bnum += key.Size()
 	}
-	bnum += len(tx.ValidationScript)
-	bnum += 8 // sequence
+	bnum += 8
 
 	bytes := make([]byte, 0, bnum)
 
@@ -48,7 +39,6 @@ func (tx *ClaimAccount) SignableBytes() []byte {
 	for _, key := range tx.TransferKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
-	bytes = append(bytes, tx.ValidationScript...)
 	bytes = appendUint64(bytes, tx.Sequence)
 
 	return bytes
@@ -97,15 +87,12 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		}
 	}
 
-	if len(tx.ValidationScript) > 0 && !IsChaincode(tx.ValidationScript) {
-		return errors.New("Validation script must be chaincode")
-	}
-
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
 	// normally, we'd use GetValidAccount, but we can't do that here:
-	// we have unusual requirements
+	// sequence validation is unusual, and we explicitly require no transfer
+	// keys to be set
 	acct, _ := state.GetAccount(
 		tx.Target,
 		app.blockTime,
@@ -130,7 +117,6 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 
 		acct, _ := st.GetAccount(tx.Target, app.blockTime)
 		acct.TransferKeys = tx.TransferKeys
-		acct.ValidationScript = tx.ValidationScript
 		st.Accounts[tx.Target.String()] = acct
 		acct.Sequence = tx.Sequence
 

@@ -6,7 +6,6 @@ import (
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
@@ -161,14 +160,13 @@ func (s *State) GetAccount(address address.Address, blockTime math.Timestamp) (A
 // If the account does not already exist, a fresh one is created
 //
 // This is a sugar function to simplify some common validation requirements.
-func (s *State) GetValidAccount(address address.Address, blockTime math.Timestamp, sequence uint64, signableBytes []byte, signatures []signature.Signature) (AccountData, bool, *bitset256.Bitset256, error) {
+func (s *State) GetValidAccount(address address.Address, blockTime math.Timestamp, sequence uint64, signableBytes []byte, signatures []signature.Signature) (AccountData, bool, error) {
 	ad, exists := s.GetAccount(address, blockTime)
 	if sequence <= ad.Sequence {
-		return ad, exists, nil, errors.New("Sequence too low")
+		return ad, exists, errors.New("Sequence too low")
 	}
-	validates, sigset := ad.ValidateSignatures(signableBytes, signatures)
-	if !validates {
-		return ad, exists, sigset, errors.New("Invalid signature(s)")
+	if validates, _ := ad.ValidateSignatures(signableBytes, signatures); !validates {
+		return ad, exists, errors.New("Invalid signature(s)")
 	}
-	return ad, exists, sigset, nil
+	return ad, exists, nil
 }

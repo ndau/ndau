@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -12,22 +13,20 @@ import (
 )
 
 // SignableBytes implements Transactable
-func (tx *ChangeValidation) SignableBytes() []byte {
+func (ct *ChangeValidation) SignableBytes() []byte {
 	blen := 0
 	blen += address.AddrLength
-	for _, key := range tx.NewKeys {
+	for _, key := range ct.NewKeys {
 		blen += key.Size()
 	}
-	blen += len(tx.ValidationScript)
-	blen += 8 // sequence
-	bytes := make([]byte, 0, blen)
+	blen += 8
+	bytes := make([]byte, 8, blen)
 
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Target.String()...)
-	for _, key := range tx.NewKeys {
+	binary.BigEndian.PutUint64(bytes, ct.Sequence)
+	bytes = append(bytes, ct.Target.String()...)
+	for _, key := range ct.NewKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
-	bytes = append(bytes, tx.ValidationScript...)
 
 	return bytes
 }
@@ -36,45 +35,40 @@ func (tx *ChangeValidation) SignableBytes() []byte {
 func NewChangeValidation(
 	target address.Address,
 	newKeys []signature.PublicKey,
-	validationScript []byte,
 	sequence uint64,
 	privates []signature.PrivateKey,
 ) ChangeValidation {
-	tx := ChangeValidation{
-		Target:           target,
-		NewKeys:          newKeys,
-		ValidationScript: validationScript,
-		Sequence:         sequence,
+	ct := ChangeValidation{
+		Target:   target,
+		NewKeys:  newKeys,
+		Sequence: sequence,
 	}
 	for _, private := range privates {
-		tx.Signatures = append(tx.Signatures, private.Sign(tx.SignableBytes()))
+		ct.Signatures = append(ct.Signatures, private.Sign(ct.SignableBytes()))
 	}
-	return tx
+	return ct
 }
 
 // Validate implements metatx.Transactable
-func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
-	tx.Target, err = address.Validate(tx.Target.String())
+func (ct *ChangeValidation) Validate(appI interface{}) (err error) {
+	ct.Target, err = address.Validate(ct.Target.String())
 	if err != nil {
 		return
 	}
 
 	// business rule: there must be at least 1 and no more than a const
 	// transfer keys set in this tx
-	if len(tx.NewKeys) < 1 || len(tx.NewKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
-	}
-
-	if len(tx.ValidationScript) > 0 && !IsChaincode(tx.ValidationScript) {
-		return errors.New("Validation script must be chaincode")
+	if len(ct.NewKeys) < 1 || len(ct.NewKeys) > backing.MaxKeysInAccount {
+		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(ct.NewKeys))
 	}
 
 	app := appI.(*App)
-	_, _, _, err = app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
+	_, _, err = app.GetState().(*backing.State).GetValidAccount(
+		ct.Target,
+		app.blockTime,
+		ct.Sequence,
+		ct.SignableBytes(),
+		ct.Signatures,
 	)
 	if err != nil {
 		return err
@@ -84,19 +78,19 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// we need to generate addresses for the signing key, to verify it matches
 	// the actual ownership key, if used, and for the new transfer key,
 	// to ensure it's not equal to the actual ownership key
-	kind := address.Kind(string(tx.Target.String()[2]))
+	kind := address.Kind(string(ct.Target.String()[2]))
 	if !address.IsValidKind(kind) {
 		return fmt.Errorf("Target has invalid address kind: %s", kind)
 	}
 
 	// per-key validation
-	for _, tk := range tx.NewKeys {
+	for _, tk := range ct.NewKeys {
 		// new transfer key must not equal ownership key
 		ntAddr, err := address.Generate(kind, tk.Bytes())
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate address from new transfer key")
 		}
-		if tx.Target.String() == ntAddr.String() {
+		if ct.Target.String() == ntAddr.String() {
 			return fmt.Errorf("New transfer key must not equal ownership key")
 		}
 	}
@@ -105,21 +99,20 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (tx *ChangeValidation) Apply(appI interface{}) error {
+func (ct *ChangeValidation) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
-		ad, hasAd := state.GetAccount(tx.Target, app.blockTime)
+		ad, hasAd := state.GetAccount(ct.Target, app.blockTime)
 		if !hasAd {
 			ad = backing.NewAccountData(app.blockTime)
 		}
-		ad.Sequence = tx.Sequence
+		ad.Sequence = ct.Sequence
 
-		ad.TransferKeys = tx.NewKeys
-		ad.ValidationScript = tx.ValidationScript
+		ad.TransferKeys = ct.NewKeys
 
-		state.Accounts[tx.Target.String()] = ad
+		state.Accounts[ct.Target.String()] = ad
 		return state, nil
 	})
 }

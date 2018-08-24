@@ -27,6 +27,12 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
+// GetID returns the ID associated with a transaction
+func GetID(tx metatx.Transactable) (byte, error) {
+	txid, err := metatx.TxIDOf(tx, TxIDs)
+	return byte(txid), err
+}
+
 // A GTValidatorChange is a Globally Trusted Validator Change.
 //
 // No attempt is made to validate the validator change;
@@ -50,11 +56,11 @@ var _ metatx.Transactable = (*GTValidatorChange)(nil)
 
 // A Transfer is the fundamental transaction of the Ndau chain.
 type Transfer struct {
-	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Source      address.Address `chain:"1,Tx_Source"`
+	Destination address.Address `chain:"2,Tx_Destination"`
+	Qty         math.Ndau       `chain:"11,Tx_Quantity"`
+	Sequence    uint64
+	Signatures  []signature.Signature
 }
 
 // static assert that GTValidatorChange is metatx.Transactable
@@ -62,11 +68,10 @@ var _ metatx.Transactable = (*Transfer)(nil)
 
 // A ChangeValidation transaction is used to set transfer keys
 type ChangeValidation struct {
-	Target           address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	NewKeys          []signature.PublicKey `msg:"key" chain:"31,Tx_NewKeys"`
-	ValidationScript []byte                `msg:"val" chain:"32,Tx_ValidationScript"`
-	Sequence         uint64                `msg:"seq"`
-	Signatures       []signature.Signature `msg:"sig"`
+	Target     address.Address       `chain:"3,Tx_Target"`
+	NewKeys    []signature.PublicKey `chain:"31,Tx_NewKeys"`
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*ChangeValidation)(nil)
@@ -77,11 +82,11 @@ var _ metatx.Transactable = (*ChangeValidation)(nil)
 // It must be signed with the private key corresponding to one of the public
 // keys listed in the system variable `ReleaseFromEndowmentKeys`.
 type ReleaseFromEndowment struct {
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	TxFeeAcct   address.Address       `msg:"fee" chain:"5,Tx_FeeAccount"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Destination address.Address `chain:"2,Tx_Destination"`
+	Qty         math.Ndau       `chain:"11,Tx_Quantity"`
+	TxFeeAcct   address.Address `chain:"5,Tx_FeeAccount"`
+	Sequence    uint64
+	Signatures  []signature.Signature
 }
 
 var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
@@ -89,10 +94,10 @@ var _ metatx.Transactable = (*ReleaseFromEndowment)(nil)
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
 type ChangeSettlementPeriod struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Period     math.Duration         `msg:"per" chain:"21,Tx_Period"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address `chain:"3,Tx_Target"`
+	Period     math.Duration   `chain:"21,Tx_Period"`
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
@@ -102,10 +107,10 @@ var _ metatx.Transactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address `chain:"3,Tx_Target"`
+	Node       address.Address `chain:"4,Tx_Node"`
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Delegate)(nil)
@@ -124,9 +129,9 @@ var _ metatx.Transactable = (*Delegate)(nil)
 //   2. The originating node can't know ahead of time what the official block
 //      time will be.
 type CreditEAI struct {
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Node       address.Address `chain:"4,Tx_Node"`
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*CreditEAI)(nil)
@@ -135,10 +140,10 @@ var _ metatx.Transactable = (*CreditEAI)(nil)
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Period     math.Duration         `msg:"per" chain:"21,Tx_Period"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address `chain:"3,Tx_Target"`
+	Period     math.Duration   `chain:"21,Tx_Period"`
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Lock)(nil)
@@ -148,9 +153,9 @@ var _ metatx.Transactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address `chain:"3,Tx_Target"`
+	Sequence   uint64
+	Signatures []signature.Signature
 }
 
 var _ metatx.Transactable = (*Notify)(nil)
@@ -160,10 +165,10 @@ var _ metatx.Transactable = (*Notify)(nil)
 // When the rewards target is empty, EAI and other rewards are deposited to the
 // origin account. Otherwise, they are deposited to the specified destination.
 type SetRewardsDestination struct {
-	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Source      address.Address `chain:"1,Tx_Source"`
+	Destination address.Address `chain:"2,Tx_Destination"`
+	Sequence    uint64
+	Signatures  []signature.Signature
 }
 
 var _ metatx.Transactable = (*SetRewardsDestination)(nil)
@@ -172,12 +177,11 @@ var _ metatx.Transactable = (*SetRewardsDestination)(nil)
 //
 // It is the only type of transaction which may be signed with the ownership key.
 type ClaimAccount struct {
-	Target           address.Address       `msg:"tgt"`
-	Ownership        signature.PublicKey   `msg:"own"`
-	TransferKeys     []signature.PublicKey `msg:"key"`
-	ValidationScript []byte                `msg:"val"`
-	Sequence         uint64                `msg:"seq"`
-	Signature        signature.Signature   `msg:"sig"`
+	Target       address.Address
+	Ownership    signature.PublicKey
+	TransferKeys []signature.PublicKey
+	Sequence     uint64
+	Signature    signature.Signature
 }
 
 var _ metatx.Transactable = (*ClaimAccount)(nil)
