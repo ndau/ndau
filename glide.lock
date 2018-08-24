@@ -1,5 +1,5 @@
-hash: 57c955d8487e2ca100fadbb321f385c3a711e42e702bc656f3d2f5c3a8720a33
-updated: 2018-08-23T14:09:39.800961-04:00
+hash: 51eb4ef1e6fb6343b461f36627ef6726d8a648cfd60c0f94338cae8df53738a9
+updated: 2018-08-24T10:00:29.279617-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: f26268b77ea9619d95b1d04b6f3e3c5a03b61110
+  version: cf65abf76f2fcf683caaae2893bac6f237639eaa
   subpackages:
   - aws
   - aws/awserr
@@ -80,7 +80,7 @@ imports:
   subpackages:
   - quantile
 - name: github.com/btcsuite/btcd
-  version: f899737d7f2764dc13e4d01ff00108ec58f766a9
+  version: 79e00513b1011888b1e675157ab89f527f901cae
   subpackages:
   - btcec
 - name: github.com/BurntSushi/toml
@@ -110,7 +110,7 @@ imports:
 - name: github.com/go-ini/ini
   version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
 - name: github.com/go-kit/kit
-  version: 9bf23341289dc5ecc1c4bb9dbad72265fbdfdd94
+  version: 4914a6960de6e1a81504d2b8a9dd9f207d20c757
   subpackages:
   - log
   - log/level
@@ -147,7 +147,7 @@ imports:
 - name: github.com/google/go-cmp
   version: 3af367b6b30c263d47e8895973edcca9a49cf029
 - name: github.com/gorilla/websocket
-  version: 3ff3320c2a1756a3691521efc290b4701575147c
+  version: b378caee5b2a673abe3897c40fde529bff7b986e
 - name: github.com/honeycombio/libhoney-go
   version: 741c87cf6e228e5c509705847b67a3245bc79b8b
 - name: github.com/jawher/mow.cli
@@ -181,7 +181,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaincode
-  version: d3bb4788f7b7eb757a0fa98588bd11e82d04d0ed
+  version: b0412f084247cb4a9258d24477bfd42aa458f47a
   repo: git@github.com:oneiro-ndev/chaincode.git
   subpackages:
   - pkg/chain
@@ -247,7 +247,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 29e6500a95d6ab373cae935d8615527ca38be74f
+  version: 4eb539fa85a2688054063c3b01d9e86eb01bf999
   subpackages:
   - prometheus
   - prometheus/promhttp
@@ -374,7 +374,7 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: 922f4815f713f213882e8ef45e0d315b164d705c
+  version: faa378e6dbaed88bd8100f8bcf09939375c6e8fa
   subpackages:
   - context
   - http/httpguts
@@ -385,7 +385,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 3b58ed4ad3395d483fc92d5d14123ce2c3581fec
+  version: 11551d06cbcc94edc80a0facaccbda56473c19c1
   subpackages:
   - unix
   - windows
@@ -401,7 +401,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 9907ae0e57ce159e835381ed54eb271206bf7b12
+  version: e00d24941bcee35dd163f4377d5371349f14baaf
   subpackages:
   - balancer
   - balancer/base
