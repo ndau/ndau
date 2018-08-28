@@ -235,6 +235,7 @@ type nomsAccountData struct {
 	Sequence            util.Int
 	Settlements         []Settlement
 	SettlementSettings  SettlementSettings
+	ValidationScript    nt.Blob
 }
 
 func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
@@ -273,6 +274,7 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 	if nad.HasStake {
 		nad.Stake = *ad.Stake
 	}
+	nad.ValidationScript = util.Blob(vrw, ad.ValidationScript)
 	return nad, nil
 }
 
@@ -336,5 +338,6 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	ad.Sequence = uint64(n.Sequence)
 	ad.Settlements = n.Settlements
 	ad.SettlementSettings = n.SettlementSettings
-	return nil
+	ad.ValidationScript, err = util.Unblob(n.ValidationScript)
+	return err
 }

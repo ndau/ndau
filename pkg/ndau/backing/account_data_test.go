@@ -75,6 +75,11 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					require.Equal(t, account.Sequence, recoveredAccount.Sequence)
 					require.Equal(t, account.Settlements, recoveredAccount.Settlements)
 					require.Equal(t, account.SettlementSettings, recoveredAccount.SettlementSettings)
+					// validaation scripts of nil or 0 length are equivalent
+					require.Equal(t, len(account.ValidationScript), len(recoveredAccount.ValidationScript))
+					if len(account.ValidationScript) > 0 {
+						require.Equal(t, account.ValidationScript, recoveredAccount.ValidationScript)
+					}
 				})
 			}
 		}
@@ -146,6 +151,10 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	qtyEscrows := rand.Intn(10)
 	for i := 0; i < qtyEscrows; i++ {
 		ad.Settlements = append(ad.Settlements, generateEscrow())
+	}
+	if randBool() {
+		ad.ValidationScript = make([]byte, 20)
+		rand.Read(ad.ValidationScript)
 	}
 	return ad, name
 }
