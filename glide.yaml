@@ -7,6 +7,9 @@ import:
   repo: https://github.com/oneiro-ndev/noms.git
 - package: github.com/google/go-cmp
   version: ^0.2.0
+- package: github.com/oneiro-ndev/chaincode
+  version: ^0.9
+  repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
   version: ~v0.10
   repo: git@github.com:oneiro-ndev/chaos.git

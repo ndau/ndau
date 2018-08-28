@@ -89,11 +89,10 @@ func (t *Transfer) Validate(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, _, err := state.GetValidAccount(
+	source, _, _, err := app.getTxAccount(
+		t,
 		t.Source,
-		app.blockTime,
 		t.Sequence,
-		t.SignableBytes(),
 		t.Signatures,
 	)
 	if err != nil {
