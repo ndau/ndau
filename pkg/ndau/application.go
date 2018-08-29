@@ -9,11 +9,15 @@ import (
 	"time"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/types"
@@ -128,4 +132,39 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 	}).Info("ndaunode per block custom processing complete")
 
 	return response
+}
+
+// getTxAccount gets and validates an account for a transactable
+//
+// It returns a nil error if:
+//  - 1 of N signature validation passes
+//  - sequence number is high enough
+//  - validation script passes if present
+func (app *App) getTxAccount(tx metatx.Transactable, address address.Address, sequence uint64, signatures []signature.Signature) (backing.AccountData, bool, *bitset256.Bitset256, error) {
+	validateScript := func(acct backing.AccountData, sigset *bitset256.Bitset256) error {
+		if len(acct.ValidationScript) > 0 {
+			vm, err := BuildVMForTxValidation(acct.ValidationScript, acct, tx, sigset, app.blockTime)
+			if err != nil {
+				return errors.Wrap(err, "couldn't build vm for validation script")
+			}
+			err = vm.Run(false)
+			if err != nil {
+				return errors.Wrap(err, "validation script")
+			}
+			vmReturn, err := vm.Stack().PopAsInt64()
+			if err != nil {
+				return errors.Wrap(err, "validation script exited with non-numeric exit code")
+			}
+			if vmReturn != 0 {
+				return errors.New("validation script exited with non-0 exit code")
+			}
+		}
+		return nil
+	}
+
+	acct, exists, sigset, err := app.GetState().(*backing.State).GetValidAccount(address, app.blockTime, sequence, tx.SignableBytes(), signatures)
+	if err == nil {
+		err = validateScript(acct, sigset)
+	}
+	return acct, exists, sigset, err
 }
