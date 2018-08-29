@@ -93,3 +93,68 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 	err = theVM.Init(txIndex, acctStruct, txStruct, sigs)
 	return theVM, err
 }
+
+// BuildVMForTxFees accepts a transactable and builds a VM that it sets up to call the appropriate
+// handler for the given transaction type. All that needs to happen after this is to call Run().
+func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*vm.ChaincodeVM, error) {
+	txStruct, err := chain.ToValue(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
+	// if it has one, or the current time if it doesn't.
+	var nower vm.Nower
+
+	// Similarly, for transactions rand should return values that will be the same across all nodes.
+	// We're going to build a seed out of the hash of the SignableBytes of the tx.
+	randomer, err := chain.NewSeededRand(tx.SignableBytes())
+	if err != nil {
+		return nil, err
+	}
+	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	if err != nil {
+		return nil, err
+	}
+
+	txID, err := metatx.TxIDOf(tx, TxIDs)
+	if err != nil {
+		return nil, err
+	}
+	txIndex := byte(txID)
+
+	bin := buildBinary(code, metatx.NameOf(tx), "")
+
+	// in order to get an accourate count of the length of the transaction
+	// on the blockchain, we re-serialize it. This should run about as fast
+	// as SignableBytes, plus a delta for generating a UUID.
+	bytes, err := metatx.Marshal(tx, TxIDs)
+	if err != nil {
+		return nil, err
+	}
+	byteLen := vm.NewNumber(int64(len(bytes)))
+
+	switch tx.(type) {
+	default:
+		// nothing as yet: the point of this switch is to override behaviors
+		// for transactions which may require it.
+	}
+
+	theVM, err := vm.New(*bin)
+	if err != nil {
+		return nil, err
+	}
+
+	if nower != nil {
+		theVM.SetNow(nower)
+	}
+	if randomer != nil {
+		theVM.SetRand(randomer)
+	}
+
+	// tx fees are initialized to run the handler associated with the
+	// transaction in question, with the length of the full serialized
+	// transaction and the transaction struct on the stack
+	err = theVM.Init(txIndex, byteLen, txStruct)
+	return theVM, err
+}
