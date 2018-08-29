@@ -14,9 +14,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 13
+	// map header, size 14
 	// string "Balance"
-	o = append(o, 0x8d, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0x8e, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		return
@@ -133,6 +133,9 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	if err != nil {
 		return
 	}
+	// string "ValidationScript"
+	o = append(o, 0xb0, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74)
+	o = msgp.AppendBytes(o, z.ValidationScript)
 	return
 }
 
@@ -347,6 +350,11 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "ValidationScript":
+			z.ValidationScript, bts, err = msgp.ReadBytesBytes(bts, z.ValidationScript)
+			if err != nil {
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -396,7 +404,7 @@ func (z *AccountData) Msgsize() (s int) {
 	for za0003 := range z.Settlements {
 		s += 1 + 4 + z.Settlements[za0003].Qty.Msgsize() + 7 + z.Settlements[za0003].Expiry.Msgsize()
 	}
-	s += 19 + z.SettlementSettings.Msgsize()
+	s += 19 + z.SettlementSettings.Msgsize() + 17 + msgp.BytesPrefixSize + len(z.ValidationScript)
 	return
 }
 

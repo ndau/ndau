@@ -9,7 +9,7 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-func getLock(verbose *bool) func(*cli.Cmd) {
+func getLock(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = "NAME DURATION"
 
@@ -41,7 +41,7 @@ func getLock(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				duration,
 				sequence(conf, acct.Address),
-				acct.TransferPrivate(),
+				acct.TransferPrivateK(keys),
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)

@@ -9,19 +9,20 @@ import (
 func main() {
 	app := cli.App("ndau", "interact with the ndau chain")
 
-	app.Spec = "[-v]"
+	app.Spec = "[-v|-k]..."
 
 	var (
-		verbose = app.BoolOpt("v verbose", false, "Emit detailed results from the ndau chain if set")
+		verbose = app.BoolOpt("v verbose", false, "emit detailed results from the ndau chain if set")
+		keys    = app.IntOpt("k keys", 0, "bitset of keys to use in signature")
 	)
 
 	app.Command("conf", "perform initial configuration", getConf(verbose))
 
 	app.Command("conf-path", "show location of config file", confPath)
 
-	app.Command("account", "manage accounts", getAccount(verbose))
+	app.Command("account", "manage accounts", getAccount(verbose, keys))
 
-	app.Command("transfer", "transfer ndau from one account to another", getTransfer(verbose))
+	app.Command("transfer", "transfer ndau from one account to another", getTransfer(verbose, keys))
 
 	app.Command("rfe", "release ndau from the endowment", getRfe(verbose))
 

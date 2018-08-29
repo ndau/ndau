@@ -8,7 +8,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
-func getSetRewardsDestination(verbose *bool) func(*cli.Cmd) {
+func getSetRewardsDestination(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf("NAME %s", getAddressSpec("DESTINATION"))
 		getAddress := getAddressClosure(cmd, "DESTINATION")
@@ -38,7 +38,7 @@ func getSetRewardsDestination(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				dest,
 				sequence(conf, acct.Address),
-				acct.TransferPrivate(),
+				acct.TransferPrivateK(keys),
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)

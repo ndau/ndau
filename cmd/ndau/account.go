@@ -4,7 +4,7 @@ import (
 	cli "github.com/jawher/mow.cli"
 )
 
-func getAccount(verbose *bool) func(*cli.Cmd) {
+func getAccount(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Command(
 			"list",
@@ -27,7 +27,7 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 		cmd.Command(
 			"validation",
 			"change the account's validation",
-			getAccountValidation(verbose),
+			getAccountValidation(verbose, keys),
 		)
 
 		cmd.Command(
@@ -39,37 +39,37 @@ func getAccount(verbose *bool) func(*cli.Cmd) {
 		cmd.Command(
 			"change-settlement-period",
 			"change the settlement period for outbound transfers from this account",
-			getAccountChangeSettlement(verbose),
+			getAccountChangeSettlement(verbose, keys),
 		)
 
 		cmd.Command(
 			"delegate",
 			"delegate EAI calculation to a node",
-			getAccountDelegate(verbose),
+			getAccountDelegate(verbose, keys),
 		)
 
 		cmd.Command(
 			"credit-eai",
 			"credit EAI for accounts which have delegated to this one",
-			getAccountCreditEAI(verbose),
+			getAccountCreditEAI(verbose, keys),
 		)
 
 		cmd.Command(
 			"lock",
 			"lock this account with a specified notice period",
-			getLock(verbose),
+			getLock(verbose, keys),
 		)
 
 		cmd.Command(
 			"notify",
 			"notify that this account should be unlocked once its notice period expires",
-			getNotify(verbose),
+			getNotify(verbose, keys),
 		)
 
 		cmd.Command(
 			"set-rewards-target",
 			"set the rewards target for this account",
-			getSetRewardsDestination(verbose),
+			getSetRewardsDestination(verbose, keys),
 		)
 	}
 }

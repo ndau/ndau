@@ -24,10 +24,6 @@ func getAccountClaim(verbose *bool) func(*cli.Cmd) {
 				orQuit(errors.New("No such account"))
 			}
 
-			if len(acct.Transfer) > 0 {
-				orQuit(errors.New("account is already claimed"))
-			}
-
 			public, private, err := signature.Generate(signature.Ed25519, nil)
 			orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
 
@@ -35,7 +31,7 @@ func getAccountClaim(verbose *bool) func(*cli.Cmd) {
 				acct.Address,
 				acct.Ownership.Public,
 				[]signature.PublicKey{public},
-				[]byte{},
+				acct.ValidationScript,
 				sequence(conf, acct.Address),
 				acct.Ownership.Private,
 			)

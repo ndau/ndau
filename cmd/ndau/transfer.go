@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func getTransfer(verbose *bool) func(*cli.Cmd) {
+func getTransfer(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf(
 			"%s %s %s",
@@ -50,7 +50,7 @@ func getTransfer(verbose *bool) func(*cli.Cmd) {
 				from, to,
 				ndauQty,
 				sequence(conf, from),
-				fromAcct.TransferPrivate(),
+				fromAcct.TransferPrivateK(keys),
 			)
 			orQuit(errors.Wrap(err, "Failed to construct transfer"))
 

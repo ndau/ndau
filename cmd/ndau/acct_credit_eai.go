@@ -8,7 +8,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
-func getAccountCreditEAI(verbose *bool) func(*cli.Cmd) {
+func getAccountCreditEAI(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = "NAME"
 
@@ -34,7 +34,7 @@ func getAccountCreditEAI(verbose *bool) func(*cli.Cmd) {
 			tx := ndau.NewCreditEAI(
 				acct.Address,
 				sequence(conf, acct.Address),
-				acct.TransferPrivate(),
+				acct.TransferPrivateK(keys),
 			)
 
 			resp, err := tool.SendCommit(tmnode(conf.Node), tx)
