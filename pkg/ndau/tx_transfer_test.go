@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/base64"
 	"testing"
 	"time"
 
@@ -471,4 +472,42 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	// send transfer
 	resp := deliverTrAt(t, app, tr, tn)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestValidationScriptValidatesTransfers(t *testing.T) {
+	app, private := initAppTx(t)
+	public2, private2, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	// this script should be pretty stable for future versions of chaincode:
+	// it means `one and not`, which just ensures that the first transfer key
+	// is used, no matter how many keys are included
+	script, err := base64.StdEncoding.DecodeString("oAAasUiI")
+	require.NoError(t, err)
+
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.ValidationScript = script
+		ad.TransferKeys = append(ad.TransferKeys, public2)
+	})
+
+	t.Run("only first key", func(t *testing.T) {
+		tr := generateTransfer(t, 123, 1, []signature.PrivateKey{private})
+		resp := deliverTr(t, app, tr)
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	})
+	t.Run("both keys in order", func(t *testing.T) {
+		tr := generateTransfer(t, 123, 2, []signature.PrivateKey{private, private2})
+		resp := deliverTr(t, app, tr)
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	})
+	t.Run("both keys out of order", func(t *testing.T) {
+		tr := generateTransfer(t, 123, 3, []signature.PrivateKey{private2, private})
+		resp := deliverTr(t, app, tr)
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	})
+	t.Run("only second key", func(t *testing.T) {
+		tr := generateTransfer(t, 123, 4, []signature.PrivateKey{private2})
+		resp := deliverTr(t, app, tr)
+		require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+	})
 }

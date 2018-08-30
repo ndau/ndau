@@ -11,12 +11,20 @@ import (
 )
 
 // NewClaimAccount creates a ClaimAccount transaction
-func NewClaimAccount(account address.Address, ownership signature.PublicKey, transferKeys []signature.PublicKey, sequence uint64, ownerPrivate signature.PrivateKey) ClaimAccount {
+func NewClaimAccount(
+	account address.Address,
+	ownership signature.PublicKey,
+	transferKeys []signature.PublicKey,
+	validationScript []byte,
+	sequence uint64,
+	ownerPrivate signature.PrivateKey,
+) ClaimAccount {
 	ca := ClaimAccount{
-		Target:       account,
-		Ownership:    ownership,
-		TransferKeys: transferKeys,
-		Sequence:     sequence,
+		Target:           account,
+		Ownership:        ownership,
+		TransferKeys:     transferKeys,
+		ValidationScript: validationScript,
+		Sequence:         sequence,
 	}
 	ca.Signature = ownerPrivate.Sign(ca.SignableBytes())
 	return ca
@@ -24,21 +32,23 @@ func NewClaimAccount(account address.Address, ownership signature.PublicKey, tra
 
 // SignableBytes returns the signable bytes of ClaimAccount
 func (tx *ClaimAccount) SignableBytes() []byte {
-	bnum := 0
-	bnum += address.AddrLength
-	bnum += tx.Ownership.Size()
+	bcnt := 0
+	bcnt += address.AddrLength
+	bcnt += tx.Ownership.Size()
 	for _, key := range tx.TransferKeys {
-		bnum += key.Size()
+		bcnt += key.Size()
 	}
-	bnum += 8
+	bcnt += len(tx.ValidationScript)
+	bcnt += 8 // sequence
 
-	bytes := make([]byte, 0, bnum)
+	bytes := make([]byte, 0, bcnt)
 
 	bytes = append(bytes, tx.Target.String()...)
 	bytes = append(bytes, tx.Ownership.Bytes()...)
 	for _, key := range tx.TransferKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
+	bytes = append(bytes, tx.ValidationScript...)
 	bytes = appendUint64(bytes, tx.Sequence)
 
 	return bytes
@@ -87,12 +97,15 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		}
 	}
 
+	if len(tx.ValidationScript) > 0 && !IsChaincode(tx.ValidationScript) {
+		return errors.New("Validation script must be chaincode")
+	}
+
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
 	// normally, we'd use GetValidAccount, but we can't do that here:
-	// sequence validation is unusual, and we explicitly require no transfer
-	// keys to be set
+	// we have unusual requirements
 	acct, _ := state.GetAccount(
 		tx.Target,
 		app.blockTime,
@@ -117,6 +130,7 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 
 		acct, _ := st.GetAccount(tx.Target, app.blockTime)
 		acct.TransferKeys = tx.TransferKeys
+		acct.ValidationScript = tx.ValidationScript
 		st.Accounts[tx.Target.String()] = acct
 		acct.Sequence = tx.Sequence
 
