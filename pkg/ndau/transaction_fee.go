@@ -27,7 +27,7 @@ func (app *App) calculateTxFee(tx metatx.Transactable) (math.Ndau, error) {
 
 	vmReturn, err := vm.Stack().PopAsInt64()
 	if err != nil {
-		return 0, errors.Wrap(err, "tx fee script exited with non-numeric top value")
+		return 0, errors.Wrap(err, "tx fee script exited without numeric top value")
 	}
 	return math.Ndau(vmReturn), nil
 }
