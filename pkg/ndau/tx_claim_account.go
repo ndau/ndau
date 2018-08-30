@@ -32,16 +32,16 @@ func NewClaimAccount(
 
 // SignableBytes returns the signable bytes of ClaimAccount
 func (tx *ClaimAccount) SignableBytes() []byte {
-	bnum := 0
-	bnum += address.AddrLength
-	bnum += tx.Ownership.Size()
+	bcnt := 0
+	bcnt += address.AddrLength
+	bcnt += tx.Ownership.Size()
 	for _, key := range tx.TransferKeys {
-		bnum += key.Size()
+		bcnt += key.Size()
 	}
-	bnum += len(tx.ValidationScript)
-	bnum += 8 // sequence
+	bcnt += len(tx.ValidationScript)
+	bcnt += 8 // sequence
 
-	bytes := make([]byte, 0, bnum)
+	bytes := make([]byte, 0, bcnt)
 
 	bytes = append(bytes, tx.Target.String()...)
 	bytes = append(bytes, tx.Ownership.Bytes()...)

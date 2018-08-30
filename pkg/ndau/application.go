@@ -153,7 +153,7 @@ func (app *App) getTxAccount(tx metatx.Transactable, address address.Address, se
 			}
 			vmReturn, err := vm.Stack().PopAsInt64()
 			if err != nil {
-				return errors.Wrap(err, "validation script exited with non-numeric exit code")
+				return errors.Wrap(err, "validation script exited without numeric stack top")
 			}
 			if vmReturn != 0 {
 				return errors.New("validation script exited with non-0 exit code")
