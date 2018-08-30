@@ -66,6 +66,12 @@ func (tx *ChangeSettlementPeriod) Apply(appI interface{}) error {
 		acct.UpdateSettlements(app.blockTime)
 		acct.Sequence = tx.Sequence
 
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return state, err
+		}
+		acct.Balance -= fee
+
 		ca := app.blockTime.Add(acct.SettlementSettings.Period)
 		acct.SettlementSettings.ChangesAt = &ca
 		acct.SettlementSettings.Next = &tx.Period

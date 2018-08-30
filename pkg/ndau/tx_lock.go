@@ -73,6 +73,12 @@ func (tx *Lock) Apply(appI interface{}) error {
 		accountData, _ := state.GetAccount(tx.Target, app.blockTime)
 		accountData.Sequence = tx.Sequence
 
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return state, err
+		}
+		accountData.Balance -= fee
+
 		accountData.Lock = &backing.Lock{
 			NoticePeriod: tx.Period,
 		}

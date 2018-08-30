@@ -135,6 +135,12 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 		st.Accounts[tx.Target.String()] = acct
 		acct.Sequence = tx.Sequence
 
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return st, err
+		}
+		acct.Balance -= fee
+
 		return st, nil
 	})
 }

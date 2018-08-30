@@ -51,26 +51,25 @@ func (tx *Transfer) SignableBytes() []byte {
 	return bytes
 }
 
-func (tx *Transfer) calculateTxFee() math.Ndau {
-	// TODO: perform a real calculation here
-	return math.Ndau(0)
-}
-
 func (tx *Transfer) calculateSIB() math.Ndau {
 	// TODO: perform a real lookup here
 	return math.Ndau(0)
 }
 
-func (tx *Transfer) calculateQtyFromSource() (math.Ndau, error) {
+func (tx *Transfer) calculateQtyFromSource(app *App) (math.Ndau, error) {
 	var err error
 	fromSource := tx.Qty
-	fromSource, err = fromSource.Add(tx.calculateTxFee())
+	txFee, err := tx.CalculateTxFee(app)
 	if err != nil {
-		return math.Ndau(0), errors.Wrap(err, "calculating total from source")
+		return math.Ndau(0), errors.Wrap(err, "calculating tx fee: calculating total from source")
+	}
+	fromSource, err = fromSource.Add(txFee)
+	if err != nil {
+		return math.Ndau(0), errors.Wrap(err, "adding tx fee: calculating total from source")
 	}
 	fromSource, err = fromSource.Add(tx.calculateSIB())
 	if err != nil {
-		return math.Ndau(0), errors.Wrap(err, "calculating total from source")
+		return math.Ndau(0), errors.Wrap(err, "adding SIB: calculating total from source")
 	}
 
 	return fromSource, nil
@@ -110,7 +109,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return err
 	}
 
-	fromSource, err := tx.calculateQtyFromSource()
+	fromSource, err := tx.calculateQtyFromSource(app)
 	if err != nil {
 		return err
 	}
@@ -148,7 +147,7 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	}
 	dest.LastWAAUpdate = app.blockTime
 
-	fromSource, err := tx.calculateQtyFromSource()
+	fromSource, err := tx.calculateQtyFromSource(app)
 	if err != nil {
 		return errors.Wrap(err, "calc qty to take from source")
 	}

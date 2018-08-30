@@ -5,6 +5,7 @@
 package ndau
 
 import (
+	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -136,10 +137,11 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 
 // getTxAccount gets and validates an account for a transactable
 //
-// It returns a nil error if:
+// It returns a nil error if all of:
 //  - 1 of N signature validation passes
 //  - sequence number is high enough
 //  - validation script passes if present
+//  - account contains enough ndau to pay the transaction fee
 func (app *App) getTxAccount(tx metatx.Transactable, address address.Address, sequence uint64, signatures []signature.Signature) (backing.AccountData, bool, *bitset256.Bitset256, error) {
 	validateScript := func(acct backing.AccountData, sigset *bitset256.Bitset256) error {
 		if len(acct.ValidationScript) > 0 {
@@ -165,6 +167,12 @@ func (app *App) getTxAccount(tx metatx.Transactable, address address.Address, se
 	acct, exists, sigset, err := app.GetState().(*backing.State).GetValidAccount(address, app.blockTime, sequence, tx.SignableBytes(), signatures)
 	if err == nil {
 		err = validateScript(acct, sigset)
+	}
+	if err == nil {
+		fee, err := app.calculateTxFee(tx)
+		if err == nil && acct.Balance.Compare(fee) < 0 {
+			err = fmt.Errorf("insufficient balance to pay tx fee of %s ndau", fee)
+		}
 	}
 	return acct, exists, sigset, err
 }

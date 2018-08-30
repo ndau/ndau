@@ -117,6 +117,12 @@ func (tx *ChangeValidation) Apply(appI interface{}) error {
 		}
 		ad.Sequence = tx.Sequence
 
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return state, err
+		}
+		ad.Balance -= fee
+
 		ad.TransferKeys = tx.NewKeys
 		ad.ValidationScript = tx.ValidationScript
 

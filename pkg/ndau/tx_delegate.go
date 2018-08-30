@@ -78,6 +78,12 @@ func (tx *Delegate) Apply(appI interface{}) error {
 
 		acct.Sequence = tx.Sequence
 
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return state, err
+		}
+		acct.Balance -= fee
+
 		// remove it from its current delegate
 		if acct.DelegationNode != nil {
 			cs := acct.DelegationNode.String()
