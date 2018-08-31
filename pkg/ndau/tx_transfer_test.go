@@ -18,6 +18,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
@@ -127,13 +128,35 @@ func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.Respon
 	return deliverTrAt(t, app, transfer, timestamp)
 }
 
-func deliverTrAt(t *testing.T, app *App, transfer metatx.Transactable, time math.Timestamp) abci.ResponseDeliverTx {
-	bytes, err := tx.Marshal(transfer, TxIDs)
+func deliverTrAt(
+	t *testing.T,
+	app *App,
+	transactable metatx.Transactable,
+	time math.Timestamp,
+) abci.ResponseDeliverTx {
+	return deliverTrAtWithSV(
+		t,
+		app,
+		transactable,
+		time,
+		func(*cache.SystemCache) {},
+	)
+}
+
+func deliverTrAtWithSV(
+	t *testing.T,
+	app *App,
+	transactable metatx.Transactable,
+	time math.Timestamp,
+	svUpdate func(*cache.SystemCache),
+) abci.ResponseDeliverTx {
+	bytes, err := tx.Marshal(transactable, TxIDs)
 	require.NoError(t, err)
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: time.AsTime().Unix(),
 	}})
+	svUpdate(app.systemCache)
 	resp := app.DeliverTx(bytes)
 	if resp.Log != "" {
 		t.Log(resp.Log)

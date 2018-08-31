@@ -164,3 +164,20 @@ func (c *SystemCache) Get(name string, value msgp.Unmarshaler) error {
 	}
 	return err
 }
+
+// Set sets the specified system variable
+//
+// This is useful for overriding system variables for testing, but it's almost
+// certainly not what you want in production. Think VERY HARD before using this
+// method outside of a testing context.
+func (c *SystemCache) Set(name string, value msgp.Marshaler) error {
+	bytes, err := value.MarshalMsg(nil)
+	if err != nil {
+		return errors.Wrap(err, "marshalling value in set")
+	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.inner[name] = bytes
+	return nil
+}

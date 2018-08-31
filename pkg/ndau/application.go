@@ -165,14 +165,24 @@ func (app *App) getTxAccount(tx metatx.Transactable, address address.Address, se
 	}
 
 	acct, exists, sigset, err := app.GetState().(*backing.State).GetValidAccount(address, app.blockTime, sequence, tx.SignableBytes(), signatures)
-	if err == nil {
-		err = validateScript(acct, sigset)
+	if err != nil {
+		return acct, exists, sigset, err
 	}
-	if err == nil {
-		fee, err := app.calculateTxFee(tx)
-		if err == nil && acct.Balance.Compare(fee) < 0 {
-			err = fmt.Errorf("insufficient balance to pay tx fee of %s ndau", fee)
-		}
+
+	err = validateScript(acct, sigset)
+	if err != nil {
+		return acct, exists, sigset, err
 	}
+
+	fee, err := app.calculateTxFee(tx)
+	if err != nil {
+		return acct, exists, sigset, err
+	}
+
+	if acct.Balance.Compare(fee) < 0 {
+		err = fmt.Errorf("insufficient balance to pay tx fee (%s ndau)", fee)
+		return acct, exists, sigset, err
+	}
+
 	return acct, exists, sigset, err
 }

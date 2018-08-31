@@ -7,7 +7,9 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -188,6 +190,51 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
 				require.Equal(t, math.Ndau(1), ad.Balance)
 			})
+		})
+	}
+}
+
+func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
+	app, assc := initAppRFE(t)
+	privateKeys := assc[sv.ReleaseFromEndowmentKeysName].([]signature.PrivateKey)
+	txFeeAddr := assc[rfeAddr].(address.Address)
+
+	// with a tx fee of 1, only the first tx should succeed
+	modify(t, txFeeAddr.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	timestamp, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	// our fixtures are set up with 2 rfe keys
+	for i := 0; i < len(privateKeys); i++ {
+		private := privateKeys[i]
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			rfe := NewReleaseFromEndowment(
+				math.Ndau(1),
+				targetAddress,
+				txFeeAddr,
+				uint64(i)+1,
+				[]signature.PrivateKey{private},
+			)
+
+			resp := deliverTrAtWithSV(t, app, &rfe, timestamp, func(systemCache *cache.SystemCache) {
+				// set the cached tx fee script to unconditionally return 1
+				systemCache.Set(
+					sv.TxFeeScriptName,
+					// script: oAAaiA==
+					wkt.Bytes([]byte{0xa0, 0x00, 0x1a, 0x88}),
+				)
+			})
+
+			var expect code.ReturnCode
+			if i == 0 {
+				expect = code.OK
+			} else {
+				expect = code.InvalidTransaction
+			}
+			require.Equal(t, expect, code.ReturnCode(resp.Code))
 		})
 	}
 }
