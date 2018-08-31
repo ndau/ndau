@@ -107,7 +107,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return errors.New("source is locked")
 	}
 
-	// the source update doesn'tx get persisted this time because this method is read-only
+	// the source update doesn't get persisted this time because this method is read-only
 	source.UpdateSettlements(app.blockTime)
 	availableBalance, err := source.AvailableBalance()
 	if err != nil {
