@@ -87,9 +87,3 @@ func (tx *Lock) Apply(appI interface{}) error {
 		return state, nil
 	})
 }
-
-// CalculateTxFee implements metatx.Transactable
-func (tx *Lock) CalculateTxFee(appI interface{}) (math.Ndau, error) {
-	app := appI.(*App)
-	return app.calculateTxFee(tx)
-}

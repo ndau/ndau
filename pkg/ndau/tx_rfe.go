@@ -115,9 +115,3 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 		return state, err
 	})
 }
-
-// CalculateTxFee implements metatx.Transactable
-func (tx *ReleaseFromEndowment) CalculateTxFee(appI interface{}) (math.Ndau, error) {
-	app := appI.(*App)
-	return app.calculateTxFee(tx)
-}

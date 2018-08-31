@@ -6,7 +6,6 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/pkg/errors"
@@ -129,10 +128,4 @@ func (tx *ChangeValidation) Apply(appI interface{}) error {
 		state.Accounts[tx.Target.String()] = ad
 		return state, nil
 	})
-}
-
-// CalculateTxFee implements metatx.Transactable
-func (tx *ChangeValidation) CalculateTxFee(appI interface{}) (math.Ndau, error) {
-	app := appI.(*App)
-	return app.calculateTxFee(tx)
 }

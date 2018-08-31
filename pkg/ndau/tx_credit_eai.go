@@ -8,7 +8,6 @@ import (
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -174,10 +173,4 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 		return state, err
 	})
-}
-
-// CalculateTxFee implements metatx.Transactable
-func (tx *CreditEAI) CalculateTxFee(appI interface{}) (math.Ndau, error) {
-	app := appI.(*App)
-	return app.calculateTxFee(tx)
 }

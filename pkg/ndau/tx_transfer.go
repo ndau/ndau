@@ -42,32 +42,33 @@ func appendUint64(b []byte, i uint64) []byte {
 }
 
 // SignableBytes implements Transactable
-func (tx *Transfer) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Msgsize())
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.Destination.String()...)
-	bytes = appendUint64(bytes, uint64(tx.Qty))
-	bytes = appendUint64(bytes, tx.Sequence)
+func (t *Transfer) SignableBytes() []byte {
+	bytes := make([]byte, 0, t.Msgsize())
+	bytes = append(bytes, t.Source.String()...)
+	bytes = append(bytes, t.Destination.String()...)
+	bytes = appendUint64(bytes, uint64(t.Qty))
+	bytes = appendUint64(bytes, t.Sequence)
 	return bytes
 }
 
-func (tx *Transfer) calculateSIB() math.Ndau {
+func (t *Transfer) calculateTxFee() math.Ndau {
+	// TODO: perform a real calculation here
+	return math.Ndau(0)
+}
+
+func (t *Transfer) calculateSIB() math.Ndau {
 	// TODO: perform a real lookup here
 	return math.Ndau(0)
 }
 
-func (tx *Transfer) calculateQtyFromSource(app *App) (math.Ndau, error) {
+func (t *Transfer) calculateQtyFromSource() (math.Ndau, error) {
 	var err error
-	fromSource := tx.Qty
-	txFee, err := tx.CalculateTxFee(app)
-	if err != nil {
-		return math.Ndau(0), errors.Wrap(err, "calculating tx fee: calculating total from source")
-	}
-	fromSource, err = fromSource.Add(txFee)
+	fromSource := t.Qty
+	fromSource, err = fromSource.Add(t.calculateTxFee())
 	if err != nil {
 		return math.Ndau(0), errors.Wrap(err, "adding tx fee: calculating total from source")
 	}
-	fromSource, err = fromSource.Add(tx.calculateSIB())
+	fromSource, err = fromSource.Add(t.calculateSIB())
 	if err != nil {
 		return math.Ndau(0), errors.Wrap(err, "adding SIB: calculating total from source")
 	}
@@ -76,23 +77,23 @@ func (tx *Transfer) calculateQtyFromSource(app *App) (math.Ndau, error) {
 }
 
 // Validate satisfies metatx.Transactable
-func (tx *Transfer) Validate(appInt interface{}) error {
+func (t *Transfer) Validate(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
-	if tx.Qty <= math.Ndau(0) {
+	if t.Qty <= math.Ndau(0) {
 		return errors.New("invalid transfer: Qty not positive")
 	}
 
-	if tx.Source == tx.Destination {
+	if t.Source == t.Destination {
 		return errors.New("invalid transfer: source == destination")
 	}
 
 	source, _, _, err := app.getTxAccount(
-		tx,
-		tx.Source,
-		tx.Sequence,
-		tx.Signatures,
+		t,
+		t.Source,
+		t.Sequence,
+		t.Signatures,
 	)
 	if err != nil {
 		return err
@@ -109,7 +110,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return err
 	}
 
-	fromSource, err := tx.calculateQtyFromSource(app)
+	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {
 		return err
 	}
@@ -117,7 +118,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return errors.New("insufficient balance in source")
 	}
 
-	dest, _ := state.GetAccount(tx.Destination, app.blockTime)
+	dest, _ := state.GetAccount(t.Destination, app.blockTime)
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
@@ -127,19 +128,19 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 }
 
 // Apply satisfies metatx.Transactable
-func (tx *Transfer) Apply(appInt interface{}) error {
+func (t *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 	state := app.GetState().(*backing.State)
 
-	source, _ := state.GetAccount(tx.Source, app.blockTime)
-	dest, _ := state.GetAccount(tx.Destination, app.blockTime)
+	source, _ := state.GetAccount(t.Source, app.blockTime)
+	dest, _ := state.GetAccount(t.Destination, app.blockTime)
 
 	// this source update will get persisted if the method exits without error
 	source.UpdateSettlements(app.blockTime)
 
 	err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),
-		tx.Qty,
+		t.Qty,
 		dest.Balance,
 	)
 	if err != nil {
@@ -147,17 +148,17 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	}
 	dest.LastWAAUpdate = app.blockTime
 
-	fromSource, err := tx.calculateQtyFromSource(app)
+	fromSource, err := t.calculateQtyFromSource()
 	if err != nil {
 		return errors.Wrap(err, "calc qty to take from source")
 	}
 	source.Balance -= fromSource
-	source.Sequence = tx.Sequence
+	source.Sequence = t.Sequence
 
-	dest.Balance += tx.Qty
+	dest.Balance += t.Qty
 	if source.SettlementSettings.Period != 0 {
 		dest.Settlements = append(dest.Settlements, backing.Settlement{
-			Qty:    tx.Qty,
+			Qty:    t.Qty,
 			Expiry: app.blockTime.Add(source.SettlementSettings.Period),
 		})
 	}
@@ -165,19 +166,13 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
-		state.Accounts[tx.Destination.String()] = dest
+		state.Accounts[t.Destination.String()] = dest
 		if source.Balance > 0 {
-			state.Accounts[tx.Source.String()] = source
+			state.Accounts[t.Source.String()] = source
 		} else {
-			delete(state.Accounts, tx.Source.String())
+			delete(state.Accounts, t.Source.String())
 		}
 
 		return state, nil
 	})
-}
-
-// CalculateTxFee implements metatx.Transactable
-func (tx *Transfer) CalculateTxFee(appI interface{}) (math.Ndau, error) {
-	app := appI.(*App)
-	return app.calculateTxFee(tx)
 }

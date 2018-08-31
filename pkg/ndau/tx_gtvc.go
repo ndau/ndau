@@ -3,7 +3,6 @@ package ndau
 import (
 	"fmt"
 
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	log "github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -13,30 +12,30 @@ import (
 // As it happens, we don't currently _have_ any business logic which would
 // determine whether or not a GTValidatorChange is valid, but we've put in
 // this method anyway to implement the Transactable interface
-func (tx *GTValidatorChange) Validate(interface{}) error {
+func (vc *GTValidatorChange) Validate(interface{}) error {
 	return nil
 }
 
 // ToValidator converts this struct into a Validator
-func (tx *GTValidatorChange) ToValidator() abci.Validator {
-	return abci.Ed25519Validator(tx.PublicKey, tx.Power)
+func (vc *GTValidatorChange) ToValidator() abci.Validator {
+	return abci.Ed25519Validator(vc.PublicKey, vc.Power)
 }
 
 // Apply this GTVC to the node state
-func (tx *GTValidatorChange) Apply(appInt interface{}) error {
+func (vc *GTValidatorChange) Apply(appInt interface{}) error {
 	app := appInt.(*App)
 
 	// from persistent_app.go: we now know that this public key should be in go-crypto format
 	logger := app.GetLogger().WithField("method", "GTValidatorChange.Apply")
 	logger.WithFields(log.Fields{
-		"PubKey": fmt.Sprintf("%x", tx.PublicKey),
-		"Power":  tx.Power,
+		"PubKey": fmt.Sprintf("%x", vc.PublicKey),
+		"Power":  vc.Power,
 	}).Info("entered method")
-	if err := tx.Validate(app); err != nil {
-		logger.Info("exit method; invalid tx")
+	if err := vc.Validate(app); err != nil {
+		logger.Info("exit method; invalid vc")
 		return err
 	}
-	v := tx.ToValidator()
+	v := vc.ToValidator()
 	app.UpdateValidator(v)
 
 	logger.Info("exit method; success")
@@ -44,8 +43,8 @@ func (tx *GTValidatorChange) Apply(appInt interface{}) error {
 }
 
 // SignableBytes implements Transactable
-func (tx *GTValidatorChange) SignableBytes() []byte {
-	bytes, err := tx.MarshalMsg(nil)
+func (vc *GTValidatorChange) SignableBytes() []byte {
+	bytes, err := vc.MarshalMsg(nil)
 	panicIfError(err, "GTVC signable bytes non nil error")
 	return bytes
 }
@@ -54,10 +53,4 @@ func panicIfError(err error, msg string) {
 	if err != nil {
 		panic(msg)
 	}
-}
-
-// CalculateTxFee implements metatx.Transactable
-func (tx *GTValidatorChange) CalculateTxFee(appI interface{}) (math.Ndau, error) {
-	app := appI.(*App)
-	return app.calculateTxFee(tx)
 }
