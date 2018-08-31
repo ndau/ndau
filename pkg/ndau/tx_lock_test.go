@@ -151,3 +151,27 @@ func TestRelockNotified(t *testing.T) {
 	require.Equal(t, newDuration, acct.Lock.NoticePeriod)
 	require.Nil(t, acct.Lock.UnlocksOn)
 }
+
+func TestLockDeductsTxFee(t *testing.T) {
+	app, private := initAppTx(t)
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	for i := 0; i < 2; i++ {
+		tx := NewLock(sA, math.Duration(30*math.Day), 1+uint64(i), []signature.PrivateKey{private})
+
+		resp := deliverTrWithTxFee(t, app, tx)
+
+		var expect code.ReturnCode
+		if i == 0 {
+			expect = code.OK
+		} else {
+			expect = code.InvalidTransaction
+		}
+		require.Equal(t, expect, code.ReturnCode(resp.Code))
+	}
+}

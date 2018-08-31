@@ -7,9 +7,7 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -204,9 +202,6 @@ func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
 		ad.Balance = 1
 	})
 
-	timestamp, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
-
 	// our fixtures are set up with 2 rfe keys
 	for i := 0; i < len(privateKeys); i++ {
 		private := privateKeys[i]
@@ -219,14 +214,7 @@ func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
 				[]signature.PrivateKey{private},
 			)
 
-			resp := deliverTrAtWithSV(t, app, &rfe, timestamp, func(systemCache *cache.SystemCache) {
-				// set the cached tx fee script to unconditionally return 1
-				systemCache.Set(
-					sv.TxFeeScriptName,
-					// script: oAAaiA==
-					wkt.Bytes([]byte{0xa0, 0x00, 0x1a, 0x88}),
-				)
-			})
+			resp := deliverTrWithTxFee(t, app, &rfe)
 
 			var expect code.ReturnCode
 			if i == 0 {

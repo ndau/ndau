@@ -156,3 +156,29 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	require.Contains(t, state.Delegates, eaiNode)
 	require.NotContains(t, state.Delegates[eaiNode], source)
 }
+
+func TestDelegateDeductsTxFee(t *testing.T) {
+	app, private := initAppTx(t)
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	for i := 0; i < 2; i++ {
+		tx := NewDelegate(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
+
+		resp := deliverTrWithTxFee(t, app, tx)
+
+		var expect code.ReturnCode
+		if i == 0 {
+			expect = code.OK
+		} else {
+			expect = code.InvalidTransaction
+		}
+		require.Equal(t, expect, code.ReturnCode(resp.Code))
+	}
+}

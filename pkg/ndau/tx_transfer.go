@@ -61,10 +61,14 @@ func (tx *Transfer) calculateSIB() math.Ndau {
 	return math.Ndau(0)
 }
 
-func (tx *Transfer) calculateQtyFromSource() (math.Ndau, error) {
+func (tx *Transfer) calculateQtyFromSource(app *App) (math.Ndau, error) {
 	var err error
 	fromSource := tx.Qty
-	fromSource, err = fromSource.Add(tx.calculateTxFee())
+	fee, err := app.calculateTxFee(tx)
+	if err != nil {
+		return 0, errors.Wrap(err, "calculating tx fee")
+	}
+	fromSource, err = fromSource.Add(fee)
 	if err != nil {
 		return math.Ndau(0), errors.Wrap(err, "adding tx fee: calculating total from source")
 	}
@@ -110,7 +114,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return err
 	}
 
-	fromSource, err := tx.calculateQtyFromSource()
+	fromSource, err := tx.calculateQtyFromSource(app)
 	if err != nil {
 		return err
 	}
@@ -148,7 +152,7 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	}
 	dest.LastWAAUpdate = app.blockTime
 
-	fromSource, err := tx.calculateQtyFromSource()
+	fromSource, err := tx.calculateQtyFromSource(app)
 	if err != nil {
 		return errors.Wrap(err, "calc qty to take from source")
 	}
