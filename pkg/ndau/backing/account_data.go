@@ -191,7 +191,7 @@ type AccountData struct {
 	LastWAAUpdate       math.Timestamp        `chain:"67,Acct_LastWAAUpdate"`
 	WeightedAverageAge  math.Duration         `chain:"68,Acct_WeightedAverageAge"`
 	Sequence            uint64
-	Settlements         []Settlement       `chain:"."`
+	Settlements         []Settlement       `chain:"70,Acct_Settlements"`
 	SettlementSettings  SettlementSettings `chain:"."`
 	ValidationScript    []byte             `chain:"69,Acct_ValidationScript"`
 }
