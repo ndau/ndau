@@ -45,7 +45,7 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 	require.Nil(t, acct.SettlementSettings.ChangesAt)
 }
 
-func TestChangeSettlemntPeriodDeductsTxFee(t *testing.T) {
+func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
