@@ -13,40 +13,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-var (
-	targetPrivate signature.PrivateKey
-	targetPublic  signature.PublicKey
-	targetAddress address.Address
-
-	transferPublic  signature.PublicKey
-	transferPrivate signature.PrivateKey
-)
-
-func init() {
-	var err error
-	targetPublic, targetPrivate, err = signature.Generate(signature.Ed25519, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	targetAddress, err = address.Generate(address.KindUser, targetPublic.Bytes())
-	if err != nil {
-		panic(err)
-	}
-
-	// require that the public and private keys agree
-	testdata := []byte("foo bar bat baz")
-	sig := targetPrivate.Sign(testdata)
-	if !targetPublic.Verify(testdata, sig) {
-		panic("target public and private keys do not agree")
-	}
-
-	transferPublic, transferPrivate, err = signature.Generate(signature.Ed25519, nil)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func initAppChangeValidation(t *testing.T) *App {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
@@ -186,4 +152,35 @@ func TestChangeValidationTooManyTransferKeys(t *testing.T) {
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestChangeValidationDeductsTxFee(t *testing.T) {
+	app := initAppChangeValidation(t)
+	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	for i := 0; i < 2; i++ {
+		// now change the transfer key using the previous transfer key
+		newPub, _, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+
+		cv := NewChangeValidation(
+			targetAddress,
+			[]signature.PublicKey{newPub},
+			[]byte{},
+			uint64(i)+1,
+			[]signature.PrivateKey{transferPrivate},
+		)
+
+		resp := deliverTrWithTxFee(t, app, &cv)
+
+		var expect code.ReturnCode
+		if i == 0 {
+			expect = code.OK
+		} else {
+			expect = code.InvalidTransaction
+		}
+		require.Equal(t, expect, code.ReturnCode(resp.Code))
+	}
 }

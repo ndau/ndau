@@ -217,3 +217,26 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	// the dest acct must have had some EAI credited
 	require.NotEqual(t, math.Ndau(0), dAcct.Balance)
 }
+
+func TestCreditEAIDeductsTxFee(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	nA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+	modify(t, eaiNode, app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	for i := 0; i < 2; i++ {
+		tx := NewCreditEAI(nA, 1+uint64(i), []signature.PrivateKey{private})
+
+		resp := deliverTrWithTxFee(t, app, tx)
+
+		var expect code.ReturnCode
+		if i == 0 {
+			expect = code.OK
+		} else {
+			expect = code.InvalidTransaction
+		}
+		require.Equal(t, expect, code.ReturnCode(resp.Code))
+	}
+}

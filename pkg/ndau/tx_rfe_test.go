@@ -191,3 +191,38 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 		})
 	}
 }
+
+func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
+	app, assc := initAppRFE(t)
+	privateKeys := assc[sv.ReleaseFromEndowmentKeysName].([]signature.PrivateKey)
+	txFeeAddr := assc[rfeAddr].(address.Address)
+
+	// with a tx fee of 1, only the first tx should succeed
+	modify(t, txFeeAddr.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	// our fixtures are set up with 2 rfe keys
+	for i := 0; i < len(privateKeys); i++ {
+		private := privateKeys[i]
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			rfe := NewReleaseFromEndowment(
+				math.Ndau(1),
+				targetAddress,
+				txFeeAddr,
+				uint64(i)+1,
+				[]signature.PrivateKey{private},
+			)
+
+			resp := deliverTrWithTxFee(t, app, &rfe)
+
+			var expect code.ReturnCode
+			if i == 0 {
+				expect = code.OK
+			} else {
+				expect = code.InvalidTransaction
+			}
+			require.Equal(t, expect, code.ReturnCode(resp.Code))
+		})
+	}
+}

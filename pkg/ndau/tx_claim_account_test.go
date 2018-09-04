@@ -182,3 +182,34 @@ func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestClaimAccountDeductsTxFee(t *testing.T) {
+	app := initAppClaimAccount(t)
+	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	for i := 0; i < 2; i++ {
+		newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+
+		tx := NewClaimAccount(
+			targetAddress,
+			targetPublic,
+			[]signature.PublicKey{newPublic},
+			[]byte{},
+			1+uint64(i),
+			targetPrivate,
+		)
+
+		resp := deliverTrWithTxFee(t, app, &tx)
+
+		var expect code.ReturnCode
+		if i == 0 {
+			expect = code.OK
+		} else {
+			expect = code.InvalidTransaction
+		}
+		require.Equal(t, expect, code.ReturnCode(resp.Code))
+	}
+}

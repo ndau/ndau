@@ -115,6 +115,15 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		return errors.New("sequence is too low")
 	}
 
+	fee, err := app.calculateTxFee(tx)
+	if err != nil {
+		return errors.Wrap(err, "calculating tx fee")
+	}
+
+	if acct.Balance.Compare(fee) < 0 {
+		return fmt.Errorf("insufficient balance to pay tx fee (%s ndau)", fee)
+	}
+
 	if len(acct.TransferKeys) > 1 {
 		return errors.New("claim account is not valid if there are 2 or more transfer keys")
 	}
@@ -131,8 +140,15 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 		acct, _ := st.GetAccount(tx.Target, app.blockTime)
 		acct.TransferKeys = tx.TransferKeys
 		acct.ValidationScript = tx.ValidationScript
-		st.Accounts[tx.Target.String()] = acct
 		acct.Sequence = tx.Sequence
+
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return st, err
+		}
+		acct.Balance -= fee
+
+		st.Accounts[tx.Target.String()] = acct
 
 		return st, nil
 	})

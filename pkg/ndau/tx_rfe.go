@@ -99,6 +99,12 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 
 		txAcct, _ := state.GetAccount(tx.TxFeeAcct, app.blockTime)
 		txAcct.Sequence = tx.Sequence
+
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return state, err
+		}
+		txAcct.Balance -= fee
 		state.Accounts[tx.TxFeeAcct.String()] = txAcct
 
 		acct, _ := state.GetAccount(tx.Destination, app.blockTime)

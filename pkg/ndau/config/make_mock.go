@@ -8,9 +8,9 @@ import (
 
 	"github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
@@ -174,6 +174,16 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	ded := sv.DefaultSettlementDuration{Duration: math.Day * 15}
 	mock.Sets(bpc, sv.DefaultSettlementDurationName, ded)
 
+	// make default tx fee script
+	// this one is very simple: unconditionally returns numeric 0
+	// (base64 oAAgiA== if you'd like to decompile)
+	mock.Sets(bpc, sv.TxFeeScriptName, wkt.Bytes([]byte{
+		0xa0,
+		0x00,
+		0x20,
+		0x88,
+	}))
+
 	return mock, ma, &sviKey
 }
 
@@ -215,6 +225,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.DefaultSettlementDurationName,
 		NewNamespacedKey(bpc, sv.DefaultSettlementDurationName),
+	)
+
+	svi.set(
+		sv.TxFeeScriptName,
+		NewNamespacedKey(bpc, sv.TxFeeScriptName),
 	)
 
 	return svi

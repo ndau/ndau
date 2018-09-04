@@ -71,6 +71,12 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		nodeData, _ := state.GetAccount(tx.Node, app.blockTime)
 		nodeData.Sequence = tx.Sequence
+
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return state, err
+		}
+		nodeData.Balance -= fee
 		state.Accounts[tx.Node.String()] = nodeData
 
 		delegatedAccounts := state.Delegates[tx.Node.String()]

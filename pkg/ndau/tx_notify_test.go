@@ -102,3 +102,27 @@ func TestNotifyChangesAppState(t *testing.T) {
 	acct, _ = state.GetAccount(sA, app.blockTime)
 	require.NotNil(t, acct.Lock.UnlocksOn)
 }
+
+func TestNotifyDeductsTxFee(t *testing.T) {
+	app, private := initAppNotify(t)
+	sA, err := address.Validate(source)
+	require.NoError(t, err)
+
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Balance = 1
+	})
+
+	for i := uint64(0); i < 2; i++ {
+		tx := NewNotify(sA, 1+i, []signature.PrivateKey{private})
+
+		resp := deliverTrWithTxFee(t, app, tx)
+
+		var expect code.ReturnCode
+		if i == 0 {
+			expect = code.OK
+		} else {
+			expect = code.InvalidTransaction
+		}
+		require.Equal(t, expect, code.ReturnCode(resp.Code))
+	}
+}
