@@ -1,10 +1,13 @@
 package ndau
 
 import (
+	"fmt"
+
 	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
@@ -23,8 +26,7 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 
 // IsChaincode is true when the supplied bytes appear to be chaincode
 func IsChaincode(code []byte) bool {
-	tvm := vm.ChaincodeVM{}
-	return tvm.PreLoad(*buildBinary(code, "", "")) == nil
+	return vm.IsValidChaincode(vm.ConvertToOpcodes(code)) == nil
 }
 
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate
@@ -156,5 +158,58 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	// transaction in question, with the length of the full serialized
 	// transaction and the transaction struct on the stack
 	err = theVM.Init(txIndex, byteLen, txStruct)
+	return theVM, err
+}
+
+// BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
+//
+// Node goodness functions can currently only use the following three pieces
+// of context to make their decision (bottom to top): address, account data,
+// total stake.
+//
+// All that needs to happen after this is to call Run().
+func BuildVMForNodeGoodness(
+	code []byte,
+	addr address.Address,
+	acct backing.AccountData,
+	totalStake math.Ndau,
+	ts math.Timestamp,
+) (*vm.ChaincodeVM, error) {
+	addrV, err := chain.ToValue(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	acctV, err := chain.ToValue(acct)
+	if err != nil {
+		return nil, err
+	}
+
+	totalStakeV, err := chain.ToValue(totalStake)
+	if err != nil {
+		return nil, err
+	}
+
+	bin := buildBinary(code, fmt.Sprintf("goodness of %s", addr), "")
+
+	theVM, err := vm.New(*bin)
+	if err != nil {
+		return nil, err
+	}
+
+	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
+	// if it has one, or the current time if it doesn't.
+	var nower vm.Nower
+
+	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	if err != nil {
+		return nil, err
+	}
+	if nower != nil {
+		theVM.SetNow(nower)
+	}
+
+	// goodness functions all use the default handler
+	err = theVM.Init(0, addrV, acctV, totalStakeV)
 	return theVM, err
 }

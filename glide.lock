@@ -1,5 +1,5 @@
-hash: 51eb4ef1e6fb6343b461f36627ef6726d8a648cfd60c0f94338cae8df53738a9
-updated: 2018-08-24T10:00:29.279617-04:00
+hash: 80906c17b7c46af32f34e8c77620a7234fc358205792ca9d67f479924014b2fe
+updated: 2018-09-06T13:53:33.016507+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -86,7 +86,7 @@ imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/davecgh/go-spew
-  version: 8991bc29aa16c548c550c7ff78260e27b9ab7c73
+  version: 2df174808ee097f90d259e432cc04442cf60be21
   subpackages:
   - spew
 - name: github.com/dustin/go-humanize
@@ -181,7 +181,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaincode
-  version: b0412f084247cb4a9258d24477bfd42aa458f47a
+  version: 57c2d75e3bbdf624569dabf94277b65c5550a36c
   repo: git@github.com:oneiro-ndev/chaincode.git
   subpackages:
   - pkg/chain
@@ -208,6 +208,8 @@ imports:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
   subpackages:
   - wkt
+- name: github.com/oneiro-ndev/mt19937_64
+  version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
   version: bfa50431959e5aa3e5d459739b1878871a1c1942
   repo: git@github.com:oneiro-ndev/ndaumath.git
@@ -243,7 +245,7 @@ imports:
 - name: github.com/pkg/errors
   version: 816c9085562cd7ee03e7f8188a1cfd942858cded
 - name: github.com/pmezard/go-difflib
-  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang

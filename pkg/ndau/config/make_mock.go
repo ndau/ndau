@@ -188,6 +188,17 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	// min stake for an account to be active
 	mock.Sets(bpc, sv.MinStakeName, math.Ndau(1000*constants.QuantaPerUnit))
 
+	// make default node goodness script
+	// empty: returns the value on top of the stack
+	// as goodness functions have the total stake on top of the stack,
+	// that's actually not a terrible default
+	// (base64 oACI if you'd like to decompile)
+	mock.Sets(bpc, sv.NodeGoodnessFuncName, wkt.Bytes([]byte{
+		0xa0,
+		0x00,
+		0x88,
+	}))
+
 	return mock, ma, &sviKey
 }
 
@@ -239,6 +250,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.MinStakeName,
 		NewNamespacedKey(bpc, sv.MinStakeName),
+	)
+
+	svi.set(
+		sv.NodeGoodnessFuncName,
+		NewNamespacedKey(bpc, sv.NodeGoodnessFuncName),
 	)
 
 	return svi
