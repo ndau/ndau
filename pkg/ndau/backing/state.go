@@ -1,18 +1,19 @@
 package backing
 
 import (
-	"errors"
-
+	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/pkg/errors"
 )
 
 const accountKey = "accounts"
 const delegateKey = "delegates"
+const nodeKey = "nodes"
 
 // State is primarily a set of accounts
 type State struct {
@@ -23,6 +24,9 @@ type State struct {
 	// the values are the addresses of the accounts which those nodes must
 	// compute
 	Delegates map[string]map[string]struct{}
+	// Nodes keeps track of the validator and verifier node stakes.
+	// The key is the node address. The value is a Node struct.
+	Nodes map[string]Node
 }
 
 // make sure State is a metaapp.State
@@ -32,6 +36,7 @@ var _ meta.State = (*State)(nil)
 func (s *State) Init(nt.ValueReadWriter) {
 	s.Accounts = make(map[string]AccountData)
 	s.Delegates = make(map[string]map[string]struct{})
+	s.Nodes = make(map[string]Node)
 }
 
 // MarshalNoms satisfies noms' Marshaler interface
@@ -39,6 +44,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	ns := nt.NewStruct("state", nt.StructData{
 		accountKey:  nt.NewMap(vrw),
 		delegateKey: nt.NewMap(vrw),
+		nodeKey:     nt.NewMap(vrw),
 	})
 
 	// marshal accounts
@@ -62,6 +68,12 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		editor.Set(nt.String(delegateNode), setEditor.Set())
 	}
 	ns = ns.Set(delegateKey, editor.Map())
+	// marshal nodes
+	nm, err := marshal.Marshal(vrw, s.Nodes)
+	if err != nil {
+		return ns, err
+	}
+	ns = ns.Set(nodeKey, nm)
 
 	return ns, nil
 }
@@ -135,6 +147,15 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 			}
 		}
 	})
+
+	// unmarshal nodes
+	nV := st.Get(nodeKey)
+	s.Nodes = make(map[string]Node)
+	err = marshal.Unmarshal(nV, &s.Nodes)
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling nodes")
+	}
+
 	return err
 }
 
@@ -171,4 +192,47 @@ func (s *State) GetValidAccount(address address.Address, blockTime math.Timestam
 		return ad, exists, sigset, errors.New("Invalid signature(s)")
 	}
 	return ad, exists, sigset, nil
+}
+
+// Stake updates the state to handle staking an account to another
+func (s *State) Stake(targetA, nodeA address.Address) error {
+	nodeS := nodeA.String()
+	node, isNode := s.Nodes[nodeS]
+	// logically, the operation I want in this if is nxor, but go doesn't
+	// define that for booleans, because reasons
+	if (targetA == nodeA) == isNode {
+		if isNode {
+			return errors.New("cannot re-self-stake")
+		}
+		return errors.New("node is not already a node; can't stake to it")
+	}
+
+	target := s.Accounts[targetA.String()]
+	if isNode {
+		// targetA != nodeA
+		node.Costake(targetA, target.Balance)
+	} else {
+		// targetA == nodeA
+		node = NewNode(targetA, target.Balance)
+	}
+
+	s.Nodes[nodeS] = node
+	return nil
+}
+
+// GetCostakers returns the list of costakers associated with a node
+func (s *State) GetCostakers(nodeA address.Address) []AccountData {
+	node, isNode := s.Nodes[nodeA.String()]
+	if !isNode {
+		return nil
+	}
+
+	out := make([]AccountData, 0, len(node.Costakers))
+	for costaker := range node.Costakers {
+		ad, hasAccount := s.Accounts[costaker]
+		if hasAccount {
+			out = append(out, ad)
+		}
+	}
+	return out
 }

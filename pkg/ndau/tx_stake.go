@@ -123,6 +123,7 @@ func (tx *Stake) Apply(appI interface{}) error {
 		}
 
 		state.Accounts[tx.Target.String()] = target
+		err = state.Stake(tx.Target, tx.Node)
 
 		return state, nil
 	})

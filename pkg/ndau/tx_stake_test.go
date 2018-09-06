@@ -19,12 +19,17 @@ func initAppStake(t *testing.T) (*App, signature.PrivateKey) {
 	nodeA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
 
+	const NodeBalance = 10000 * constants.QuantaPerUnit
+
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
-		ad.Balance = 10000 * constants.QuantaPerUnit
+		ad.Balance = NodeBalance
 
 		ad.Stake = &backing.Stake{
 			Address: nodeA,
 		}
+	})
+	modifyNode(t, eaiNode, app, func(node *backing.Node) {
+		*node = backing.NewNode(nodeA, NodeBalance)
 	})
 
 	return app, private
@@ -46,7 +51,6 @@ func TestValidStakeTxIsValid(t *testing.T) {
 		t.Log(resp.Log)
 	}
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
 }
 
 func TestStakeAccountValidates(t *testing.T) {
@@ -139,6 +143,15 @@ func TestStakeChangesAppState(t *testing.T) {
 	// we must have updated the target's stake node
 	require.NotNil(t, state.Accounts[source].Stake)
 	require.Equal(t, nA, state.Accounts[source].Stake.Address)
+	// we must have updated the stake struct
+	require.ElementsMatch(
+		t,
+		[]backing.AccountData{
+			state.Accounts[source],
+			state.Accounts[eaiNode],
+		},
+		state.GetCostakers(nA),
+	)
 }
 
 func TestStakeDeductsTxFee(t *testing.T) {

@@ -81,6 +81,20 @@ func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
 	require.NoError(t, err)
 }
 
+func modifyNode(t *testing.T, addr string, app *App, f func(*backing.Node)) {
+	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		node := state.Nodes[addr]
+
+		f(&node)
+
+		state.Nodes[addr] = node
+		return state, nil
+	})
+
+	require.NoError(t, err)
+}
+
 func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.ResponseDeliverTx {
 	timestamp, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
