@@ -80,6 +80,7 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					if len(account.ValidationScript) > 0 {
 						require.Equal(t, account.ValidationScript, recoveredAccount.ValidationScript)
 					}
+					require.Equal(t, account.UncreditedEAI, recoveredAccount.UncreditedEAI)
 				})
 			}
 		}
@@ -128,6 +129,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		WeightedAverageAge: randDuration(),
 		Sequence:           rand.Uint64(),
 		SettlementSettings: generateEscrowSettings(randBool()),
+		UncreditedEAI:      randNdau(),
 	}
 	if randBool() {
 		addr := randAddress()
