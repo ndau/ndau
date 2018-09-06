@@ -49,6 +49,9 @@ func (tx *Notify) Validate(appI interface{}) error {
 	if accountData.Lock.UnlocksOn != nil {
 		return errors.New("Account has already been notified")
 	}
+	if accountData.Stake != nil {
+		return errors.New("Account is staked")
+	}
 
 	return nil
 }

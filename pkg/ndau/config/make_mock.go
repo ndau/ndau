@@ -9,6 +9,7 @@ import (
 	"github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -184,6 +185,9 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		0x88,
 	}))
 
+	// min stake for an account to be active
+	mock.Sets(bpc, sv.MinStakeName, math.Ndau(1000*constants.QuantaPerUnit))
+
 	return mock, ma, &sviKey
 }
 
@@ -230,6 +234,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.TxFeeScriptName,
 		NewNamespacedKey(bpc, sv.TxFeeScriptName),
+	)
+
+	svi.set(
+		sv.MinStakeName,
+		NewNamespacedKey(bpc, sv.MinStakeName),
 	)
 
 	return svi

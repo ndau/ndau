@@ -29,6 +29,10 @@ const dest = "ndam5v8hpv5b79zbxxcepih8d4km4a3j2ev8dpaegexpdest"
 // Public key:     878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
 const settled = "ndap94hhwyik86x2na9m3hjtq4n5v9uj3qm4tfp4xuyescrw"
 
+// Private key:    e8f080d6f39b0942217a55a4e239cc59b6dfbc48bc3d5e0abebc7da0bf055f57d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5
+// Public key:     d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5
+const eaiNode = "ndamb84tesvp54vhc63257wifr34zfvyffvi9utqrkruneai"
+
 var (
 	targetPrivate signature.PrivateKey
 	targetPublic  signature.PublicKey

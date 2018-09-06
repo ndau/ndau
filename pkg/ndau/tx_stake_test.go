@@ -7,33 +7,55 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidDelegateTxIsValid(t *testing.T) {
+func initAppStake(t *testing.T) (*App, signature.PrivateKey) {
 	app, private := initAppTx(t)
+
+	nodeA, err := address.Validate(eaiNode)
+	require.NoError(t, err)
+
+	modify(t, eaiNode, app, func(ad *backing.AccountData) {
+		ad.Balance = 10000 * constants.QuantaPerUnit
+
+		ad.Stake = &backing.Stake{
+			Address: nodeA,
+		}
+	})
+
+	return app, private
+}
+
+func TestValidStakeTxIsValid(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
 
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 }
 
-func TestDelegateAccountValidates(t *testing.T) {
-	app, private := initAppTx(t)
+func TestStakeAccountValidates(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
 	d.Target = address.Address{}
@@ -46,13 +68,13 @@ func TestDelegateAccountValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestDelegateDelegateValidates(t *testing.T) {
-	app, private := initAppTx(t)
+func TestStakeStakeValidates(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
 
 	// make the account field invalid
 	d.Node = address.Address{}
@@ -65,13 +87,13 @@ func TestDelegateDelegateValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestDelegateSequenceValidates(t *testing.T) {
-	app, private := initAppTx(t)
+func TestStakeSequenceValidates(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 0, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 0, []signature.PrivateKey{private})
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -80,13 +102,13 @@ func TestDelegateSequenceValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestDelegateSignatureValidates(t *testing.T) {
-	app, private := initAppTx(t)
+func TestStakeSignatureValidates(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
 
 	// flip a single bit in the signature
 	sigBytes := d.Signatures[0].Bytes()
@@ -102,78 +124,45 @@ func TestDelegateSignatureValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestDelegateChangesAppState(t *testing.T) {
-	app, private := initAppTx(t)
+func TestStakeChangesAppState(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
 
 	resp := deliverTr(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
-	// we must have updated the source's delegation node
-	require.Equal(t, &nA, state.Accounts[source].DelegationNode)
-
-	// we must have added the source to the node's delegation responsibilities
-	require.Contains(t, state.Delegates, eaiNode)
-	require.Contains(t, state.Delegates[eaiNode], source)
+	// we must have updated the target's stake node
+	require.NotNil(t, state.Accounts[source].Stake)
+	require.Equal(t, nA, state.Accounts[source].Stake.Address)
 }
 
-func TestDelegateRemovesPreviousDelegation(t *testing.T) {
-	app, private := initAppTx(t)
+func TestStakeDeductsTxFee(t *testing.T) {
+	app, private := initAppStake(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
-
-	resp := deliverTr(t, app, d)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	// now create a new delegation transaction
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	d = NewDelegate(sA, dA, 2, []signature.PrivateKey{private})
-	resp = deliverTr(t, app, d)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	state := app.GetState().(*backing.State)
-	// we must have updated the source's delegation node
-	require.Equal(t, &dA, state.Accounts[source].DelegationNode)
-
-	// we must have added the source to dest's delegation responsibilities
-	require.Contains(t, state.Delegates, dest)
-	require.Contains(t, state.Delegates[dest], source)
-
-	// we must have removed the source from eaiNode
-	require.Contains(t, state.Delegates, eaiNode)
-	require.NotContains(t, state.Delegates[eaiNode], source)
-}
-
-func TestDelegateDeductsTxFee(t *testing.T) {
-	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-
-	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.Balance = 1
-	})
 
 	for i := 0; i < 2; i++ {
-		tx := NewDelegate(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
+		modify(t, source, app, func(ad *backing.AccountData) {
+			ad.Balance = math.Ndau(i + (1000 * constants.QuantaPerUnit))
+			ad.Stake = nil
+		})
+
+		tx := NewStake(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
 
 		resp := deliverTrWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {
-			expect = code.OK
-		} else {
 			expect = code.InvalidTransaction
+		} else {
+			expect = code.OK
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}

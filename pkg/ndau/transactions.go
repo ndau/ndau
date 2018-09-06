@@ -24,6 +24,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(8):    &Notify{},
 	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
+	metatx.TxID(11):   &Stake{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -181,3 +182,23 @@ type ClaimAccount struct {
 }
 
 var _ metatx.Transactable = (*ClaimAccount)(nil)
+
+// A Stake transaction stakes to a node
+type Stake struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
+
+var _ metatx.Transactable = (*Stake)(nil)
+
+// // A NominateNodeReward transaction
+// type NominateNodeReward struct {
+// 	Random     uint64                `msg:"rnd" chain:"41,Tx_Random"`
+// 	TxFeeAcct  address.Address       `msg:"fee" chain:"5,Tx_FeeAccount"`
+// 	Sequence   uint64                `msg:"seq"`
+// 	Signatures []signature.Signature `msg:"sig"`
+// }
+
+// var _ metatx.Transactable = (*NominateNodeReward)(nil)
