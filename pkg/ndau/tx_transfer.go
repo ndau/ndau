@@ -180,3 +180,18 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 		return state, nil
 	})
 }
+
+// GetSource implements sourcer
+func (tx *Transfer) GetSource(*App) (address.Address, error) {
+	return tx.Source, nil
+}
+
+// Withdrawal implements withdrawer
+func (tx *Transfer) Withdrawal() math.Ndau {
+	return tx.Qty
+}
+
+// GetSequence implements sequencer
+func (tx *Transfer) GetSequence() uint64 {
+	return tx.Sequence
+}

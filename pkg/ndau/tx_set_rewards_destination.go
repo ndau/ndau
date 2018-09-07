@@ -121,3 +121,13 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 		return state, nil
 	})
 }
+
+// GetSource implements sourcer
+func (tx *SetRewardsDestination) GetSource(*App) (address.Address, error) {
+	return tx.Source, nil
+}
+
+// GetSequence implements sequencer
+func (tx *SetRewardsDestination) GetSequence() uint64 {
+	return tx.Sequence
+}

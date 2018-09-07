@@ -87,3 +87,13 @@ func (tx *Lock) Apply(appI interface{}) error {
 		return state, nil
 	})
 }
+
+// GetSource implements sourcer
+func (tx *Lock) GetSource(*App) (address.Address, error) {
+	return tx.Target, nil
+}
+
+// GetSequence implements sequencer
+func (tx *Lock) GetSequence() uint64 {
+	return tx.Sequence
+}

@@ -74,3 +74,13 @@ func (tx *Notify) Apply(appI interface{}) error {
 		return state, nil
 	})
 }
+
+// GetSource implements sourcer
+func (tx *Notify) GetSource(*App) (address.Address, error) {
+	return tx.Target, nil
+}
+
+// GetSequence implements sequencer
+func (tx *Notify) GetSequence() uint64 {
+	return tx.Sequence
+}

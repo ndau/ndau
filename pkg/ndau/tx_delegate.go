@@ -108,3 +108,13 @@ func (tx *Delegate) Apply(appI interface{}) error {
 		return state, nil
 	})
 }
+
+// GetSource implements sourcer
+func (tx *Delegate) GetSource(*App) (address.Address, error) {
+	return tx.Target, nil
+}
+
+// GetSequence implements sequencer
+func (tx *Delegate) GetSequence() uint64 {
+	return tx.Sequence
+}

@@ -115,3 +115,13 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 		return state, err
 	})
 }
+
+// GetSource implements sourcer
+func (tx *ReleaseFromEndowment) GetSource(*App) (address.Address, error) {
+	return tx.TxFeeAcct, nil
+}
+
+// GetSequence implements sequencer
+func (tx *ReleaseFromEndowment) GetSequence() uint64 {
+	return tx.Sequence
+}

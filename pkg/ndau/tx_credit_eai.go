@@ -174,3 +174,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		return state, err
 	})
 }
+
+// GetSource implements sourcer
+func (tx *CreditEAI) GetSource(*App) (address.Address, error) {
+	return tx.Node, nil
+}
+
+// GetSequence implements sequencer
+func (tx *CreditEAI) GetSequence() uint64 {
+	return tx.Sequence
+}
