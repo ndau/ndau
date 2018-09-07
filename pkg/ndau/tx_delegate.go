@@ -60,6 +60,10 @@ func (tx *Delegate) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Delegate) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
@@ -69,14 +73,6 @@ func (tx *Delegate) Apply(appI interface{}) error {
 		if !hasAcct {
 			return state, errors.New("Account does not exist")
 		}
-
-		acct.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		acct.Balance -= fee
 
 		// remove it from its current delegate
 		if acct.DelegationNode != nil {

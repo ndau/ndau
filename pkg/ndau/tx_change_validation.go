@@ -102,20 +102,14 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 // Apply implements metatx.Transactable
 func (tx *ChangeValidation) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-
-		ad, hasAd := state.GetAccount(tx.Target, app.blockTime)
-		if !hasAd {
-			ad = backing.NewAccountData(app.blockTime)
-		}
-		ad.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		ad.Balance -= fee
+		ad, _ := state.GetAccount(tx.Target, app.blockTime)
 
 		ad.TransferKeys = tx.NewKeys
 		ad.ValidationScript = tx.ValidationScript

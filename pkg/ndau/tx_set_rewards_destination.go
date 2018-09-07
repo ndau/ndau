@@ -76,17 +76,14 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		accountData, _ := state.GetAccount(tx.Source, app.blockTime)
-		accountData.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		accountData.Balance -= fee
 
 		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
 

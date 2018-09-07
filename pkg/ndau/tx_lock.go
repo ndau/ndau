@@ -62,17 +62,14 @@ func (tx *Lock) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Lock) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		accountData, _ := state.GetAccount(tx.Target, app.blockTime)
-		accountData.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		accountData.Balance -= fee
 
 		accountData.Lock = &backing.Lock{
 			NoticePeriod: tx.Period,

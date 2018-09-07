@@ -55,17 +55,14 @@ func (tx *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 // Apply implements metatx.Transactable
 func (tx *ChangeSettlementPeriod) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		acct, _ := state.GetAccount(tx.Target, app.blockTime)
-		acct.UpdateSettlements(app.blockTime)
-		acct.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		acct.Balance -= fee
 
 		ca := app.blockTime.Add(acct.SettlementSettings.Period)
 		acct.SettlementSettings.ChangesAt = &ca

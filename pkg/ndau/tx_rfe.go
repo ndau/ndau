@@ -88,19 +88,14 @@ func (tx *ReleaseFromEndowment) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		var err error
 		state := stateI.(*backing.State)
-
-		txAcct, _ := state.GetAccount(tx.TxFeeAcct, app.blockTime)
-		txAcct.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		txAcct.Balance -= fee
-		state.Accounts[tx.TxFeeAcct.String()] = txAcct
 
 		acct, _ := state.GetAccount(tx.Destination, app.blockTime)
 		acct.Balance, err = acct.Balance.Add(tx.Qty)

@@ -51,8 +51,13 @@ func (tx *CreditEAI) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *CreditEAI) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
 	unlockedTable := new(eai.RateTable)
-	err := app.System(sv.UnlockedRateTableName, unlockedTable)
+	err = app.System(sv.UnlockedRateTableName, unlockedTable)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 	}
@@ -65,13 +70,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		nodeData, _ := state.GetAccount(tx.Node, app.blockTime)
-		nodeData.Sequence = tx.Sequence
 
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		nodeData.Balance -= fee
 		state.Accounts[tx.Node.String()] = nodeData
 
 		delegatedAccounts := state.Delegates[tx.Node.String()]
@@ -124,6 +123,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				acctData.WeightedAverageAge, acctData.Lock,
 				*unlockedTable, *lockedTable,
 			)
+			if err != nil {
+				errorList = append(errorList, err)
+				err = nil
+				continue
+			}
+
+			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
 			if err != nil {
 				errorList = append(errorList, err)
 				err = nil

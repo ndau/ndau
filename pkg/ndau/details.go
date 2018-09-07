@@ -48,13 +48,13 @@ type ndauTransactable interface {
 //
 // It returns a nil error if all of:
 //  - sequence number is high enough
-//  - account contains enough ndau to pay the transaction fee
+//  - account contains enough available ndau to pay the transaction fee
 //  - if validation script set:
 //       validation script passes
 //  - if tx implements signeder:
 //       1 of N signature validation passes
 //  - if tx implements withdrawer:
-//       account contains enough ndau to pay the withdrawal + tx fee
+//       account contains enough available ndau to pay the withdrawal + tx fee
 func (app *App) getTxAccount(tx ndauTransactable) (backing.AccountData, bool, *bitset256.Bitset256, error) {
 	validateScript := func(acct backing.AccountData, sigset *bitset256.Bitset256) error {
 		if len(acct.ValidationScript) > 0 {
@@ -117,8 +117,18 @@ func (app *App) getTxAccount(tx ndauTransactable) (backing.AccountData, bool, *b
 		}
 	}
 
-	if acct.Balance.Compare(fee) < 0 {
-		err = fmt.Errorf("insufficient balance to pay tx fee (%s ndau)", fee)
+	acct.UpdateSettlements(app.blockTime)
+	available, err := acct.AvailableBalance()
+	if err != nil {
+		return acct, exists, sigset, err
+	}
+
+	if available.Compare(fee) < 0 {
+		err = fmt.Errorf(
+			"insufficient available balance (%s ndau) to pay for tx (%s ndau)",
+			available,
+			fee,
+		)
 		return acct, exists, sigset, err
 	}
 
@@ -134,6 +144,7 @@ func (app *App) getTxAccount(tx ndauTransactable) (backing.AccountData, bool, *b
 //  - deduct tx fee
 //  - reduce source balance (if applicable)
 //  - update sequence
+//  - resolve completed settlements
 //
 // Of course, most transactions will imply more modifications than these, but
 // this at least provides a standard template for taking care of the basics.
@@ -184,6 +195,7 @@ func (app *App) applyTxDetails(tx ndauTransactable) error {
 	if err != nil {
 		return errors.Wrap(err, "calculating new uncredited EAI")
 	}
+	source.LastEAIUpdate = app.blockTime
 
 	withdrawal := fee
 	if w, isWithdrawer := tx.(withdrawer); isWithdrawer {
@@ -204,6 +216,8 @@ func (app *App) applyTxDetails(tx ndauTransactable) error {
 	// Everything which may return an error must go above this line.   //
 	// Below this point, no error values are permitted.                //
 	/////////////////////////////////////////////////////////////////////
+
+	source.UpdateSettlements(app.blockTime)
 
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
