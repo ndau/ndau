@@ -44,12 +44,7 @@ func (tx *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 	if tx.Period < 0 {
 		return errors.New("Negative settlement period")
 	}
-	_, _, _, err = app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	_, _, _, err = app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -89,4 +84,9 @@ func (tx *ChangeSettlementPeriod) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *ChangeSettlementPeriod) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *ChangeSettlementPeriod) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

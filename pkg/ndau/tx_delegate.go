@@ -46,12 +46,7 @@ func (tx *Delegate) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	_, hasAccount, _, err := app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	_, hasAccount, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -117,4 +112,9 @@ func (tx *Delegate) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *Delegate) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *Delegate) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

@@ -93,12 +93,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return errors.New("invalid transfer: source == destination")
 	}
 
-	source, _, _, err := app.getTxAccount(
-		tx,
-		tx.Source,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	source, _, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -194,4 +189,9 @@ func (tx *Transfer) Withdrawal() math.Ndau {
 // GetSequence implements sequencer
 func (tx *Transfer) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *Transfer) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

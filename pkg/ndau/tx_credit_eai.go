@@ -36,12 +36,7 @@ func (tx *CreditEAI) SignableBytes() []byte {
 func (tx *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	_, hasNode, _, err := app.getTxAccount(
-		tx,
-		tx.Node,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	_, hasNode, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -183,4 +178,9 @@ func (tx *CreditEAI) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *CreditEAI) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *CreditEAI) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

@@ -37,12 +37,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	accountData, hasAccount, _, err := app.getTxAccount(
-		tx,
-		tx.Source,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	accountData, hasAccount, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -130,4 +125,9 @@ func (tx *SetRewardsDestination) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *SetRewardsDestination) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *SetRewardsDestination) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

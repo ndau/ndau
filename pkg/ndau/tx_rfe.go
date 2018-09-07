@@ -52,12 +52,7 @@ func (tx *ReleaseFromEndowment) Validate(appI interface{}) error {
 		return errors.New("RFE qty may not be <= 0")
 	}
 
-	_, hasAcct, _, err := app.getTxAccount(
-		tx,
-		tx.TxFeeAcct,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	_, hasAcct, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -124,4 +119,9 @@ func (tx *ReleaseFromEndowment) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *ReleaseFromEndowment) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *ReleaseFromEndowment) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

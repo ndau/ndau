@@ -31,12 +31,7 @@ func (tx *Lock) SignableBytes() []byte {
 func (tx *Lock) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	accountData, hasAccount, _, err := app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	accountData, hasAccount, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -96,4 +91,9 @@ func (tx *Lock) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *Lock) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *Lock) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

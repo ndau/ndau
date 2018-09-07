@@ -70,12 +70,7 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	}
 
 	app := appI.(*App)
-	_, _, _, err = app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	_, _, _, err = app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -138,4 +133,9 @@ func (tx *ChangeValidation) GetSource(*App) (address.Address, error) {
 // GetSequence implements sequencer
 func (tx *ChangeValidation) GetSequence() uint64 {
 	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *ChangeValidation) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }
