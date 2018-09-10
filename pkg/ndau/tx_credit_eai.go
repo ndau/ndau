@@ -7,7 +7,10 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -64,8 +67,25 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	lockedTable := new(eai.RateTable)
 	err = app.System(sv.LockedRateTableName, lockedTable)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
+		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.LockedRateTableName))
 	}
+
+	feeTable := new(sv.EAIFeeTable)
+	err = app.System(sv.EAIFeeTableName, feeTable)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.EAIFeeTableName))
+	}
+
+	// calculate the actual award per ndau of EAI, so we can reduce each account's
+	// award appropriately
+	awardPerNdau := math.Ndau(constants.QuantaPerUnit)
+	for _, fee := range *feeTable {
+		awardPerNdau -= fee.Fee
+	}
+
+	// accumulate the total EAI credited by this transaction so we can award
+	// fees appropriately
+	var totalEAICredited uint64
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
@@ -136,6 +156,22 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				continue
 			}
 
+			// add the total EAI credited BEFORE reducing it
+			totalEAICredited += uint64(eaiAward)
+
+			// now reduce the award to account for the fees
+			reducedAward, err := signed.MulDiv(
+				int64(eaiAward),
+				int64(awardPerNdau),
+				constants.QuantaPerUnit,
+			)
+			if err != nil {
+				errorList = append(errorList, err)
+				err = nil
+				continue
+			}
+			eaiAward = math.Ndau(reducedAward)
+
 			destAcct := accountAddr
 			destAcctData := acctData
 			if acctData.RewardsTarget != nil {
@@ -162,6 +198,30 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 			state.Accounts[accountAddr.String()] = acctData
 		}
+
+		// before considering the error list generated from the account iteration,
+		// we want to ensure that appropriate fees get credited regardless
+		for _, fee := range *feeTable {
+			feeAward, err := signed.MulDiv(
+				int64(totalEAICredited),
+				int64(fee.Fee),
+				constants.QuantaPerUnit,
+			)
+			if err != nil {
+				errorList = append(errorList, err)
+				err = nil
+				continue
+			}
+			feeAcct, _ := state.GetAccount(fee.To, app.blockTime)
+			feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))
+			if err != nil {
+				errorList = append(errorList, err)
+				err = nil
+				continue
+			}
+			state.Accounts[fee.To.String()] = feeAcct
+		}
+
 		if len(errorList) > 0 {
 			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
 			for idx, err := range errorList {
