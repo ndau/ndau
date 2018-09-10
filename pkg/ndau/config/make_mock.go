@@ -204,6 +204,13 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	// make eai fee table
 	mock.Sets(bpc, sv.EAIFeeTableName, makeMockEAIFeeTable())
 
+	// set default min duration between node rewards nominations
+	mock.Sets(
+		bpc,
+		sv.MinDurationBetweenNodeRewardNominationsName,
+		math.Duration(1*math.Day),
+	)
+
 	return mock, ma, &sviKey
 }
 
@@ -265,6 +272,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.EAIFeeTableName,
 		NewNamespacedKey(bpc, sv.EAIFeeTableName),
+	)
+
+	svi.set(
+		sv.MinDurationBetweenNodeRewardNominationsName,
+		NewNamespacedKey(bpc, sv.MinDurationBetweenNodeRewardNominationsName),
 	)
 
 	return svi
