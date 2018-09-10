@@ -22,6 +22,10 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	require.NoError(t, err)
 	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 	resp := deliverTr(t, app, d)
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.LastEAIUpdate = 0
+		ad.LastWAAUpdate = 0
+	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// create a keypair for the node

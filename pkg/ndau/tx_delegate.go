@@ -46,12 +46,7 @@ func (tx *Delegate) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	_, hasAccount, _, err := app.getTxAccount(
-		tx,
-		tx.Target,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	_, hasAccount, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -65,6 +60,10 @@ func (tx *Delegate) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Delegate) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
@@ -74,14 +73,6 @@ func (tx *Delegate) Apply(appI interface{}) error {
 		if !hasAcct {
 			return state, errors.New("Account does not exist")
 		}
-
-		acct.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		acct.Balance -= fee
 
 		// remove it from its current delegate
 		if acct.DelegationNode != nil {
@@ -107,4 +98,19 @@ func (tx *Delegate) Apply(appI interface{}) error {
 
 		return state, nil
 	})
+}
+
+// GetSource implements sourcer
+func (tx *Delegate) GetSource(*App) (address.Address, error) {
+	return tx.Target, nil
+}
+
+// GetSequence implements sequencer
+func (tx *Delegate) GetSequence() uint64 {
+	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *Delegate) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }

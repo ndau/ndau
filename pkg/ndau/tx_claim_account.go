@@ -102,26 +102,10 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	state := app.GetState().(*backing.State)
 
-	// normally, we'd use GetValidAccount, but we can't do that here:
-	// we have unusual requirements
-	acct, _ := state.GetAccount(
-		tx.Target,
-		app.blockTime,
-	)
-
-	if tx.Sequence <= acct.Sequence {
-		return errors.New("sequence is too low")
-	}
-
-	fee, err := app.calculateTxFee(tx)
+	acct, _, _, err := app.getTxAccount(tx)
 	if err != nil {
-		return errors.Wrap(err, "calculating tx fee")
-	}
-
-	if acct.Balance.Compare(fee) < 0 {
-		return fmt.Errorf("insufficient balance to pay tx fee (%s ndau)", fee)
+		return err
 	}
 
 	if len(acct.TransferKeys) > 1 {
@@ -134,22 +118,30 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 // Apply applies this tx if no error occurs
 func (tx *ClaimAccount) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
 		acct, _ := st.GetAccount(tx.Target, app.blockTime)
 		acct.TransferKeys = tx.TransferKeys
 		acct.ValidationScript = tx.ValidationScript
-		acct.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return st, err
-		}
-		acct.Balance -= fee
 
 		st.Accounts[tx.Target.String()] = acct
 
 		return st, nil
 	})
+}
+
+// GetSource implements sourcer
+func (tx *ClaimAccount) GetSource(*App) (address.Address, error) {
+	return tx.Target, nil
+}
+
+// GetSequence implements sequencer
+func (tx *ClaimAccount) GetSequence() uint64 {
+	return tx.Sequence
 }
