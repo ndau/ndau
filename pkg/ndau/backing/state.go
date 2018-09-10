@@ -6,12 +6,14 @@ import (
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	util "github.com/oneiro-ndev/noms-util"
 	"github.com/pkg/errors"
 )
 
 const accountKey = "accounts"
 const delegateKey = "delegates"
 const nodeKey = "nodes"
+const lnrnKey = "lnrn" // last node reward nomination
 
 // State is primarily a set of accounts
 type State struct {
@@ -25,6 +27,10 @@ type State struct {
 	// Nodes keeps track of the validator and verifier node stakes.
 	// The key is the node address. The value is a Node struct.
 	Nodes map[string]Node
+	// The last node reward nomination is necessary in state because this
+	// governs the validity of upcoming node reward nominations; there's
+	// a minimum interval between them.
+	LastNodeRewardNomination math.Timestamp
 }
 
 // make sure State is a metaapp.State
@@ -43,6 +49,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		accountKey:  nt.NewMap(vrw),
 		delegateKey: nt.NewMap(vrw),
 		nodeKey:     nt.NewMap(vrw),
+		lnrnKey:     util.Int(0).ToBlob(vrw),
 	})
 
 	// marshal accounts
@@ -72,6 +79,9 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		return ns, err
 	}
 	ns = ns.Set(nodeKey, nm)
+	// marshal last node reward nomination
+	lnrnV := util.Int(s.LastNodeRewardNomination).ToBlob(vrw)
+	ns = ns.Set(lnrnKey, lnrnV)
 
 	return ns, nil
 }
@@ -153,6 +163,13 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling nodes")
 	}
+
+	// unmarshal last node reward nomination
+	lnrnI, err := util.IntFromBlob(st.Get(lnrnKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling last node reward nomination")
+	}
+	s.LastNodeRewardNomination = math.Timestamp(lnrnI)
 
 	return err
 }
