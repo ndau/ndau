@@ -305,7 +305,7 @@ func makeMockEAIFeeTable() sv.EAIFeeTable {
 		makeMockEAIFee("ntrd operations", 10),
 		makeMockEAIFee("rfe account", 1),
 		makeMockEAIFee("rewards nomination acct", 1),
-		makeMockEAIFee("node rewards", 98),
+		makeMockNodeRewardEAIFee(98),
 	}
 }
 
@@ -324,6 +324,17 @@ func makeMockEAIFee(_ string, thousandths int64) sv.EAIFee {
 	}
 	return sv.EAIFee{
 		Fee: math.Ndau(fee),
-		To:  addr,
+		To:  &addr,
+	}
+}
+
+func makeMockNodeRewardEAIFee(thousandths int64) sv.EAIFee {
+	fee, err := signed.MulDiv(thousandths, constants.QuantaPerUnit, 1000)
+	if err != nil {
+		panic(err)
+	}
+	return sv.EAIFee{
+		Fee: math.Ndau(fee),
+		To:  nil,
 	}
 }

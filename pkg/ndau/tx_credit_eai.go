@@ -212,14 +212,18 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				err = nil
 				continue
 			}
-			feeAcct, _ := state.GetAccount(fee.To, app.blockTime)
-			feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))
-			if err != nil {
-				errorList = append(errorList, err)
-				err = nil
-				continue
+			if fee.To == nil {
+				state.UnclaimedNodeReward = math.Ndau(feeAward)
+			} else {
+				feeAcct, _ := state.GetAccount(*fee.To, app.blockTime)
+				feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))
+				if err != nil {
+					errorList = append(errorList, err)
+					err = nil
+					continue
+				}
+				state.Accounts[fee.To.String()] = feeAcct
 			}
-			state.Accounts[fee.To.String()] = feeAcct
 		}
 
 		if len(errorList) > 0 {

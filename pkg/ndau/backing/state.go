@@ -14,6 +14,7 @@ const accountKey = "accounts"
 const delegateKey = "delegates"
 const nodeKey = "nodes"
 const lnrnKey = "lnrn" // last node reward nomination
+const unrKey = "unr"   // uncredited node reward
 
 // State is primarily a set of accounts
 type State struct {
@@ -31,6 +32,10 @@ type State struct {
 	// governs the validity of upcoming node reward nominations; there's
 	// a minimum interval between them.
 	LastNodeRewardNomination math.Timestamp
+	// Node rewards are calculated by the NominateNodeReward transaction,
+	// but only claimed by the ClaimNodeReward transaction. In the interim,
+	// they need to be stored, so we put them here.
+	UnclaimedNodeReward math.Ndau
 }
 
 // make sure State is a metaapp.State
@@ -50,6 +55,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		delegateKey: nt.NewMap(vrw),
 		nodeKey:     nt.NewMap(vrw),
 		lnrnKey:     util.Int(0).ToBlob(vrw),
+		unrKey:      util.Int(0).ToBlob(vrw),
 	})
 
 	// marshal accounts
@@ -80,8 +86,15 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	}
 	ns = ns.Set(nodeKey, nm)
 	// marshal last node reward nomination
-	lnrnV := util.Int(s.LastNodeRewardNomination).ToBlob(vrw)
-	ns = ns.Set(lnrnKey, lnrnV)
+	ns = ns.Set(
+		lnrnKey,
+		util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
+	)
+	// marshal unclaimed node reward
+	ns = ns.Set(
+		unrKey,
+		util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
+	)
 
 	return ns, nil
 }
@@ -170,6 +183,12 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		return errors.Wrap(err, "unmarshalling last node reward nomination")
 	}
 	s.LastNodeRewardNomination = math.Timestamp(lnrnI)
+	// unmarshal unclaimed node reward
+	unrI, err := util.IntFromBlob(st.Get(unrKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling unclaimed node reward")
+	}
+	s.UnclaimedNodeReward = math.Ndau(unrI)
 
 	return err
 }

@@ -20,8 +20,10 @@ type EAIFeeTable []EAIFee
 // The fee is listed as Ndau; the listed value is multiplied by the number
 // of Ndau actually earned as EAI.
 //
-// The fee is credited to the account at the listed address.
+// The fee is credited to the account at the listed address. If the destination
+// is nil, it is considered to be a node reward, and is tracked in internal
+// state instead of going into an account.
 type EAIFee struct {
 	Fee math.Ndau
-	To  address.Address
+	To  *address.Address
 }

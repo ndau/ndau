@@ -5,6 +5,7 @@ package system_vars
 // DO NOT EDIT
 
 import (
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/tinylib/msgp/msgp"
 )
 
@@ -20,9 +21,13 @@ func (z *EAIFee) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	// string "To"
 	o = append(o, 0xa2, 0x54, 0x6f)
-	o, err = z.To.MarshalMsg(o)
-	if err != nil {
-		return
+	if z.To == nil {
+		o = msgp.AppendNil(o)
+	} else {
+		o, err = z.To.MarshalMsg(o)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -49,9 +54,20 @@ func (z *EAIFee) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "To":
-			bts, err = z.To.UnmarshalMsg(bts)
-			if err != nil {
-				return
+			if msgp.IsNil(bts) {
+				bts, err = msgp.ReadNilBytes(bts)
+				if err != nil {
+					return
+				}
+				z.To = nil
+			} else {
+				if z.To == nil {
+					z.To = new(address.Address)
+				}
+				bts, err = z.To.UnmarshalMsg(bts)
+				if err != nil {
+					return
+				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
@@ -66,7 +82,12 @@ func (z *EAIFee) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *EAIFee) Msgsize() (s int) {
-	s = 1 + 4 + z.Fee.Msgsize() + 3 + z.To.Msgsize()
+	s = 1 + 4 + z.Fee.Msgsize() + 3
+	if z.To == nil {
+		s += msgp.NilSize
+	} else {
+		s += z.To.Msgsize()
+	}
 	return
 }
 
@@ -84,9 +105,13 @@ func (z EAIFeeTable) MarshalMsg(b []byte) (o []byte, err error) {
 		}
 		// string "To"
 		o = append(o, 0xa2, 0x54, 0x6f)
-		o, err = z[za0001].To.MarshalMsg(o)
-		if err != nil {
-			return
+		if z[za0001].To == nil {
+			o = msgp.AppendNil(o)
+		} else {
+			o, err = z[za0001].To.MarshalMsg(o)
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -125,9 +150,20 @@ func (z *EAIFeeTable) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 			case "To":
-				bts, err = (*z)[zb0001].To.UnmarshalMsg(bts)
-				if err != nil {
-					return
+				if msgp.IsNil(bts) {
+					bts, err = msgp.ReadNilBytes(bts)
+					if err != nil {
+						return
+					}
+					(*z)[zb0001].To = nil
+				} else {
+					if (*z)[zb0001].To == nil {
+						(*z)[zb0001].To = new(address.Address)
+					}
+					bts, err = (*z)[zb0001].To.UnmarshalMsg(bts)
+					if err != nil {
+						return
+					}
 				}
 			default:
 				bts, err = msgp.Skip(bts)
@@ -145,7 +181,12 @@ func (z *EAIFeeTable) UnmarshalMsg(bts []byte) (o []byte, err error) {
 func (z EAIFeeTable) Msgsize() (s int) {
 	s = msgp.ArrayHeaderSize
 	for zb0004 := range z {
-		s += 1 + 4 + z[zb0004].Fee.Msgsize() + 3 + z[zb0004].To.Msgsize()
+		s += 1 + 4 + z[zb0004].Fee.Msgsize() + 3
+		if z[zb0004].To == nil {
+			s += msgp.NilSize
+		} else {
+			s += z[zb0004].To.Msgsize()
+		}
 	}
 	return
 }
