@@ -211,6 +211,18 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		math.Duration(1*math.Day),
 	)
 
+	// set nominate reward keys
+	nnrKeys := make(sv.NominateNodeRewardKeys, noKeys)
+	nnrPrivate := make([]signature.PrivateKey, noKeys)
+	for i := 0; i < noKeys; i++ {
+		nnrKeys[i], nnrPrivate[i], err = signature.Generate(signature.Ed25519, nil)
+		if err != nil {
+			panic(err)
+		}
+	}
+	mock.Sets(bpc, sv.NominateNodeRewardKeysName, nnrKeys)
+	ma[sv.NominateNodeRewardKeysName] = nnrPrivate
+
 	return mock, ma, &sviKey
 }
 
@@ -277,6 +289,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.MinDurationBetweenNodeRewardNominationsName,
 		NewNamespacedKey(bpc, sv.MinDurationBetweenNodeRewardNominationsName),
+	)
+
+	svi.set(
+		sv.NominateNodeRewardKeysName,
+		NewNamespacedKey(bpc, sv.NominateNodeRewardKeysName),
 	)
 
 	return svi
