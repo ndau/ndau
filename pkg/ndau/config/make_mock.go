@@ -9,8 +9,10 @@ import (
 	"github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
@@ -199,6 +201,9 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		0x88,
 	}))
 
+	// make eai fee table
+	mock.Sets(bpc, sv.EAIFeeTableName, makeMockEAIFeeTable())
+
 	return mock, ma, &sviKey
 }
 
@@ -257,5 +262,39 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 		NewNamespacedKey(bpc, sv.NodeGoodnessFuncName),
 	)
 
+	svi.set(
+		sv.EAIFeeTableName,
+		NewNamespacedKey(bpc, sv.EAIFeeTableName),
+	)
+
 	return svi
+}
+
+func makeMockEAIFeeTable() sv.EAIFeeTable {
+	return sv.EAIFeeTable{
+		makeMockEAIFee("ndev operations", 40),
+		makeMockEAIFee("ntrd operations", 10),
+		makeMockEAIFee("rfe account", 1),
+		makeMockEAIFee("rewards nomination acct", 1),
+		makeMockEAIFee("node rewards", 98),
+	}
+}
+
+func makeMockEAIFee(_ string, thousandths int64) sv.EAIFee {
+	public, _, err := signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
+	addr, err := address.Generate(address.KindNdau, public.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	fee, err := signed.MulDiv(thousandths, constants.QuantaPerUnit, 1000)
+	if err != nil {
+		panic(err)
+	}
+	return sv.EAIFee{
+		Fee: math.Ndau(fee),
+		To:  addr,
+	}
 }
