@@ -1,5 +1,5 @@
-hash: 80906c17b7c46af32f34e8c77620a7234fc358205792ca9d67f479924014b2fe
-updated: 2018-09-06T13:53:33.016507+02:00
+hash: 1687fc9c714443152a6d677f3b43821aa71a082888d2e6b746838699c13bef22
+updated: 2018-09-11T16:13:20.129983+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -196,7 +196,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: bf4d5637e3576f9525e8aecefbaa12a769676ef5
+  version: 92f4afb0ef55be833a405e5415a303a567775bb3
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -222,6 +222,7 @@ imports:
   - pkg/ndauerr
   - pkg/signed
   - pkg/types
+  - pkg/unsigned
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git

@@ -30,12 +30,10 @@ type Config struct {
 	// It is normally a fully qualified HTTP or TCP address.
 	ChaosAddress string
 
-	// UseMock is normally an empty string.
-	//
-	// When UseMock is not empty, it must be the path to a toml file
+	// When UseMock is set and not empty, it must be the path to a toml file
 	// which contains the mock chain data. In this case, the mock data
 	// overrides the actual chain data; the actual chain is not queried.
-	UseMock string
+	UseMock *string
 
 	// SystemVariableIndirect is a namespaced key at which the master system
 	// variable indirection map is located.
@@ -58,6 +56,21 @@ type Config struct {
 
 	// Node contains node configuration data
 	Node Node
+
+	// NodeRewardWebhook, if set, must be a URL.
+	//
+	// If set, then in the course of the NominateNodeReward transaction,
+	// the node will create a POST request to this URL with a
+	// JSON body:
+	//
+	// {
+	//     "random": <int from Nominate tx>,
+	//     "winner": <string address of winning node>
+	// }
+	//
+	// This allows node operators to respond appropriately when their own node
+	// wins, so they can create a `ClaimNodeReward` transaction.
+	NodeRewardWebhook *string
 }
 
 // DefaultConfig creates a new config object with sensible defaults

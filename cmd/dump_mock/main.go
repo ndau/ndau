@@ -87,11 +87,11 @@ func main() {
 	conf, err := config.LoadDefault(config.DefaultConfigPath(getNdauhome()))
 	check(err)
 
-	if conf.UseMock == "" {
+	if conf.UseMock == nil || *conf.UseMock == "" {
 		check(errors.New("conf.UseMock not set"))
 	}
 
-	mock, err := config.LoadMock(conf.UseMock)
+	mock, err := config.LoadMock(*conf.UseMock)
 	check(err)
 	fmt.Println(intoJSON(mock))
 }

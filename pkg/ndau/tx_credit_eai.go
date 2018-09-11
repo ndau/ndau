@@ -213,7 +213,15 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				continue
 			}
 			if fee.To == nil {
-				state.UnclaimedNodeReward = math.Ndau(feeAward)
+				state.PendingNodeReward, err = state.PendingNodeReward.Add(math.Ndau(feeAward))
+				if err != nil {
+					errorList = append(errorList, errors.Wrap(
+						err,
+						"adding unclaimed node rewards",
+					))
+					err = nil
+					continue
+				}
 			} else {
 				feeAcct, _ := state.GetAccount(*fee.To, app.blockTime)
 				feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))

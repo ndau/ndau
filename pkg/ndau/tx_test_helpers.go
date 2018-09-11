@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -9,10 +10,12 @@ import (
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -65,6 +68,46 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
+	configP, assc, err := config.MakeTmpMock("")
+	require.NoError(t, err)
+
+	app, err = NewApp("", *configP)
+	require.NoError(t, err)
+
+	// disable logging within the tests by sending output to devnull
+	logger := log.StandardLogger()
+	logger.Out = ioutil.Discard
+	app.SetLogger(logger)
+
+	return
+}
+
+// app.System depends on app.Height() returning a reasonable value.
+// Also, to test all system variable features, we need to be able to
+// control what that value is.
+//
+// Unfortunately, by default, app.Height just crashes before the app
+// is fully initialized, which happens at the InitChain transaction.
+//
+// We need to send InitChain regardless, to set the initial system
+// variable cache,
+// but that doesn't allow us to control the returned height, and we
+// definitely don't want to wait around for the chain to run for some
+// number of blocks.
+//
+// We've solved this by making what should be a private method, public.
+// All we have to do now is call it.
+func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
+	app, _ = initApp(t)
+	// adjust only if required
+	if atHeight != 0 {
+		app.SetHeight(atHeight)
+	}
+	app.InitChain(abci.RequestInitChain{})
+	return
 }
 
 func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {

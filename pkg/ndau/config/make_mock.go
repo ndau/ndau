@@ -76,7 +76,7 @@ func MakeChaosMock(config *Config) (MockAssociated, error) {
 
 	// blank the UseMock field--after setting the actual chain mocks,
 	// we don't need the mock file anymore.
-	config.UseMock = ""
+	config.UseMock = nil
 
 	return ma, nil
 }
@@ -106,7 +106,7 @@ func MakeMock(configPath, mockPath string) (config *Config, ma MockAssociated, e
 		if err != nil {
 			return nil, nil, err
 		}
-		config.UseMock = mockPath
+		config.UseMock = &mockPath
 		config.SystemVariableIndirect = *sviKey
 		err = config.Dump(configPath)
 	}
@@ -152,22 +152,28 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		}
 	}
 
+	var err error
+
 	// prepare to return associated data
 	ma := make(MockAssociated)
 
-	// make RFE keypairs
-	const noKeys = 2
-	rfeKeys := make(sv.ReleaseFromEndowmentKeys, noKeys)
-	rfePrivate := make([]signature.PrivateKey, noKeys)
-	var err error
-	for i := 0; i < noKeys; i++ {
-		rfeKeys[i], rfePrivate[i], err = signature.Generate(signature.Ed25519, nil)
-		if err != nil {
-			panic(err)
-		}
+	// set RFE address
+	// generate ownership keys
+	ma[sv.ReleaseFromEndowmentOwnershipName], ma[sv.ReleaseFromEndowmentOwnershipPrivateName], err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
 	}
-	mock.Sets(bpc, sv.ReleaseFromEndowmentKeysName, rfeKeys)
-	ma[sv.ReleaseFromEndowmentKeysName] = rfePrivate
+	// now generate and set the address
+	rfeOwnership := ma[sv.ReleaseFromEndowmentOwnershipName].(signature.PublicKey)
+	rfeAddr, err := address.Generate(address.KindNdau, rfeOwnership.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	mock.Sets(
+		bpc,
+		sv.ReleaseFromEndowmentAddressName,
+		rfeAddr,
+	)
 
 	// set default rate tables
 	mock.Sets(bpc, sv.UnlockedRateTableName, eai.DefaultUnlockedEAI)
@@ -211,17 +217,23 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		math.Duration(1*math.Day),
 	)
 
-	// set nominate reward keys
-	nnrKeys := make(sv.NominateNodeRewardKeys, noKeys)
-	nnrPrivate := make([]signature.PrivateKey, noKeys)
-	for i := 0; i < noKeys; i++ {
-		nnrKeys[i], nnrPrivate[i], err = signature.Generate(signature.Ed25519, nil)
-		if err != nil {
-			panic(err)
-		}
+	// set nominate reward
+	// generate ownership keys
+	ma[sv.NominateNodeRewardOwnershipName], ma[sv.NominateNodeRewardOwnershipPrivateName], err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
 	}
-	mock.Sets(bpc, sv.NominateNodeRewardKeysName, nnrKeys)
-	ma[sv.NominateNodeRewardKeysName] = nnrPrivate
+	// now generate and set the address
+	nnrOwnership := ma[sv.NominateNodeRewardOwnershipName].(signature.PublicKey)
+	nnrAddr, err := address.Generate(address.KindNdau, nnrOwnership.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	mock.Sets(
+		bpc,
+		sv.NominateNodeRewardAddressName,
+		nnrAddr,
+	)
 
 	return mock, ma, &sviKey
 }
@@ -248,8 +260,8 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 
 	// set the ReleaseFromEndowmentsKeys indirect to a BPC variable
 	svi.set(
-		sv.ReleaseFromEndowmentKeysName,
-		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentKeysName),
+		sv.ReleaseFromEndowmentAddressName,
+		NewNamespacedKey(bpc, sv.ReleaseFromEndowmentAddressName),
 	)
 
 	// set the rate table indirects to a bpc variable
@@ -292,8 +304,8 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	)
 
 	svi.set(
-		sv.NominateNodeRewardKeysName,
-		NewNamespacedKey(bpc, sv.NominateNodeRewardKeysName),
+		sv.NominateNodeRewardAddressName,
+		NewNamespacedKey(bpc, sv.NominateNodeRewardAddressName),
 	)
 
 	return svi

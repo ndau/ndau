@@ -1,8 +1,6 @@
 package ndau
 
 import (
-	"fmt"
-
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
@@ -14,11 +12,10 @@ import (
 
 // SignableBytes implements Transactable
 func (tx *ReleaseFromEndowment) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Destination.Msgsize()+tx.Qty.Msgsize()+tx.TxFeeAcct.Msgsize()+8+8)
+	bytes := make([]byte, 0, tx.Destination.Msgsize()+tx.Qty.Msgsize()+8+8)
 	bytes = appendUint64(bytes, tx.Sequence)
 	bytes = appendUint64(bytes, uint64(tx.Qty))
 	bytes = append(bytes, []byte(tx.Destination.String())...)
-	bytes = append(bytes, []byte(tx.TxFeeAcct.String())...)
 	return bytes
 }
 
@@ -28,14 +25,13 @@ func (tx *ReleaseFromEndowment) SignableBytes() []byte {
 // in the `ReleaseFromEndowmentKeys` system variable.
 func NewReleaseFromEndowment(
 	qty math.Ndau,
-	destination, txFeeAcct address.Address,
+	destination address.Address,
 	sequence uint64,
 	keys []signature.PrivateKey,
 ) (tx ReleaseFromEndowment) {
 	tx = ReleaseFromEndowment{
 		Qty:         qty,
 		Destination: destination,
-		TxFeeAcct:   txFeeAcct,
 		Sequence:    sequence,
 	}
 	for _, key := range keys {
@@ -52,37 +48,9 @@ func (tx *ReleaseFromEndowment) Validate(appI interface{}) error {
 		return errors.New("RFE qty may not be <= 0")
 	}
 
-	_, hasAcct, _, err := app.getTxAccount(tx)
-	if err != nil {
-		return err
-	}
+	_, _, _, err := app.getTxAccount(tx)
 
-	if !hasAcct {
-		return errors.New("TxFeeAcct does not exist")
-	}
-
-	rfeKeys := make(sv.ReleaseFromEndowmentKeys, 0)
-	err = app.System(sv.ReleaseFromEndowmentKeysName, &rfeKeys)
-	if err != nil {
-		return errors.Wrap(err, "RFE.Validate app.System err")
-	}
-	// all signatures must be validated by keys in the rfeKeys list
-	valid := true
-	for _, sig := range tx.Signatures {
-		match := false
-		for _, public := range rfeKeys {
-			if public.Verify(tx.SignableBytes(), sig) {
-				match = true
-				break
-			}
-		}
-		valid = valid && match
-	}
-	if !valid {
-		return fmt.Errorf("No public key in %s verifies RFE signature", sv.ReleaseFromEndowmentKeysName)
-	}
-
-	return nil
+	return err
 }
 
 // Apply implements metatx.Transactable
@@ -107,8 +75,9 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 }
 
 // GetSource implements sourcer
-func (tx *ReleaseFromEndowment) GetSource(*App) (address.Address, error) {
-	return tx.TxFeeAcct, nil
+func (tx *ReleaseFromEndowment) GetSource(app *App) (addr address.Address, err error) {
+	err = app.System(sv.ReleaseFromEndowmentAddressName, &addr)
+	return
 }
 
 // GetSequence implements sequencer

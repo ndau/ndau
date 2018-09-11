@@ -80,7 +80,6 @@ var _ ndauTransactable = (*ChangeValidation)(nil)
 type ReleaseFromEndowment struct {
 	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
 	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	TxFeeAcct   address.Address       `msg:"fee" chain:"5,Tx_FeeAccount"`
 	Sequence    uint64                `msg:"seq"`
 	Signatures  []signature.Signature `msg:"sig"`
 }
@@ -193,12 +192,16 @@ type Stake struct {
 
 var _ ndauTransactable = (*Stake)(nil)
 
-// // A NominateNodeReward transaction
-// type NominateNodeReward struct {
-// 	Random     uint64                `msg:"rnd" chain:"41,Tx_Random"`
-// 	TxFeeAcct  address.Address       `msg:"fee" chain:"5,Tx_FeeAccount"`
-// 	Sequence   uint64                `msg:"seq"`
-// 	Signatures []signature.Signature `msg:"sig"`
-// }
+// A NominateNodeReward transaction signals that a node is probably about to be
+// rewarded.
+//
+// The signatures are checked against an account specified by the
+// NominateNodeRewardAddress system variable. That account also specifes
+// the validation script, and pays the transaction fee.
+type NominateNodeReward struct {
+	Random     uint64                `msg:"rnd" chain:"41,Tx_Random"`
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
 
-// var _ ndauTransactable = (*NominateNodeReward)(nil)
+var _ ndauTransactable = (*NominateNodeReward)(nil)

@@ -1,11 +1,12 @@
 package system_vars
 
-import "github.com/oneiro-ndev/signature/pkg/signature"
+// ReleaseFromEndowmentAddressName is the name of the ReleaseFromEndowmentAddress system variable
+//
+// The value contained in this system variable must be of type address.Address
+const ReleaseFromEndowmentAddressName = "ReleaseFromEndowmentAddress"
 
-//go:generate msgp -io=0
+// ReleaseFromEndowmentOwnershipName is the name of the public ownership key
+const ReleaseFromEndowmentOwnershipName = "ReleaseFromEndowmentOwnership"
 
-// ReleaseFromEndowmentKeysName is the name of the ReleaseFromEndowmentKeys system variable
-const ReleaseFromEndowmentKeysName = "ReleaseFromEndowmentKeys"
-
-// ReleaseFromEndowmentKeys is the system variable holding the public keys which are authorized to sign ReleaseFromEndowment transactions
-type ReleaseFromEndowmentKeys []signature.PublicKey
+// ReleaseFromEndowmentOwnershipPrivateName is the name of the public ownership key
+const ReleaseFromEndowmentOwnershipPrivateName = "ReleaseFromEndowmentOwnershipPrivate"

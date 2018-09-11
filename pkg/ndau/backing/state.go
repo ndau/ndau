@@ -14,6 +14,7 @@ const accountKey = "accounts"
 const delegateKey = "delegates"
 const nodeKey = "nodes"
 const lnrnKey = "lnrn" // last node reward nomination
+const pnrKey = "pnr"   // pending node reward
 const unrKey = "unr"   // uncredited node reward
 
 // State is primarily a set of accounts
@@ -32,9 +33,14 @@ type State struct {
 	// governs the validity of upcoming node reward nominations; there's
 	// a minimum interval between them.
 	LastNodeRewardNomination math.Timestamp
-	// Node rewards are calculated by the NominateNodeReward transaction,
-	// but only claimed by the ClaimNodeReward transaction. In the interim,
-	// they need to be stored, so we put them here.
+	// Node rewards are a bit complex. They're accumulated with every
+	// CreditEAI transaction into the PendingNodeReward variable. On
+	// NominateNodeReward, the balance in PendingNodeReward is moved into
+	// UnclaimedNodeReward, because there may be further CreditEAI transactions,
+	// which have to be stored up for the subsequent node.
+	// ClaimNodeReward transactions actually claim the unclaimed node reward;
+	// otherwise, it's overwritten at the next Nominate tx.
+	PendingNodeReward   math.Ndau
 	UnclaimedNodeReward math.Ndau
 }
 
@@ -55,6 +61,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		delegateKey: nt.NewMap(vrw),
 		nodeKey:     nt.NewMap(vrw),
 		lnrnKey:     util.Int(0).ToBlob(vrw),
+		pnrKey:      util.Int(0).ToBlob(vrw),
 		unrKey:      util.Int(0).ToBlob(vrw),
 	})
 
@@ -89,6 +96,11 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	ns = ns.Set(
 		lnrnKey,
 		util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
+	)
+	// marshal pending node reward
+	ns = ns.Set(
+		pnrKey,
+		util.Int(s.PendingNodeReward).ToBlob(vrw),
 	)
 	// marshal unclaimed node reward
 	ns = ns.Set(
@@ -183,6 +195,12 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		return errors.Wrap(err, "unmarshalling last node reward nomination")
 	}
 	s.LastNodeRewardNomination = math.Timestamp(lnrnI)
+	// unmarshal pending node reward
+	pnrI, err := util.IntFromBlob(st.Get(pnrKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling pending node reward")
+	}
+	s.PendingNodeReward = math.Ndau(pnrI)
 	// unmarshal unclaimed node reward
 	unrI, err := util.IntFromBlob(st.Get(unrKey).(nt.Blob))
 	if err != nil {

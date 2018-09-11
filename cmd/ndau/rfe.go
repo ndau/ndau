@@ -6,7 +6,6 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -31,16 +30,19 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 			}
 
 			conf := getConfig()
-			if len(conf.RFE) <= *index {
+			if conf.RFE == nil {
+				orQuit(errors.New("RFE data not set in tool config"))
+			}
+
+			if len(conf.RFE.Keys) <= *index {
 				orQuit(errors.New("not enough RFE keys in configuration"))
 			}
 
 			rfe := ndau.NewReleaseFromEndowment(
 				ndauQty,
 				address,
-				conf.RFE[*index].Address,
-				sequence(conf, conf.RFE[*index].Address),
-				[]signature.PrivateKey{conf.RFE[*index].Key},
+				sequence(conf, conf.RFE.Address),
+				conf.RFE.Keys,
 			)
 
 			result, err := tool.SendCommit(tmnode(conf.Node), &rfe)
