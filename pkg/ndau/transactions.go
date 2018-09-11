@@ -25,6 +25,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(11):   &Stake{},
+	metatx.TxID(12):   &NominateNodeReward{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 

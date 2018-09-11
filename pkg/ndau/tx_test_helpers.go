@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
@@ -185,6 +186,7 @@ func deliverTrAtWithSV(
 	}})
 	svUpdate(app.systemCache)
 	resp := app.DeliverTx(bytes)
+	t.Log(code.ReturnCode(resp.Code))
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
