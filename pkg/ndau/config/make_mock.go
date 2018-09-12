@@ -235,6 +235,13 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		nnrAddr,
 	)
 
+	// set node reward nomination timeout
+	mock.Sets(
+		bpc,
+		sv.NodeRewardNominationTimeoutName,
+		math.Duration(30*math.Second),
+	)
+
 	return mock, ma, &sviKey
 }
 
@@ -306,6 +313,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.NominateNodeRewardAddressName,
 		NewNamespacedKey(bpc, sv.NominateNodeRewardAddressName),
+	)
+
+	svi.set(
+		sv.NodeRewardNominationTimeoutName,
+		NewNamespacedKey(bpc, sv.NodeRewardNominationTimeoutName),
 	)
 
 	return svi

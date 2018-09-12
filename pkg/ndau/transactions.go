@@ -25,7 +25,8 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(11):   &Stake{},
-	metatx.TxID(12):   &NominateNodeReward{},
+	metatx.TxID(13):   &NominateNodeReward{},
+	metatx.TxID(14):   &ClaimNodeReward{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -206,3 +207,14 @@ type NominateNodeReward struct {
 }
 
 var _ ndauTransactable = (*NominateNodeReward)(nil)
+
+// A ClaimNodeReward transaction signals that the named node has been watching
+// the blockchain, noticed that it won the nomination, and is up and ready to
+// claim its reward.
+type ClaimNodeReward struct {
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*ClaimNodeReward)(nil)
