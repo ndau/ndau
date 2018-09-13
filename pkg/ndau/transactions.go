@@ -25,6 +25,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
 	metatx.TxID(11):   &Stake{},
+	metatx.TxID(12):   &RegisterNode{},
 	metatx.TxID(13):   &NominateNodeReward{},
 	metatx.TxID(14):   &ClaimNodeReward{},
 	metatx.TxID(0xff): &GTValidatorChange{},
@@ -193,6 +194,17 @@ type Stake struct {
 }
 
 var _ ndauTransactable = (*Stake)(nil)
+
+// A RegisterNode transaction activates a node
+type RegisterNode struct {
+	Node               address.Address       `msg:"nod" chain:"4,Tx_Node"`
+	DistributionScript []byte                `msg:"dis" chain:"33,Tx_DistributionScript"`
+	RPCAddress         string                `msg:"rpc" chain:"34,Tx_RPCAddress"`
+	Sequence           uint64                `msg:"seq"`
+	Signatures         []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*RegisterNode)(nil)
 
 // A NominateNodeReward transaction signals that a node is probably about to be
 // rewarded.

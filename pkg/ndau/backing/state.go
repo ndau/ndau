@@ -1,7 +1,6 @@
 package backing
 
 import (
-	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -87,7 +86,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	}
 	ns = ns.Set(delegateKey, editor.Map())
 	// marshal nodes
-	nm, err := marshal.Marshal(vrw, s.Nodes)
+	nm, err := MarshalNodesNoms(vrw, s.Nodes)
 	if err != nil {
 		return ns, err
 	}
@@ -182,9 +181,7 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 	})
 
 	// unmarshal nodes
-	nV := st.Get(nodeKey)
-	s.Nodes = make(map[string]Node)
-	err = marshal.Unmarshal(nV, &s.Nodes)
+	s.Nodes, err = UnmarshalNodesNoms(st.Get(nodeKey))
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling nodes")
 	}

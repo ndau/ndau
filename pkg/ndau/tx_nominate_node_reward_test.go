@@ -13,7 +13,6 @@ import (
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	util "github.com/oneiro-ndev/noms-util"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -38,8 +37,8 @@ func initAppNNR(t *testing.T) (*App, config.MockAssociated) {
 			require.NoError(t, err)
 
 			state.Nodes[addr.String()] = backing.Node{
-				TotalStake: util.Int(i + 1),
-				Costakers:  make(map[string]util.Int),
+				TotalStake: math.Ndau(i + 1),
+				Costakers:  make(map[string]math.Ndau),
 			}
 
 			state.Accounts[addr.String()] = backing.AccountData{

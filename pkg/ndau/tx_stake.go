@@ -86,8 +86,10 @@ func (tx *Stake) Validate(appI interface{}) error {
 	if !hasNode {
 		return errors.New("Node does not exist")
 	}
-	if node.Stake == nil || node.Stake.Address != tx.Node {
-		return errors.New("Node is not self-staked")
+	if tx.Node != tx.Target {
+		if node.Stake == nil || node.Stake.Address != tx.Node {
+			return errors.New("Node is not self-staked")
+		}
 	}
 
 	if target.Balance.Compare(node.Balance) > 0 {
