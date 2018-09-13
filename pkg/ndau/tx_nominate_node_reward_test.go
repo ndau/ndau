@@ -1,7 +1,10 @@
 package ndau
 
 import (
+	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"testing"
 	"time"
 
@@ -142,4 +145,60 @@ func TestNNRIsValidOnlyWithSufficientTxFee(t *testing.T) {
 			require.Equal(t, expect, code.ReturnCode(resp.Code))
 		})
 	}
+}
+
+func TestNNRRequiresCooldown(t *testing.T) {
+	app, assc := initAppNNR(t)
+	privateKeys := assc[nnrKeys].([]signature.PrivateKey)
+
+	nnr := NewNominateNodeReward(
+		0,
+		1,
+		[]signature.PrivateKey{privateKeys[0]},
+	)
+	resp := deliverTr(t, app, &nnr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	nnr = NewNominateNodeReward(
+		0, 2, []signature.PrivateKey{privateKeys[0]},
+	)
+	resp = deliverTr(t, app, &nnr)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestNNRCallsWebhook(t *testing.T) {
+	// set up server listening on localhost
+	qtyCalls := 0
+	const port = ":31416"
+	server := &http.Server{Addr: port}
+	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		qtyCalls++
+		w.WriteHeader(204)
+	})
+	listener, err := net.Listen("tcp", port)
+	require.NoError(t, err)
+	go func() {
+		if err := server.Serve(listener); err != nil {
+			t.Log(err)
+		}
+	}()
+	defer server.Shutdown(context.Background())
+
+	// edit app configuration to set webhook address
+	app, assc := initAppNNR(t)
+	webhookAddr := fmt.Sprintf("http://localhost%s", port)
+	app.config.NodeRewardWebhook = &webhookAddr
+
+	// now deliver the NNR transaction
+	privateKeys := assc[nnrKeys].([]signature.PrivateKey)
+
+	nnr := NewNominateNodeReward(
+		0,
+		1,
+		[]signature.PrivateKey{privateKeys[0]},
+	)
+	resp := deliverTr(t, app, &nnr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	require.Equal(t, 1, qtyCalls)
 }
