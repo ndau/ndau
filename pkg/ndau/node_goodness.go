@@ -76,7 +76,10 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 	}
 	goodnessSum := uint64(0)
 	goodnesses := make([]goodnessPair, 0, len(state.Nodes))
-	for addr := range state.Nodes {
+	for addr, node := range state.Nodes {
+		if !node.Active {
+			continue
+		}
 		goodness, err := app.goodnessOf(addr)
 		if err == nil && goodness > 0 {
 			goodnessSum += uint64(goodness)

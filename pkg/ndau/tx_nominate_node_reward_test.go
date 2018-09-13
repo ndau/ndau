@@ -39,6 +39,7 @@ func initAppNNR(t *testing.T) (*App, config.MockAssociated) {
 			state.Nodes[addr.String()] = backing.Node{
 				TotalStake: math.Ndau(i + 1),
 				Costakers:  make(map[string]math.Ndau),
+				Active:     true,
 			}
 
 			state.Accounts[addr.String()] = backing.AccountData{
