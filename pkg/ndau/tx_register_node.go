@@ -46,7 +46,7 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 		return errors.New("DistributionScript invalid")
 	}
 
-	_, err := url.Parse(tx.RPCAddress)
+	_, err := url.ParseRequestURI(tx.RPCAddress)
 	if err != nil {
 		return errors.Wrap(err, "RPCAddress invalid")
 	}
