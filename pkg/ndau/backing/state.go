@@ -15,6 +15,7 @@ const nodeKey = "nodes"
 const lnrnKey = "lnrn" // last node reward nomination
 const pnrKey = "pnr"   // pending node reward
 const unrKey = "unr"   // uncredited node reward
+const nrwKey = "nrw"   // node reward winner
 
 // State is primarily a set of accounts
 type State struct {
@@ -61,9 +62,10 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		accountKey:  nt.NewMap(vrw),
 		delegateKey: nt.NewMap(vrw),
 		nodeKey:     nt.NewMap(vrw),
-		lnrnKey:     util.Int(0).ToBlob(vrw),
-		pnrKey:      util.Int(0).ToBlob(vrw),
-		unrKey:      util.Int(0).ToBlob(vrw),
+		lnrnKey:     util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
+		pnrKey:      util.Int(s.PendingNodeReward).ToBlob(vrw),
+		unrKey:      util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
+		nrwKey:      nt.String(s.NodeRewardWinner.String()),
 	})
 
 	// marshal accounts
@@ -93,21 +95,6 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		return ns, err
 	}
 	ns = ns.Set(nodeKey, nm)
-	// marshal last node reward nomination
-	ns = ns.Set(
-		lnrnKey,
-		util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
-	)
-	// marshal pending node reward
-	ns = ns.Set(
-		pnrKey,
-		util.Int(s.PendingNodeReward).ToBlob(vrw),
-	)
-	// marshal unclaimed node reward
-	ns = ns.Set(
-		unrKey,
-		util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
-	)
 
 	return ns, nil
 }
@@ -206,6 +193,14 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		return errors.Wrap(err, "unmarshalling unclaimed node reward")
 	}
 	s.UnclaimedNodeReward = math.Ndau(unrI)
+	// unmarshal node reward winner
+	nrwS := string(st.Get(nrwKey).(nt.String))
+	if nrwS != "" {
+		s.NodeRewardWinner, err = address.Validate(string(st.Get(nrwKey).(nt.String)))
+		if err != nil {
+			return errors.Wrap(err, "validating node reward winner")
+		}
+	}
 
 	return err
 }
