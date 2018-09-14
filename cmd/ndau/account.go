@@ -83,5 +83,11 @@ func getAccount(verbose *bool, keys *int) func(*cli.Cmd) {
 			"register this node to activate it",
 			getRegisterNode(verbose, keys),
 		)
+
+		cmd.Command(
+			"claim-node-reward",
+			"claim node reward for this node",
+			getClaimNodeReward(verbose, keys),
+		)
 	}
 }
