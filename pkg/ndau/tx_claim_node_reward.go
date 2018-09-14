@@ -56,6 +56,10 @@ func (tx *ClaimNodeReward) Validate(appI interface{}) error {
 		)
 	}
 
+	if state.NodeRewardWinner != tx.Node {
+		return fmt.Errorf("winner was %s not %s", state.NodeRewardWinner, tx.Node)
+	}
+
 	return nil
 }
 

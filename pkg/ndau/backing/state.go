@@ -41,6 +41,8 @@ type State struct {
 	// otherwise, it's overwritten at the next Nominate tx.
 	PendingNodeReward   math.Ndau
 	UnclaimedNodeReward math.Ndau
+	// Of course, we have to keep track of which node has acutally won
+	NodeRewardWinner address.Address
 }
 
 // make sure State is a metaapp.State

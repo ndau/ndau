@@ -187,7 +187,7 @@ func BuildVMForNodeGoodness(
 		return nil, err
 	}
 
-	totalStakeV, err := chain.ToValue(totalStake)
+	totalAwardV, err := chain.ToValue(totalStake)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func BuildVMForNodeGoodness(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, addrV, acctV, totalStakeV)
+	err = theVM.Init(0, addrV, acctV, totalAwardV)
 	return theVM, err
 }
 
@@ -230,7 +230,7 @@ func BuildVMForNodeDistribution(
 	node address.Address,
 	costakers map[string]math.Ndau,
 	accounts map[string]backing.AccountData,
-	totalReward math.Ndau,
+	totalAward math.Ndau,
 	ts math.Timestamp,
 ) (*vm.ChaincodeVM, error) {
 	// decorate account data with the account's address
@@ -252,14 +252,14 @@ func BuildVMForNodeDistribution(
 		return acctS.SafeSet(byte(1), addrV)
 	}
 
-	nodeV, err := chain.ToValue(node.String())
+	nodeV, err := decorateAddr(node.String(), accounts[node.String()])
 	if err != nil {
 		return nil, errors.Wrap(err, "chaincode value for node")
 	}
 
-	totalStakeV, err := chain.ToValue(totalReward)
+	totalAwardV, err := chain.ToValue(totalAward)
 	if err != nil {
-		return nil, errors.Wrap(err, "chaincode value for totalReward")
+		return nil, errors.Wrap(err, "chaincode value for totalAward")
 	}
 
 	costakersV := make([]vm.Value, 0, len(costakers))
@@ -331,8 +331,8 @@ func BuildVMForNodeDistribution(
 	//
 	// stack:
 	//  (top) costakers (list of structs of account data decorated with address)
-	//        totalStake
-	//        nodeAddress
-	err = theVM.Init(0, nodeV, totalStakeV, vm.List(costakersV))
+	//        totalAward
+	//        node (account data decorated with address)
+	err = theVM.Init(0, nodeV, totalAwardV, vm.List(costakersV))
 	return theVM, errors.Wrap(err, "initializing chaincode vm")
 }
