@@ -21,15 +21,15 @@ func getNNR(verbose *bool, keys *int) func(*cli.Cmd) {
 		randS := cmd.StringArg("RANDOM", "", "specify a random number in the u64 range")
 
 		cmd.Action = func() {
-			random := uint64(0)
+			random := int64(0)
 			if generate != nil && *generate {
 				bytes := make([]byte, 8)
 				_, err := rand.Read(bytes)
 				orQuit(err)
-				random = binary.BigEndian.Uint64(bytes)
+				random = int64(binary.BigEndian.Uint64(bytes))
 			} else if randS != nil && *randS != "" {
 				var err error
-				random, err = strconv.ParseUint(*randS, 10, 64)
+				random, err = strconv.ParseInt(*randS, 0, 64)
 				orQuit(err)
 			} else {
 				orQuit(errors.New("no random number specified"))

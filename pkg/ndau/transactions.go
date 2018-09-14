@@ -213,7 +213,7 @@ var _ ndauTransactable = (*RegisterNode)(nil)
 // NominateNodeRewardAddress system variable. That account also specifes
 // the validation script, and pays the transaction fee.
 type NominateNodeReward struct {
-	Random     uint64                `msg:"rnd" chain:"41,Tx_Random"`
+	Random     int64                 `msg:"rnd" chain:"41,Tx_Random"`
 	Sequence   uint64                `msg:"seq"`
 	Signatures []signature.Signature `msg:"sig"`
 }

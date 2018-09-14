@@ -789,7 +789,7 @@ func (z *NominateNodeReward) MarshalMsg(b []byte) (o []byte, err error) {
 	// map header, size 3
 	// string "rnd"
 	o = append(o, 0x83, 0xa3, 0x72, 0x6e, 0x64)
-	o = msgp.AppendUint64(o, z.Random)
+	o = msgp.AppendInt64(o, z.Random)
 	// string "seq"
 	o = append(o, 0xa3, 0x73, 0x65, 0x71)
 	o = msgp.AppendUint64(o, z.Sequence)
@@ -822,7 +822,7 @@ func (z *NominateNodeReward) UnmarshalMsg(bts []byte) (o []byte, err error) {
 		}
 		switch msgp.UnsafeString(field) {
 		case "rnd":
-			z.Random, bts, err = msgp.ReadUint64Bytes(bts)
+			z.Random, bts, err = msgp.ReadInt64Bytes(bts)
 			if err != nil {
 				return
 			}
@@ -861,7 +861,7 @@ func (z *NominateNodeReward) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *NominateNodeReward) Msgsize() (s int) {
-	s = 1 + 4 + msgp.Uint64Size + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + msgp.Int64Size + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}

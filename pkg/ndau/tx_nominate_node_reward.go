@@ -19,7 +19,7 @@ import (
 // SignableBytes implements Transactable
 func (tx *NominateNodeReward) SignableBytes() []byte {
 	bytes := make([]byte, 0, 8+8)
-	bytes = appendUint64(bytes, tx.Random)
+	bytes = appendUint64(bytes, uint64(tx.Random))
 	bytes = appendUint64(bytes, tx.Sequence)
 	return bytes
 }
@@ -29,7 +29,7 @@ func (tx *NominateNodeReward) SignableBytes() []byte {
 // The caller must ensure that `private` corresponds to a public key listed
 // in the `NominateNodeRewardKeys` system variable.
 func NewNominateNodeReward(
-	random uint64,
+	random int64,
 	sequence uint64,
 	keys []signature.PrivateKey,
 ) (tx NominateNodeReward) {
@@ -87,7 +87,7 @@ func (tx *NominateNodeReward) Apply(appI interface{}) error {
 		state.UnclaimedNodeReward = state.PendingNodeReward
 		state.PendingNodeReward = 0
 
-		winner, err := app.SelectByGoodness(tx.Random)
+		winner, err := app.SelectByGoodness(uint64(tx.Random))
 		if err != nil {
 			return state, err
 		}
@@ -107,7 +107,7 @@ func (app *App) callWinnerWebhook(tx *NominateNodeReward, winner address.Address
 	})
 
 	body := struct {
-		Random uint64 `json:"random"`
+		Random int64  `json:"random"`
 		Winner string `json:"winner"`
 	}{
 		Random: tx.Random,
