@@ -6,20 +6,20 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/pkg/errors"
 )
 
-func getRfe(verbose *bool) func(*cli.Cmd) {
+func getRfe(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf(
-			"%s %s [RFE_KEY_INDEX]",
+			"%s %s",
 			getNdauSpec(),
 			getAddressSpec(""),
 		)
 
 		getNdau := getNdauClosure(cmd)
 		getAddress := getAddressClosure(cmd, "")
-		index := cmd.IntArg("RFE_KEY_INDEX", 0, "index of RFE key to use to sign this transaction")
 
 		cmd.Action = func() {
 			ndauQty := getNdau()
@@ -34,15 +34,13 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 				orQuit(errors.New("RFE data not set in tool config"))
 			}
 
-			if len(conf.RFE.Keys) <= *index {
-				orQuit(errors.New("not enough RFE keys in configuration"))
-			}
+			keys := config.FilterK(conf.RFE.Keys, keys)
 
 			rfe := ndau.NewReleaseFromEndowment(
 				ndauQty,
 				address,
 				sequence(conf, conf.RFE.Address),
-				conf.RFE.Keys,
+				keys,
 			)
 
 			result, err := tool.SendCommit(tmnode(conf.Node), &rfe)

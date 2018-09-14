@@ -10,6 +10,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/pkg/errors"
 )
 
 func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
@@ -101,7 +102,7 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*vm.ChaincodeVM, error) {
 	txStruct, err := chain.ToValue(tx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "representing tx as chaincode value")
 	}
 
 	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
@@ -112,16 +113,16 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	// We're going to build a seed out of the hash of the SignableBytes of the tx.
 	randomer, err := chain.NewSeededRand(tx.SignableBytes())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating seeded rand")
 	}
 	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating caching now")
 	}
 
 	txID, err := metatx.TxIDOf(tx, TxIDs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting tx id")
 	}
 	txIndex := byte(txID)
 
@@ -132,7 +133,7 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	// as SignableBytes, plus a delta for generating a UUID.
 	bytes, err := metatx.Marshal(tx, TxIDs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "marshalling tx for length")
 	}
 	byteLen := vm.NewNumber(int64(len(bytes)))
 
@@ -144,7 +145,7 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 
 	theVM, err := vm.New(*bin)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating chaincode vm")
 	}
 
 	if nower != nil {
@@ -158,7 +159,7 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	// transaction in question, with the length of the full serialized
 	// transaction and the transaction struct on the stack
 	err = theVM.Init(txIndex, byteLen, txStruct)
-	return theVM, err
+	return theVM, errors.Wrap(err, "initializing chaincode vm")
 }
 
 // BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
