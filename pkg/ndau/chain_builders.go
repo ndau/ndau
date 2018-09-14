@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
@@ -213,4 +214,125 @@ func BuildVMForNodeGoodness(
 	// goodness functions all use the default handler
 	err = theVM.Init(0, addrV, acctV, totalStakeV)
 	return theVM, err
+}
+
+// BuildVMForNodeDistribution builds a VM that it sets up to calculate distribution
+// of node rewards.
+//
+// All that needs to happen after this is to call Run().
+//
+// Node distribution functions are expected to return a list of structs on
+// top of their stack. These structs must be decorated such that field 10
+// is the numeric quantitiy of napu which should be disbursed to that
+// costaker.
+func BuildVMForNodeDistribution(
+	code []byte,
+	node address.Address,
+	costakers map[string]math.Ndau,
+	accounts map[string]backing.AccountData,
+	totalReward math.Ndau,
+	ts math.Timestamp,
+) (*vm.ChaincodeVM, error) {
+	// decorate account data with the account's address
+	decorateAddr := func(addr string, acct backing.AccountData) (vm.Value, error) {
+		acctV, err := chain.ToValue(acct)
+		if err != nil {
+			return acctV, err
+		}
+		addrV, err := chain.ToValue(addr)
+		if err != nil {
+			return acctV, err
+		}
+		// field 1 is usually Tx_Source, but it also makes sense in a struct
+		// context as the address
+		acctS, isStruct := acctV.(*vm.Struct)
+		if !isStruct {
+			return acctV, errors.New("acctV is not a *vm.Struct")
+		}
+		return acctS.SafeSet(byte(1), addrV)
+	}
+
+	nodeV, err := chain.ToValue(node.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "chaincode value for node")
+	}
+
+	totalStakeV, err := chain.ToValue(totalReward)
+	if err != nil {
+		return nil, errors.Wrap(err, "chaincode value for totalReward")
+	}
+
+	costakersV := make([]vm.Value, 0, len(costakers))
+	for costaker := range costakers {
+		if costaker == node.String() {
+			// don't include the node's data among the costakers:
+			// nodes get all the leftovers, so we only really care about
+			// distribution among everyone else
+			continue
+		}
+		acct, hasAcct := accounts[costaker]
+		if !hasAcct {
+			continue
+		}
+		acctV, err := decorateAddr(costaker, acct)
+		if err != nil {
+			return nil, errors.Wrap(err, "decorating costaker with addr")
+		}
+		costakersV = append(costakersV, acctV)
+	}
+
+	// sort the list of costakers by address for determinism,
+	// so we're not thrown off by a node whose distribution script
+	// is something like "the first guy in the list gets everything"
+	sort.Slice(costakersV, func(i, j int) bool {
+		vI, isS := costakersV[i].(*vm.Struct)
+		if !isS {
+			return false
+		}
+		aI, err := vI.Get(1)
+		if err != nil {
+			return false
+		}
+		vJ, isS := costakersV[j].(*vm.Struct)
+		if !isS {
+			return false
+		}
+		aJ, err := vJ.Get(1)
+		if err != nil {
+			return false
+		}
+		lt, err := aI.Less(aJ)
+		if err != nil {
+			return false
+		}
+		return lt
+	})
+
+	bin := buildBinary(code, fmt.Sprintf("distribution for %s", node), "")
+
+	theVM, err := vm.New(*bin)
+	if err != nil {
+		return nil, errors.Wrap(err, "constructing chaincode vm")
+	}
+
+	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
+	// if it has one, or the current time if it doesn't.
+	var nower vm.Nower
+
+	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	if err != nil {
+		return nil, errors.Wrap(err, "constructing chaincode nower")
+	}
+	if nower != nil {
+		theVM.SetNow(nower)
+	}
+
+	// distribution functions all use the default handler
+	//
+	// stack:
+	//  (top) costakers (list of structs of account data decorated with address)
+	//        totalStake
+	//        nodeAddress
+	err = theVM.Init(0, nodeV, totalStakeV, vm.List(costakersV))
+	return theVM, errors.Wrap(err, "initializing chaincode vm")
 }
