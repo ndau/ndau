@@ -194,6 +194,7 @@ type AccountData struct {
 	Settlements         []Settlement       `chain:"70,Acct_Settlements"`
 	SettlementSettings  SettlementSettings `chain:"."`
 	ValidationScript    []byte             `chain:"69,Acct_ValidationScript"`
+	UncreditedEAI       math.Ndau          `json:"-" msg:"-"` // exclude from serialization
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
@@ -237,6 +238,7 @@ type nomsAccountData struct {
 	Settlements         []Settlement
 	SettlementSettings  SettlementSettings
 	ValidationScript    nt.Blob
+	UncreditedEAI       util.Int
 }
 
 func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
@@ -252,6 +254,7 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		Sequence:           util.Int(ad.Sequence),
 		Settlements:        ad.Settlements,
 		SettlementSettings: ad.SettlementSettings,
+		UncreditedEAI:      util.Int(ad.UncreditedEAI),
 	}
 	for _, tk := range ad.TransferKeys {
 		tkBytes, err := tk.Marshal()
@@ -340,5 +343,6 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	ad.Settlements = n.Settlements
 	ad.SettlementSettings = n.SettlementSettings
 	ad.ValidationScript, err = util.Unblob(n.ValidationScript)
+	ad.UncreditedEAI = math.Ndau(n.UncreditedEAI)
 	return err
 }

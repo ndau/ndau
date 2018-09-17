@@ -37,12 +37,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	accountData, hasAccount, _, err := app.getTxAccount(
-		tx,
-		tx.Source,
-		tx.Sequence,
-		tx.Signatures,
-	)
+	accountData, hasAccount, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
@@ -81,17 +76,14 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		accountData, _ := state.GetAccount(tx.Source, app.blockTime)
-		accountData.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		accountData.Balance -= fee
 
 		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
 
@@ -120,4 +112,19 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 		state.Accounts[tx.Source.String()] = accountData
 		return state, nil
 	})
+}
+
+// GetSource implements sourcer
+func (tx *SetRewardsDestination) GetSource(*App) (address.Address, error) {
+	return tx.Source, nil
+}
+
+// GetSequence implements sequencer
+func (tx *SetRewardsDestination) GetSequence() uint64 {
+	return tx.Sequence
+}
+
+// GetSignatures implements signeder
+func (tx *SetRewardsDestination) GetSignatures() []signature.Signature {
+	return tx.Signatures
 }
