@@ -49,7 +49,7 @@ type GTValidatorChange struct {
 	Power int64
 }
 
-// static assert that GTValidatorChange is ndauTransactable
+// static assert that GTValidatorChange is metatx.Transactable
 var _ metatx.Transactable = (*GTValidatorChange)(nil)
 
 // A Transfer is the fundamental transaction of the Ndau chain.
