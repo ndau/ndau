@@ -42,7 +42,7 @@ jobs:
           name: Build ndaunode-test image
           command: |
             # build ndaunode tests
-            docker build -t ndaunode-test . -f /app/ndaunode-test.docker
+            docker build -t ndaunode-test . -f /app/ndaunode-test.docker --build-arg CI=true
             # cleanup
             docker rmi ndaunode-test
       - run:

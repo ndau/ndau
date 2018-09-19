@@ -1,6 +1,10 @@
 # Build stage: this all gets discarded later
 FROM golang:1.10-alpine3.7
 
+# Allow us to pass in a flag for CI builds
+ARG CI
+ENV CI=$CI
+
 # start by installing fundamental utilities
 # openssh-client is required for git
 # git is required for glide
