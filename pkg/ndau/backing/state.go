@@ -265,3 +265,50 @@ func (s *State) GetCostakers(nodeA address.Address) []AccountData {
 	}
 	return out
 }
+
+// PayReward updates the state of the target address to add the given qty of ndau, following
+// the link to any specified rewards target. If the rewards target account does not previously exist,
+// it will be created. Returns the address that was updated, which may not be the same as the address
+// specified.
+func (s *State) PayReward(address address.Address, reward math.Ndau, blockTime math.Timestamp, isEAI bool) (address.Address, error) {
+	// follow the chain to the target account
+	acct, _ := s.GetAccount(address, blockTime)
+
+	rewardForWAA := reward
+
+	if acct.RewardsTarget == nil {
+		// WAA is not affected by rewards coming from EAI, ONLY when the rewards are sent to the
+		// same account; otherwise, WAA *is* adjusted.
+		if isEAI {
+			rewardForWAA = 0
+		}
+	} else {
+		address = *(acct.RewardsTarget)
+		acct, _ = s.GetAccount(address, blockTime)
+	}
+
+	err := acct.WeightedAverageAge.UpdateWeightedAverageAge(
+		blockTime.Since(acct.LastWAAUpdate),
+		rewardForWAA,
+		acct.Balance,
+	)
+	if err != nil {
+		return address, err
+	}
+
+	// now we can update the balance
+	acct.Balance, err = acct.Balance.Add(math.Ndau(reward))
+	if err != nil {
+		return address, err
+	}
+
+	// and if it was EAI do that too
+	if isEAI {
+		acct.LastEAIUpdate = blockTime
+	}
+	// we always set LastWAAUpdate
+	acct.LastWAAUpdate = blockTime
+
+	s.Accounts[address.String()] = acct
+	return address, nil
+}

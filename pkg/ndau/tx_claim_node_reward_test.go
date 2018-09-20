@@ -31,8 +31,8 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 		acct.TransferKeys = []signature.PublicKey{public}
 	})
 
-	// see chaincode/chasm/examples/distribution.chasm
-	script, err := base64.StdEncoding.DecodeString("oAAOAlIFcD2QCYIACoiAAAJgPQ4CRiFQIWRGiA==")
+	// see chaincode/chasm/examples/distributeRewards.chasm
+	script, err := base64.StdEncoding.DecodeString("oAANAlIJIVAhZEYJBXA9kAmCAAoFURpBIAlUiIAAAmA9CUaI")
 	require.NoError(t, err)
 
 	costakers := make(map[string]math.Ndau)
@@ -152,7 +152,10 @@ func TestClaimNodeRewardChangesAppState(t *testing.T) {
 	state = app.GetState().(*backing.State)
 	acct, _ = state.GetAccount(nA, app.blockTime)
 
-	// we expect 60% of node rewards to go to the EAI node in this setup
+	// The script allocates 80% of node rewards to co-stakers but includes
+	// the node itself as a co-staker, so that means that with one co-staker of
+	// equal stake to the node, we expect 40% will go to the co-staker and
+	// 60% of node rewards to go to the EAI node.
 	require.Equal(t, math.Ndau(cnrStake+(60*constants.QuantaPerUnit)), acct.Balance)
 
 	// we expect 40% of node rewards to go to source acct in this setup
@@ -167,9 +170,13 @@ func TestClaimNodeRewardDeductsTxFee(t *testing.T) {
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
 
+	// This test sets the node's balance to 1 napu and then does two
+	// tx with no reward that cost 1 napu. The first should succeed
+	// and the second should fail
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
+	app.GetState().(*backing.State).UnclaimedNodeReward = 0
 
 	for i := 0; i < 2; i++ {
 		tx := NewClaimNodeReward(nA, 1+uint64(i), []signature.PrivateKey{private})

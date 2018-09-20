@@ -171,32 +171,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				continue
 			}
 			eaiAward = math.Ndau(reducedAward)
-
-			destAcct := accountAddr
-			destAcctData := acctData
-			if acctData.RewardsTarget != nil {
-				destAcct = *acctData.RewardsTarget
-				destAcctData, _ = state.GetAccount(destAcct, app.blockTime)
-			}
-
-			destAcctData.Balance, err = destAcctData.Balance.Add(eaiAward)
+			_, err = state.PayReward(accountAddr, eaiAward, app.blockTime, true)
 			if err != nil {
-				// same deal: we either panic, or just log the error and soldier on
-				logger.WithError(err).WithField("eaiAward", eaiAward).Error("error updating account balance")
 				errorList = append(errorList, err)
 				err = nil
 				continue
 			}
-			acctData.LastEAIUpdate = app.blockTime
 
-			if destAcct.String() == accountAddr.String() {
-				// special case: just update the acctData balance, and
-				// make a single state update
-				acctData.Balance = destAcctData.Balance
-			} else {
-				state.Accounts[destAcct.String()] = destAcctData
-			}
-			state.Accounts[accountAddr.String()] = acctData
 		}
 
 		// before considering the error list generated from the account iteration,
@@ -230,21 +211,32 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 					err = nil
 					continue
 				}
+				// Because this is a required state update, once we get this far,
+				// we MUST NOT return an error from this function.
 				state.Accounts[fee.To.String()] = feeAcct
 			}
 		}
 
-		if len(errorList) > 0 {
-			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
-			for idx, err := range errorList {
-				if idx != 0 {
-					errStr += ", "
-				}
-				errStr += err.Error()
-			}
-			err = errors.New(errStr)
-		}
-		return state, err
+		// Since the comments above indicate that the desire is to make sure the state gets
+		// propogated even though there are errors, I'm going to suppress the error return
+		// here since the caller will not update state if error is non-nil.
+		// (See app.UpdateState in metanode/pkg/meta/app/application.go)
+
+		// I'm leaving this code here for now in case I'm misunderstanding something.
+
+		// if len(errorList) > 0 {
+		// 	errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
+		// 	for idx, err := range errorList {
+		// 		if idx != 0 {
+		// 			errStr += ", "
+		// 		}
+		// 		errStr += err.Error()
+		// 	}
+		// 	err = errors.New(errStr)
+		// }
+		// return state, err
+
+		return state, nil
 	})
 }
 

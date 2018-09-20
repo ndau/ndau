@@ -11,6 +11,7 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // NewClaimNodeReward creates a new ClaimNodeReward transaction
@@ -74,6 +75,21 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
+		// We never want this tx to fail because we want all node payouts to be paid to someone.
+		// If there are errors, they will be resolved in favor of the node operator.
+		// That sounds unfair but the users will swiftly realize that their payouts aren't
+		// coming properly and they'll punish the node op by moving their stake.
+		// We need a place to hold any errors we may generate.
+		// Because we want to dedup them, we just store them as strings and dump them at the end.
+		allErrs := make(map[string]struct{})
+		// this just makes the lines a little prettier
+		xx := struct{}{}
+
+		// work on distributing the awards list, and accumulate any errors we see. We want to
+		// be sure that we always distribute all of the node reward, so we're never going to exit
+		// this function early, and all errors are logged but not returned.
+
+		rv := make(vm.List, 0)
 		avm, err := BuildVMForNodeDistribution(
 			state.Nodes[tx.Node.String()].DistributionScript,
 			tx.Node,
@@ -82,45 +98,63 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 			state.UnclaimedNodeReward,
 			app.blockTime,
 		)
+		// ugly nested ifs here but it's what we need to do
+		// basically, if we have an egregious error anywhere up here, we'll skip trying
+		// to evaluate the results and just give everything to the node op.
 		if err != nil {
-			return state, errors.Wrap(err, "constructing chaincode vm")
-		}
-		err = avm.Run(false)
-		if err != nil {
-			return state, errors.Wrap(err, "running chaincode vm")
-		}
-		// expected top of stack on successful chaincode completion:
-		// list of structs, whose field 10 is the amount returned
-		// note: this list may be sorted in arbitrary order, and sort order
-		// may differ from our input list.
-		rv, err := avm.Stack().PopAsListOfStructs(10)
-		if err != nil {
-			return state, errors.Wrap(err, "pop chaincode return value as list of structs")
+			allErrs[errors.Wrap(err, "constructing chaincode vm").Error()] = xx
+		} else {
+			err = avm.Run(false)
+			if err != nil {
+				allErrs[errors.Wrap(err, "running chaincode vm").Error()] = xx
+			} else {
+				// expected top of stack on successful chaincode completion:
+				// list of structs, whose field 10 is the amount returned
+				// note: this list may be sorted in arbitrary order, and sort order
+				// may differ from our input list.
+				rv, err = avm.Stack().PopAsListOfStructs(10)
+				if err != nil {
+					allErrs[errors.Wrap(err, "pop chaincode return value as list of structs").Error()] = xx
+				}
+			}
 		}
 
+		// Now, if the chaincode actually ran and returned something useful we can iterate through the list;
+		// otherwise nothing will happen here and we'll just fall through to giving everything to the node
+		// operator (which will eventually show up in the statistics).
 		for _, v := range rv {
 			s := v.(*vm.Struct)   // no err handling because PALOS promised
 			value, _ := s.Get(10) // PALOS already checked that the field exists
-			nV, isNum := value.(*vm.Number)
+			nV, isNum := value.(vm.Number)
 			if !isNum {
-				return state, errors.Wrap(err, "chaincode returned non-numeric value for costaker disbursal")
+				allErrs["chaincode returned non-numeric value for costaker disbursal"] = xx
+				continue
 			}
 			n := nV.AsInt64()
 			if n < 0 {
-				return state, errors.New("chaincode attempted to return negative reward for costaker")
+				allErrs["chaincode attempted to return negative reward for costaker"] = xx
+				continue
 			}
 			addrV, err := s.Get(1) // addresses are in field 1
 			if err != nil {
-				return state, errors.Wrap(err, "getting address from chaincode return value")
+				allErrs[errors.Wrap(err, "getting address from chaincode return value").Error()] = xx
+				continue
 			}
 			addrB, isBytes := addrV.(*vm.Bytes)
 			if !isBytes {
-				return state, errors.Wrap(err, "chaincode changed address type")
+				allErrs[errors.Wrap(err, "chaincode changed address type").Error()] = xx
+				continue
 			}
 			addr := addrB.String()
 			addrA, err := address.Validate(addr)
 			if err != nil {
-				return state, errors.Wrap(err, "chaincode messed up costaker address")
+				allErrs[errors.Wrap(err, "chaincode messed up costaker address").Error()] = xx
+				continue
+			}
+
+			if _, ok := state.Nodes[tx.Node.String()].Costakers[addr]; !ok {
+				allErrs["chaincode attempted to reward a non-costaker"] = xx
+				continue
 			}
 
 			// awards are disbursed first-come, first-serve to the list of
@@ -137,9 +171,10 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				final = true
 			}
 			state.UnclaimedNodeReward -= award
-			acct, _ := state.GetAccount(addrA, app.blockTime)
-			acct.Balance += math.Ndau(n)
-			state.Accounts[addr] = acct
+			_, err = state.PayReward(addrA, award, app.blockTime, false)
+			if err != nil {
+				allErrs[err.Error()] = xx
+			}
 			if final {
 				break
 			}
@@ -147,10 +182,30 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 
 		// if after disbursement to costakers there remains some node reward,
 		// it goes to the node
-		acct, _ := state.GetAccount(tx.Node, app.blockTime)
-		acct.Balance += state.UnclaimedNodeReward
-		state.Accounts[tx.Node.String()] = acct
-		state.UnclaimedNodeReward = math.Ndau(0)
+		if state.UnclaimedNodeReward > 0 {
+			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.blockTime, false)
+			if err != nil {
+				allErrs[err.Error()] = xx
+			}
+			state.UnclaimedNodeReward = math.Ndau(0)
+		}
+
+		// we now have a (deduped) collection of errors that occurred, but we can't return them
+		// since we always want to be sure that our payouts are applied, even if it's only
+		// to the node operator. So instead we just log them.
+		if len(allErrs) > 0 {
+			// we need a logger
+			logger := app.GetLogger().WithFields(log.Fields{
+				"tx":        "ClaimNodeReward",
+				"node":      tx.Node.String(),
+				"script":    state.Nodes[tx.Node.String()].DistributionScript,
+				"blockTime": app.blockTime,
+			})
+			for e := range allErrs {
+				logger.WithField("text", e).Error("error during node reward payout")
+			}
+
+		}
 
 		return state, nil
 	})
