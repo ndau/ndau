@@ -218,7 +218,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 
 		// Since the comments above indicate that the desire is to make sure the state gets
-		// propogated even though there are errors, I'm going to suppress the error return
+		// propagated even though there are errors, I'm going to suppress the error return
 		// here since the caller will not update state if error is non-nil.
 		// (See app.UpdateState in metanode/pkg/meta/app/application.go)
 
