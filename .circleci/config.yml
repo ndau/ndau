@@ -36,6 +36,8 @@ jobs:
           command: |
             git clone $CIRCLE_REPOSITORY_URL -b $CIRCLE_BRANCH /app --depth=1
             echo -e "$gomu" > /app/github_chaos_deploy
+      - setup_remote_docker:
+          docker_layer_caching: false
       - run:
           name: AWS ECR Login
           command: eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
@@ -50,8 +52,6 @@ jobs:
               echo "Ndaunode container version ${sha} already exists." >&2
               exit 1
             fi
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
           name: Build dependency image
           command: docker build -t ndau-deps -f /app/docker/ndau-deps.docker /app
