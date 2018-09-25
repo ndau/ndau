@@ -1,0 +1,12 @@
+# Build stage: this all gets discarded later
+FROM golang:1.10-alpine3.8
+
+# Copy the context into the container from prebuilt ndau_deps image
+ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndau
+COPY --from=ndau_deps ${NDAU}/pkg ${NDAU}/pkg
+COPY --from=ndau_deps ${NDAU}/cmd ${NDAU}/cmd
+COPY --from=ndau_deps ${NDAU}/vendor ${NDAU}/vendor
+WORKDIR ${NDAU}
+
+# Run the tests
+RUN go test ./...

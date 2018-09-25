@@ -34,9 +34,9 @@ if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     errcho "Missing AWS_SECRET_ACCESS_KEY env var"
 fi
 
-if [ ! -f "$DIR/../gomu" ]; then
+if [ ! -f "$DIR/../github_chaos_deploy" ]; then
     errors=true
-    errcho "Missing $DIR/../gomu"
+    errcho "Missing $DIR/../github_chaos_deploy"
 fi
 
 if [ ! -f "$HOME/.helm/ca.pem" ]; then
@@ -71,7 +71,7 @@ escape_newlines() {
 circleci build \
     -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
     -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-    -e gomu="$(escape_newlines "$(cat $DIR/../gomu)")" \
+    -e gomu="$(escape_newlines "$(cat $DIR/../github_chaos_deploy)")" \
     -e helm_ca_pem="$(escape_newlines "$(cat ~/.helm/ca.pem)")" \
     -e helm_cert_pem="$(escape_newlines "$(cat ~/.helm/cert.pem)")" \
     -e helm_key_pem="$(escape_newlines "$(cat ~/.helm/key.pem)")" \

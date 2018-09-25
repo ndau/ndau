@@ -36,19 +36,9 @@ jobs:
           command: |
             git clone $CIRCLE_REPOSITORY_URL -b $CIRCLE_BRANCH /app --depth=1
             echo -e "$gomu" > /app/github_chaos_deploy
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Build ndaunode-test image
-          command: |
-            # build ndaunode tests
-            docker build -t ndaunode-test . -f /app/ndaunode-test.docker --build-arg CI=true
-            # cleanup
-            docker rmi ndaunode-test
       - run:
           name: AWS ECR Login
-          command: |
-            eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
+          command: eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
       - run:
           name: Check ndaunode version on ECR
           command: |
@@ -60,12 +50,28 @@ jobs:
               echo "Ndaunode container version ${sha} already exists." >&2
               exit 1
             fi
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          name: Build ndaunode
-          command: |
-            docker build -t ndaunode .
+          name: Build dependency image
+          command: docker build -t ndau-deps -f /app/docker/ndau-deps.docker /app
       - run:
-          name: Push ndaunode
+          name: Run all tests
+          command: docker build -t ndaunode-test . -f /app/ndaunode-test.docker --build-arg CI=true
+      - run:
+          name: Build ndaunode-build
+          command: docker build -t ndaunode-build -f /app/docker/ndaunode-build.docker /app
+      - run:
+          name: Build ndaunode-run
+          command: docker build -t ndaunode -f /app/docker/ndaunode-run.docker /app
+      - run:
+          name: Build ndauapi-build
+          command: docker build -t ndauapi-build -f /app/docker/ndauapi-build.docker /app
+      - run:
+          name: Build ndauapi-run
+          command: docker build -t ndauapi -f /app/docker/ndauapi-run.docker /app
+      - run:
+          name: Push ndaunode image to ECR
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
@@ -88,14 +94,37 @@ jobs:
               fi
             fi
       - run:
+          name: Push ndauapi image to ECR
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # Do not upload commit hash that already exists.
+              # Should never really happen as long as master is not tampered with.
+              sha=${CIRCLE_SHA1: -7}
+              sha_check=$(aws ecr describe-images --repository-name ndauapi | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
+              if [ ! -z "$sha_check" ]; then
+                echo "Ndauapi container hash ${sha} already exists. Will not push." >&2
+              else
+                commit_tag="${ECR_ENDPOINT}/ndauapi:${sha}"
+                latest_tag="${ECR_ENDPOINT}/ndauapi:latest"
+
+                docker tag ndauapi $commit_tag
+                docker tag ndauapi $latest_tag
+
+                docker push $commit_tag
+                docker push $latest_tag
+
+                echo "Pushed ndauapi with tags :${sha}, :latest." >&2
+              fi
+            fi
+      - run:
           name: Redeploy testnet
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
 
               sha=${CIRCLE_SHA1: -7}
 
-              # Clone the k-os repo master branch
-              git clone git@github.com:oneiro-ndev/k-os.git /root/k-os
+              # Clone the automation repo master branch
+              git clone git@github.com:oneiro-ndev/automation.git /root/automation
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig \
@@ -107,7 +136,7 @@ jobs:
               NOMS_VERSION=$NOMS_CONTAINER_VERSION \
               TM_VERSION=$TM_CONTAINER_VERSION \
               VERSION_TAG=$sha  \
-                /root/k-os/testnet/ndau.js \
+                /root/automation/testnet/ndau.js \
                   $STARTING_PORT \
                   $NODE_NAMES
 

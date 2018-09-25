@@ -10,6 +10,7 @@ escape_newlines() {
     echo "$1" | sed -e ':a' -e 'N' -e '$!ba' -e's/\n/\\n/g'
 }
 
+# subshell for cd
 (
     cd "$DIR"
 

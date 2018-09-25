@@ -7,7 +7,7 @@
 # This file is substantially derived from their 0.16 file, located at
 # https://github.com/tendermint/tendermint/blob/v0.16.0/DOCKER/Dockerfile
 
-FROM golang:1.10-alpine AS build
+FROM golang:1.10-alpine3.8 AS build
 
 # This is the release of tendermint to pull in.
 ENV TM_VERSION_TAG v0.22.4
@@ -40,7 +40,7 @@ RUN go get -u github.com/golang/dep/... && \
     git checkout ${TM_VERSION_TAG}
 
 # We're going to apply a patch before building, so first get the patch file
-COPY *.go.patch /patch/
+COPY ./docker/*.go.patch /patch/
 RUN patch  -i /patch/root.go.patch $GOPATH/src/github.com/tendermint/tendermint/cmd/tendermint/commands/root.go
 
 # now we can build
@@ -53,7 +53,7 @@ RUN dep ensure && \
 # Remove the secret just in case its directory gets copied below.
 RUN rm -vf /root/.ssh/id_rsa
 
-FROM alpine:3.6
+FROM alpine:3.8
 ENV TM_VERSION 0.22.4
 # Tendermint will be looking for genesis file in /tendermint (unless you change
 # `genesis_file` in config.toml). You can put your config.toml and private

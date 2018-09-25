@@ -1,4 +1,14 @@
 #!/bin/bash
+# This script shuts down the docker-compose containers.
+set -e # stop for errors
 
-SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P )"
-$SCRIPTPATH/defaults.sh docker-compose down
+ROOT="$(cd "$(dirname "$0")/.." || exit 1; pwd -P )"
+
+# shellcheck source=./common.sh
+source "$ROOT"/bin/common.sh
+
+# shellcheck source=./defaults.sh
+source "$ROOT"/bin/defaults.sh
+
+set -x # echo last command
+docker-compose down
