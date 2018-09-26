@@ -67,19 +67,19 @@ func GetBlockchain(cf cfg.Cfg) http.HandlerFunc {
 		req, err := processBlockchainRequest(r)
 		if err != nil {
 			// Anything that errors from here is going to be a bad request.
-			reqres.RespondJSON(w, reqres.NewError(err.Error(), http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewAPIError(err.Error(), http.StatusBadRequest))
 			return
 		}
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError("Could not get a node.", http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 			return
 		}
 		block, err := node.BlockchainInfo(req.start, req.end)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 			return
 		}
-		reqres.RespondJSON(w, reqres.Response{Sts: http.StatusOK, Bd: block})
+		reqres.RespondJSON(w, reqres.OKResponse(block))
 	}
 }

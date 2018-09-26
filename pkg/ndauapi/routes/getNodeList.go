@@ -27,7 +27,7 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 		// get node
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
 			return
 		}
 
@@ -39,7 +39,7 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 			case nr, open := <-nodeCh:
 				// check error first
 				if nr.Err != nil {
-					reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
+					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
 					return
 				}
 
@@ -49,12 +49,12 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 					sort.Slice(resp.Nodes, func(i, j int) bool {
 						return string(resp.Nodes[i].ID) < string(resp.Nodes[j].ID)
 					})
-					reqres.RespondJSON(w, reqres.Response{Sts: http.StatusOK, Bd: resp})
+					reqres.RespondJSON(w, reqres.OKResponse(resp))
 					return
 				}
 			case <-time.After(defaultTendermintTimeout):
 				logrus.Warn("Timed out fetching node list.")
-				reqres.RespondJSON(w, reqres.NewError("timed out fetching node list", http.StatusInternalServerError))
+				reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node list", http.StatusInternalServerError))
 				return
 
 			}

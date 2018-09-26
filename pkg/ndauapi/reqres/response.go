@@ -1,5 +1,7 @@
 package reqres
 
+import "net/http"
+
 // Statically validate Response implementation of Responder.
 var _ Responder = (*Response)(nil)
 
@@ -7,6 +9,11 @@ var _ Responder = (*Response)(nil)
 type Response struct {
 	Bd  interface{}
 	Sts int
+}
+
+// OKResponse builds a new response with status OK
+func OKResponse(obj interface{}) Response {
+	return Response{Bd: obj, Sts: http.StatusOK}
 }
 
 // Status returns a status code and satisfies the Responder interface.
