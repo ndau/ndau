@@ -13,6 +13,7 @@ jobs:
       TM_CONTAINER_VERSION: 0.0.2
       NOMS_CONTAINER_VERSION: 0.0.1
       STARTING_PORT: "31000"
+      ELB_SUBDOMAIN: api.ndau.tech # nodes will be accessible from mario.api.ndau.tech
       # These node names are removed first before new ones are installed.
       # If these names change, the old names will have to be removed manually.
       NODE_NAMES: "mario luigi"
@@ -42,34 +43,23 @@ jobs:
           name: AWS ECR Login
           command: eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
       - run:
-          name: Check ndaunode version on ECR
-          command: |
-            # Compare this container version with ECR. Fail build if version already exists.
-            # Look for this sha on ecr
-            sha=${CIRCLE_SHA1: -7}
-            sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
-            if [ ! -z "$sha_check" ]; then
-              echo "Ndaunode container version ${sha} already exists." >&2
-              exit 1
-            fi
-      - run:
           name: Build dependency image
-          command: docker build -t ndau-deps -f /app/docker/ndau-deps.docker /app
+          command: docker build -t deps -f /app/docker/deps.docker /app
       - run:
           name: Run all tests
-          command: docker build -t ndaunode-test . -f /app/ndaunode-test.docker --build-arg CI=true
+          command: docker build -t ndaunode_test . -f /app/ndaunode_test.docker --build-arg CI=true
       - run:
           name: Build ndaunode-build
-          command: docker build -t ndaunode-build -f /app/docker/ndaunode-build.docker /app
+          command: docker build -t ndaunode_build -f /app/docker/ndaunode_build.docker /app
       - run:
           name: Build ndaunode-run
-          command: docker build -t ndaunode -f /app/docker/ndaunode-run.docker /app
+          command: docker build -t ndaunode -f /app/docker/ndaunode_run.docker /app
       - run:
           name: Build ndauapi-build
-          command: docker build -t ndauapi-build -f /app/docker/ndauapi-build.docker /app
+          command: docker build -t ndauapi_build -f /app/docker/ndauapi_build.docker /app
       - run:
           name: Build ndauapi-run
-          command: docker build -t ndauapi -f /app/docker/ndauapi-run.docker /app
+          command: docker build -t ndauapi -f /app/docker/ndauapi_run.docker /app
       - run:
           name: Push ndaunode image to ECR
           command: |
@@ -80,6 +70,10 @@ jobs:
               sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
               if [ ! -z "$sha_check" ]; then
                 echo "Ndaunode container hash ${sha} already exists. Will not push." >&2
+                # If a container with this hash is built already, docker will overwrite
+                # with a push. This could change the containers behavior if, for example,
+                # dependencies have changed between subsequent build times.
+                exit 1
               else
                 commit_tag="${ECR_ENDPOINT}/ndaunode:${sha}"
                 latest_tag="${ECR_ENDPOINT}/ndaunode:latest"
@@ -103,6 +97,7 @@ jobs:
               sha_check=$(aws ecr describe-images --repository-name ndauapi | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
               if [ ! -z "$sha_check" ]; then
                 echo "Ndauapi container hash ${sha} already exists. Will not push." >&2
+                exit 1
               else
                 commit_tag="${ECR_ENDPOINT}/ndauapi:${sha}"
                 latest_tag="${ECR_ENDPOINT}/ndauapi:latest"
@@ -135,6 +130,7 @@ jobs:
               KUBECONFIG=/root/kubeconfig \
               NOMS_VERSION=$NOMS_CONTAINER_VERSION \
               TM_VERSION=$TM_CONTAINER_VERSION \
+              ELB_SUBDOMAIN=$ELB_SUBDOMAIN \
               VERSION_TAG=$sha  \
                 /root/automation/testnet/ndau.js \
                   $STARTING_PORT \
