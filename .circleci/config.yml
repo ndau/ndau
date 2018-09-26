@@ -47,7 +47,7 @@ jobs:
           command: docker build -t deps -f /app/docker/deps.docker /app
       - run:
           name: Run all tests
-          command: docker build -t ndaunode_test . -f /app/ndaunode_test.docker --build-arg CI=true
+          command: docker build -t ndaunode_test . -f /app/docker/ndaunode_test.docker --build-arg CI=true
       - run:
           name: Build ndaunode-build
           command: docker build -t ndaunode_build -f /app/docker/ndaunode_build.docker /app
