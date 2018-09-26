@@ -14,14 +14,14 @@ func GetNumUnconfirmedTxs(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError("Could not get a node.", http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 			return
 		}
 		health, err := node.Health()
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("could not fetch health: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not fetch health: %v", err), http.StatusInternalServerError))
 			return
 		}
-		reqres.RespondJSON(w, reqres.Response{Sts: http.StatusOK, Bd: health})
+		reqres.RespondJSON(w, reqres.OKResponse(health))
 	}
 }

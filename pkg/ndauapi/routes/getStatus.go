@@ -15,14 +15,14 @@ func GetStatus(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError("Could not get a node.", http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 			return
 		}
 		status, err := tool.Info(node)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("could not fetch status: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not fetch status: %v", err), http.StatusInternalServerError))
 			return
 		}
-		reqres.RespondJSON(w, reqres.Response{Sts: http.StatusOK, Bd: status})
+		reqres.RespondJSON(w, reqres.OKResponse(status))
 	}
 }

@@ -26,14 +26,14 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 		// validate request
 		nodeID := bone.GetValue(r, "id")
 		if nodeID == "" {
-			reqres.RespondJSON(w, reqres.NewError("node ID cannot be empty", http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError("node ID cannot be empty", http.StatusInternalServerError))
 			return
 		}
 
 		// get node
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
 			return
 		}
 
@@ -46,7 +46,7 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 			case nr, open := <-ch:
 				// check error first
 				if nr.Err != nil {
-					reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
+					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
 					return
 				}
 
@@ -55,16 +55,16 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 				if !open { // send response when channel closed
 					for i := range nodes {
 						if string(nodes[i].ID) == nodeID {
-							reqres.RespondJSON(w, reqres.Response{Sts: http.StatusOK, Bd: nodes[i]})
+							reqres.RespondJSON(w, reqres.OKResponse(nodes[i]))
 							return
 						}
 					}
 					// if not found
-					reqres.RespondJSON(w, reqres.NewError(fmt.Sprintf("could not find node: %v", nodeID), http.StatusNotFound))
+					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not find node: %v", nodeID), http.StatusNotFound))
 				}
 			case <-time.After(defaultTendermintTimeout):
 				logrus.Warn("Timeout fetching node info.")
-				reqres.RespondJSON(w, reqres.NewError("timed out fetching node info", http.StatusInternalServerError))
+				reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node info", http.StatusInternalServerError))
 				return
 
 			}

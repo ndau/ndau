@@ -1,22 +1,24 @@
 package reqres
 
-// Statically validate Error implementation of Responder.
-var _ Responder = (*Error)(nil)
+import "fmt"
+
+// Statically validate APIError implementation of Responder.
+var _ Responder = (*APIError)(nil)
 
 // ErrorBody represents a simple error message
 type ErrorBody struct {
 	Message string `json:"msg"`
 }
 
-// Error represents an error with a message and an http status code.
-type Error struct {
+// APIError represents an error with a message and an http status code.
+type APIError struct {
 	ErrorBody ErrorBody
 	Sts       int
 }
 
-// NewError returns an Error that RespondJSON can use.
-func NewError(message string, status int) Error {
-	return Error{
+// NewAPIError returns an APIError that RespondJSON can use.
+func NewAPIError(message string, status int) APIError {
+	return APIError{
 		ErrorBody: ErrorBody{
 			Message: message,
 		},
@@ -24,12 +26,22 @@ func NewError(message string, status int) Error {
 	}
 }
 
+// NewFromErr builds an APIError from a go error
+func NewFromErr(msg string, err error, status int) APIError {
+	return APIError{
+		ErrorBody: ErrorBody{
+			Message: fmt.Sprintf("%s (%v)", msg, err),
+		},
+		Sts: status,
+	}
+}
+
 // Status returns a status code and satisfies the Responder interface.
-func (e Error) Status() int {
+func (e APIError) Status() int {
 	return e.Sts
 }
 
 // Body returns a status code and satisfies the Responder interface.
-func (e Error) Body() interface{} {
+func (e APIError) Body() interface{} {
 	return e.ErrorBody
 }
