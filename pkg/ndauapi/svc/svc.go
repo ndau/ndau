@@ -91,5 +91,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("Node List").
 		Produces("application/json").
 		Writes(p2p.NodeInfo{}))
+
+	svc.Route(svc.POST("/accounts").To(routes.GetAccount(cf)).
+		Doc("Returns a list of addresses.").
+		Operation("Address List").
+		Produces("application/json").
+		Writes(routes.AccountResponse{}))
+
 	return svc
 }

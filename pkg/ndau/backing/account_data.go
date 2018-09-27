@@ -180,20 +180,20 @@ func NewAccountData(blockTime math.Timestamp) AccountData {
 //
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
-	Balance             math.Ndau             `chain:"61,Acct_Balance"`
-	TransferKeys        []signature.PublicKey `chain:"62,Acct_TransferKeys"`
-	RewardsTarget       *address.Address      `chain:"63,Acct_RewardsTarget"`
-	IncomingRewardsFrom []address.Address     `chain:"64,Acct_IncomingRewardsFrom"`
-	DelegationNode      *address.Address      `chain:"65,Acct_DelegationNode"`
-	Lock                *Lock                 `chain:"."`
-	Stake               *Stake                `chain:"."`
-	LastEAIUpdate       math.Timestamp        `chain:"66,Acct_LastEAIUpdate"`
-	LastWAAUpdate       math.Timestamp        `chain:"67,Acct_LastWAAUpdate"`
-	WeightedAverageAge  math.Duration         `chain:"68,Acct_WeightedAverageAge"`
+	Balance             math.Ndau             `json:"balance" chain:"61,Acct_Balance"`
+	TransferKeys        []signature.PublicKey `json:"transferKeys" chain:"62,Acct_TransferKeys"`
+	RewardsTarget       *address.Address      `json:"rewardsTarget" chain:"63,Acct_RewardsTarget"`
+	IncomingRewardsFrom []address.Address     `json:"incomingRewardsFrom" chain:"64,Acct_IncomingRewardsFrom"`
+	DelegationNode      *address.Address      `json:"delegationNode" chain:"65,Acct_DelegationNode"`
+	Lock                *Lock                 `json:"lock" chain:"."`
+	Stake               *Stake                `json:"stake" chain:"."`
+	LastEAIUpdate       math.Timestamp        `json:"lastEAIUpdate" chain:"66,Acct_LastEAIUpdate"`
+	LastWAAUpdate       math.Timestamp        `json:"lastWAAUpdate" chain:"67,Acct_LastWAAUpdate"`
+	WeightedAverageAge  math.Duration         `json:"weightedAverageAge" chain:"68,Acct_WeightedAverageAge"`
 	Sequence            uint64
-	Settlements         []Settlement       `chain:"70,Acct_Settlements"`
-	SettlementSettings  SettlementSettings `chain:"."`
-	ValidationScript    []byte             `chain:"69,Acct_ValidationScript"`
+	Settlements         []Settlement       `json:"settlements" chain:"70,Acct_Settlements"`
+	SettlementSettings  SettlementSettings `json:"settlementSettings" chain:"."`
+	ValidationScript    []byte             `json:"validationScript" chain:"69,Acct_ValidationScript"`
 	UncreditedEAI       math.Ndau          `json:"-" msg:"-"` // exclude from serialization
 }
 

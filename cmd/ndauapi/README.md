@@ -76,6 +76,8 @@ This service provides the API for Tendermint and Chaos/Order/ndau blockchain dat
 
 * [Node List](#node list)
 
+* [Address List](#address list)
+
 
 
 
@@ -426,4 +428,28 @@ _**Writes:**_
           "moniker": "",
           "other": null
         }
+```
+
+
+
+---
+## Address List
+
+### `POST /accounts`
+
+_Returns a list of addresses._
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        {}
 ```
