@@ -4,7 +4,7 @@ These files are organized in a way that allows dependencies to be downloaded onc
 
 In the CircleCI environment, for example, this means you `glide install` one time, and then build for ndaunode tests, ndaunode, and ndauapi.
 
-`.bin/build.sh` build's the containers fetches the deps first, then builds the images, and
+`.bin/build.sh` builds the containers using `docker-compose up` with default/overriden variables.
 
 ## caveat
 
