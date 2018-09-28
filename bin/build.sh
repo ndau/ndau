@@ -3,7 +3,7 @@
 
 set -e # stop for errors
 
-ROOT="$(cd "$(dirname "$0")"..; pwd -P )"
+ROOT="$(cd "$(dirname "$0")"/..; pwd -P )"
 
 # shellcheck source=./defaults.sh
 source "$ROOT"/bin/defaults.sh
