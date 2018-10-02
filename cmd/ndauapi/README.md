@@ -58,23 +58,27 @@ This service provides the API for Tendermint and Chaos/Order/ndau blockchain dat
 
 * [Health](#health)
 
-* [Net Info](#net info)
+* [NetInfo](#netinfo)
 
 * [Genesis](#genesis)
 
-* [ABCI Info](#abci info)
+* [ABCIInfo](#abciinfo)
 
-* [Num Unconfirmed Transactions](#num unconfirmed transactions)
+* [NumUnconfirmedTransactions](#numunconfirmedtransactions)
 
-* [Dump Consensus State](#dump consensus state)
+* [DumpConsensusState](#dumpconsensusstate)
 
-* [Get Block](#get block)
+* [GetBlock](#getblock)
 
-* [Get Block Chain](#get block chain)
+* [GetBlockChain](#getblockchain)
 
-* [Node List](#node list)
+* [NodeList](#nodelist)
 
-* [Node List](#node list)
+* [NodeID](#nodeid)
+
+* [Address List](#address list)
+
+* [EAIRate](#eairate)
 
 
 
@@ -150,7 +154,7 @@ _**Writes:**_
 
 
 ---
-## Net Info
+## NetInfo
 
 ### `GET /net`
 
@@ -205,7 +209,7 @@ _**Writes:**_
 
 
 ---
-## ABCI Info
+## ABCIInfo
 
 ### `GET /abci`
 
@@ -231,7 +235,7 @@ _**Writes:**_
 
 
 ---
-## Num Unconfirmed Transactions
+## NumUnconfirmedTransactions
 
 ### `GET /unconfirmed`
 
@@ -277,7 +281,7 @@ _**Writes:**_
 
 
 ---
-## Dump Consensus State
+## DumpConsensusState
 
 ### `GET /consensus`
 
@@ -304,7 +308,7 @@ _**Writes:**_
 
 
 ---
-## Get Block
+## GetBlock
 
 ### `GET /block`
 
@@ -338,7 +342,7 @@ _**Writes:**_
 
 
 ---
-## Get Block Chain
+## GetBlockChain
 
 ### `GET /blockchain`
 
@@ -373,7 +377,7 @@ _**Writes:**_
 
 
 ---
-## Node List
+## NodeList
 
 ### `GET /nodes`
 
@@ -399,13 +403,20 @@ _**Writes:**_
 
 
 ---
-## Node List
+## NodeID
 
 ### `GET /nodes/:id`
 
 _Returns a single node._
 
 
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ id | Path | the NodeID as a hex string | string
 
 
 
@@ -426,4 +437,85 @@ _**Writes:**_
           "moniker": "",
           "other": null
         }
+```
+
+
+
+---
+## Address List
+
+### `POST /accounts`
+
+_Returns a list of addresses._
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        {}
+```
+
+
+
+---
+## EAIRate
+
+### `POST /eai/rate`
+
+_Returns eai rates for a collection of account information._
+
+Accepts an array of rate requests that includes an address
+field; this field may be any string (the account information is not
+checked). It returns an array of rate responses, which includes
+the address passed so that responses may be correctly correlated
+to the input.
+
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ body | Body |  | []routes.EAIRateRequest
+
+
+
+
+_**Consumes:**_ `[application/json]`
+
+
+_**Reads:**_
+```json
+        [
+          {
+            "address": "accountAddress",
+            "weightedAverageAge": 7776000000000,
+            "lock": {
+              "noticePeriod": 15552000000000,
+              "unlocksOn": null
+            }
+          }
+        ]
+```
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        [
+          {
+            "address": "accountAddress",
+            "eairate": 6000000
+          }
+        ]
 ```
