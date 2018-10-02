@@ -1,16 +1,21 @@
 package backing
 
 import (
-	"errors"
-
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	util "github.com/oneiro-ndev/noms-util"
+	"github.com/pkg/errors"
 )
 
 const accountKey = "accounts"
 const delegateKey = "delegates"
+const nodeKey = "nodes"
+const lnrnKey = "lnrn" // last node reward nomination
+const pnrKey = "pnr"   // pending node reward
+const unrKey = "unr"   // uncredited node reward
+const nrwKey = "nrw"   // node reward winner
 
 // State is primarily a set of accounts
 type State struct {
@@ -21,6 +26,24 @@ type State struct {
 	// the values are the addresses of the accounts which those nodes must
 	// compute
 	Delegates map[string]map[string]struct{}
+	// Nodes keeps track of the validator and verifier node stakes.
+	// The key is the node address. The value is a Node struct.
+	Nodes map[string]Node
+	// The last node reward nomination is necessary in state because this
+	// governs the validity of upcoming node reward nominations; there's
+	// a minimum interval between them.
+	LastNodeRewardNomination math.Timestamp
+	// Node rewards are a bit complex. They're accumulated with every
+	// CreditEAI transaction into the PendingNodeReward variable. On
+	// NominateNodeReward, the balance in PendingNodeReward is moved into
+	// UnclaimedNodeReward, because there may be further CreditEAI transactions,
+	// which have to be stored up for the subsequent node.
+	// ClaimNodeReward transactions actually claim the unclaimed node reward;
+	// otherwise, it's overwritten at the next Nominate tx.
+	PendingNodeReward   math.Ndau
+	UnclaimedNodeReward math.Ndau
+	// Of course, we have to keep track of which node has acutally won
+	NodeRewardWinner address.Address
 }
 
 // make sure State is a metaapp.State
@@ -30,6 +53,7 @@ var _ meta.State = (*State)(nil)
 func (s *State) Init(nt.ValueReadWriter) {
 	s.Accounts = make(map[string]AccountData)
 	s.Delegates = make(map[string]map[string]struct{})
+	s.Nodes = make(map[string]Node)
 }
 
 // MarshalNoms satisfies noms' Marshaler interface
@@ -37,6 +61,11 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	ns := nt.NewStruct("state", nt.StructData{
 		accountKey:  nt.NewMap(vrw),
 		delegateKey: nt.NewMap(vrw),
+		nodeKey:     nt.NewMap(vrw),
+		lnrnKey:     util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
+		pnrKey:      util.Int(s.PendingNodeReward).ToBlob(vrw),
+		unrKey:      util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
+		nrwKey:      nt.String(s.NodeRewardWinner.String()),
 	})
 
 	// marshal accounts
@@ -60,6 +89,12 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		editor.Set(nt.String(delegateNode), setEditor.Set())
 	}
 	ns = ns.Set(delegateKey, editor.Map())
+	// marshal nodes
+	nm, err := MarshalNodesNoms(vrw, s.Nodes)
+	if err != nil {
+		return ns, err
+	}
+	ns = ns.Set(nodeKey, nm)
 
 	return ns, nil
 }
@@ -133,6 +168,40 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 			}
 		}
 	})
+
+	// unmarshal nodes
+	s.Nodes, err = UnmarshalNodesNoms(st.Get(nodeKey))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling nodes")
+	}
+
+	// unmarshal last node reward nomination
+	lnrnI, err := util.IntFromBlob(st.Get(lnrnKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling last node reward nomination")
+	}
+	s.LastNodeRewardNomination = math.Timestamp(lnrnI)
+	// unmarshal pending node reward
+	pnrI, err := util.IntFromBlob(st.Get(pnrKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling pending node reward")
+	}
+	s.PendingNodeReward = math.Ndau(pnrI)
+	// unmarshal unclaimed node reward
+	unrI, err := util.IntFromBlob(st.Get(unrKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling unclaimed node reward")
+	}
+	s.UnclaimedNodeReward = math.Ndau(unrI)
+	// unmarshal node reward winner
+	nrwS := string(st.Get(nrwKey).(nt.String))
+	if nrwS != "" {
+		s.NodeRewardWinner, err = address.Validate(string(st.Get(nrwKey).(nt.String)))
+		if err != nil {
+			return errors.Wrap(err, "validating node reward winner")
+		}
+	}
+
 	return err
 }
 
@@ -152,4 +221,94 @@ func (s *State) GetAccount(address address.Address, blockTime math.Timestamp) (A
 		data.LastWAAUpdate = blockTime
 	}
 	return data, hasAccount
+}
+
+// Stake updates the state to handle staking an account to another
+func (s *State) Stake(targetA, nodeA address.Address) error {
+	nodeS := nodeA.String()
+	node, isNode := s.Nodes[nodeS]
+	// logically, the operation I want in this if is nxor, but go doesn't
+	// define that for booleans, because reasons
+	if (targetA == nodeA) == isNode {
+		if isNode {
+			return errors.New("cannot re-self-stake")
+		}
+		return errors.New("node is not already a node; can't stake to it")
+	}
+
+	target := s.Accounts[targetA.String()]
+	if isNode {
+		// targetA != nodeA
+		node.Costake(targetA, target.Balance)
+	} else {
+		// targetA == nodeA
+		node = NewNode(targetA, target.Balance)
+	}
+
+	s.Nodes[nodeS] = node
+	return nil
+}
+
+// GetCostakers returns the list of costakers associated with a node
+func (s *State) GetCostakers(nodeA address.Address) []AccountData {
+	node, isNode := s.Nodes[nodeA.String()]
+	if !isNode {
+		return nil
+	}
+
+	out := make([]AccountData, 0, len(node.Costakers))
+	for costaker := range node.Costakers {
+		ad, hasAccount := s.Accounts[costaker]
+		if hasAccount {
+			out = append(out, ad)
+		}
+	}
+	return out
+}
+
+// PayReward updates the state of the target address to add the given qty of ndau, following
+// the link to any specified rewards target. If the rewards target account does not previously exist,
+// it will be created. Returns the address that was updated, which may not be the same as the address
+// specified.
+func (s *State) PayReward(address address.Address, reward math.Ndau, blockTime math.Timestamp, isEAI bool) (address.Address, error) {
+	// follow the chain to the target account
+	acct, _ := s.GetAccount(address, blockTime)
+
+	rewardForWAA := reward
+
+	if acct.RewardsTarget == nil {
+		// WAA is not affected by rewards coming from EAI, ONLY when the rewards are sent to the
+		// same account; otherwise, WAA *is* adjusted.
+		if isEAI {
+			rewardForWAA = 0
+		}
+	} else {
+		address = *(acct.RewardsTarget)
+		acct, _ = s.GetAccount(address, blockTime)
+	}
+
+	err := acct.WeightedAverageAge.UpdateWeightedAverageAge(
+		blockTime.Since(acct.LastWAAUpdate),
+		rewardForWAA,
+		acct.Balance,
+	)
+	if err != nil {
+		return address, err
+	}
+
+	// now we can update the balance
+	acct.Balance, err = acct.Balance.Add(math.Ndau(reward))
+	if err != nil {
+		return address, err
+	}
+
+	// and if it was EAI do that too
+	if isEAI {
+		acct.LastEAIUpdate = blockTime
+	}
+	// we always set LastWAAUpdate
+	acct.LastWAAUpdate = blockTime
+
+	s.Accounts[address.String()] = acct
+	return address, nil
 }

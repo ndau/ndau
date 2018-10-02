@@ -1,18 +1,22 @@
 package ndau
 
 import (
+	"io/ioutil"
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -28,6 +32,10 @@ const dest = "ndam5v8hpv5b79zbxxcepih8d4km4a3j2ev8dpaegexpdest"
 // Private key:    73a1955a52d6e7e099607c1bcfe4825fd30632be9780c9d70c836d8c5044546a878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
 // Public key:     878f08ca7793c560ca16400e08dfa776cebca90a4d9889524eeeec2fb288cc25
 const settled = "ndap94hhwyik86x2na9m3hjtq4n5v9uj3qm4tfp4xuyescrw"
+
+// Private key:    e8f080d6f39b0942217a55a4e239cc59b6dfbc48bc3d5e0abebc7da0bf055f57d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5
+// Public key:     d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5
+const eaiNode = "ndamb84tesvp54vhc63257wifr34zfvyffvi9utqrkruneai"
 
 var (
 	targetPrivate signature.PrivateKey
@@ -63,6 +71,46 @@ func init() {
 	}
 }
 
+func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
+	configP, assc, err := config.MakeTmpMock("")
+	require.NoError(t, err)
+
+	app, err = NewApp("", *configP)
+	require.NoError(t, err)
+
+	// disable logging within the tests by sending output to devnull
+	logger := log.StandardLogger()
+	logger.Out = ioutil.Discard
+	app.SetLogger(logger)
+
+	return
+}
+
+// app.System depends on app.Height() returning a reasonable value.
+// Also, to test all system variable features, we need to be able to
+// control what that value is.
+//
+// Unfortunately, by default, app.Height just crashes before the app
+// is fully initialized, which happens at the InitChain transaction.
+//
+// We need to send InitChain regardless, to set the initial system
+// variable cache,
+// but that doesn't allow us to control the returned height, and we
+// definitely don't want to wait around for the chain to run for some
+// number of blocks.
+//
+// We've solved this by making what should be a private method, public.
+// All we have to do now is call it.
+func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
+	app, _ = initApp(t)
+	// adjust only if required
+	if atHeight != 0 {
+		app.SetHeight(atHeight)
+	}
+	app.InitChain(abci.RequestInitChain{})
+	return
+}
+
 func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
 	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
 		state := stI.(*backing.State)
@@ -71,6 +119,20 @@ func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
 		f(&acct)
 
 		state.Accounts[addr] = acct
+		return state, nil
+	})
+
+	require.NoError(t, err)
+}
+
+func modifyNode(t *testing.T, addr string, app *App, f func(*backing.Node)) {
+	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		node := state.Nodes[addr]
+
+		f(&node)
+
+		state.Nodes[addr] = node
 		return state, nil
 	})
 
@@ -124,6 +186,7 @@ func deliverTrAtWithSV(
 	}})
 	svUpdate(app.systemCache)
 	resp := app.DeliverTx(bytes)
+	t.Log(code.ReturnCode(resp.Code))
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}

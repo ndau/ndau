@@ -71,5 +71,23 @@ func getAccount(verbose *bool, keys *int) func(*cli.Cmd) {
 			"set the rewards target for this account",
 			getSetRewardsDestination(verbose, keys),
 		)
+
+		cmd.Command(
+			"stake",
+			"stake this account to another",
+			getStake(verbose, keys),
+		)
+
+		cmd.Command(
+			"register-node",
+			"register this node to activate it",
+			getRegisterNode(verbose, keys),
+		)
+
+		cmd.Command(
+			"claim-node-reward",
+			"claim node reward for this node",
+			getClaimNodeReward(verbose, keys),
+		)
 	}
 }

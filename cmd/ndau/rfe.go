@@ -6,21 +6,20 @@ import (
 	cli "github.com/jawher/mow.cli"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/pkg/errors"
 )
 
-func getRfe(verbose *bool) func(*cli.Cmd) {
+func getRfe(verbose *bool, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = fmt.Sprintf(
-			"%s %s [RFE_KEY_INDEX]",
+			"%s %s",
 			getNdauSpec(),
 			getAddressSpec(""),
 		)
 
 		getNdau := getNdauClosure(cmd)
 		getAddress := getAddressClosure(cmd, "")
-		index := cmd.IntArg("RFE_KEY_INDEX", 0, "index of RFE key to use to sign this transaction")
 
 		cmd.Action = func() {
 			ndauQty := getNdau()
@@ -31,16 +30,17 @@ func getRfe(verbose *bool) func(*cli.Cmd) {
 			}
 
 			conf := getConfig()
-			if len(conf.RFE) <= *index {
-				orQuit(errors.New("not enough RFE keys in configuration"))
+			if conf.RFE == nil {
+				orQuit(errors.New("RFE data not set in tool config"))
 			}
+
+			keys := config.FilterK(conf.RFE.Keys, keys)
 
 			rfe := ndau.NewReleaseFromEndowment(
 				ndauQty,
 				address,
-				conf.RFE[*index].Address,
-				sequence(conf, conf.RFE[*index].Address),
-				[]signature.PrivateKey{conf.RFE[*index].Key},
+				sequence(conf, conf.RFE.Address),
+				keys,
 			)
 
 			result, err := tool.SendCommit(tmnode(conf.Node), &rfe)
