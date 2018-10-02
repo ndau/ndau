@@ -24,7 +24,9 @@ func main() {
 
 	app.Command("transfer", "transfer ndau from one account to another", getTransfer(verbose, keys))
 
-	app.Command("rfe", "release ndau from the endowment", getRfe(verbose))
+	app.Command("rfe", "release ndau from the endowment", getRfe(verbose, keys))
+
+	app.Command("nnr", "nominate node reward", getNNR(verbose, keys))
 
 	app.Command("info", "get information about node's current status", info)
 

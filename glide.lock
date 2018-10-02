@@ -1,5 +1,5 @@
-hash: 51eb4ef1e6fb6343b461f36627ef6726d8a648cfd60c0f94338cae8df53738a9
-updated: 2018-09-27T12:20:25.611602+02:00
+hash: 1454326173280212cf2a3f992b4e9ef62084f7e1d8bef12c0c2e2a1e0469342e
+updated: 2018-10-02T11:12:38.368013+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -151,7 +151,7 @@ imports:
 - name: github.com/honeycombio/libhoney-go
   version: 741c87cf6e228e5c509705847b67a3245bc79b8b
 - name: github.com/jawher/mow.cli
-  version: 123c8a60ff2f69b8c55b3e19b1383233321b316f
+  version: 2f22195f169da29d54624afd9eb83ada5c9e4ee9
   subpackages:
   - internal/container
   - internal/flow
@@ -196,7 +196,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: bf4d5637e3576f9525e8aecefbaa12a769676ef5
+  version: 00de463f3f90f6d730ae13f09ccfaf4f8a9db74e
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -222,6 +222,7 @@ imports:
   - pkg/ndauerr
   - pkg/signed
   - pkg/types
+  - pkg/unsigned
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git

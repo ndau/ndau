@@ -24,6 +24,10 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(8):    &Notify{},
 	metatx.TxID(9):    &SetRewardsDestination{},
 	metatx.TxID(10):   &ClaimAccount{},
+	metatx.TxID(11):   &Stake{},
+	metatx.TxID(12):   &RegisterNode{},
+	metatx.TxID(13):   &NominateNodeReward{},
+	metatx.TxID(14):   &ClaimNodeReward{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -79,7 +83,6 @@ var _ ndauTransactable = (*ChangeValidation)(nil)
 type ReleaseFromEndowment struct {
 	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
 	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	TxFeeAcct   address.Address       `msg:"fee" chain:"5,Tx_FeeAccount"`
 	Sequence    uint64                `msg:"seq"`
 	Signatures  []signature.Signature `msg:"sig"`
 }
@@ -181,3 +184,49 @@ type ClaimAccount struct {
 }
 
 var _ ndauTransactable = (*ClaimAccount)(nil)
+
+// A Stake transaction stakes to a node
+type Stake struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*Stake)(nil)
+
+// A RegisterNode transaction activates a node
+type RegisterNode struct {
+	Node               address.Address       `msg:"nod" chain:"4,Tx_Node"`
+	DistributionScript []byte                `msg:"dis" chain:"33,Tx_DistributionScript"`
+	RPCAddress         string                `msg:"rpc" chain:"34,Tx_RPCAddress"`
+	Sequence           uint64                `msg:"seq"`
+	Signatures         []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*RegisterNode)(nil)
+
+// A NominateNodeReward transaction signals that a node is probably about to be
+// rewarded.
+//
+// The signatures are checked against an account specified by the
+// NominateNodeRewardAddress system variable. That account also specifes
+// the validation script, and pays the transaction fee.
+type NominateNodeReward struct {
+	Random     int64                 `msg:"rnd" chain:"41,Tx_Random"`
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*NominateNodeReward)(nil)
+
+// A ClaimNodeReward transaction signals that the named node has been watching
+// the blockchain, noticed that it won the nomination, and is up and ready to
+// claim its reward.
+type ClaimNodeReward struct {
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*ClaimNodeReward)(nil)
