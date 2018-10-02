@@ -195,7 +195,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		// to the node operator. So instead we just log them.
 		if len(allErrs) > 0 {
 			// we need a logger
-			logger := app.GetLogger().WithFields(log.Fields{
+			logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
 				"tx":        "ClaimNodeReward",
 				"node":      tx.Node.String(),
 				"script":    state.Nodes[tx.Node.String()].DistributionScript,

@@ -1,5 +1,5 @@
-hash: 1687fc9c714443152a6d677f3b43821aa71a082888d2e6b746838699c13bef22
-updated: 2018-09-23T15:31:17.787338+02:00
+hash: 1454326173280212cf2a3f992b4e9ef62084f7e1d8bef12c0c2e2a1e0469342e
+updated: 2018-10-02T10:16:05.015961+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -151,7 +151,7 @@ imports:
 - name: github.com/honeycombio/libhoney-go
   version: 741c87cf6e228e5c509705847b67a3245bc79b8b
 - name: github.com/jawher/mow.cli
-  version: 123c8a60ff2f69b8c55b3e19b1383233321b316f
+  version: 2f22195f169da29d54624afd9eb83ada5c9e4ee9
   subpackages:
   - internal/container
   - internal/flow
@@ -196,7 +196,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 92f4afb0ef55be833a405e5415a303a567775bb3
+  version: 00de463f3f90f6d730ae13f09ccfaf4f8a9db74e
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -211,7 +211,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 88cb6196bf1f9f4e897a5be9dbe5fb5bb9e971c3
+  version: 3cdc376fca3a0ae197003760791596c3dda3b795
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address

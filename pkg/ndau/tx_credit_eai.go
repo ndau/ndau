@@ -221,20 +221,17 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		// propagated even though there are errors, I'm going to suppress the error return
 		// here since the caller will not update state if error is non-nil.
 		// (See app.UpdateState in metanode/pkg/meta/app/application.go)
-
-		// I'm leaving this code here for now in case I'm misunderstanding something.
-
-		// if len(errorList) > 0 {
-		// 	errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
-		// 	for idx, err := range errorList {
-		// 		if idx != 0 {
-		// 			errStr += ", "
-		// 		}
-		// 		errStr += err.Error()
-		// 	}
-		// 	err = errors.New(errStr)
-		// }
-		// return state, err
+		if len(errorList) > 0 {
+			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
+			for idx, err := range errorList {
+				if idx != 0 {
+					errStr += ", "
+				}
+				errStr += err.Error()
+			}
+			err = errors.New(errStr)
+			app.DecoratedTxLogger(tx).WithError(err).Error("CreditEAI.Apply() found errors; suppressing")
+		}
 
 		return state, nil
 	})
