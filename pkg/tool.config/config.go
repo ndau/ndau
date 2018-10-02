@@ -33,7 +33,8 @@ func GetConfigPath() string {
 type Config struct {
 	Node     string              `toml:"node"`
 	Accounts map[string]*Account `toml:"accounts"`
-	RFE      []RFEAuth           `toml:"rfe"`
+	RFE      *SysAccount         `toml:"rfe"`
+	NNR      *SysAccount         `toml:"nnr"`
 }
 
 // NewConfig creates a new configuration with the given address
@@ -154,14 +155,16 @@ func (c Config) toToml() (tomlConfig, error) {
 		Node:     c.Node,
 		Accounts: tacs,
 		RFE:      c.RFE,
+		NNR:      c.NNR,
 	}, nil
 }
 
 // Config represents all data from `ndautool.toml`
 type tomlConfig struct {
-	Node     string    `toml:"node"`
-	Accounts []Account `toml:"accounts"`
-	RFE      []RFEAuth `toml:"rfe"`
+	Node     string      `toml:"node"`
+	Accounts []Account   `toml:"accounts"`
+	RFE      *SysAccount `toml:"rfe"`
+	NNR      *SysAccount `toml:"nnr"`
 }
 
 func (tc tomlConfig) toConfig() (*Config, error) {
@@ -181,5 +184,6 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 		Node:     tc.Node,
 		Accounts: acts,
 		RFE:      tc.RFE,
+		NNR:      tc.NNR,
 	}, nil
 }
