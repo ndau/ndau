@@ -28,6 +28,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(12):   &RegisterNode{},
 	metatx.TxID(13):   &NominateNodeReward{},
 	metatx.TxID(14):   &ClaimNodeReward{},
+	metatx.TxID(15):   &TransferAndLock{},
 	metatx.TxID(0xff): &GTValidatorChange{},
 }
 
@@ -61,7 +62,7 @@ type Transfer struct {
 	Signatures  []signature.Signature `msg:"sig"`
 }
 
-// static assert that GTValidatorChange is ndauTransactable
+// static assert that Transfer is ndauTransactable
 var _ ndauTransactable = (*Transfer)(nil)
 
 // A ChangeValidation transaction is used to set transfer keys
@@ -184,6 +185,20 @@ type ClaimAccount struct {
 }
 
 var _ ndauTransactable = (*ClaimAccount)(nil)
+
+// TransferAndLock allows a transaction where the received amount is locked
+// for a specified period. It can only be sent to accounts that did not
+// previously exist on the blockchain.
+type TransferAndLock struct {
+	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
+	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
+	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
+	Period      math.Duration         `msg:"per" chain:"21,Tx_Period"`
+	Sequence    uint64                `msg:"seq"`
+	Signatures  []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*TransferAndLock)(nil)
 
 // A Stake transaction stakes to a node
 type Stake struct {
