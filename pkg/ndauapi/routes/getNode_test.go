@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -17,8 +16,8 @@ import (
 )
 
 func TestGetNode(t *testing.T) {
-	if os.Getenv("CI") == "true" {
-		t.Skip("early exit for integration tests")
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
 	}
 
 	baseHandler := routes.GetNode
