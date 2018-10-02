@@ -44,7 +44,7 @@ jobs:
           command: eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
       - run:
           name: Build dependency image
-          command: docker build -t ndau-deps -f /app/docker/deps.docker /app
+          command: docker build -t ndau-deps -f /app/docker/ndau-deps.docker /app
       - run:
           name: Run all tests
           command: docker build -t ndaunode_test . -f /app/docker/ndaunode_test.docker --build-arg CI=true
