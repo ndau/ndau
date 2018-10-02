@@ -6,8 +6,10 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -88,8 +90,24 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/nodes/:id").To(routes.GetNode(cf)).
 		Doc("Returns a single node.").
-		Operation("Node List").
+		Operation("Node ID").
 		Produces("application/json").
 		Writes(p2p.NodeInfo{}))
+
+	svc.Route(svc.POST("/eai/rate").To(routes.GetEAIRate(cf)).
+		Doc("Returns eai rates for a collection of account information.").
+		Operation("Node List").
+		Consumes("application/json").
+		Reads(routes.EAIRateRequest{
+			Address: "accountAddress",
+			WAA:     90 * types.Day,
+			Lock:    backing.Lock{NoticePeriod: 180 * types.Day},
+		}).
+		Produces("application/json").
+		Writes(routes.EAIRateResponse{
+			Address: "accountAddress",
+			EAIRate: 6000000,
+		}))
+
 	return svc
 }

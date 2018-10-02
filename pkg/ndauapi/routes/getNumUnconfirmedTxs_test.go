@@ -11,10 +11,8 @@ import (
 )
 
 func TestNumUnconfirmedTxs(t *testing.T) {
-
 	if os.Getenv("CI") == "true" {
-		// early exit for integration type tests
-		return
+		t.Skip("early exit for integration tests")
 	}
 
 	baseHandler := routes.GetNumUnconfirmedTxs
