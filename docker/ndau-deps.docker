@@ -1,11 +1,18 @@
 # Build stage: this all gets discarded later
-FROM golang:1.10-alpine3.7 AS build
+FROM golang:1.10-alpine3.8
+
+# set up working directory
+ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndau
+WORKDIR ${NDAU}
 
 # start by installing fundamental utilities
 # openssh-client is required for git
 # git is required for glide
 # bash is required for check-github-fingerprint.sh (array syntax)
 RUN apk add --no-cache git openssh-client bash
+
+# install glide for dependency management
+RUN go get github.com/Masterminds/glide
 
 # Note that in this file we're using a large number of independent RUN
 # instructions instead of concatenating everything into a compressed
@@ -31,44 +38,17 @@ COPY ./bin/check-github-fingerprint.sh /root/
 RUN /root/check-github-fingerprint.sh
 RUN chmod 0600 /root/.ssh/*
 
-# now install glide, which both tendermint and ndev-developed software
-# use for dependency management
-RUN go get github.com/Masterminds/glide
-
-# set up working directory
-ENV NDAU=$GOPATH/src/github.com/oneiro-ndev/ndau
-WORKDIR ${NDAU}
-
-# Copy the glide stuff into the container and fetch dependencies
-# Doing this will cache the deps so long as docker detects glide.lock
-# updates appropriately, but you'll still want to run production
-# builds with --no-cache
+# Copy the source and glide files into the container.
+COPY ./pkg ${NDAU}/pkg
+COPY ./cmd ${NDAU}/cmd
 COPY ./glide.* ${NDAU}/
+
+# Configure git and `glide install`
+# Doing this will cache the deps so long as docker detects `glide.lock`
+# and updates appropriately, but you'll still want to run production
+# builds with --no-cache
 RUN git config --global url.git@github.com:.insteadof https://github.com/ && \
     glide install
 
-# Copy the source into the container and build
-COPY ./pkg ${NDAU}/pkg
-COPY ./cmd ${NDAU}/cmd
-RUN CGO_ENABLED=0 GOOS=linux go install -a -ldflags '-extldflags "-static"' ./cmd/ndaunode
-
-# we need to copy the produced executable to a known path because the
-# $GOPATH environment variable doesn't persist into the run container
-RUN cp ${GOPATH}/bin/ndaunode /bin/
-
 # Remove the secret just in case its directory gets copied below.
 RUN rm -vf /root/.ssh/id_rsa
-
-# Terminal build stage: should only contain the static executable
-FROM alpine:3.7
-# Add the ca certs so that we can do outbound connections to https sites (honeycomb)
-RUN apk add --no-cache  ca-certificates
-
-# only copy the binary artifacts we produced earlier
-COPY --from=build /bin/ndaunode /bin/
-
-# ndaunode listens here for its requests
-# tendermint connects to this port
-EXPOSE 26658/TCP
-
-ENTRYPOINT ["/bin/ndaunode"]

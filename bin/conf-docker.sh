@@ -1,24 +1,27 @@
 #!/bin/bash
 
-SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P )"
-ndau=$(which ndau)
-if [ -x "$SCRIPTPATH/../cmd/ndau/ndau" ]; then
-    ndau="$SCRIPTPATH/../cmd/ndau/ndau"
-fi
-if [ -x "$SCRIPTPATH/../ndau" ]; then
-    ndau="$SCRIPTPATH/../ndau"
-fi
+set -e # quit for errors
 
+ROOT="$(cd "$(dirname "$0")/.." || exit 1; pwd -P )"
+me=$(basename "$0")  # get tag
+
+# shellcheck source=./common.sh
+source "$ROOT"/bin/common.sh
+
+# shellcheck source=./defaults.sh
+source "$ROOT"/bin/defaults.sh
+
+# find the ndau tool
+ndau="$(which ndau || echo '')"
+if [ -x "$ROOT/cmd/ndau/ndau" ]; then
+    ndau="$ROOT/cmd/ndau/ndau"
+fi
 if [ -z "$ndau" ]; then
-    echo "ndau executable not found"
-    exit 1
+    err "$me" "ndau executable not found."
 fi
 
-nn="$SCRIPTPATH/.."
-if cd "$nn"; then
-    $ndau conf $(bin/defaults.sh docker-compose port tendermint 26657)
-else
-    echo "ndaunode not found"
-    exit 1
-fi
+errcho "$me" "Using ndau: $ndau"
 
+# configure ndau tool
+set -x # echo command
+$ndau conf "http://$(docker-compose port tendermint 26657)"

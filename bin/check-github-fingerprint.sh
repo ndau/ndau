@@ -2,7 +2,7 @@
 
 ssh-keyscan github.com > githubKey 2>/dev/null
 fingerprint=$(ssh-keygen -lf githubKey | cut -d' ' -f2)
-echo "github.com fingerprint: $fingerprint"
+echo >&2 "github.com fingerprint: $fingerprint"
 
 # now check that the fingerprint matches a known github fingerprint
 # see https://help.github.com/articles/github-s-ssh-key-fingerprints/
@@ -12,25 +12,28 @@ declare -a legit_github_fingerprints=(
     "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
     "SHA256:br9IjFspm1vxR3iA35FWE+4VTyz1hYVLIE2t1/CeyWQ"
 )
-fp_is_legit=0
+fp_is_legit=false
 for legit_fp in "${legit_github_fingerprints[@]}"; do
     if [ "$fingerprint" == "$legit_fp" ]; then
-        fp_is_legit=1
+        fp_is_legit=true
         break
     fi
 done
-if [ "$fp_is_legit" != "1" ]; then
-    echo "FAIL: github fingerprint not valid! MITM?"
+
+if ! $fp_is_legit; then
+    >&2 echo "FAIL: github fingerprint not valid! MITM?"
     exit 1
 fi
 
-kh="$HOME/.ssh/known_hosts"
+kh="$HOME"/.ssh/known_hosts
 
 # if we're here, we believe the fingerprint to be valid
 if ! grep github.com "$kh" >/dev/null 2>&1; then
-    echo "Adding github.com to $kh"
-    echo "$(cat githubKey)" >> "$kh"
+    >&2 echo "Adding github.com to $kh"
+    cat githubKey >> "$kh"
 else
-    echo "github.com already present in $kh"
+    >&2 echo "github.com already present in $kh"
 fi
+
+# clean up
 rm githubKey

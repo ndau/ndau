@@ -1,37 +1,81 @@
 version: "3.2"
 services:
-  noms:
+  # First build the image that contains all of our dependencies
+  ndau-deps:
     build:
-      context: ./noms-docker
-    expose:
-      - "8000"
-    volumes:
-      - type: bind
-        source: ${NDAUHOME:?NDAUHOME is required}/ndau/noms
-        target: /data
+      context: .
+      dockerfile: ./docker/ndau-deps.docker
+    image: ndau-deps
+
+    # This image builds ndaunode
+  ndaunode-build:
+    build:
+      context: .
+      dockerfile: ./docker/ndaunode-build.docker
+    image: ndaunode-build
+    depends_on:
+      - ndau-deps
+
+  # This image copies the binary from the build image and runs it.
   ndaunode:
     environment:
       - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
       - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
     build:
       context: .
-    image: "ndaunode"
+      dockerfile: ./docker/ndaunode-run.docker
+    image: ndaunode
     volumes:
       - type: bind
         source: ${NDAUHOME:?NDAUHOME is required}
-        target: /root/.ndau # command is run as root, so $HOME==/root
-    # we need to expose the ndaunode ABCI port to services inside this container,
-    # but not to anything external. the 'expose' command handles that.
+        target: /root/.ndau # ndaunode is run as root, so `$HOME==/root`.
     expose:
+      # Exposes this container's ABCI port only to linked services. [see expose vs port]
       - "26658"
     depends_on:
       - noms
+      - ndaunode-build
+  ndauapi-build:
+    build:
+      context: .
+      dockerfile: ./docker/ndauapi-build.docker
+    image: ndauapi-build
+    depends_on:
+      - ndau-deps #
+  ndauapi:
+    environment:
+      - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
+      - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
+      - NDAUAPI_NODE_ADDRESS=http://tendermint:26657
+    build:
+      context: .
+      dockerfile: ./docker/ndauapi-run.docker
+    image: ndauapi
+    ports:
+      - "3030"
+    depends_on:
+      - ndauapi-build
+
+  noms:
+    build:
+      context: .
+      dockerfile: ./docker/noms.docker
+    image: noms
+    expose:
+      - "8000"
+    volumes:
+      - type: bind
+        source: ${NDAUHOME:?NDAUHOME is required}/ndau/noms
+        target: /data
+
   tendermint:
     environment:
       - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
       - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
     build:
-      context: ./tm-docker
+      context: .
+      dockerfile: ./docker/tendermint.docker
+    image: tendermint
     # expose the p2p and RPC ports to the outside world
     ports:
       - "26656"
