@@ -103,6 +103,7 @@ func main() {
 		app.GetLogger().WithFields(logrus.Fields{
 			"warning":       "Unable to initialize Honeycomb for tm server",
 			"originalError": err,
+			"bin":           "ndautendermint",
 		}).Warn("InitServerLog")
 		fmt.Println("Can't init server logger for tm: ", err)
 	} else {

@@ -3,7 +3,6 @@ package routes_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -11,10 +10,8 @@ import (
 )
 
 func TestNumUnconfirmedTxs(t *testing.T) {
-
-	if os.Getenv("CI") == "true" {
-		// early exit for integration type tests
-		return
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
 	}
 
 	baseHandler := routes.GetNumUnconfirmedTxs

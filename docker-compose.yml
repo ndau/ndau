@@ -1,18 +1,20 @@
 version: "3.2"
 services:
   # First build the image that contains all of our dependencies
-  deps: # Externally this turns to an image called ndau_deps
+  ndau-deps:
     build:
       context: .
-      dockerfile: ./docker/deps.docker
+      dockerfile: ./docker/ndau-deps.docker
+    image: ndau-deps
 
     # This image builds ndaunode
-  ndaunode_build:
+  ndaunode-build:
     build:
       context: .
-      dockerfile: ./docker/ndaunode_build.docker
+      dockerfile: ./docker/ndaunode-build.docker
+    image: ndaunode-build
     depends_on:
-      - deps
+      - ndau-deps
 
   # This image copies the binary from the build image and runs it.
   ndaunode:
@@ -21,8 +23,8 @@ services:
       - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
     build:
       context: .
-      dockerfile: ./docker/ndaunode_run.docker
-    image: "ndaunode"
+      dockerfile: ./docker/ndaunode-run.docker
+    image: ndaunode
     volumes:
       - type: bind
         source: ${NDAUHOME:?NDAUHOME is required}
@@ -32,13 +34,14 @@ services:
       - "26658"
     depends_on:
       - noms
-      - ndaunode_build
-  ndauapi_build:
+      - ndaunode-build
+  ndauapi-build:
     build:
       context: .
-      dockerfile: ./docker/ndauapi_build.docker
+      dockerfile: ./docker/ndauapi-build.docker
+    image: ndauapi-build
     depends_on:
-      - deps #
+      - ndau-deps #
   ndauapi:
     environment:
       - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
@@ -46,16 +49,18 @@ services:
       - NDAUAPI_NODE_ADDRESS=http://tendermint:26657
     build:
       context: .
-      dockerfile: ./docker/ndauapi_run.docker
+      dockerfile: ./docker/ndauapi-run.docker
+    image: ndauapi
     ports:
-      - 3030
+      - "3030"
     depends_on:
-      - ndauapi_build
+      - ndauapi-build
 
   noms:
     build:
       context: .
       dockerfile: ./docker/noms.docker
+    image: noms
     expose:
       - "8000"
     volumes:
@@ -70,6 +75,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/tendermint.docker
+    image: tendermint
     # expose the p2p and RPC ports to the outside world
     ports:
       - "26656"
@@ -80,4 +86,3 @@ services:
       - type: bind
         source: ${TMHOME:?TMHOME is required}
         target: /tendermint
-

@@ -22,14 +22,11 @@ fi
 if [ -z "$HONEYCOMB_KEY" ]; then
     # The honeycomb key must be set externally and not committed to git.
     >&2 echo "defaults.sh:" "HONEYCOMB_KEY is not set -- logging will be local"
-    HONEYCOMB_KEY=invalidkey
+    export HONEYCOMB_KEY=invalidkey
 else
     >&2 echo "defaults.sh:" "HONEYCOMB_KEY is set"
 fi
 
-export TMHOME=$TMHOME
-export NDAUHOME=$NDAUHOME
-export HONEYCOMB_DATASET=$HONEYCOMB_DATASET
-if [ -z "$HONEYCOMB_KEY" ]; then
-    export HONEYCOMB_KEY=invalidkey
-fi
+export TMHOME
+export NDAUHOME
+export HONEYCOMB_DATASET

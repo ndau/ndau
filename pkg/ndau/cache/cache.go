@@ -27,8 +27,8 @@ type SystemCache struct {
 func NewSystemCache(conf config.Config) (*SystemCache, error) {
 	var ss config.SystemStore
 	var err error
-	if len(conf.UseMock) > 0 {
-		ss, err = config.LoadMock(conf.UseMock)
+	if conf.UseMock != nil && len(*conf.UseMock) > 0 {
+		ss, err = config.LoadMock(*conf.UseMock)
 		if err != nil {
 			return nil, errors.Wrap(err, "System() failed to load mock")
 		}

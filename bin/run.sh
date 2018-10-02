@@ -9,9 +9,12 @@ source "$ROOT"/bin/common.sh
 # shellcheck source=./defaults.sh
 source "$ROOT"/bin/defaults.sh
 
-if echo "$*" | grep -q "\\-d\\|\\-\\-detatch" ; then
-    aoce="--abort-on-container-exit --exit-code-from tendermint"
-fi
+
+for arg in "$@"; do
+    if [ $arg == "-d" -o $arg == "--detach" ]; then
+        aoce="--abort-on-container-exit --exit-code-from tendermint"
+    fi
+done
 
 set -x # echo command
 # shellcheck disable=SC2086 disable=SC2068

@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Private key:    e8f080d6f39b0942217a55a4e239cc59b6dfbc48bc3d5e0abebc7da0bf055f57d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5
-// Public key:     d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5
-const eaiNode = "ndamb84tesvp54vhc63257wifr34zfvyffvi9utqrkruneai"
-
 func TestValidDelegateTxIsValid(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
