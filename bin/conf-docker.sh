@@ -13,8 +13,12 @@ source "$ROOT"/bin/defaults.sh
 
 # find the ndau tool
 ndau="$(which ndau || echo '')"
-if [ -x "$ROOT/cmd/ndau/ndau" ]; then
-    ndau="$ROOT/cmd/ndau/ndau"
+if [ -x "$ROOT"/ndau ]; then
+    ndau="$ROOT"/ndau
+else
+    if [ -x "$ROOT/cmd/ndau/ndau" ]; then
+        ndau="$ROOT/cmd/ndau/ndau"
+    fi
 fi
 if [ -z "$ndau" ]; then
     err "$me" "ndau executable not found."
