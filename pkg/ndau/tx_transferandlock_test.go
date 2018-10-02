@@ -226,7 +226,7 @@ func TestTnLsWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestTnSignatureMustValidate(t *testing.T) {
+func TestTnLSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
 	// I'm almost completely certain that this will be an invalid signature
