@@ -56,13 +56,16 @@ if [ -d "$chaospath" ]; then
     errcho "$me" "found chaos path: $chaospath"
     cn_port=$(
         cd "$chaospath"
-        bin/defaults.sh docker-compose port tendermint 26657 2>/dev/null
+        bin/defaults.sh docker-compose port tendermint 26657 2>/dev/null |\
+        cut -d: -f2
     )
+    local_ip=$(ipconfig getifaddr en0)
+    cn_addr=$(printf '%s:%s' "$local_ip" "$cn_port")
 else
     errcho "$me" "chaosnode not found at $chaospath"
 fi
-if [ -n "$cn_port" ]; then
-    errcho "$me" "chaosnode appears to be running at $cn_port"
+if [ -n "$cn_addr" ]; then
+    errcho "$me" "chaosnode appears to be running at $cn_addr"
 else
     errcho "$me" "chaosnode appears not to be running"
 fi
@@ -81,11 +84,10 @@ else
     errcho "$me" "ndaunode making mocks"
     docker-compose run --rm --no-deps ndaunode --make-mocks
 
-    if [ -n "$cn_port" ]; then
+    if [ -n "$cn_addr" ]; then
         errcho "$me" "updating config with chaos port"
         $sed -E \
-            -e '/^UseMock/d' \
-            -e "/^ChaosAddress/s/\"[^\"]*\"/\"$cn_port\"/" \
+            -e "/^ChaosAddress/s/\"[^\"]*\"/\"$cn_addr\"/" \
             -i "$ndauconf"
         errcho "$me" "ndaunode making chaos mocks"
         docker-compose run --rm --no-deps ndaunode --make-chaos-mocks
