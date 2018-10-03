@@ -64,10 +64,9 @@ func MakeChaosMock(config *Config) (MockAssociated, error) {
 	node := client.NewHTTP(config.ChaosAddress, "/websocket")
 	bpcMap := chaosMock[string([]byte(bpcPublic))]
 	for keyString, valB := range bpcMap {
-		key := wkt.Bytes(keyString)
-		val := wkt.Bytes(valB)
-		err = tool.SetStructuredCommit(
-			node, key, val, []byte(bpcPublic), []byte(bpcPrivate),
+		key := []byte(keyString)
+		err = tool.SetRawCommit(
+			node, key, valB, []byte(bpcPublic), []byte(bpcPrivate),
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("Failed to set key %s", keyString))
