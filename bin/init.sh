@@ -64,7 +64,7 @@ if [ -d "$chaospath" ]; then
 else
     errcho "$me" "chaosnode not found at $chaospath"
 fi
-if [ -n "$cn_addr" ]; then
+if [ -n "$cn_port" ]; then
     errcho "$me" "chaosnode appears to be running at $cn_addr"
 else
     errcho "$me" "chaosnode appears not to be running"
@@ -84,7 +84,7 @@ else
     errcho "$me" "ndaunode making mocks"
     docker-compose run --rm --no-deps ndaunode --make-mocks
 
-    if [ -n "$cn_addr" ]; then
+    if [ -n "$cn_port" ]; then
         errcho "$me" "updating config with chaos port"
         $sed -E \
             -e "/^ChaosAddress/s/\"[^\"]*\"/\"$cn_addr\"/" \
