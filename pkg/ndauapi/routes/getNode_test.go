@@ -36,7 +36,7 @@ func TestGetNode(t *testing.T) {
 		return
 	}
 	nodeID := n.NodeInfo.ID
-	fmt.Println("Node ID:", nodeID)
+
 	// set up tests
 	tests := []struct {
 		name   string
