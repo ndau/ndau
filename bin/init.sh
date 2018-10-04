@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# this script depends on jq, sed, and docker-compose
-# let's make sure that each is installed before going anywhere with this
-
 ROOT="$(cd "$(dirname "$0")/.." || exit 1; pwd -P )"
 me=$(basename "$0") # get tag
 
@@ -12,6 +9,8 @@ source "$ROOT"/bin/common.sh
 # shellcheck source=./defaults.sh
 source "$ROOT"/bin/defaults.sh
 
+# this script depends on jq, sed, and docker-compose
+# let's make sure that each is installed before going anywhere with this
 dependencies=(jq sed docker-compose)
 for tool in "${dependencies[@]}"; do
     if ! command -v "$tool" > /dev/null  ; then
@@ -50,18 +49,49 @@ errcho "$me" "config diff:"
 diff "$config_backup" "$config"
 rm "$config_backup"
 
+# detect if the chaos chain is currently running
+# if so, we want to connect to that chain instead of using a mockfile
+chaospath="$ROOT/../chaos"
+if [ -d "$chaospath" ]; then
+    errcho "$me" "found chaos path: $chaospath"
+    cn_port=$(
+        cd "$chaospath"
+        bin/defaults.sh docker-compose port tendermint "$TM_RPC" 2>/dev/null |\
+        cut -d: -f2
+    )
+    local_ip=$(ipconfig getifaddr en0)
+    cn_addr=$(printf '%s:%s' "$local_ip" "$cn_port")
+else
+    errcho "$me" "chaosnode not found at $chaospath"
+fi
+if [ -n "$cn_port" ]; then
+    errcho "$me" "chaosnode appears to be running at $cn_addr"
+else
+    errcho "$me" "chaosnode appears not to be running"
+fi
+
 # ndaunode, unlike chaosnode, needs a configuration file to work right
 # in a real node, we'd need to specify parameters such as where to connect
 # to the chaos chain, and so on.
 # We need to support the use case of initting a real node.
 # However, most of the time we run these scripts, we're just starting
 # a dev server for debugging purposes. In that case, we just want a default
-# config file to be put in place in order to
+# config file to be put in place
+ndauconf="${NDAUHOME}/ndau/config.toml"
 if [ -n "$NDAUNODE_CONFIG" ]; then
-    cp -v "$NDAUNODE_CONFIG" "${NDAUHOME}/ndau/config.toml"
+    cp -v "$NDAUNODE_CONFIG" "$ndauconf"
 else
     errcho "$me" "ndaunode making mocks"
     docker-compose run --rm --no-deps ndaunode --make-mocks
+
+    if [ -n "$cn_port" ]; then
+        errcho "$me" "updating config with chaos port"
+        $sed -E \
+            -e "/^ChaosAddress/s/\"[^\"]*\"/\"$cn_addr\"/" \
+            -i "$ndauconf"
+        errcho "$me" "ndaunode making chaos mocks"
+        docker-compose run --rm --no-deps ndaunode --make-chaos-mocks
+    fi
 fi
 
 # configure tendermint to recognize the empty app hash

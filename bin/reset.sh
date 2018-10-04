@@ -17,4 +17,4 @@ tendermint unsafe_reset_all
 rm -rfv $TMHOME
 
 # remove ndau home
-rm -rfv $NDAUHOME
+rm -rfv $NDAUHOME/ndau

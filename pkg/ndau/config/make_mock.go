@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -63,15 +64,19 @@ func MakeChaosMock(config *Config) (MockAssociated, error) {
 	// hope for the best.
 	node := client.NewHTTP(config.ChaosAddress, "/websocket")
 	bpcMap := chaosMock[string([]byte(bpcPublic))]
+	fmt.Fprintf(os.Stderr, "Writing mocks to chaos at %s\n", config.ChaosAddress)
+	fmt.Fprintf(os.Stderr, " (bpc ns: %s)\n", base64.RawStdEncoding.EncodeToString([]byte(bpcPublic)))
 	for keyString, valB := range bpcMap {
-		key := wkt.Bytes(keyString)
-		val := wkt.Bytes(valB)
-		err = tool.SetStructuredCommit(
-			node, key, val, []byte(bpcPublic), []byte(bpcPrivate),
+		fmt.Fprintf(os.Stderr, "  %q... ", keyString)
+		key := []byte(keyString)
+		err = tool.SetRawCommit(
+			node, key, valB, []byte(bpcPublic), []byte(bpcPrivate),
 		)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERR: %s\n", err.Error())
 			return nil, errors.Wrap(err, fmt.Sprintf("Failed to set key %s", keyString))
 		}
+		fmt.Fprintf(os.Stderr, "DONE\n")
 	}
 
 	// blank the UseMock field--after setting the actual chain mocks,
@@ -146,10 +151,11 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 
 		mock.Sets(bpc, "one", wkt.String("bpc val one"))
 		mock.Sets(bpc, "bar", wkt.String("baz"))
-		if svi != nil {
-			mock.Sets(bpc, "svi", svi)
-			sviKey = NewNamespacedKey(bpc, "svi")
-		}
+	}
+
+	if svi != nil {
+		mock.Sets(bpc, "svi", svi)
+		sviKey = NewNamespacedKey(bpc, "svi")
 	}
 
 	var err error

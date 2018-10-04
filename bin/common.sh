@@ -20,3 +20,6 @@ err() {
 echo_green() {
     errcho "$GREEN" "$@" "$NC"
 }
+
+# default tendermint RPC port
+export TM_RPC=26657
