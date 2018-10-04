@@ -56,7 +56,7 @@ if [ -d "$chaospath" ]; then
     errcho "$me" "found chaos path: $chaospath"
     cn_port=$(
         cd "$chaospath"
-        bin/defaults.sh docker-compose port tendermint 26657 2>/dev/null |\
+        bin/defaults.sh docker-compose port tendermint "$TM_RPC" 2>/dev/null |\
         cut -d: -f2
     )
     local_ip=$(ipconfig getifaddr en0)

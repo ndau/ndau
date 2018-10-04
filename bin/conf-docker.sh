@@ -28,4 +28,4 @@ errcho "$me" "Using ndau: $ndau"
 
 # configure ndau tool
 set -x # echo command
-$ndau conf "http://$(docker-compose port tendermint 26657)"
+$ndau conf "http://$(docker-compose port tendermint "$TM_RPC")"
