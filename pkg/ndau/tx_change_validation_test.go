@@ -19,7 +19,7 @@ func initAppChangeValidation(t *testing.T) *App {
 
 	// this ensures the target address exists
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
-		acct.TransferKeys = []signature.PublicKey{transferPublic}
+		acct.ValidationKeys = []signature.PublicKey{transferPublic}
 	})
 
 	return app
@@ -98,7 +98,7 @@ func TestValidChangeValidationUpdatesTransferKey(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		require.Equal(t, newPublic.Bytes(), ad.TransferKeys[0].Bytes())
+		require.Equal(t, newPublic.Bytes(), ad.ValidationKeys[0].Bytes())
 	})
 }
 
@@ -122,7 +122,7 @@ func TestChangeValidationChain(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestChangeValidationNoTransferKeys(t *testing.T) {
+func TestChangeValidationNoValidationKeys(t *testing.T) {
 	app := initAppChangeValidation(t)
 
 	cv := NewChangeValidation(targetAddress, []signature.PublicKey{}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
@@ -134,7 +134,7 @@ func TestChangeValidationNoTransferKeys(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestChangeValidationTooManyTransferKeys(t *testing.T) {
+func TestChangeValidationTooManyValidationKeys(t *testing.T) {
 	app := initAppChangeValidation(t)
 
 	noKeys := backing.MaxKeysInAccount + 1

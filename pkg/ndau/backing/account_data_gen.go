@@ -19,11 +19,11 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	if err != nil {
 		return
 	}
-	// string "TransferKeys"
-	o = append(o, 0xac, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x4b, 0x65, 0x79, 0x73)
-	o = msgp.AppendArrayHeader(o, uint32(len(z.TransferKeys)))
-	for za0001 := range z.TransferKeys {
-		o, err = z.TransferKeys[za0001].MarshalMsg(o)
+	// string "ValidationKeys"
+	o = append(o, 0xae, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.ValidationKeys)))
+	for za0001 := range z.ValidationKeys {
+		o, err = z.ValidationKeys[za0001].MarshalMsg(o)
 		if err != nil {
 			return
 		}
@@ -158,19 +158,19 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "TransferKeys":
+		case "ValidationKeys":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if cap(z.TransferKeys) >= int(zb0002) {
-				z.TransferKeys = (z.TransferKeys)[:zb0002]
+			if cap(z.ValidationKeys) >= int(zb0002) {
+				z.ValidationKeys = (z.ValidationKeys)[:zb0002]
 			} else {
-				z.TransferKeys = make([]signature.PublicKey, zb0002)
+				z.ValidationKeys = make([]signature.PublicKey, zb0002)
 			}
-			for za0001 := range z.TransferKeys {
-				bts, err = z.TransferKeys[za0001].UnmarshalMsg(bts)
+			for za0001 := range z.ValidationKeys {
+				bts, err = z.ValidationKeys[za0001].UnmarshalMsg(bts)
 				if err != nil {
 					return
 				}
@@ -366,9 +366,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *AccountData) Msgsize() (s int) {
-	s = 1 + 8 + z.Balance.Msgsize() + 13 + msgp.ArrayHeaderSize
-	for za0001 := range z.TransferKeys {
-		s += z.TransferKeys[za0001].Msgsize()
+	s = 1 + 8 + z.Balance.Msgsize() + 15 + msgp.ArrayHeaderSize
+	for za0001 := range z.ValidationKeys {
+		s += z.ValidationKeys[za0001].Msgsize()
 	}
 	s += 14
 	if z.RewardsTarget == nil {
