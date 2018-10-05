@@ -3,6 +3,8 @@ package svc
 import (
 	"net/http"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
@@ -114,7 +116,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Reads([]routes.EAIRateRequest{routes.EAIRateRequest{
 			Address: "accountAddress",
 			WAA:     90 * types.Day,
-			Lock:    backing.Lock{NoticePeriod: 180 * types.Day},
+			Lock:    *backing.NewLock(180*types.Day, eai.DefaultLockBonusEAI),
 		}}).
 		Produces("application/json").
 		Writes([]routes.EAIRateResponse{routes.EAIRateResponse{

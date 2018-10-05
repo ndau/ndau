@@ -44,7 +44,6 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		// TODO: need to actually query the chaos chain
 		// These are just the default values
 		unlockedTable := eai.DefaultUnlockedEAI
-		lockedTable := eai.DefaultLockBonusEAI
 
 		// Below is code that came from the ndau app but can't run because we don't have
 		// app or config objects.
@@ -68,7 +67,7 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		response := make([]EAIRateResponse, len(requests))
 		for i := range requests {
 			response[i].Address = requests[i].Address
-			response[i].EAIRate = eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable, lockedTable)
+			response[i].EAIRate = eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable)
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}

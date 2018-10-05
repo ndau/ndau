@@ -188,7 +188,7 @@ func (app *App) applyTxDetails(tx ndauTransactable) error {
 	eai, err := eai.Calculate(
 		source.Balance, app.blockTime, source.LastEAIUpdate,
 		source.WeightedAverageAge, source.Lock,
-		*unlockedTable, *lockedTable,
+		*unlockedTable,
 	)
 
 	source.UncreditedEAI, err = source.UncreditedEAI.Add(eai)

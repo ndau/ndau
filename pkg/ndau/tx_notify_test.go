@@ -7,6 +7,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
@@ -16,9 +17,7 @@ func initAppNotify(t *testing.T) (*App, signature.PrivateKey) {
 	duration := math.Duration(30 * math.Day)
 	app, private := initAppTx(t)
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.Lock = &backing.Lock{
-			NoticePeriod: duration,
-		}
+		ad.Lock = backing.NewLock(duration, eai.DefaultLockBonusEAI)
 	})
 	return app, private
 }

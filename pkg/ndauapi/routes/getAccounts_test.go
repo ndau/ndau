@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -13,6 +12,9 @@ import (
 )
 
 func TestGetAccounts(t *testing.T) {
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
 
 	baseHandler := routes.GetAccount
 
@@ -51,9 +53,6 @@ func TestGetAccounts(t *testing.T) {
 
 	// run tests
 	for _, tt := range tests {
-		if os.Getenv("CI") == "true" {
-			t.Skip("Skipping for CI environment.")
-		}
 
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()

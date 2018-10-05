@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -226,10 +228,8 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 	// fixture: destination must be notified
 	modify(t, dest, app, func(ad *backing.AccountData) {
 		uo := math.Timestamp(ts + 1)
-		ad.Lock = &backing.Lock{
-			NoticePeriod: math.Duration(2),
-			UnlocksOn:    &uo,
-		}
+		ad.Lock = backing.NewLock(math.Duration(2), eai.DefaultLockBonusEAI)
+		ad.Lock.UnlocksOn = &uo
 	})
 
 	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
