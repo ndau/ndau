@@ -49,7 +49,7 @@ func (l *Lock) GetBonusRate() eai.Rate {
 	if l != nil {
 		return l.Bonus
 	}
-	return eai.Rate{}
+	return eai.Rate(0)
 }
 
 var _ eai.Lock = (*Lock)(nil)

@@ -22,7 +22,7 @@ type EAIRateRequest struct {
 // EAIRateResponse is a single instance of a rate response (it returns an array of them)
 type EAIRateResponse struct {
 	Address string `json:"address"`
-	EAIRate int64  `json:"eairate"`
+	EAIRate uint64 `json:"eairate"`
 }
 
 // GetEAIRate returns the EAI rates for a collection of rate requests, each of which has
@@ -67,7 +67,7 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		response := make([]EAIRateResponse, len(requests))
 		for i := range requests {
 			response[i].Address = requests[i].Address
-			response[i].EAIRate = eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable)
+			response[i].EAIRate = uint64(eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable))
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}
