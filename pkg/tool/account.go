@@ -4,9 +4,9 @@ import (
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
 
 // GetAccount gets the account data associated with a given address
@@ -16,7 +16,7 @@ func GetAccount(node client.ABCIClient, addr address.Address) (
 	addrB := []byte(addr.String())
 
 	// perform the query
-	res, err := node.ABCIQuery(ndau.AccountEndpoint, addrB)
+	res, err := node.ABCIQuery(query.AccountEndpoint, addrB)
 	if err != nil {
 		return nil, res, err
 	}

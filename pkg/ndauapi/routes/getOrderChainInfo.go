@@ -5,6 +5,8 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
 // OrderChainInfo is a single instance of a rate response (it returns an array of them)
@@ -17,43 +19,34 @@ type OrderChainInfo struct {
 	PriceUnits    string  `json:"USD"`
 }
 
-func getOrderChainInfo() (OrderChainInfo, error) {
+func getTotalNdau(cf cfg.Cfg) (int64, error) {
+	node, err := ws.Node(cf.NodeAddress)
+	if err != nil {
+		return 0, err
+	}
+	summ, _, err := tool.GetSummary(node)
+	return int64(summ.TotalNdau), nil
+}
+
+func getOrderChainInfo(cf cfg.Cfg) (OrderChainInfo, error) {
+	totalndau, err := getTotalNdau(cf)
 	info := OrderChainInfo{
 		MarketPrice:   16.85,
 		TargetPrice:   17.00,
 		FloorPrice:    2.57,
 		EndowmentSold: 2919000 * 100000000,
-		TotalNdau:     3141593 * 100000000,
+		TotalNdau:     totalndau,
 		PriceUnits:    "USD",
 	}
-	return info, nil
+	return info, err
 }
 
 // GetOrderChainData returns a block of information for the
 func GetOrderChainData(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Below is code that came from the ndau app but can't run because we don't have
-		// app or config objects.
-
-		// sc, err := cache.NewSystemCache(config)
-		// if err != nil {
-		// 	reqres.RespondJSON(w, reqres.NewFromErr("couldn't create cache", err, http.StatusInternalServerError))
-		// 	return
-		// }
-
-		// err = app.System(sv.UnlockedRateTableName, unlockedTable)
-		// if err != nil {
-		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
-		// }
-		// lockedTable := new(eai.RateTable)
-		// err = app.System(sv.LockedRateTableName, lockedTable)
-		// if err != nil {
-		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
-		// }
-
-		response, err := getOrderChainInfo()
+		response, err := getOrderChainInfo(cf)
 		if err != nil {
-			reqres.NewFromErr("couldn't query the order chain", err, http.StatusInternalServerError)
+			reqres.NewFromErr("order chain query error", err, http.StatusInternalServerError)
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}

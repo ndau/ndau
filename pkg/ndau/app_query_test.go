@@ -6,8 +6,10 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -66,7 +68,6 @@ func TestQueryRunsUpdateBalance(t *testing.T) {
 func TestCanQuerySummary1(t *testing.T) {
 	app, _ := initAppTx(t)
 
-	// test the source, which should not exist
 	resp := app.Query(abci.RequestQuery{
 		Path: query.SummaryEndpoint,
 		Data: nil,
@@ -82,19 +83,26 @@ func TestCanQuerySummary1(t *testing.T) {
 }
 
 func TestCanQuerySummary2(t *testing.T) {
-	app, _, _ := initAppSettlement(t)
+	app, _ := initAppTx(t)
+	// create a new account for different results
+	public, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	addr, err := address.Generate(address.KindUser, public.Bytes())
+	require.NoError(t, err)
+	modify(t, addr.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1 * constants.QuantaPerUnit
+	})
 
-	// test the source, which should not exist
 	resp := app.Query(abci.RequestQuery{
 		Path: query.SummaryEndpoint,
 		Data: nil,
 	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "total ndau at height 1 is 1000000000000, in 1 accounts", resp.Log)
+	require.Equal(t, "total ndau at height 1 is 1000100000000, in 2 accounts", resp.Log)
 	summary := new(query.Summary)
-	_, err := summary.UnmarshalMsg(resp.Value)
+	_, err = summary.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), summary.BlockHeight)
-	require.Equal(t, 1, summary.NumAccounts)
-	require.Equal(t, math.Ndau(1000000000000), summary.TotalNdau)
+	require.Equal(t, 2, summary.NumAccounts)
+	require.Equal(t, math.Ndau(10001*constants.QuantaPerUnit), summary.TotalNdau)
 }
