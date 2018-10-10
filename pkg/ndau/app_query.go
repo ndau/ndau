@@ -7,14 +7,14 @@ import (
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
 
-// AccountEndpoint is the endpoint at which Account queries live
-const AccountEndpoint = "/account"
-
 func init() {
-	meta.RegisterQueryHandler(AccountEndpoint, accountQuery)
+	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
+	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 }
 
 func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -38,4 +38,14 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	}
 
 	response.Value = adBytes
+}
+
+func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	v, err := version.Get()
+	if err != nil {
+		app.QueryError(err, response, "getting ndaunode version")
+	}
+	response.Value = []byte(v)
 }
