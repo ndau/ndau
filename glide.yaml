@@ -31,6 +31,9 @@ import:
 - package: github.com/oneiro-ndev/signature
   repo: git@github.com:oneiro-ndev/signature.git
   version: ~v0.1.0
+- package: github.com/oneiro-ndev/writers
+  version: master
+  repo: git@github.com:oneiro-ndev/writers.git
 - package: github.com/satori/go.uuid
   version: master
 - package: github.com/stretchr/testify

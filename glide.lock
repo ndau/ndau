@@ -1,5 +1,5 @@
-hash: ef22375a3dccf301fc15b799d2fa7cdb9cc8ef1fff60e863f45b936457f32b0f
-updated: 2018-10-10T11:42:48.330166+02:00
+hash: ed81826553873726637cd88b098ecad3961f22919a58c42dda6763764b182d2a
+updated: 2018-10-10T15:57:17.052349+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -240,6 +240,9 @@ imports:
   repo: git@github.com:oneiro-ndev/whitelist.git
   subpackages:
   - pkg/whitelist
+- name: github.com/oneiro-ndev/writers
+  version: ff5d0f8112d9ad95049ea5adc6bd6e145153ff8b
+  repo: git@github.com:oneiro-ndev/writers.git
 - name: github.com/philhofer/fwd
   version: bb6d471dc95d4fe11e432687f8b70ff496cf3136
 - name: github.com/pkg/errors
