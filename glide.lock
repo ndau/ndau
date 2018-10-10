@@ -1,5 +1,5 @@
 hash: ef22375a3dccf301fc15b799d2fa7cdb9cc8ef1fff60e863f45b936457f32b0f
-updated: 2018-10-05T15:21:49.502821+02:00
+updated: 2018-10-10T11:42:48.330166+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -99,8 +99,6 @@ imports:
   - internal/arith
   - internal/arith/checked
   - internal/c
-  - math
-  - misc
 - name: github.com/facebookgo/clock
   version: 600d898af40aa09a7a93ecb9265d87b0504b6f03
 - name: github.com/facebookgo/limitgroup
@@ -181,7 +179,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaincode
-  version: 57c2d75e3bbdf624569dabf94277b65c5550a36c
+  version: 9e481f5ec33f2fffb3ff9516ac7d811114bfd72d
   repo: git@github.com:oneiro-ndev/chaincode.git
   subpackages:
   - pkg/chain
@@ -211,7 +209,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 3d6be0c3e1ccacc85a69b3d8ecc8ba5a8a1754b0
+  version: 3f9255df222587be1d8ee150bf54ec3b299bb421
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -228,7 +226,7 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/o11y
-  version: e09dad6f9a0caec0781ce4a86af300452494e928
+  version: 56253f7bc9986c67ffe49c0004ee90520a026917
   repo: git@github.com:oneiro-ndev/o11y.git
   subpackages:
   - pkg/honeycomb
