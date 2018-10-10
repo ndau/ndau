@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+
 	"github.com/oneiro-ndev/signature/pkg/signature"
 
 	"github.com/attic-labs/noms/go/marshal"
@@ -146,6 +148,8 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	}
 	if hasLock {
 		ad.Lock = generateLock(randBool())
+		// verify that account roundtrips include non-0 lock bonuses
+		// t.Log("generated lock bonus:", ad.Lock.Bonus)
 	}
 	if hasStake {
 		ad.Stake = generateStake()
@@ -162,9 +166,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 }
 
 func generateLock(notified bool) *Lock {
-	l := &Lock{
-		NoticePeriod: randDuration(),
-	}
+	l := NewLock(randDuration(), eai.DefaultLockBonusEAI)
 	if randBool() {
 		ts := randTimestamp()
 		l.UnlocksOn = &ts

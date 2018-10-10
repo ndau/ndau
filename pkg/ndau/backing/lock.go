@@ -77,12 +77,14 @@ type nomsLock struct {
 	Duration   util.Int
 	IsNotified bool
 	UnlocksOn  util.Int
+	BonusRate  util.Int
 }
 
 func (l Lock) toNomsLock() nomsLock {
 	nl := nomsLock{
 		Duration:   util.Int(l.NoticePeriod),
 		IsNotified: l.UnlocksOn != nil,
+		BonusRate:  util.Int(l.Bonus),
 	}
 	if l.UnlocksOn != nil {
 		nl.UnlocksOn = util.Int(*l.UnlocksOn)
@@ -92,6 +94,7 @@ func (l Lock) toNomsLock() nomsLock {
 
 func (l *Lock) fromNomsLock(nl nomsLock) {
 	l.NoticePeriod = math.Duration(nl.Duration)
+	l.Bonus = eai.Rate(nl.BonusRate)
 	if nl.IsNotified {
 		ts := math.Timestamp(nl.UnlocksOn)
 		l.UnlocksOn = &ts
