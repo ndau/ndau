@@ -28,13 +28,18 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 
 // IsChaincode is true when the supplied bytes appear to be chaincode
 func IsChaincode(code []byte) bool {
-	return vm.IsValidChaincode(vm.ConvertToOpcodes(code)) == nil
+	return vm.ConvertToOpcodes(code).IsValid() == nil
 }
 
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate
 // handler for the given transaction type. All that needs to happen after this is to call Run().
-func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Transactable,
-	signatureSet *bitset256.Bitset256, ts math.Timestamp) (*vm.ChaincodeVM, error) {
+func BuildVMForTxValidation(
+	code []byte,
+	acct backing.AccountData,
+	tx metatx.Transactable,
+	signatureSet *bitset256.Bitset256,
+	app *App,
+) (*vm.ChaincodeVM, error) {
 	acctStruct, err := chain.ToValue(acct)
 	if err != nil {
 		return nil, err
@@ -65,7 +70,7 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 	if err != nil {
 		return nil, err
 	}
-	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	nower, err = vm.NewCachingNow(vm.NewTimestamp(app.blockTime))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +82,21 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 
 	bin := buildBinary(code, metatx.NameOf(tx), "")
 
+	args := []vm.Value{acctStruct, txStruct, sigs}
+
 	switch tx.(type) {
+	case *ReleaseFromEndowment:
+		// RFE transactions need more validation: for the validation scripts
+		// we want to run, we need to inject the account data of the destination
+		// account onto the bottom of the stack
+		destAddr := tx.(*ReleaseFromEndowment).Destination
+		dest, _ := app.GetState().(*backing.State).GetAccount(destAddr, app.blockTime)
+		destStruct, err := chain.ToValue(dest)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating chain value for dest account data")
+		}
+		// no prepend builtin, so we're stuck with this ugliness
+		args = append([]vm.Value{destStruct}, args...)
 	default:
 		// nothing as yet: the point of this switch is to override behaviors
 		// for transactions which may require it.
@@ -94,7 +113,7 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 		theVM.SetRand(randomer)
 	}
 
-	err = theVM.Init(txIndex, acctStruct, txStruct, sigs)
+	err = theVM.Init(txIndex, args...)
 	return theVM, err
 }
 

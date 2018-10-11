@@ -26,11 +26,11 @@ func TestBuildVMForTxValidation(t *testing.T) {
 		acct         backing.AccountData
 		tx           metatx.Transactable
 		signatureSet *bitset256.Bitset256
-		ts           math.Timestamp
 	}
 	tests := []struct {
 		name          string
 		args          args
+		ts            math.Timestamp
 		want          vm.Value
 		wantErrCreate bool
 		wantErrRun    bool
@@ -42,8 +42,8 @@ func TestBuildVMForTxValidation(t *testing.T) {
 				backing.AccountData{},
 				&Transfer{},
 				bitset256.New(),
-				math.Timestamp(0),
 			},
+			math.Timestamp(0),
 			vm.NewNumber(9),
 			false,
 			false,
@@ -55,8 +55,8 @@ func TestBuildVMForTxValidation(t *testing.T) {
 				backing.AccountData{},
 				&Transfer{},
 				bitset256.New(3),
-				math.Timestamp(0),
 			},
+			math.Timestamp(0),
 			vm.NewNumber(16),
 			false,
 			false,
@@ -64,7 +64,10 @@ func TestBuildVMForTxValidation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			vm, err := BuildVMForTxValidation(asm(tt.args.code), tt.args.acct, tt.args.tx, tt.args.signatureSet, tt.args.ts)
+			app, _ := initApp(t)
+			app.blockTime = tt.ts
+
+			vm, err := BuildVMForTxValidation(asm(tt.args.code), tt.args.acct, tt.args.tx, tt.args.signatureSet, app)
 			if (err != nil) != tt.wantErrCreate {
 				t.Errorf("BuildVMForTxValidation() error = %v, wantErrCreate %v", err, tt.wantErrCreate)
 				return

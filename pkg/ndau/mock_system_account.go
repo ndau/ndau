@@ -32,7 +32,7 @@ func MockSystemAccount(app *App, addr address.Address) ([]signature.PrivateKey, 
 		st := stI.(*backing.State)
 
 		acct, _ := st.GetAccount(addr, app.blockTime)
-		acct.TransferKeys = publics
+		acct.ValidationKeys = publics
 
 		st.Accounts[addr.String()] = acct
 		return st, nil

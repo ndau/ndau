@@ -9,6 +9,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
@@ -26,7 +27,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
 		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
-		acct.TransferKeys = []signature.PublicKey{public}
+		acct.ValidationKeys = []signature.PublicKey{public}
 	})
 
 	return app, private
@@ -62,7 +63,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 				Expiry: ts.Sub(math.Duration(i)),
 			})
 		}
-		acct.TransferKeys = []signature.PublicKey{public}
+		acct.ValidationKeys = []signature.PublicKey{public}
 	})
 
 	// add 1 second to the timestamp to get past unix time rounding errors
@@ -115,9 +116,7 @@ func TestTransfersWhoseQtyLTE0AreInvalid(t *testing.T) {
 func TestTransfersFromLockedAddressesProhibited(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
-		acct.Lock = &backing.Lock{
-			NoticePeriod: 90 * math.Day,
-		}
+		acct.Lock = backing.NewLock(90*math.Day, eai.DefaultLockBonusEAI)
 	})
 
 	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
@@ -132,10 +131,8 @@ func TestTransfersFromLockedButExpiredAddressesAreValid(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
 		twoDaysAgo := now.Sub(math.Duration(2 * math.Day))
-		acct.Lock = &backing.Lock{
-			NoticePeriod: math.Duration(1 * math.Day),
-			UnlocksOn:    &twoDaysAgo,
-		}
+		acct.Lock = backing.NewLock(1*math.Day, eai.DefaultLockBonusEAI)
+		acct.Lock.UnlocksOn = &twoDaysAgo
 	})
 
 	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
@@ -150,10 +147,8 @@ func TestTransfersFromNotifiedAddressesAreInvalid(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
 		tomorrow := now.Add(math.Duration(1 * math.Day))
-		acct.Lock = &backing.Lock{
-			NoticePeriod: math.Duration(1 * math.Day),
-			UnlocksOn:    &tomorrow,
-		}
+		acct.Lock = backing.NewLock(1*math.Day, eai.DefaultLockBonusEAI)
+		acct.Lock.UnlocksOn = &tomorrow
 	})
 
 	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
@@ -431,7 +426,7 @@ func TestValidationScriptValidatesTransfers(t *testing.T) {
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.ValidationScript = script
-		ad.TransferKeys = append(ad.TransferKeys, public2)
+		ad.ValidationKeys = append(ad.ValidationKeys, public2)
 	})
 
 	t.Run("only first key", func(t *testing.T) {

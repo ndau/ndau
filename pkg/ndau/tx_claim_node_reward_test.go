@@ -28,7 +28,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	require.NoError(t, err)
 
 	modify(t, eaiNode, app, func(acct *backing.AccountData) {
-		acct.TransferKeys = []signature.PublicKey{public}
+		acct.ValidationKeys = []signature.PublicKey{public}
 	})
 
 	// see chaincode/chasm/examples/distributeRewards.chasm

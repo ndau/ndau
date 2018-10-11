@@ -141,7 +141,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			eaiAward, err := eai.Calculate(
 				acctData.Balance, app.blockTime, acctData.LastEAIUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
-				*unlockedTable, *lockedTable,
+				*unlockedTable,
 			)
 			if err != nil {
 				errorList = append(errorList, err)

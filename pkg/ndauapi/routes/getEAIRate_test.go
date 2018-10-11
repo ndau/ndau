@@ -11,6 +11,7 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
@@ -52,33 +53,33 @@ func TestGetEAIRate(t *testing.T) {
 			},
 			status: http.StatusOK,
 			want: []EAIRateResponse{
-				EAIRateResponse{"3L0", 4000000},
+				EAIRateResponse{"3L0", uint64(eai.RateFromPercent(4))},
 			},
 		},
 		{
 			name: "locked 90 days at time 0",
 			body: []EAIRateRequest{
-				EAIRateRequest{"0L90", 0, backing.Lock{NoticePeriod: 90 * types.Day}},
+				EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
 			},
 			status: http.StatusOK,
 			want: []EAIRateResponse{
-				EAIRateResponse{"0L90", 1000000},
+				EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
 			},
 		},
 		{
 			name: "several accounts",
 			body: []EAIRateRequest{
-				EAIRateRequest{"90L90", 90 * types.Day, backing.Lock{NoticePeriod: 90 * types.Day}},
-				EAIRateRequest{"0L90", 0, backing.Lock{NoticePeriod: 90 * types.Day}},
+				EAIRateRequest{"90L90", 90 * types.Day, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
+				EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
 				EAIRateRequest{"90L0", 90 * types.Day, backing.Lock{}},
-				EAIRateRequest{"400L1095", 400 * types.Day, backing.Lock{NoticePeriod: 1095 * types.Day}},
+				EAIRateRequest{"400L1095", 400 * types.Day, *backing.NewLock(1095*types.Day, eai.DefaultLockBonusEAI)},
 			},
 			status: http.StatusOK,
 			want: []EAIRateResponse{
-				EAIRateResponse{"90L90", 5000000},
-				EAIRateResponse{"0L90", 1000000},
-				EAIRateResponse{"90L0", 4000000},
-				EAIRateResponse{"400L1095", 15000000},
+				EAIRateResponse{"90L90", uint64(eai.RateFromPercent(5))},
+				EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
+				EAIRateResponse{"90L0", uint64(eai.RateFromPercent(4))},
+				EAIRateResponse{"400L1095", uint64(eai.RateFromPercent(15))},
 			},
 		},
 	}
