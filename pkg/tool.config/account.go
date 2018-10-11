@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 )
 
 // An Account contains the data necessary to interact with an account:

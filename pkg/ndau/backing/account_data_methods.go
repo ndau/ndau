@@ -3,7 +3,7 @@ package backing
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 

@@ -3,7 +3,7 @@ package backing
 import (
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
