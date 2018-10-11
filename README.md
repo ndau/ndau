@@ -13,11 +13,22 @@ This is the implementation of the Ndau chain. See the Ndau design whitepaper for
 
 ## Install
 
+- pre-requisites:
+
+    1. Install [Go](https://golang.org/doc/install)
+    1. Install [Docker](https://docs.docker.com/docker-for-mac/install/)
+        - If you don't have an account, you can use one from [here](http://bugmenot.com/view/store.docker.com)
+        - Run it from `/Applications`
+    1. Clone this repo in `~/go/src/github.com/oneiro-ndev/` (required for Go)
+    1. Download github_chaos_deploy from your Oneiro 1password account, put it at the root of your cloned copy of this repo
+
 - install [glide](https://github.com/Masterminds/glide):
 
     ```shell
     curl https://glide.sh/get | sh
     ```
+
+    - Optionally, install glide using [Brew](https://brew.sh/)
 
 - update dependencies
 
