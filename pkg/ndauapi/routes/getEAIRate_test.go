@@ -11,17 +11,12 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 func TestGetEAIRate(t *testing.T) {
 	baseHandler := GetEAIRate
-
-	expectPercent := func(pct uint64) uint64 {
-		return pct * constants.RateDenominator / 100
-	}
 
 	tests := []struct {
 		name   string
@@ -58,7 +53,7 @@ func TestGetEAIRate(t *testing.T) {
 			},
 			status: http.StatusOK,
 			want: []EAIRateResponse{
-				EAIRateResponse{"3L0", expectPercent(4)},
+				EAIRateResponse{"3L0", uint64(eai.RateFromPercent(4))},
 			},
 		},
 		{
@@ -68,7 +63,7 @@ func TestGetEAIRate(t *testing.T) {
 			},
 			status: http.StatusOK,
 			want: []EAIRateResponse{
-				EAIRateResponse{"0L90", expectPercent(1)},
+				EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
 			},
 		},
 		{
@@ -81,10 +76,10 @@ func TestGetEAIRate(t *testing.T) {
 			},
 			status: http.StatusOK,
 			want: []EAIRateResponse{
-				EAIRateResponse{"90L90", expectPercent(5)},
-				EAIRateResponse{"0L90", expectPercent(1)},
-				EAIRateResponse{"90L0", expectPercent(4)},
-				EAIRateResponse{"400L1095", expectPercent(15)},
+				EAIRateResponse{"90L90", uint64(eai.RateFromPercent(5))},
+				EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
+				EAIRateResponse{"90L0", uint64(eai.RateFromPercent(4))},
+				EAIRateResponse{"400L1095", uint64(eai.RateFromPercent(15))},
 			},
 		},
 	}
