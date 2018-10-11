@@ -3,15 +3,13 @@ package svc
 import (
 	"net/http"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-
-	"github.com/tendermint/tendermint/p2p"
-
 	"github.com/kentquirk/boneful"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/tendermint/tendermint/p2p"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 

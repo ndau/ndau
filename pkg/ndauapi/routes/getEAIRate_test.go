@@ -9,11 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
