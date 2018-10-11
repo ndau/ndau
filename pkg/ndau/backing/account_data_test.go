@@ -7,16 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/signature/pkg/signature"
-
 	"github.com/attic-labs/noms/go/marshal"
 	"github.com/attic-labs/noms/go/spec"
-	"github.com/stretchr/testify/require"
-
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/stretchr/testify/require"
 )
 
 func alphaOf(in string) (out string) {

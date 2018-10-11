@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 	rpc "github.com/tendermint/tendermint/rpc/core/types"
 )
