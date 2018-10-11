@@ -28,8 +28,6 @@ import:
 - package: github.com/oneiro-ndev/o11y
   version: master
   repo: git@github.com:oneiro-ndev/o11y.git
-- package: github.com/oneiro-ndev/signature
-  repo: git@github.com:oneiro-ndev/ndaumath.git
 - package: github.com/oneiro-ndev/writers
   version: master
   repo: git@github.com:oneiro-ndev/writers.git

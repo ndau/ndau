@@ -1,5 +1,5 @@
-hash: 3264d7b12747d7b2a38a969ff9c290a17fa3c26cc23a5594e3f048dc8dc914f7
-updated: 2018-10-11T13:31:22.722343+02:00
+hash: 3dcc95b5aa307c180e29447529c4ccdec38264fe1d96b32936ee80214591a856
+updated: 2018-10-11T13:55:32.720847+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -180,7 +180,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/oneiro-ndev/chaincode
-  version: 9e481f5ec33f2fffb3ff9516ac7d811114bfd72d
+  version: 48467a3d3695999ed63f7ddf54cb63d7146dda9b
   repo: git@github.com:oneiro-ndev/chaincode.git
   subpackages:
   - pkg/chain
@@ -217,10 +217,13 @@ imports:
   - pkg/b32
   - pkg/bitset256
   - pkg/constants
+  - pkg/eai
+  - pkg/key
   - pkg/ndauerr
   - pkg/signature
   - pkg/signed
   - pkg/types
+  - pkg/unsigned
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -229,11 +232,6 @@ imports:
   repo: git@github.com:oneiro-ndev/o11y.git
   subpackages:
   - pkg/honeycomb
-- name: github.com/oneiro-ndev/signature
-  version: c42340841d442d0dcd264ec6dc6208f04926ccb4
-  repo: git@github.com:oneiro-ndev/ndaumath.git
-  subpackages:
-  - pkg/signature
 - name: github.com/oneiro-ndev/whitelist
   version: f9950b022eeab826b83f535c133967bf96aa7977
   repo: git@github.com:oneiro-ndev/whitelist.git
