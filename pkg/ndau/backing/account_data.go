@@ -181,7 +181,7 @@ func NewAccountData(blockTime math.Timestamp) AccountData {
 // See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
 	Balance             math.Ndau             `json:"balance" chain:"61,Acct_Balance"`
-	TransferKeys        []signature.PublicKey `json:"transferKeys" chain:"62,Acct_TransferKeys"`
+	ValidationKeys      []signature.PublicKey `json:"validationKeys" chain:"62,Acct_ValidationKeys"`
 	RewardsTarget       *address.Address      `json:"rewardsTarget" chain:"63,Acct_RewardsTarget"`
 	IncomingRewardsFrom []address.Address     `json:"incomingRewardsFrom" chain:"64,Acct_IncomingRewardsFrom"`
 	DelegationNode      *address.Address      `json:"delegationNode" chain:"65,Acct_DelegationNode"`
@@ -221,7 +221,7 @@ func (ad *AccountData) UnmarshalNoms(v nt.Value) error {
 
 type nomsAccountData struct {
 	Balance             util.Int
-	TransferKeys        []nt.Blob
+	ValidationKeys      []nt.Blob
 	HasRewardsTarget    bool
 	RewardsTarget       nt.String
 	IncomingRewardsFrom []nt.String
@@ -256,12 +256,12 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		SettlementSettings: ad.SettlementSettings,
 		UncreditedEAI:      util.Int(ad.UncreditedEAI),
 	}
-	for _, tk := range ad.TransferKeys {
+	for _, tk := range ad.ValidationKeys {
 		tkBytes, err := tk.Marshal()
 		if err != nil {
 			return nomsAccountData{}, err
 		}
-		nad.TransferKeys = append(nad.TransferKeys, util.Blob(vrw, tkBytes))
+		nad.ValidationKeys = append(nad.ValidationKeys, util.Blob(vrw, tkBytes))
 	}
 	if nad.HasRewardsTarget {
 		nad.RewardsTarget = nt.String(ad.RewardsTarget.String())
@@ -288,7 +288,7 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 		*ad = AccountData{}
 		return err
 	}
-	for _, ntk := range n.TransferKeys {
+	for _, ntk := range n.ValidationKeys {
 		tkBytes, err := util.Unblob(ntk)
 		if err != nil {
 			*ad = AccountData{}
@@ -300,7 +300,7 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 			*ad = AccountData{}
 			return err
 		}
-		ad.TransferKeys = append(ad.TransferKeys, tk)
+		ad.ValidationKeys = append(ad.ValidationKeys, tk)
 	}
 	if n.HasRewardsTarget {
 		ad.RewardsTarget = new(address.Address)

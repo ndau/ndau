@@ -20,7 +20,7 @@ func initAppRegisterNode(t *testing.T) *App {
 
 	// this ensures the target address exists
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
-		acct.TransferKeys = []signature.PublicKey{transferPublic}
+		acct.ValidationKeys = []signature.PublicKey{transferPublic}
 		acct.Stake = &backing.Stake{
 			Address: targetAddress,
 		}

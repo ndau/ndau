@@ -26,7 +26,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
 		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
-		acct.TransferKeys = []signature.PublicKey{public}
+		acct.ValidationKeys = []signature.PublicKey{public}
 	})
 
 	return app, private
@@ -62,7 +62,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 				Expiry: ts.Sub(math.Duration(i)),
 			})
 		}
-		acct.TransferKeys = []signature.PublicKey{public}
+		acct.ValidationKeys = []signature.PublicKey{public}
 	})
 
 	// add 1 second to the timestamp to get past unix time rounding errors
@@ -431,7 +431,7 @@ func TestValidationScriptValidatesTransfers(t *testing.T) {
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.ValidationScript = script
-		ad.TransferKeys = append(ad.TransferKeys, public2)
+		ad.ValidationKeys = append(ad.ValidationKeys, public2)
 	})
 
 	t.Run("only first key", func(t *testing.T) {

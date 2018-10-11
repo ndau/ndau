@@ -60,10 +60,10 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					// require equality for known fields by name so we know what's
 					// unequal, if anything is
 					require.Equal(t, account.Balance, recoveredAccount.Balance)
-					require.Equal(t, len(account.TransferKeys), len(recoveredAccount.TransferKeys))
-					for idx := range account.TransferKeys {
+					require.Equal(t, len(account.ValidationKeys), len(recoveredAccount.ValidationKeys))
+					for idx := range account.ValidationKeys {
 						// transfer key may not be equal if algorithm pointers are unequal
-						require.Equal(t, account.TransferKeys[idx].Bytes(), recoveredAccount.TransferKeys[idx].Bytes())
+						require.Equal(t, account.ValidationKeys[idx].Bytes(), recoveredAccount.ValidationKeys[idx].Bytes())
 					}
 					require.Equal(t, account.RewardsTarget, recoveredAccount.RewardsTarget)
 					require.Equal(t, account.IncomingRewardsFrom, recoveredAccount.IncomingRewardsFrom)
@@ -141,7 +141,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	}
 	for i := 0; i < 5; i++ {
 		key := randKey()
-		ad.TransferKeys = append(ad.TransferKeys, *key)
+		ad.ValidationKeys = append(ad.ValidationKeys, *key)
 		ad.IncomingRewardsFrom = append(ad.IncomingRewardsFrom, randAddress())
 	}
 	if hasLock {
@@ -355,7 +355,7 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ad := &AccountData{
-				TransferKeys: tt.keys,
+				ValidationKeys: tt.keys,
 			}
 			got, got1 := ad.ValidateSignatures(data, tt.sigs)
 			if got != tt.want {
