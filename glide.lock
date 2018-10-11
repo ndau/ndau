@@ -1,5 +1,5 @@
-hash: ed81826553873726637cd88b098ecad3961f22919a58c42dda6763764b182d2a
-updated: 2018-10-10T15:57:17.052349+02:00
+hash: 3264d7b12747d7b2a38a969ff9c290a17fa3c26cc23a5594e3f048dc8dc914f7
+updated: 2018-10-11T13:31:22.722343+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: cf65abf76f2fcf683caaae2893bac6f237639eaa
+  version: 71e3545407870c4ca0a0769c52e9d87cc65d870a
   subpackages:
   - aws
   - aws/awserr
@@ -58,6 +58,7 @@ imports:
   - aws/request
   - aws/session
   - aws/signer/v4
+  - internal/s3err
   - internal/sdkio
   - internal/sdkrand
   - internal/sdkuri
@@ -80,13 +81,13 @@ imports:
   subpackages:
   - quantile
 - name: github.com/btcsuite/btcd
-  version: 79e00513b1011888b1e675157ab89f527f901cae
+  version: 2a560b2036bee5e3679ec2133eb6520b2f195213
   subpackages:
   - btcec
 - name: github.com/BurntSushi/toml
   version: 3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005
 - name: github.com/davecgh/go-spew
-  version: 2df174808ee097f90d259e432cc04442cf60be21
+  version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
   subpackages:
   - spew
 - name: github.com/dustin/go-humanize
@@ -94,7 +95,7 @@ imports:
 - name: github.com/ebuchman/fail-test
   version: 95f809107225be108efcf10a3509e4ea6ceef3c4
 - name: github.com/ericlagergren/decimal
-  version: 32e0aeedccccb0a2b263c754706e53e23089f106
+  version: 0bb163153a5daa921bc8ccd715eeb2c50e11cb62
   subpackages:
   - internal/arith
   - internal/arith/checked
@@ -106,9 +107,9 @@ imports:
 - name: github.com/facebookgo/muster
   version: fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a
 - name: github.com/go-ini/ini
-  version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
+  version: 7b294651033cd7d9e7f0d9ffa1b75ed1e198e737
 - name: github.com/go-kit/kit
-  version: 4914a6960de6e1a81504d2b8a9dd9f207d20c757
+  version: bd9859ee65bb1743c72811a5dca2a330a4e0d957
   subpackages:
   - log
   - log/level
@@ -119,12 +120,10 @@ imports:
   - metrics/prometheus
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
-- name: github.com/go-stack/stack
-  version: 259ab82a6cad3992b4e21ff5cac294ccb06474bc
 - name: github.com/go-zoo/bone
-  version: c6b9d00069e0797f1454e738811b95dad24d9b96
+  version: 2270ec2a18cc13fba907d4ae5ad546a21473c0ed
 - name: github.com/gogo/protobuf
-  version: 98f6aa8b3bcf03e45b1a8b48257c754766d5c3c8
+  version: fd322a3c49630fe6d05737e2b7d9426e6680e28d
   subpackages:
   - gogoproto
   - jsonpb
@@ -133,7 +132,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: b27b920f9e71b439b873b17bf99f56467623814a
+  version: ddf22928ea3c56eb4292a0adbbf5001b1e8e7d0d
   subpackages:
   - proto
   - ptypes
@@ -145,11 +144,11 @@ imports:
 - name: github.com/google/go-cmp
   version: 3af367b6b30c263d47e8895973edcca9a49cf029
 - name: github.com/gorilla/websocket
-  version: b378caee5b2a673abe3897c40fde529bff7b986e
+  version: a51a35ae3232254685f26a0b6d995ca0e81e2248
 - name: github.com/honeycombio/libhoney-go
-  version: 741c87cf6e228e5c509705847b67a3245bc79b8b
+  version: 86ceb69a9b89f381631caac96f24df15b88bedad
 - name: github.com/jawher/mow.cli
-  version: 2f22195f169da29d54624afd9eb83ada5c9e4ee9
+  version: be8a14f11c9d056881a23b1492b7995778fae6d0
   subpackages:
   - internal/container
   - internal/flow
@@ -163,7 +162,7 @@ imports:
 - name: github.com/jmhodges/levigo
   version: c42d9e0ca023e2198120196f842701bb4c55d7b9
 - name: github.com/jpillora/backoff
-  version: 8eab2debe79d12b7bd3d10653910df25fa9552ba
+  version: 3050d21c67d7c46b07ca1b5e1be0b26669c8d04c
 - name: github.com/juju/gnuflag
   version: 2ce1bb71843d6d179b3f1c1c9cb4a72cd067fc65
 - name: github.com/julienschmidt/httprouter
@@ -172,6 +171,8 @@ imports:
   version: 9bdec3dec7c611fa97beadc374d75bdf02cd880e
 - name: github.com/kentquirk/boneful
   version: 3803229ab933de2ae9bc4809a89295b28286cf36
+- name: github.com/konsorten/go-windows-terminal-sequences
+  version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/matttproud/golang_protobuf_extensions
@@ -185,7 +186,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 8db693bf52e013e8b91ee508453b94ae3688a8b5
+  version: f9d7a9aca13b4c1a657dfe06f645eba86e84a0a7
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -194,7 +195,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 00de463f3f90f6d730ae13f09ccfaf4f8a9db74e
+  version: 9d9c1889e99b872b9cbe8536ba8e38b2b8efab71
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -209,19 +210,17 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 3f9255df222587be1d8ee150bf54ec3b299bb421
+  version: c42340841d442d0dcd264ec6dc6208f04926ccb4
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
   - pkg/bitset256
   - pkg/constants
-  - pkg/eai
-  - pkg/key
   - pkg/ndauerr
+  - pkg/signature
   - pkg/signed
   - pkg/types
-  - pkg/unsigned
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -231,8 +230,8 @@ imports:
   subpackages:
   - pkg/honeycomb
 - name: github.com/oneiro-ndev/signature
-  version: 98ba9626121c5676aa52ca4ebb315d53cf16753c
-  repo: git@github.com:oneiro-ndev/signature.git
+  version: c42340841d442d0dcd264ec6dc6208f04926ccb4
+  repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/signature
 - name: github.com/oneiro-ndev/whitelist
@@ -243,18 +242,22 @@ imports:
 - name: github.com/oneiro-ndev/writers
   version: ff5d0f8112d9ad95049ea5adc6bd6e145153ff8b
   repo: git@github.com:oneiro-ndev/writers.git
+  subpackages:
+  - pkg/linewriter
+  - pkg/testwriter
 - name: github.com/philhofer/fwd
   version: bb6d471dc95d4fe11e432687f8b70ff496cf3136
 - name: github.com/pkg/errors
-  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
+  version: 2233dee583dcf88f3c8b22cb7a33f05a499800d8
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 4eb539fa85a2688054063c3b01d9e86eb01bf999
+  version: 7866eead363ec334628dbc56e32df590a05f4696
   subpackages:
   - prometheus
+  - prometheus/internal
   - prometheus/promhttp
 - name: github.com/prometheus/client_model
   version: 5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f
@@ -267,7 +270,7 @@ imports:
   - internal/bitbucket.org/ww/goautoneg
   - model
 - name: github.com/prometheus/procfs
-  version: 05ee40e3a273f7245e8777337fc7b46e533a9a92
+  version: 185b4288413d2a0dd0806f78c90dde719829e5ae
   subpackages:
   - internal/util
   - nfs
@@ -281,7 +284,7 @@ imports:
 - name: github.com/sigurn/utils
   version: f19e41f79f8f006116f682c1af454591bc278ad4
 - name: github.com/sirupsen/logrus
-  version: fc587f31c804fe6853cd90f0d8d90af588eca5bd
+  version: 458213699411cdceb6fd839a3178be49c01fba54
 - name: github.com/stretchr/testify
   version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
@@ -366,7 +369,7 @@ imports:
 - name: github.com/ybbus/jsonrpc
   version: 649ede3181b7a6d7329afc6612b494434c641499
 - name: golang.org/x/crypto
-  version: 614d502a4dac94afa3a6ce146bd1736da82514c6
+  version: 7c1a557ab941a71c619514f229f0b27ccb0c27cf
   subpackages:
   - curve25519
   - ed25519
@@ -379,7 +382,7 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: faa378e6dbaed88bd8100f8bcf09939375c6e8fa
+  version: 146acd28ed5894421fb5aac80ca93bc1b1f46f87
   subpackages:
   - context
   - http/httpguts
@@ -390,23 +393,23 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 11551d06cbcc94edc80a0facaccbda56473c19c1
+  version: 4497e2df6f9e69048a54498c7affbbec3294ad47
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 6e3c4e7365ddcc329f090f96e4348398f6310088
+  version: 4d1c5fb19474adfe9562c9847ba425e7da817e81
   subpackages:
   - secure/bidirule
   - transform
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: c66870c02cf823ceb633bcd05be3c7cda29976f4
+  version: af9cb2a35e7f169ec875002c1829c9b315cddc04
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: e00d24941bcee35dd163f4377d5371349f14baaf
+  version: c195587d96d5ae30321b96a1e2e175fea09e9fda
   subpackages:
   - balancer
   - balancer/base
