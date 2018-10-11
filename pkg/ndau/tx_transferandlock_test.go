@@ -350,7 +350,7 @@ func TestValidationScriptValidatesTnLs(t *testing.T) {
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.ValidationScript = script
-		ad.TransferKeys = append(ad.TransferKeys, public2)
+		ad.ValidationKeys = append(ad.ValidationKeys, public2)
 	})
 
 	t.Run("only first key", func(t *testing.T) {

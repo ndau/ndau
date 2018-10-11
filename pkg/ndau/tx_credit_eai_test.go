@@ -34,7 +34,7 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	require.NoError(t, err)
 	// assign this keypair
 	modify(t, eaiNode, app, func(data *backing.AccountData) {
-		data.TransferKeys = []signature.PublicKey{public}
+		data.ValidationKeys = []signature.PublicKey{public}
 	})
 	return app, private
 }

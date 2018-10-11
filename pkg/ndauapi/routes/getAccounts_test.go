@@ -53,7 +53,6 @@ func TestGetAccounts(t *testing.T) {
 
 	// run tests
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("POST", "/", bytes.NewReader([]byte(tt.body)))
