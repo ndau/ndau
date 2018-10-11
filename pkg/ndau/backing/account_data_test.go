@@ -7,16 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/signature/pkg/signature"
-
 	"github.com/attic-labs/noms/go/marshal"
 	"github.com/attic-labs/noms/go/spec"
-	"github.com/stretchr/testify/require"
-
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/stretchr/testify/require"
 )
 
 func alphaOf(in string) (out string) {
@@ -146,6 +145,8 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	}
 	if hasLock {
 		ad.Lock = generateLock(randBool())
+		// verify that account roundtrips include non-0 lock bonuses
+		// t.Log("generated lock bonus:", ad.Lock.Bonus)
 	}
 	if hasStake {
 		ad.Stake = generateStake()
@@ -162,9 +163,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 }
 
 func generateLock(notified bool) *Lock {
-	l := &Lock{
-		NoticePeriod: randDuration(),
-	}
+	l := NewLock(randDuration(), eai.DefaultLockBonusEAI)
 	if randBool() {
 		ts := randTimestamp()
 		l.UnlocksOn = &ts

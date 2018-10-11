@@ -17,6 +17,15 @@ type Lock struct {
 	NoticePeriod math.Duration `msg:"notice" chain:"91,Lock_NoticePeriod" json:"noticePeriod"`
 	// if a lock has not been notified, this is nil
 	UnlocksOn *math.Timestamp `msg:"unlock" chain:"92,Lock_UnlocksOn" json:"unlocksOn"`
+	Bonus     eai.Rate        `msg:"bonus" chain:"93,Lock_Bonus" json:"bonus"`
+}
+
+// NewLock constructs a new lock with appropriate bonus rate looked up
+func NewLock(period math.Duration, bonusTable eai.RateTable) *Lock {
+	return &Lock{
+		NoticePeriod: period,
+		Bonus:        bonusTable.RateAt(period),
+	}
 }
 
 // GetNoticePeriod implements eai.Lock
@@ -33,6 +42,14 @@ func (l *Lock) GetUnlocksOn() *math.Timestamp {
 		return l.UnlocksOn
 	}
 	return nil
+}
+
+// GetBonusRate implements eai.Lock
+func (l *Lock) GetBonusRate() eai.Rate {
+	if l != nil {
+		return l.Bonus
+	}
+	return eai.Rate(0)
 }
 
 var _ eai.Lock = (*Lock)(nil)
@@ -60,12 +77,14 @@ type nomsLock struct {
 	Duration   util.Int
 	IsNotified bool
 	UnlocksOn  util.Int
+	BonusRate  util.Int
 }
 
 func (l Lock) toNomsLock() nomsLock {
 	nl := nomsLock{
 		Duration:   util.Int(l.NoticePeriod),
 		IsNotified: l.UnlocksOn != nil,
+		BonusRate:  util.Int(l.Bonus),
 	}
 	if l.UnlocksOn != nil {
 		nl.UnlocksOn = util.Int(*l.UnlocksOn)
@@ -75,6 +94,7 @@ func (l Lock) toNomsLock() nomsLock {
 
 func (l *Lock) fromNomsLock(nl nomsLock) {
 	l.NoticePeriod = math.Duration(nl.Duration)
+	l.Bonus = eai.Rate(nl.BonusRate)
 	if nl.IsNotified {
 		ts := math.Timestamp(nl.UnlocksOn)
 		l.UnlocksOn = &ts

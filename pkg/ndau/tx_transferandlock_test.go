@@ -9,6 +9,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/key"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
@@ -55,9 +56,7 @@ func TestTnLsWhoseQtyLTE0AreInvalid(t *testing.T) {
 func TestTnLsFromLockedAddressesProhibited(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
-		acct.Lock = &backing.Lock{
-			NoticePeriod: 90 * math.Day,
-		}
+		acct.Lock = backing.NewLock(90*math.Day, eai.DefaultLockBonusEAI)
 	})
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
@@ -72,10 +71,8 @@ func TestTnLsFromLockedButExpiredAddressesAreValid(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
 		twoDaysAgo := now.Sub(math.Duration(2 * math.Day))
-		acct.Lock = &backing.Lock{
-			NoticePeriod: math.Duration(1 * math.Day),
-			UnlocksOn:    &twoDaysAgo,
-		}
+		acct.Lock = backing.NewLock(1*math.Day, eai.DefaultLockBonusEAI)
+		acct.Lock.UnlocksOn = &twoDaysAgo
 	})
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
@@ -90,10 +87,8 @@ func TestTnLsFromNotifiedAddressesAreInvalid(t *testing.T) {
 	app, private := initAppTx(t)
 	modifySource(t, app, func(acct *backing.AccountData) {
 		tomorrow := now.Add(math.Duration(1 * math.Day))
-		acct.Lock = &backing.Lock{
-			NoticePeriod: math.Duration(1 * math.Day),
-			UnlocksOn:    &tomorrow,
-		}
+		acct.Lock = backing.NewLock(1*math.Day, eai.DefaultLockBonusEAI)
+		acct.Lock.UnlocksOn = &tomorrow
 	})
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})

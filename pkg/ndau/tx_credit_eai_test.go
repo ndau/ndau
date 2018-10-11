@@ -7,6 +7,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
@@ -197,10 +198,8 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	})
 	modify(t, dest, app, func(ad *backing.AccountData) {
 		uo := math.Timestamp(1 * math.Year)
-		ad.Lock = &backing.Lock{
-			NoticePeriod: math.Duration(1 * math.Year),
-			UnlocksOn:    &uo,
-		}
+		ad.Lock = backing.NewLock(1*math.Year, eai.DefaultLockBonusEAI)
+		ad.Lock.UnlocksOn = &uo
 	})
 
 	blockTime := math.Timestamp(45 * math.Day)

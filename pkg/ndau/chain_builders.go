@@ -28,7 +28,7 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 
 // IsChaincode is true when the supplied bytes appear to be chaincode
 func IsChaincode(code []byte) bool {
-	return vm.IsValidChaincode(vm.ConvertToOpcodes(code)) == nil
+	return vm.ConvertToOpcodes(code).IsValid() == nil
 }
 
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate

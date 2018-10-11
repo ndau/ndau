@@ -7,6 +7,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 	"github.com/stretchr/testify/require"
@@ -99,9 +100,7 @@ func TestLockCannotReduceLockLength(t *testing.T) {
 	duration := math.Duration(30 * math.Day)
 	app, private := initAppTx(t)
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.Lock = &backing.Lock{
-			NoticePeriod: duration,
-		}
+		ad.Lock = backing.NewLock(duration, eai.DefaultLockBonusEAI)
 	})
 
 	// construct invalid relock tx
@@ -122,10 +121,8 @@ func TestRelockNotified(t *testing.T) {
 	app, private := initAppTx(t)
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ts := math.Timestamp(int64(duration))
-		ad.Lock = &backing.Lock{
-			NoticePeriod: duration,
-			UnlocksOn:    &ts,
-		}
+		ad.Lock = backing.NewLock(duration, eai.DefaultLockBonusEAI)
+		ad.Lock.UnlocksOn = &ts
 	})
 
 	// construct relock tx of half original duration
