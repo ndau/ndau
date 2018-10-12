@@ -36,5 +36,7 @@ func main() {
 
 	app.Command("server", "create server for API endpoint calls", server)
 
+	app.Command("version", "emit version information and quit", version)
+
 	app.Run(os.Args)
 }
