@@ -8,6 +8,7 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/o11y/pkg/honeycomb"
 	"github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/server"
@@ -22,6 +23,7 @@ var socketAddr = flag.String("addr", "0.0.0.0:26658", "socket address for incomi
 var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and then quit")
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
 var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
+var echoVersion = flag.Bool("version", false, "if set, echo the current version and exit")
 
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
@@ -64,6 +66,10 @@ func main() {
 	if *echoEmptyHash {
 		fmt.Println(getEmptyHash())
 		os.Exit(0)
+	}
+
+	if *echoVersion {
+		version.Emit()
 	}
 
 	ndauhome := getNdauhome()
