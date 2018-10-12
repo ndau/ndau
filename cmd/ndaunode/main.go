@@ -119,11 +119,18 @@ func main() {
 	err = server.Start()
 	check(err)
 
-	logger.Info(
-		"started ABCI socket server",
-		"address", *socketAddr,
-		"name", server.String(),
-	)
+	entry := logger.WithFields(logrus.Fields{
+		"address": *socketAddr,
+		"name":    server.String(),
+	})
+
+	v, err := version.Get()
+	if err == nil {
+		entry = entry.WithField("version", v)
+	} else {
+		entry = entry.WithError(err)
+	}
+	entry.Info("started ABCI socket server")
 	// we want to keep this service running indefinitely
 	// if there were more commands to run, we'd probably want to split this into a separate
 	// goroutine and deal with closing options, but for now, it's probably fine to actually
