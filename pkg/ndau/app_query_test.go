@@ -8,7 +8,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -72,22 +71,6 @@ func TestCanQueryVersion(t *testing.T) {
 	if err != nil {
 		t.Skip("version not set by linker. See `go build -extldflags`")
 	}
-
-	app, _ := initApp(t)
-
-	resp := app.Query(abci.RequestQuery{
-		Path: query.VersionEndpoint,
-	})
-
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.NotEmpty(t, resp.Value)
-}
-
-func TestCanQueryVersion(t *testing.T) {
-	// this test can't pass unless you run it with ldflags set to inject
-	// the version information properly. It exists mainly as an example
-	// of how to use this query
-	t.Skip("go test doesn't by default inject version")
 
 	app, _ := initApp(t)
 
