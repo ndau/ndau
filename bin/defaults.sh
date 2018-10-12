@@ -4,7 +4,7 @@
 # Note
 # Not having any sourced dependencies in this script makes it sourceable outside of a script.
 
-VERSION=$(git describe --all --long)
+VERSION=$(git describe --long --tags)
 >&2 echo "defaults.sh:" "VERSION=$VERSION"
 
 if [ -z "$TMHOME" ]; then
