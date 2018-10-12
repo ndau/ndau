@@ -49,3 +49,13 @@ func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 	}
 	response.Value = []byte(v)
 }
+
+func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	v, err := version.Get()
+	if err != nil {
+		app.QueryError(err, response, "getting ndaunode version")
+	}
+	response.Value = []byte(v)
+}
