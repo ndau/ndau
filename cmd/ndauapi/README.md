@@ -153,7 +153,7 @@ Each of these, in turn, has several endpoints within it.
 ---
 ## AccountByID
 
-### `GET /account/account/:accountid`
+### `GET /account/account/:address`
 
 _Returns current state of an account given its address._
 
@@ -170,8 +170,10 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "balance": 0,
-          "transferKeys": null,
+          "balance": 123000000,
+          "transferKeys": [
+            "kgHEIOzAXTvnjneE4il2g1PPhzjQ9imizVH0OsvLzCcktoi9"
+          ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
           "delegationNode": null,
@@ -179,7 +181,7 @@ _**Writes:**_
           "stake": null,
           "lastEAIUpdate": 0,
           "lastWAAUpdate": 0,
-          "weightedAverageAge": 0,
+          "weightedAverageAge": 2592000000000,
           "Sequence": 0,
           "settlements": null,
           "settlementSettings": {
@@ -188,7 +190,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": ""
+          "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk"
         }
 ```
 
@@ -204,8 +206,24 @@ _Returns current state of several accounts given a list of addresses._
 
 
 
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ body | Body |  | []string
 
 
+
+
+_**Consumes:**_ `[application/json]`
+
+
+_**Reads:**_
+```json
+        [
+          "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk"
+        ]
+```
 
 
 _**Produces:**_ `[application/json]`
@@ -213,7 +231,33 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "addressData": [
+            {
+              "balance": 123000000,
+              "transferKeys": [
+                "kgHEIOzAXTvnjneE4il2g1PPhzjQ9imizVH0OsvLzCcktoi9"
+              ],
+              "rewardsTarget": null,
+              "incomingRewardsFrom": null,
+              "delegationNode": null,
+              "lock": null,
+              "stake": null,
+              "lastEAIUpdate": 0,
+              "lastWAAUpdate": 0,
+              "weightedAverageAge": 2592000000000,
+              "Sequence": 0,
+              "settlements": null,
+              "settlementSettings": {
+                "Period": 0,
+                "ChangesAt": null,
+                "Next": null
+              },
+              "validationScript": null,
+              "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk"
+            }
+          ]
+        }
 ```
 
 
@@ -249,7 +293,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "accountAddress",
+            "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -267,7 +311,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "accountAddress",
+            "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk",
             "eairate": 6000000
           }
         ]
@@ -291,7 +335,7 @@ _**Parameters:**_
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  limit | Query | Maximum number of transactions to return; default=10. | string
- before | Query | Timestamp (ISO-3339) to start looking backwards; default=now. | string
+ before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
 
 
 
@@ -303,7 +347,13 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        [
+          {
+            "Timestamp": "2018-07-18T20:01:02Z",
+            "Balance": 123000000,
+            "TxHash": "abc123def456"
+          }
+        ]
 ```
 
 
@@ -335,8 +385,66 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "block_meta": null,
-          "block": null
+          "block_meta": {
+            "block_id": {
+              "hash": "",
+              "parts": {
+                "total": 0,
+                "hash": ""
+              }
+            },
+            "header": {
+              "chain_id": "",
+              "height": 0,
+              "time": "0001-01-01T00:00:00Z",
+              "num_txs": 0,
+              "last_block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "total_txs": 0,
+              "last_commit_hash": "",
+              "data_hash": "",
+              "validators_hash": "",
+              "consensus_hash": "",
+              "app_hash": "",
+              "last_results_hash": "",
+              "evidence_hash": ""
+            }
+          },
+          "block": {
+            "header": {
+              "chain_id": "",
+              "height": 0,
+              "time": "0001-01-01T00:00:00Z",
+              "num_txs": 0,
+              "last_block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "total_txs": 0,
+              "last_commit_hash": "",
+              "data_hash": "",
+              "validators_hash": "",
+              "consensus_hash": "",
+              "app_hash": "",
+              "last_results_hash": "",
+              "evidence_hash": ""
+            },
+            "data": {
+              "txs": null
+            },
+            "evidence": {
+              "evidence": null
+            },
+            "last_commit": null
+          }
         }
 ```
 
@@ -369,8 +477,66 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "block_meta": null,
-          "block": null
+          "block_meta": {
+            "block_id": {
+              "hash": "",
+              "parts": {
+                "total": 0,
+                "hash": ""
+              }
+            },
+            "header": {
+              "chain_id": "",
+              "height": 0,
+              "time": "0001-01-01T00:00:00Z",
+              "num_txs": 0,
+              "last_block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "total_txs": 0,
+              "last_commit_hash": "",
+              "data_hash": "",
+              "validators_hash": "",
+              "consensus_hash": "",
+              "app_hash": "",
+              "last_results_hash": "",
+              "evidence_hash": ""
+            }
+          },
+          "block": {
+            "header": {
+              "chain_id": "",
+              "height": 0,
+              "time": "0001-01-01T00:00:00Z",
+              "num_txs": 0,
+              "last_block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "total_txs": 0,
+              "last_commit_hash": "",
+              "data_hash": "",
+              "validators_hash": "",
+              "consensus_hash": "",
+              "app_hash": "",
+              "last_results_hash": "",
+              "evidence_hash": ""
+            },
+            "data": {
+              "txs": null
+            },
+            "evidence": {
+              "evidence": null
+            },
+            "last_commit": null
+          }
         }
 ```
 
@@ -405,7 +571,38 @@ _**Writes:**_
 ```json
         {
           "last_height": 0,
-          "block_metas": null
+          "block_metas": [
+            {
+              "block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "header": {
+                "chain_id": "",
+                "height": 0,
+                "time": "0001-01-01T00:00:00Z",
+                "num_txs": 0,
+                "last_block_id": {
+                  "hash": "",
+                  "parts": {
+                    "total": 0,
+                    "hash": ""
+                  }
+                },
+                "total_txs": 0,
+                "last_commit_hash": "",
+                "data_hash": "",
+                "validators_hash": "",
+                "consensus_hash": "",
+                "app_hash": "",
+                "last_results_hash": "",
+                "evidence_hash": ""
+              }
+            }
+          ]
         }
 ```
 
@@ -483,7 +680,7 @@ Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  key | Path | Name of the system variable. | string
  limit | Query | Maximum number of values to return; default=10. | string
- before | Query | Timestamp (ISO-3339) to start looking backwards; default=now. | string
+ before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
 
 
 
@@ -881,8 +1078,8 @@ Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  limit | Query | Maximum number of values to return; default=100, max=1000. | string
  period | Query | Duration between samples (ex: 1d, 5m); default=1d. | string
- before | Query | Timestamp (ISO-3339) to end (exclusive); default=now. | string
- after | Query | Timestamp (ISO-3339) to start (inclusive); default=before-(limit*period). | string
+ before | Query | Timestamp (ISO 8601) to end (exclusive); default=now. | string
+ after | Query | Timestamp (ISO 8601) to start (inclusive); default=before-(limit*period). | string
 
 
 
@@ -993,7 +1190,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1031,7 +1232,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1069,7 +1274,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1107,7 +1316,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1145,7 +1358,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1183,7 +1400,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1221,7 +1442,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1259,7 +1484,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1297,7 +1526,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1335,7 +1568,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1373,7 +1610,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1411,7 +1652,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1449,7 +1694,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1487,7 +1736,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1525,7 +1778,11 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxData": "",
+          "SignableBytes": "",
+          "Signature": ""
+        }
 ```
 
 
@@ -1554,7 +1811,11 @@ _**Consumes:**_ `[application/json]`
 
 _**Reads:**_
 ```json
-        {}
+        {
+          "TxData": "base64 tx data",
+          "SignableBytes": "base64 bytes to be signed",
+          "Signature": "base64 signature of SignableBytes"
+        }
 ```
 
 
@@ -1563,5 +1824,9 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "TxHash": "123abc34099f",
+          "ResultCode": 0,
+          "ErrorMsg": ""
+        }
 ```

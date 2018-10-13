@@ -8,7 +8,10 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-type BalanceHistoryResponse struct {
+type BalanceHistoryItem struct {
+	Timestamp string
+	Balance   math.Ndau
+	TxHash    string
 }
 
 type ChaosHistoryResponse struct {
@@ -20,9 +23,15 @@ type OrderHistoryRecord struct {
 }
 
 type PreparedTx struct {
+	TxData        string
+	SignableBytes string
+	Signature     string
 }
 
 type TxResult struct {
+	TxHash     string
+	ResultCode int
+	ErrorMsg   string
 }
 
 type TransactionData struct {
