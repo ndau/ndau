@@ -99,7 +99,7 @@ Each of these, in turn, has several endpoints within it.
 
 * [NodeNumUnconfirmedTransactions](#nodenumunconfirmedtransactions)
 
-* [DumpConsensusState](#dumpconsensusstate)
+* [NodeConsensusState](#nodeconsensusstate)
 
 * [NodeList](#nodelist)
 
@@ -111,7 +111,7 @@ Each of these, in turn, has several endpoints within it.
 
 * [OrderHistory](#orderhistory)
 
-* [CurrentOrderData](#currentorderdata)
+* [OrderCurrent](#ordercurrent)
 
 * [TransactionByHash](#transactionbyhash)
 
@@ -698,7 +698,7 @@ _**Writes:**_
 
 
 ---
-## DumpConsensusState
+## NodeConsensusState
 
 ### `GET /node/consensus`
 
@@ -900,7 +900,7 @@ _**Writes:**_
 
 
 ---
-## CurrentOrderData
+## OrderCurrent
 
 ### `GET /order/current`
 

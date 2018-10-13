@@ -164,7 +164,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(rpctypes.ResultStatus{}))
 
 	svc.Route(svc.GET("/node/consensus").To(routes.GetDumpConsensusState(cf)).
-		Operation("DumpConsensusState").
+		Operation("NodeConsensusState").
 		Doc("Returns the current Tendermint consensus state in JSON").
 		Produces("application/json").
 		Writes(rpctypes.ResultDumpConsensusState{}))
@@ -207,7 +207,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes([]routes.OrderHistoryRecord{}))
 
 	svc.Route(svc.GET("/order/current").To(routes.GetOrderChainData(cf)).
-		Operation("CurrentOrderData").
+		Operation("OrderCurrent").
 		Doc("Returns current order chain data for key parameters.").
 		Notes(`Returns current order chain information for 5 parameters:
 		* Market price
