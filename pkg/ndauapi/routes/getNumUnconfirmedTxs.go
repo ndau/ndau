@@ -17,6 +17,8 @@ func GetNumUnconfirmedTxs(cf cfg.Cfg) http.HandlerFunc {
 			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 			return
 		}
+
+		// TODO -- this code is WRONG, it returns Health
 		health, err := node.Health()
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not fetch health: %v", err), http.StatusInternalServerError))
