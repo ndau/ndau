@@ -3,7 +3,9 @@ package ndau
 import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
@@ -87,6 +89,12 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 		return err
 	}
 
+	lockedBonusRateTable := eai.RateTable{}
+	err = app.System(sv.LockedRateTableName, &lockedBonusRateTable)
+	if err != nil {
+		return err
+	}
+
 	state := app.GetState().(*backing.State)
 
 	source, _ := state.GetAccount(tx.Source, app.blockTime)
@@ -99,9 +107,7 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 			Expiry: app.blockTime.Add(source.SettlementSettings.Period),
 		})
 	}
-	dest.Lock = &backing.Lock{
-		NoticePeriod: tx.Period,
-	}
+	dest.Lock = backing.NewLock(tx.Period, lockedBonusRateTable)
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)

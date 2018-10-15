@@ -24,8 +24,8 @@ import (
 // marshaled into []byte and then base-64 encoded into TxData as a string.
 // Similarly, the SignableBytes is the []byte from the transaction that
 // should be signed, again encoded as base-64. When PreparedTx is generated
-// on the server side, Signature is not populated, but when it is received
-// by the Submit endpoint, it expects an array of 1 or more base-64 encoded
+// on the server side, Signature is not populated, but SignableBytes is.
+// When it is received // by the Submit endpoint, it expects an array of 1 or more base-64 encoded
 // signatures.
 type PreparedTx struct {
 	TxData        string
@@ -53,6 +53,7 @@ type TxResult struct {
 // HandleSubmitTx generates a handler that implements the /tx/submit endpoint
 func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// first, get the PreparedTx object
 		var preparedTx PreparedTx
 
 		if r.Body == nil {
@@ -65,16 +66,7 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		if len(preparedTx.Signatures) == 0 {
-			reqres.RespondJSON(w, reqres.NewFromErr("at least one signature is required", err, http.StatusBadRequest))
-		}
-
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error retrieving node: %v", err), http.StatusInternalServerError))
-			return
-		}
-
+		// now decode the transaction
 		data, err := base64.StdEncoding.DecodeString(preparedTx.TxData)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("tx.TxData could not be decoded as base64", http.StatusBadRequest))
@@ -87,6 +79,11 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 		tx := mtx.(ndau.NTransactable)
+
+		// see if there are new signatures to add
+		if len(preparedTx.Signatures) == 0 {
+			reqres.RespondJSON(w, reqres.NewFromErr("at least one signature is required", err, http.StatusBadRequest))
+		}
 
 		signable, ok := tx.(ndau.Signable)
 		if !ok {
@@ -110,6 +107,14 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		signable.AppendSignatures(sigs)
 
 		// now we have a signed tx, submit it
+		// first find a node to talk to
+		node, err := ws.Node(cf.NodeAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error retrieving node: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		// and now commit it synchronously
 		cr, err := tool.SendCommit(node, tx)
 		txresult := cr.(*ctypes.ResultBroadcastTxCommit)
 

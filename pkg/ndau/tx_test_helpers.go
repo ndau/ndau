@@ -1,9 +1,10 @@
 package ndau
 
 import (
-	"io/ioutil"
 	"testing"
 	"time"
+
+	"github.com/oneiro-ndev/writers/pkg/testwriter"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -14,8 +15,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -80,7 +81,7 @@ func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
 
 	// disable logging within the tests by sending output to devnull
 	logger := log.StandardLogger()
-	logger.Out = ioutil.Discard
+	logger.Out = testwriter.New(t)
 	app.SetLogger(logger)
 
 	return

@@ -10,6 +10,8 @@ services:
     # This image builds ndaunode
   ndaunode-build:
     build:
+      args:
+        - VERSION=${VERSION}
       context: .
       dockerfile: ./docker/ndaunode-build.docker
     image: ndaunode-build

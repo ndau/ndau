@@ -14,7 +14,7 @@ import (
 func NewClaimAccount(
 	account address.Address,
 	ownership signature.PublicKey,
-	transferKeys []signature.PublicKey,
+	validationKeys []signature.PublicKey,
 	validationScript []byte,
 	sequence uint64,
 	ownerPrivate signature.PrivateKey,
@@ -22,7 +22,7 @@ func NewClaimAccount(
 	ca := ClaimAccount{
 		Target:           account,
 		Ownership:        ownership,
-		TransferKeys:     transferKeys,
+		ValidationKeys:   validationKeys,
 		ValidationScript: validationScript,
 		Sequence:         sequence,
 	}
@@ -35,7 +35,7 @@ func (tx *ClaimAccount) SignableBytes() []byte {
 	bcnt := 0
 	bcnt += address.AddrLength
 	bcnt += tx.Ownership.Size()
-	for _, key := range tx.TransferKeys {
+	for _, key := range tx.ValidationKeys {
 		bcnt += key.Size()
 	}
 	bcnt += len(tx.ValidationScript)
@@ -45,7 +45,7 @@ func (tx *ClaimAccount) SignableBytes() []byte {
 
 	bytes = append(bytes, tx.Target.String()...)
 	bytes = append(bytes, tx.Ownership.Bytes()...)
-	for _, key := range tx.TransferKeys {
+	for _, key := range tx.ValidationKeys {
 		bytes = append(bytes, key.Bytes()...)
 	}
 	bytes = append(bytes, tx.ValidationScript...)
@@ -82,12 +82,12 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 
 	// business rule: there must be at least 1 and no more than a const
 	// transfer keys set in this tx
-	if len(tx.TransferKeys) < 1 || len(tx.TransferKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.TransferKeys))
+	if len(tx.ValidationKeys) < 1 || len(tx.ValidationKeys) > backing.MaxKeysInAccount {
+		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.ValidationKeys))
 	}
 
 	// no transfer key may be equal to the ownership key
-	for _, tk := range tx.TransferKeys {
+	for _, tk := range tx.ValidationKeys {
 		tkAddress, err := address.Generate(kind, tk.Bytes())
 		if err != nil {
 			return errors.Wrap(err, "generating address for transfer key")
@@ -108,7 +108,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 		return err
 	}
 
-	if len(acct.TransferKeys) > 1 {
+	if len(acct.ValidationKeys) > 1 {
 		return errors.New("claim account is not valid if there are 2 or more transfer keys")
 	}
 
@@ -127,7 +127,7 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 		st := stI.(*backing.State)
 
 		acct, _ := st.GetAccount(tx.Target, app.blockTime)
-		acct.TransferKeys = tx.TransferKeys
+		acct.ValidationKeys = tx.ValidationKeys
 		acct.ValidationScript = tx.ValidationScript
 
 		st.Accounts[tx.Target.String()] = acct

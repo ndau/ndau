@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 
 	"github.com/tendermint/tendermint/p2p"
 
@@ -12,7 +14,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -30,7 +31,7 @@ var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
 var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.Bytes())
 var dummyAccount = backing.AccountData{
 	Balance:            123000000,
-	TransferKeys:       []signature.PublicKey{dummyPublic},
+	ValidationKeys:     []signature.PublicKey{dummyPublic},
 	WeightedAverageAge: 30 * types.Day,
 }
 var dummyTimestamp = "2018-07-18T20:01:02Z"
@@ -42,7 +43,7 @@ var dummyResultBlock = rpctypes.ResultBlock{
 var dummyPreparedTx = routes.PreparedTx{
 	TxData:        "base64 tx data",
 	SignableBytes: "base64 bytes to be signed",
-	Signature:     "base64 signature of SignableBytes",
+	Signatures:    []string{"base64 signature of SignableBytes"},
 }
 var dummyTxResult = routes.TxResult{
 	TxHash: "123abc34099f",
@@ -101,7 +102,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Reads([]routes.EAIRateRequest{routes.EAIRateRequest{
 			Address: dummyAddress.String(),
 			WAA:     90 * types.Day,
-			Lock:    backing.Lock{NoticePeriod: 180 * types.Day},
+			Lock:    *backing.NewLock(180*types.Day, eai.DefaultLockBonusEAI),
 		}}).
 		Produces(JSON).
 		Writes([]routes.EAIRateResponse{routes.EAIRateResponse{

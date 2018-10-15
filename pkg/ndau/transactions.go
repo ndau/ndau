@@ -178,7 +178,7 @@ var _ NTransactable = (*SetRewardsDestination)(nil)
 type ClaimAccount struct {
 	Target           address.Address       `msg:"tgt"`
 	Ownership        signature.PublicKey   `msg:"own"`
-	TransferKeys     []signature.PublicKey `msg:"key"`
+	ValidationKeys   []signature.PublicKey `msg:"key"`
 	ValidationScript []byte                `msg:"val"`
 	Sequence         uint64                `msg:"seq"`
 	Signature        signature.Signature   `msg:"sig"`

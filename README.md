@@ -13,11 +13,22 @@ This is the implementation of the Ndau chain. See the Ndau design whitepaper for
 
 ## Install
 
+- pre-requisites:
+
+    1. Install [Go](https://golang.org/doc/install)
+    1. Install [Docker](https://docs.docker.com/docker-for-mac/install/)
+        - If you don't have an account, you can use one from [here](http://bugmenot.com/view/store.docker.com)
+        - Run it from `/Applications`
+    1. Clone this repo in `~/go/src/github.com/oneiro-ndev/` (required for Go)
+    1. Download github_chaos_deploy from your Oneiro 1password account, put it at the root of your cloned copy of this repo
+
 - install [glide](https://github.com/Masterminds/glide):
 
     ```shell
     curl https://glide.sh/get | sh
     ```
+
+    - Optionally, install glide using [Brew](https://brew.sh/)
 
 - update dependencies
 
@@ -32,6 +43,62 @@ This is the implementation of the Ndau chain. See the Ndau design whitepaper for
     ```
 
 ## Quick Start
+
+There are a number of bash scripts in the `bin` directory which ease the pain of
+getting a working system up and running. To get a node going from scratch:
+
+```sh
+oneiro-ndev/ndau $ bin/reset.sh && bin/build.sh && build init.sh && bin/run.sh
+<output redacted>
+```
+
+That sequence of commands will remove any existing configuration data, build,
+initialize, and start a new node. It will take several minutes and produce quite a
+log of output; just bear with it.
+
+Once that's going, you'll see a bunch of docker-compose messages about containers
+running. If your environment does not contain a Honeycomb key, you'll then see a bunch
+of log messages scrolling past. If it does, output will stop. Either way, your
+terminal will still be blocked on the server. Start a new terminal.
+
+```sh
+oneiro-ndev/ndau $ glide install && bin/tool-build.sh
+<output redacted>
+```
+
+This will build the ndau tool. You'll need to run `glide install` because unlike
+the node, the tool is not containerized by default, so you need to have the
+dependencies locally.
+
+Once you've run the tool builder, the tool (`ndau`) will appear in the `oneiro-ndev/ndau`
+directory. It has a fairly deep interface; just run it and any subcommand with
+`-h|--help` to investigate.
+
+## Building
+
+It's possible to build and run the ndau node outside its containers without using
+any of the scripts, but there are a few gotchas. One of these, as an example,
+is that the build scripts inject the current version into both the node and
+the tool. If you build either of these programs without the magic flags
+
+```sh
+-ldflags "-X github.com/oneiro-ndev/ndau/pkg/version.version=$VERSION"
+```
+
+, then the version strings will be unset when you run the applicable version query.
+
+Of course, you also need to set the `$VERSION` environment variable. That's
+handled in the `bin/defaults.sh` script, and its default value is
+
+```sh
+VERSION=$(git describe --long --tags)
+```
+
+One consequence of this is that if you do not commit your recent changes, the
+build will change but the version string will not. The build scripts do not
+protect you from this. On your own head be it.
+
+## Running outside the containers
 
 Before we start ndaunode, we have to create mock Release From Endowment (RFE) account data so that we have something to transfer into accounts.
 

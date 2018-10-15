@@ -111,7 +111,7 @@ func (tx *ChangeValidation) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		ad, _ := state.GetAccount(tx.Target, app.blockTime)
 
-		ad.TransferKeys = tx.NewKeys
+		ad.ValidationKeys = tx.NewKeys
 		ad.ValidationScript = tx.ValidationScript
 
 		state.Accounts[tx.Target.String()] = ad

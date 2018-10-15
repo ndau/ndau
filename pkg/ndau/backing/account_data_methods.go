@@ -83,7 +83,7 @@ func (ad *AccountData) AvailableBalance() (math.Ndau, error) {
 // every signature provided is valid given the provided data.
 //
 // It returns the validity of the signature set and a bitset. This bitset
-// is a map: `1` elements are keys from `ad.TransferKeys` which validated a
+// is a map: `1` elements are keys from `ad.ValidationKeys` which validated a
 // signature.
 func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Signature) (bool, *bitset256.Bitset256) {
 	if len(signatures) < 1 || len(signatures) > MaxKeysInAccount {
@@ -102,7 +102,7 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 	allKeysValidate := true
 	for _, signature := range signatures {
 		foundValidatingKey := false
-		for idx, key := range ad.TransferKeys {
+		for idx, key := range ad.ValidationKeys {
 			// don't attempt to verify keys we've already verified
 			if !signatureSet.Get(byte(idx)) {
 				if key.Verify(data, signature) {

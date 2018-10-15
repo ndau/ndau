@@ -105,11 +105,11 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 	t.Log(dresp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		require.Equal(t, newPublic.Bytes(), ad.TransferKeys[0].Bytes())
+		require.Equal(t, newPublic.Bytes(), ad.ValidationKeys[0].Bytes())
 	})
 }
 
-func TestClaimAccountNoTransferKeys(t *testing.T) {
+func TestClaimAccountNoValidationKeys(t *testing.T) {
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{}, []byte{}, 1, targetPrivate)
 	ctkBytes, err := tx.Marshal(&ca, TxIDs)
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestClaimAccountNoTransferKeys(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimAccountTooManyTransferKeys(t *testing.T) {
+func TestClaimAccountTooManyValidationKeys(t *testing.T) {
 	noKeys := backing.MaxKeysInAccount + 1
 	newKeys := make([]signature.PublicKey, 0, noKeys)
 	for i := 0; i < noKeys; i++ {
@@ -145,7 +145,7 @@ func TestClaimAccountOverwritesOneTransferKey(t *testing.T) {
 	existing, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.TransferKeys = []signature.PublicKey{existing}
+		ad.ValidationKeys = []signature.PublicKey{existing}
 	})
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -168,7 +168,7 @@ func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
 	existing2, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.TransferKeys = []signature.PublicKey{existing1, existing2}
+		ad.ValidationKeys = []signature.PublicKey{existing1, existing2}
 	})
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)

@@ -67,7 +67,7 @@ type NTransactable interface {
 func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bitset256.Bitset256, error) {
 	validateScript := func(acct backing.AccountData, sigset *bitset256.Bitset256) error {
 		if len(acct.ValidationScript) > 0 {
-			vm, err := BuildVMForTxValidation(acct.ValidationScript, acct, tx, sigset, app.blockTime)
+			vm, err := BuildVMForTxValidation(acct.ValidationScript, acct, tx, sigset, app)
 			if err != nil {
 				return errors.Wrap(err, "couldn't build vm for validation script")
 			}
@@ -197,7 +197,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	eai, err := eai.Calculate(
 		source.Balance, app.blockTime, source.LastEAIUpdate,
 		source.WeightedAverageAge, source.Lock,
-		*unlockedTable, *lockedTable,
+		*unlockedTable,
 	)
 
 	source.UncreditedEAI, err = source.UncreditedEAI.Add(eai)

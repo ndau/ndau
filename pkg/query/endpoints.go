@@ -4,4 +4,5 @@ package query
 const (
 	AccountEndpoint = "/account"
 	SummaryEndpoint = "/summary"
+	VersionEndpoint = "/version"
 )

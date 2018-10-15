@@ -44,6 +44,11 @@ func (z *Lock) DecodeMsg(dc *msgp.Reader) (err error) {
 					return
 				}
 			}
+		case "bonus":
+			err = z.Bonus.DecodeMsg(dc)
+			if err != nil {
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -56,9 +61,9 @@ func (z *Lock) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Lock) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 2
+	// map header, size 3
 	// write "notice"
-	err = en.Append(0x82, 0xa6, 0x6e, 0x6f, 0x74, 0x69, 0x63, 0x65)
+	err = en.Append(0x83, 0xa6, 0x6e, 0x6f, 0x74, 0x69, 0x63, 0x65)
 	if err != nil {
 		return
 	}
@@ -82,15 +87,24 @@ func (z *Lock) EncodeMsg(en *msgp.Writer) (err error) {
 			return
 		}
 	}
+	// write "bonus"
+	err = en.Append(0xa5, 0x62, 0x6f, 0x6e, 0x75, 0x73)
+	if err != nil {
+		return
+	}
+	err = z.Bonus.EncodeMsg(en)
+	if err != nil {
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 2
+	// map header, size 3
 	// string "notice"
-	o = append(o, 0x82, 0xa6, 0x6e, 0x6f, 0x74, 0x69, 0x63, 0x65)
+	o = append(o, 0x83, 0xa6, 0x6e, 0x6f, 0x74, 0x69, 0x63, 0x65)
 	o, err = z.NoticePeriod.MarshalMsg(o)
 	if err != nil {
 		return
@@ -104,6 +118,12 @@ func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 		if err != nil {
 			return
 		}
+	}
+	// string "bonus"
+	o = append(o, 0xa5, 0x62, 0x6f, 0x6e, 0x75, 0x73)
+	o, err = z.Bonus.MarshalMsg(o)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -145,6 +165,11 @@ func (z *Lock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 			}
+		case "bonus":
+			bts, err = z.Bonus.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -164,5 +189,6 @@ func (z *Lock) Msgsize() (s int) {
 	} else {
 		s += z.UnlocksOn.Msgsize()
 	}
+	s += 6 + z.Bonus.Msgsize()
 	return
 }
