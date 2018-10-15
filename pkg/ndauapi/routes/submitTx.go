@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"net/http"
 
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+
+	"github.com/oneiro-ndev/ndau/pkg/tool"
+
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	"github.com/tendermint/tendermint/types"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // PreparedTx is a generic object that contains a completed transaction
@@ -36,13 +40,13 @@ type PreparedTx struct {
 // submitted to the blockchain as a transaction, this function will
 // return 400 as the http status and the TxResult return object will not be included.
 // If the transaction parses correctly but is determined by the blockchain to be invalid,
-// ResultCode will be nonzero and the ErrorMsg field will contain a textual error explanation.
-// If ResultCode is nonzero, the http status will be 4xx.
+// ResultCode will be nonempty and the ErrorMsg field will contain a textual error explanation.
+// If ResultCode is nonempty, the http status will be 4xx.
 // If there was some internal processing error not related to the validity of the
 // request or transaction, then http status will be 5xx.
 type TxResult struct {
 	TxHash     string
-	ResultCode int
+	ResultCode string
 	ErrorMsg   string
 }
 
@@ -71,17 +75,18 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		var tx ndau.NTransactable
 		data, err := base64.StdEncoding.DecodeString(preparedTx.TxData)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("tx.TxData could not be decoded as base64", http.StatusBadRequest))
 			return
 		}
-		_, err = tx.UnmarshalMsg(data)
+
+		mtx, err := metatx.Unmarshal(data, ndau.TxIDs)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("tx.TxData could not be decoded into a transaction", http.StatusBadRequest))
 			return
 		}
+		tx := mtx.(ndau.NTransactable)
 
 		signable, ok := tx.(ndau.Signable)
 		if !ok {
@@ -105,19 +110,14 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		signable.AppendSignatures(sigs)
 
 		// now we have a signed tx, submit it
-		txbytes := make([]byte, 0)
-		_, err = tx.MarshalMsg(txbytes)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not marshal tx", http.StatusInternalServerError))
-			return
-		}
+		cr, err := tool.SendCommit(node, tx)
+		txresult := cr.(*ctypes.ResultBroadcastTxCommit)
 
-		txresult, err := node.BroadcastTxCommit(types.Tx(txbytes))
 		result := TxResult{TxHash: base64.StdEncoding.EncodeToString(txresult.Hash)}
 		code := http.StatusOK // if we ever do this without synchronous commit, change to StatusAccepted
 
 		if err != nil {
-			result.ResultCode = 1001 // for now the only result code
+			result.ResultCode = "transaction error"
 			result.ErrorMsg = err.Error()
 			code = http.StatusBadRequest
 		}
