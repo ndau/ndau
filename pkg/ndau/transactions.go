@@ -4,7 +4,7 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 )
 
 // We disable tests because every transaction except GTValidatorChange
@@ -62,8 +62,8 @@ type Transfer struct {
 	Signatures  []signature.Signature `msg:"sig"`
 }
 
-// static assert that Transfer is ndauTransactable
-var _ ndauTransactable = (*Transfer)(nil)
+// static assert that Transfer is NTransactable
+var _ NTransactable = (*Transfer)(nil)
 
 // A ChangeValidation transaction is used to set transfer keys
 type ChangeValidation struct {
@@ -74,7 +74,7 @@ type ChangeValidation struct {
 	Signatures       []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*ChangeValidation)(nil)
+var _ NTransactable = (*ChangeValidation)(nil)
 
 // A ReleaseFromEndowment transaction is used to release funds from the
 // endowment into an individual account.
@@ -88,7 +88,7 @@ type ReleaseFromEndowment struct {
 	Signatures  []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*ReleaseFromEndowment)(nil)
+var _ NTransactable = (*ReleaseFromEndowment)(nil)
 
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
@@ -99,7 +99,7 @@ type ChangeSettlementPeriod struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*ChangeSettlementPeriod)(nil)
+var _ NTransactable = (*ChangeSettlementPeriod)(nil)
 
 // A Delegate transaction is used to delegate the node which should
 // compute EAI for the specified account.
@@ -112,7 +112,7 @@ type Delegate struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*Delegate)(nil)
+var _ NTransactable = (*Delegate)(nil)
 
 // A CreditEAI transaction is used to award EAI.
 //
@@ -133,7 +133,7 @@ type CreditEAI struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*CreditEAI)(nil)
+var _ NTransactable = (*CreditEAI)(nil)
 
 // Lock transactions lock the specfied account.
 //
@@ -145,7 +145,7 @@ type Lock struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*Lock)(nil)
+var _ NTransactable = (*Lock)(nil)
 
 // Notify transactions notify that the specified account should be unlocked once
 // its notice period expires.
@@ -157,7 +157,7 @@ type Notify struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*Notify)(nil)
+var _ NTransactable = (*Notify)(nil)
 
 // SetRewardsDestination transactions update the rewards target for the specified account.
 //
@@ -170,7 +170,7 @@ type SetRewardsDestination struct {
 	Signatures  []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*SetRewardsDestination)(nil)
+var _ NTransactable = (*SetRewardsDestination)(nil)
 
 // A ClaimAccount transaction is used to set the initial transfer keys for an account.
 //
@@ -184,7 +184,7 @@ type ClaimAccount struct {
 	Signature        signature.Signature   `msg:"sig"`
 }
 
-var _ ndauTransactable = (*ClaimAccount)(nil)
+var _ NTransactable = (*ClaimAccount)(nil)
 
 // TransferAndLock allows a transaction where the received amount is locked
 // for a specified period. It can only be sent to accounts that did not
@@ -198,7 +198,7 @@ type TransferAndLock struct {
 	Signatures  []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*TransferAndLock)(nil)
+var _ NTransactable = (*TransferAndLock)(nil)
 
 // A Stake transaction stakes to a node
 type Stake struct {
@@ -208,7 +208,7 @@ type Stake struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*Stake)(nil)
+var _ NTransactable = (*Stake)(nil)
 
 // A RegisterNode transaction activates a node
 type RegisterNode struct {
@@ -219,7 +219,7 @@ type RegisterNode struct {
 	Signatures         []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*RegisterNode)(nil)
+var _ NTransactable = (*RegisterNode)(nil)
 
 // A NominateNodeReward transaction signals that a node is probably about to be
 // rewarded.
@@ -233,7 +233,7 @@ type NominateNodeReward struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*NominateNodeReward)(nil)
+var _ NTransactable = (*NominateNodeReward)(nil)
 
 // A ClaimNodeReward transaction signals that the named node has been watching
 // the blockchain, noticed that it won the nomination, and is up and ready to
@@ -244,4 +244,4 @@ type ClaimNodeReward struct {
 	Signatures []signature.Signature `msg:"sig"`
 }
 
-var _ ndauTransactable = (*ClaimNodeReward)(nil)
+var _ NTransactable = (*ClaimNodeReward)(nil)

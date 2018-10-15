@@ -22,18 +22,6 @@ type OrderHistoryRecord struct {
 	OrderInfo OrderChainInfo
 }
 
-type PreparedTx struct {
-	TxData        string
-	SignableBytes string
-	Signature     string
-}
-
-type TxResult struct {
-	TxHash     string
-	ResultCode int
-	ErrorMsg   string
-}
-
 type TransactionData struct {
 }
 
@@ -233,12 +221,6 @@ func HandleTransfer(cf cfg.Cfg) http.HandlerFunc {
 }
 
 func HandleTransferAndLock(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusInternalServerError))
-	}
-}
-
-func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusInternalServerError))
 	}

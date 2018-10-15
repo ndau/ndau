@@ -4,7 +4,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -84,4 +84,9 @@ func (tx *Notify) GetSequence() uint64 {
 // GetSignatures implements signeder
 func (tx *Notify) GetSignatures() []signature.Signature {
 	return tx.Signatures
+}
+
+// AppendSignatures implements Signable
+func (tx *Notify) AppendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
 }

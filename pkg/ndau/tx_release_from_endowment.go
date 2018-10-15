@@ -6,7 +6,7 @@ import (
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -88,4 +88,9 @@ func (tx *ReleaseFromEndowment) GetSequence() uint64 {
 // GetSignatures implements signeder
 func (tx *ReleaseFromEndowment) GetSignatures() []signature.Signature {
 	return tx.Signatures
+}
+
+// AppendSignatures implements Signable
+func (tx *ReleaseFromEndowment) AppendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
 }

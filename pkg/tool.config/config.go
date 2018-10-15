@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/signature/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 )
 
 // DefaultAddress of the node to connect to
