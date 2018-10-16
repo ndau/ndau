@@ -243,7 +243,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(routes.OrderChainInfo{}))
 
-	svc.Route(svc.GET("/order/history/").To(routes.HandleOrderHistory(cf)).
+	svc.Route(svc.GET("/order/history").To(routes.HandleOrderHistory(cf)).
 		Operation("OrderHistory").
 		Doc("Returns an array of data from the order chain at periodic intervals over time, sorted chronologically.").
 		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=100, max=1000.").DataType("string").Required(true)).
