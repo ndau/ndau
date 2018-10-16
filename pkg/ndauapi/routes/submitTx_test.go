@@ -11,15 +11,14 @@ import (
 	"strings"
 	"testing"
 
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
-
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
-
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 )
 
-func TestSubmitTx(t *testing.T) {
+func TestSubmitTxNoServer(t *testing.T) {
 	baseHandler := HandleSubmitTx
 
 	b64 := func(b []byte) string {
@@ -31,8 +30,7 @@ func TestSubmitTx(t *testing.T) {
 	}
 
 	b64Tx := func(tx ndau.NTransactable) string {
-		var b []byte
-		m, err := tx.MarshalMsg(b)
+		m, err := metatx.Marshal(tx, ndau.TxIDs)
 		if err != nil {
 			panic("marshal failed!!!")
 		}
@@ -86,14 +84,15 @@ func TestSubmitTx(t *testing.T) {
 			wanterr: "could not be decoded into a transaction",
 		},
 		{
-			name: "valid tx",
+			name: "valid tx but no node",
 			body: &PreparedTx{
 				TxData:        b64Tx(testLockTx),
 				SignableBytes: b64(testLockTx.SignableBytes()),
 				Signatures:    []string{},
 			},
-			status: http.StatusBadRequest,
-			want:   TxResult{},
+			status:  http.StatusInternalServerError,
+			want:    TxResult{},
+			wanterr: "error retrieving node",
 		},
 	}
 
