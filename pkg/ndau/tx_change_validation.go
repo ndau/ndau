@@ -25,7 +25,7 @@ func (tx *ChangeValidation) SignableBytes() []byte {
 	bytes = appendUint64(bytes, tx.Sequence)
 	bytes = append(bytes, tx.Target.String()...)
 	for _, key := range tx.NewKeys {
-		bytes = append(bytes, key.Bytes()...)
+		bytes = append(bytes, key.KeyBytes()...)
 	}
 	bytes = append(bytes, tx.ValidationScript...)
 
@@ -87,7 +87,7 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// per-key validation
 	for _, tk := range tx.NewKeys {
 		// new transfer key must not equal ownership key
-		ntAddr, err := address.Generate(kind, tk.Bytes())
+		ntAddr, err := address.Generate(kind, tk.KeyBytes())
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate address from new transfer key")
 		}

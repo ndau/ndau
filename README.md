@@ -48,7 +48,7 @@ There are a number of bash scripts in the `bin` directory which ease the pain of
 getting a working system up and running. To get a node going from scratch:
 
 ```sh
-oneiro-ndev/ndau $ bin/reset.sh && bin/build.sh && build init.sh && bin/run.sh
+oneiro-ndev/ndau $ bin/reset.sh && bin/build.sh && bin/init.sh && bin/run.sh
 <output redacted>
 ```
 
@@ -191,12 +191,10 @@ Once you have the configuration file written, you can finally interact with the 
 ./ndau account new demo
 ```
 
-Note that this doesn't actually interact with the ndau chain; it simply creates a named keypair in the local config file.
-
-#### Set the account's transfer key
+#### Claim the account and set a validation key
 
 ```sh
-$ ./ndau -v account change-transfer-key demo
+$ ./ndau -v account claim demo
 {
   "check_tx": {
     "fee": {}
@@ -209,31 +207,39 @@ $ ./ndau -v account change-transfer-key demo
 }
 ```
 
-This is the command which actually puts the account onto the ndau chain, with a 0 balance. The `-v` flag simply requests verbosity; it returns the JSON struct returned by the RPC command. Without it, there is no output on success; success is indicated by the exit code.
+This is a command which actually puts the account onto the ndau chain, with a 0 balance. The `-v` flag simply requests verbosity; it returns the JSON struct returned by the RPC command. Without it, there is no output on success; success is indicated by the exit code.
 
 
 #### Examine the local account data
 
 ```sh
 $ cat $(./ndau conf-path)
-node = "0.0.0.0:32768"
-rfe_keys = ["kgHEQINkiAStVH+IYRqbIsWLnt0AnkwmpdOaFUVxF8gQVu5UeTIBgl+DT6tlsVNmt4Bih6j4C/98Bo36tU+wYThuBDU=", "kgHEQHDoaCjbGBPnK9WTA7ilfPquZ/m0vWesE6X6hr/2pyJF5Gkkx5aobS2WNcEwVdTJPUrxaaIAm55lMDO3uu2QXpk="]
+node = "http://0.0.0.0:32777"
 
 [[accounts]]
   name = "demo"
-  address = "ndart5whvaifbefkmj67qsrzae6bgf42kaga85nf5twhn2fu"
+  address = "ndai9vjzvt6547jirczgi8nrawshvwgk4zzcj8gy9njg64vi"
   [accounts.ownership]
-    public = "kgHEINabBrNCZOowBrCwnHrDVotfoxVYzMNsd23De42DgdJl"
-    private = "kgHEQO9kMOQPnebLzyRPMDz4lUgf8avp5uELNHM0EBDvp+Zv1psGs0Jk6jAGsLCcesNWi1+jFVjMw2x3bcN7jYOB0mU="
-  [accounts.transfer]
-    public = "kgHEIPLE0yICydwzkMJDZAcn+MFmf9wtpTlYUUT3BIoxiat2"
-    private = "kgHEQOc+mQJzJ3taAMoqh88Pb83Yf+hv/Lh3uMexCnH3xhmQ8sTTIgLJ3DOQwkNkByf4wWZ/3C2lOVhRRPcEijGJq3Y="
+    public = "kgHEIF45MoYR0qDtvUxIJpvwuFPs7avCLE+cp4ZN0TZSbxW7"
+    private = "kgHEQOi7pmwV2bQOXFM9X4ItXLpREsnF5fVDlyktGDFinB5aXjkyhhHSoO29TEgmm/C4U+ztq8IsT5ynhk3RNlJvFbs="
+
+  [[accounts.transfer]]
+    public = "kgHEIP6AIjEZ7lN0vr58BBDXo+6R8ULpxUJ76ovu/+U7d1+W"
+    private = "kgHEQKtqyg1LI8mzYBTXeVYLlcUVyJw0jxcL7N/sWCwVYat9/oAiMRnuU3S+vnwEENej7pHxQunFQnvqi+7/5Tt3X5Y="
+
+[rfe]
+  address = "ndnfvutjkcb4vxz73zinvcdx4ezy3pxpzwapfymavapzqyez"
+  keys = ["kgHEQPDK/P/zfhQ3f3DigavI2K6v4VJ/aiyZjJZxLbY+JAXTle6Gmwsl8UBFERgjIn0odg5pCSU/g023ntAQncFj3zI=", "kgHEQGwZGJeiMoTUWOucRRh3xHYkhS4euIJtk5TGJta9GMsaBc/butRyfS20ByuogQQ9DR7Q7LdVnW9uk/mioADi74w="]
+
+[nnr]
+  address = "ndnpv7awaki9dkkeqcryk958h4jnf2itm3jw8wm3yy4asjxc"
+  keys = ["kgHEQMtTPIC0tMhmrhZaP1qbHzvL2KkcytaNK+cXzZYYqSfY9EM3vcH3knX9xxjcgBBuRstCKlrVaEGw7xPOwHvR2Fk=", "kgHEQHjkGdA0je1nj1qxjCq5OYJBH9NtuSnDSGPNSM0f+W7pqAMA3e4CrmGU1F5L5NspvMVVWsv3laDl1z/M+TH+DRw="]
 ```
 
 - The `node` setting was set by the `conf-docker.sh` script; it's the rpc port
 at which the ndau tool can reach the ndau chain
 
-- The `rfe_keys` are set by `./ndaunode -make-mocks` and `./ndaunode -make-chaos-mocks`. These are private keys authorized to release ndau from the endowment
+- The `rfe` section was set by `./ndaunode -make-mocks` and `./ndaunode -make-chaos-mocks`. These are private keys authorized to release ndau from the endowment
 
 - The `[[...]]` syntax denotes a single item of a top-level list whose name is contained in the double brackets
 
@@ -244,40 +250,43 @@ at which the ndau tool can reach the ndau chain
 ```sh
 $ ./ndau -v account query demo
 {
-  "Balance": 0,
-  "TransferKey": {},
-  "RewardsTarget": null,
-  "DelegationNode": null,
-  "Lock": null,
-  "Stake": null,
-  "LastWAAUpdate": 0,
-  "WeightedAverageAge": 0,
-  "Sequence": 0,
-  "Escrows": null,
-  "EscrowSettings": {
-    "Duration": 1296000000000,
+  "balance": 0,
+  "validationKeys": [
+    "kgHEIP6AIjEZ7lN0vr58BBDXo+6R8ULpxUJ76ovu/+U7d1+W"
+  ],
+  "rewardsTarget": null,
+  "incomingRewardsFrom": null,
+  "delegationNode": null,
+  "lock": null,
+  "stake": null,
+  "lastEAIUpdate": 593028790000000,
+  "lastWAAUpdate": 0,
+  "weightedAverageAge": 0,
+  "Sequence": 1,
+  "settlements": null,
+  "settlementSettings": {
+    "Period": 0,
     "ChangesAt": null,
     "Next": null
-  }
+  },
+  "validationScript": null
 }
 {
   "response": {
-    "log": "exists",
-    "value": "i6dCYWxhbmNlAKtUcmFuc2ZlcktleZIBxCCt0dBvjZjokY9eN5MW3w/5y77kRW+mjxPRtiYparr5D61SZXdhcmRzVGFyZ2V0wK5EZWxlZ2F0aW9uTm9kZcCkTG9ja8ClU3Rha2XArUxhc3RXQUFVcGRhdGUAsldlaWdodGVkQXZlcmFnZUFnZQCoU2VxdWVuY2UAp0VzY3Jvd3OQrkVzY3Jvd1NldHRpbmdzg6hEdXJhdGlvbtMAAAEtv56gAKlDaGFuZ2VzQXTApE5leHTA",
-    "height": "4533"
+    "log": "acct exists: true",
+    "value": "jqdCYWxhbmNlAK5WYWxpZGF0aW9uS2V5c5GSAcQg/oAiMRnuU3S+vnwEENej7pHxQunFQnvqi+7/5Tt3X5atUmV3YXJkc1RhcmdldMCzSW5jb21pbmdSZXdhcmRzRnJvbZCuRGVsZWdhdGlvbk5vZGXApExvY2vApVN0YWtlwK1MYXN0RUFJVXBkYXRl0wACG1tGXpmArUxhc3RXQUFVcGRhdGUAsldlaWdodGVkQXZlcmFnZUFnZQCoU2VxdWVuY2UBq1NldHRsZW1lbnRzkLJTZXR0bGVtZW50U2V0dGluZ3ODplBlcmlvZACpQ2hhbmdlc0F0wKROZXh0wLBWYWxpZGF0aW9uU2NyaXB0xAA=",
+    "height": "1162"
   }
 }
 ```
 
 Notes about this output:
 
-- `TransferKey` is visualized as an empty struct. This is a known bug: [oneiro-ndev/signature#4](https://github.com/oneiro-ndev/signature/issues/4). If it were unset, it would be `null`.
-
-- `EscrowSettings` is set to the default escrow duration, which is a system variable. It was set during the `change-transfer-key` transaction which assigned the transfer key. Whenever a CTK transaction is signed with the ownership key and the escrow duration is 0, the duration is updated to the default.
+- `settlementSettings` is set to the default settlement duration, which is a system variable. It was set during the `change-transfer-key` transaction which assigned the transfer key. Whenever a CTK transaction is signed with the ownership key and the escrow duration is 0, the duration is updated to the default.
 
 - The second JSON object returned is present because we used the `-v` flag. It again contains the raw response from the RPC command.
 
-    - the `log` field says "exists". If the account were not present on the blockchain, the `log` field would says "does not exist", and the account zero value would have been returned. The `log` field is currently the only way to determine whether an account exists on the blockchain.
+    - the `log` field says "acct exists: true". If the account were not present on the blockchain, the `log` field would says "does not exist", and the account zero value would have been returned. The `log` field is currently the only way to determine whether an account exists on the blockchain.
     - the `value` field contains the packed representation of the object
 
 #### Release some ndau into the account
@@ -287,7 +296,7 @@ The first argument of `rfe` is a floating-point quantity of ndau. For more preci
 The third argument of `rfe` is the index of the key from `rfe_keys` to use to sign the RFE transaction. If `rfe_keys` is unset or the index is out of bounds, the `rfe` command will fail before sending any transaction to the blockchain.
 
 ```sh
-$ ./ndau -v rfe 10 demo 0
+$ ./ndau -v rfe 10 demo
 Release from endowment: 10 ndau to ndaqmatgkap2ff62hkqpwmyzfr6uzdrct6g6mmkk38q3eekk
 {
   "check_tx": {
@@ -328,8 +337,8 @@ $ ./ndau account new demo-receiver
 $ # save the address of the new account
 $ demo_receiver_addr=$(cat $(./ndau conf-path) | toml | jq '.accounts[] | select(.name == "demo-receiver") | .address' --raw-output) && echo $demo_receiver_addr
 $ # transfer 1 ndau from the demo account to the address of the new receiver
-$ ./ndau -v transfer 1 demo --to_address=$demo_receiver_addr
-Transfer 1 ndau from ndaqmatgkap2ff62hkqpwmyzfr6uzdrct6g6mmkk38q3eekk to ndahqajzp8h5ke5nf8gr5fj6ewuh86hhud6ymw5p3fx7jsvq
+$ ./ndau -v transfer .1 demo --to-address=$demo_receiver_addr
+Transfer 0.1 ndau from ndai9vjzvt6547jirczgi8nrawshvwgk4zzcj8gy9njg64vi to ndak6qmrbzj35rrc9x2i8dv3icvnewvibb4542zjdv5wwb97
 {
   "check_tx": {
     "fee": {}
@@ -337,64 +346,116 @@ Transfer 1 ndau from ndaqmatgkap2ff62hkqpwmyzfr6uzdrct6g6mmkk38q3eekk to ndahqaj
   "deliver_tx": {
     "fee": {}
   },
-  "hash": "AF7704986E10F4E1CB80DFD27754081D2071321C",
-  "height": 6262
+  "hash": "E943565F8A06B6A3F3683AA2288B3688E727B2DB",
+  "height": 1256
 }
 $ # now let's look at the receiver on the blockchain
 $ ./ndau account query --address=$demo_receiver_addr
 {
-  "Balance": 0,
-  "TransferKey": null,
-  "RewardsTarget": null,
-  "DelegationNode": null,
-  "Lock": null,
-  "Stake": null,
-  "LastWAAUpdate": 15418601000000,
-  "WeightedAverageAge": 0,
+  "balance": 10000000,
+  "validationKeys": null,
+  "rewardsTarget": null,
+  "incomingRewardsFrom": null,
+  "delegationNode": null,
+  "lock": null,
+  "stake": null,
+  "lastEAIUpdate": 593029846000000,
+  "lastWAAUpdate": 593029878000000,
+  "weightedAverageAge": 29090909,
   "Sequence": 0,
-  "Escrows": [
-    {
-      "Qty": 100000000,
-      "Expiry": 16714601000000
-    }
-  ],
-  "EscrowSettings": {
-    "Duration": 0,
+  "settlements": null,
+  "settlementSettings": {
+    "Period": 0,
     "ChangesAt": null,
     "Next": null
-  }
+  },
+  "validationScript": null
 }
 ```
 
-Note that the balance remains 0, but an item has been added to the escrows list containing the appropriate number of napu, and an expiry time based on the source's escrow settings.
+Note that the balance remains 0, and the account is unclaimed.
 
-#### Change the escrow settings
+#### Change the settlement settings
 
-We just demo'd how accounts have default escrow settings, and how transfers are only credited to the account balance once the escrow period ends. However, the default will not always be convenient. A user might want to set a much shorter escrow period. They might do so like this:
+We can allow senders to create a "settlement period" which will cause transfers to be delayed before they can be spent. 
+The default will not always be convenient. A user might want to set a differet settlement period. They might do so like this:
 
 ```sh
-$ ./ndau account change-escrow-period demo 1h
 $ ./ndau account query demo
 {
-  "Balance": 800000000,
-  "TransferKey": {},
-  "RewardsTarget": null,
-  "DelegationNode": null,
-  "Lock": null,
-  "Stake": null,
-  "LastWAAUpdate": 0,
-  "WeightedAverageAge": 0,
-  "Sequence": 2,
-  "Escrows": null,
-  "EscrowSettings": {
-    "Duration": 1296000000000,
-    "ChangesAt": 16715346000000,
-    "Next": 3600000000
-  }
+  "balance": 475999000,
+  "validationKeys": [
+    "kgHEIP6AIjEZ7lN0vr58BBDXo+6R8ULpxUJ76ovu/+U7d1+W"
+  ],
+  "rewardsTarget": null,
+  "incomingRewardsFrom": null,
+  "delegationNode": null,
+  "lock": null,
+  "stake": null,
+  "lastEAIUpdate": 593030087000000,
+  "lastWAAUpdate": 0,
+  "weightedAverageAge": 0,
+  "Sequence": 11,
+  "settlements": null,
+  "settlementSettings": {
+    "Period": 3600000000,
+    "ChangesAt": null,
+    "Next": null
+  },
+  "validationScript": null
 }
 ```
 
-The escrow settings will now change to 1 hour, after the current escrow period has expired.
+The escrow settings will now change to 1 hour. Settlement periods only change after the current escrow period has expired.
+
+If we now send another .2 ndau to our account above:
+
+```sh
+$ ./ndau -v transfer .2 demo --to-address=$demo_receiver_addr
+Transfer 0.2 ndau from ndai9vjzvt6547jirczgi8nrawshvwgk4zzcj8gy9njg64vi to ndak6qmrbzj35rrc9x2i8dv3icvnewvibb4542zjdv5wwb97
+{
+  "check_tx": {
+    "fee": {}
+  },
+  "deliver_tx": {
+    "fee": {}
+  },
+  "hash": "36CAFF6E703983641561A9DFB3EEF2495AFE410A",
+  "height": 1286
+}
+```
+
+We can see the unsettled amount in the target account:
+
+```sh
+$ ./ndau account query --address=$demo_receiver_addr
+{
+  "balance": 130000000,
+  "validationKeys": null,
+  "rewardsTarget": null,
+  "incomingRewardsFrom": null,
+  "delegationNode": null,
+  "lock": null,
+  "stake": null,
+  "lastEAIUpdate": 593029846000000,
+  "lastWAAUpdate": 593030185000000,
+  "weightedAverageAge": 284384615,
+  "Sequence": 0,
+  "settlements": [
+    {
+      "Qty": 20000000,
+      "Expiry": 593033785000000
+    }
+  ],
+  "settlementSettings": {
+    "Period": 0,
+    "ChangesAt": null,
+    "Next": null
+  },
+  "validationScript": null
+}
+```
+
 
 ### Changing the validator set
 

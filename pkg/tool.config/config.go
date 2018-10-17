@@ -10,10 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/pkg/errors"
-
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/pkg/errors"
 )
 
 // DefaultAddress of the node to connect to
@@ -126,7 +125,7 @@ func (c *Config) CreateAccount(name string) error {
 	if err != nil {
 		return errors.Wrap(err, "generate keypair")
 	}
-	addr, err := address.Generate(address.KindUser, public.Bytes())
+	addr, err := address.Generate(address.KindUser, public.KeyBytes())
 	if err != nil {
 		return errors.Wrap(err, "generate address")
 	}

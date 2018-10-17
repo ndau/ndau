@@ -83,7 +83,7 @@ func DefaultConfig() (*Config, error) {
 	}
 	config.Node.Ownership.Public = public
 	config.Node.Ownership.Private = private
-	addr, err := address.Generate(address.KindUser, public.Bytes())
+	addr, err := address.Generate(address.KindUser, public.KeyBytes())
 	if err != nil {
 		return config, err
 	}

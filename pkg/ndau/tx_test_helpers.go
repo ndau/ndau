@@ -54,7 +54,7 @@ func init() {
 		panic(err)
 	}
 
-	targetAddress, err = address.Generate(address.KindUser, targetPublic.Bytes())
+	targetAddress, err = address.Generate(address.KindUser, targetPublic.KeyBytes())
 	if err != nil {
 		panic(err)
 	}

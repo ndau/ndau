@@ -44,9 +44,9 @@ func (tx *ClaimAccount) SignableBytes() []byte {
 	bytes := make([]byte, 0, bcnt)
 
 	bytes = append(bytes, tx.Target.String()...)
-	bytes = append(bytes, tx.Ownership.Bytes()...)
+	bytes = append(bytes, tx.Ownership.KeyBytes()...)
 	for _, key := range tx.ValidationKeys {
-		bytes = append(bytes, key.Bytes()...)
+		bytes = append(bytes, key.KeyBytes()...)
 	}
 	bytes = append(bytes, tx.ValidationScript...)
 	bytes = appendUint64(bytes, tx.Sequence)
@@ -67,7 +67,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	if !address.IsValidKind(kind) {
 		return fmt.Errorf("Account has invalid address kind: %s", kind)
 	}
-	ownershipAddress, err := address.Generate(kind, tx.Ownership.Bytes())
+	ownershipAddress, err := address.Generate(kind, tx.Ownership.KeyBytes())
 	if err != nil {
 		return errors.Wrap(err, "generating address for ownership key")
 	}
@@ -88,7 +88,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 
 	// no transfer key may be equal to the ownership key
 	for _, tk := range tx.ValidationKeys {
-		tkAddress, err := address.Generate(kind, tk.Bytes())
+		tkAddress, err := address.Generate(kind, tk.KeyBytes())
 		if err != nil {
 			return errors.Wrap(err, "generating address for transfer key")
 		}
