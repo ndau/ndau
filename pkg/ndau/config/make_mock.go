@@ -185,8 +185,8 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	mock.Sets(bpc, sv.UnlockedRateTableName, eai.DefaultUnlockedEAI)
 	mock.Sets(bpc, sv.LockedRateTableName, eai.DefaultLockBonusEAI)
 
-	// make default escrow duration
-	ded := sv.DefaultSettlementDuration{Duration: math.Day * 15}
+	// make default settlement duration
+	ded := sv.DefaultSettlementDuration{Duration: math.Day * 2}
 	mock.Sets(bpc, sv.DefaultSettlementDurationName, ded)
 
 	// make default tx fee script
