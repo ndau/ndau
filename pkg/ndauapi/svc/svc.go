@@ -28,7 +28,7 @@ func NewLogMux(cf cfg.Cfg) http.HandlerFunc {
 const JSON = "application/json"
 
 var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
-var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.Bytes())
+var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.KeyBytes())
 var dummyAccount = backing.AccountData{
 	Balance:            123000000,
 	ValidationKeys:     []signature.PublicKey{dummyPublic},
