@@ -98,7 +98,7 @@ func TestValidChangeValidationUpdatesTransferKey(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		require.Equal(t, newPublic.Bytes(), ad.ValidationKeys[0].Bytes())
+		require.Equal(t, newPublic.KeyBytes(), ad.ValidationKeys[0].KeyBytes())
 	})
 }
 

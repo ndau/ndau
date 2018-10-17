@@ -11,8 +11,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -130,7 +130,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			public, _, err := signature.Generate(signature.Ed25519, nil)
 			require.NoError(t, err)
 
-			targetAddress, err := address.Generate(address.KindUser, public.Bytes())
+			targetAddress, err := address.Generate(address.KindUser, public.KeyBytes())
 			require.NoError(t, err)
 
 			rfe := NewReleaseFromEndowment(

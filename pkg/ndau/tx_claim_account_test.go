@@ -105,7 +105,7 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 	t.Log(dresp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		require.Equal(t, newPublic.Bytes(), ad.ValidationKeys[0].Bytes())
+		require.Equal(t, newPublic.KeyBytes(), ad.ValidationKeys[0].KeyBytes())
 	})
 }
 

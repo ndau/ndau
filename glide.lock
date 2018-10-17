@@ -1,5 +1,5 @@
-hash: 3dcc95b5aa307c180e29447529c4ccdec38264fe1d96b32936ee80214591a856
-updated: 2018-10-11T13:55:32.720847+02:00
+hash: 87b8ef6c5b7ee8d60c608b0f42e9242c76e91f9200d0074519dd8e9ff2a3e2ba
+updated: 2018-10-17T14:12:09.929924+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -210,17 +210,20 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: c42340841d442d0dcd264ec6dc6208f04926ccb4
+  version: d80e411cc6cfa7c5fe322eef450749940e97fed5
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
   - pkg/b32
+  - pkg/bip32
   - pkg/bitset256
   - pkg/constants
   - pkg/eai
   - pkg/key
   - pkg/ndauerr
   - pkg/signature
+  - pkg/signature/algorithms/ed25519
+  - pkg/signature/algorithms/secp256k1
   - pkg/signed
   - pkg/types
   - pkg/unsigned
@@ -276,7 +279,7 @@ imports:
 - name: github.com/rcrowley/go-metrics
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
-  version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+  version: 8ccf5352a842c034b1a69f28c863aff9b1cdb116
 - name: github.com/sigurn/crc16
   version: da416fad5162ac0f3338ba24dccdb26e4da22485
 - name: github.com/sigurn/utils

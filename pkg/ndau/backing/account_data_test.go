@@ -62,7 +62,7 @@ func TestAccountDataRoundTrip(t *testing.T) {
 					require.Equal(t, len(account.ValidationKeys), len(recoveredAccount.ValidationKeys))
 					for idx := range account.ValidationKeys {
 						// transfer key may not be equal if algorithm pointers are unequal
-						require.Equal(t, account.ValidationKeys[idx].Bytes(), recoveredAccount.ValidationKeys[idx].Bytes())
+						require.Equal(t, account.ValidationKeys[idx].KeyBytes(), recoveredAccount.ValidationKeys[idx].KeyBytes())
 					}
 					require.Equal(t, account.RewardsTarget, recoveredAccount.RewardsTarget)
 					require.Equal(t, account.IncomingRewardsFrom, recoveredAccount.IncomingRewardsFrom)
@@ -114,7 +114,7 @@ func randAddress() address.Address {
 	key := randKey()
 	addr, _ := address.Generate(
 		address.KindUser,
-		key.Bytes(),
+		key.KeyBytes(),
 	)
 	return addr
 }
