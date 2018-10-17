@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -15,5 +14,5 @@ type Keypair struct {
 
 // String satisfies io.Stringer by writing the public key
 func (kp Keypair) String() string {
-	return fmt.Sprintf("%s...", base64.StdEncoding.EncodeToString(kp.Public.Bytes())[:10])
+	return fmt.Sprintf("<keypair: pub %s>", kp.Public.String())
 }

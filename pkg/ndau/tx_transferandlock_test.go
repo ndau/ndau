@@ -11,15 +11,15 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/key"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
 func generateRandomAddr(t *testing.T) string {
 	seed, err := key.GenerateSeed(32)
 	require.NoError(t, err)
-	k, err := key.NewMaster(seed, key.NdauPrivateKeyID)
+	k, err := key.NewMaster(seed)
 	require.NoError(t, err)
 	a, err := address.Generate(address.Kind('a'), k.PubKeyBytes())
 	return a.String()

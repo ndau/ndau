@@ -4,8 +4,8 @@ package backing
 
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/tinylib/msgp/msgp"
 )
 

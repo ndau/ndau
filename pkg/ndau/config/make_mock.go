@@ -13,9 +13,9 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tinylib/msgp/msgp"
@@ -171,7 +171,7 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	}
 	// now generate and set the address
 	rfeOwnership := ma[sv.ReleaseFromEndowmentOwnershipName].(signature.PublicKey)
-	rfeAddr, err := address.Generate(address.KindNdau, rfeOwnership.Bytes())
+	rfeAddr, err := address.Generate(address.KindNdau, rfeOwnership.KeyBytes())
 	if err != nil {
 		panic(err)
 	}
@@ -231,7 +231,7 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 	}
 	// now generate and set the address
 	nnrOwnership := ma[sv.NominateNodeRewardOwnershipName].(signature.PublicKey)
-	nnrAddr, err := address.Generate(address.KindNdau, nnrOwnership.Bytes())
+	nnrAddr, err := address.Generate(address.KindNdau, nnrOwnership.KeyBytes())
 	if err != nil {
 		panic(err)
 	}
@@ -344,7 +344,7 @@ func makeMockEAIFee(_ string, thousandths int64) sv.EAIFee {
 	if err != nil {
 		panic(err)
 	}
-	addr, err := address.Generate(address.KindNdau, public.Bytes())
+	addr, err := address.Generate(address.KindNdau, public.KeyBytes())
 	if err != nil {
 		panic(err)
 	}
