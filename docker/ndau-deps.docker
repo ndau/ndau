@@ -38,9 +38,7 @@ COPY ./bin/check-github-fingerprint.sh /root/
 RUN /root/check-github-fingerprint.sh
 RUN chmod 0600 /root/.ssh/*
 
-# Copy the source and glide files into the container.
-COPY ./pkg ${NDAU}/pkg
-COPY ./cmd ${NDAU}/cmd
+# Copy the glide files into the container.
 COPY ./glide.* ${NDAU}/
 
 # Configure git and `glide install`
@@ -49,6 +47,10 @@ COPY ./glide.* ${NDAU}/
 # builds with --no-cache
 RUN git config --global url.git@github.com:.insteadof https://github.com/ && \
     glide install
+
+# Copy the source files into the container.
+COPY ./pkg ${NDAU}/pkg
+COPY ./cmd ${NDAU}/cmd
 
 # Remove the secret just in case its directory gets copied below.
 RUN rm -vf /root/.ssh/id_rsa
