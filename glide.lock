@@ -1,5 +1,5 @@
 hash: cdcc859e5c20426058e3fc2fed13afcc3611196bfcc5a00e90fcc61ae5be0060
-updated: 2018-10-22T14:21:16.356355+02:00
+updated: 2018-10-22T15:18:28.291319+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
