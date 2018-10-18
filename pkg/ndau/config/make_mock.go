@@ -248,6 +248,24 @@ func makeMockChaos(bpc []byte, svi msgp.Marshaler, testVars bool) (ChaosMock, Mo
 		math.Duration(30*math.Second),
 	)
 
+	// set command validator change keys
+	// generate ownership keys
+	ma[sv.CommandValidatorChangeOwnershipName], ma[sv.CommandValidatorChangeOwnershipPrivateName], err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
+	// now generate and set the address
+	cvcOwnership := ma[sv.CommandValidatorChangeOwnershipName].(signature.PublicKey)
+	cvcAddr, err := address.Generate(address.KindNdau, cvcOwnership.KeyBytes())
+	if err != nil {
+		panic(err)
+	}
+	mock.Sets(
+		bpc,
+		sv.CommandValidatorChangeAddressName,
+		cvcAddr,
+	)
+
 	return mock, ma, &sviKey
 }
 
@@ -324,6 +342,11 @@ func makeMockSVI(bpc []byte, testVars bool) SVIMap {
 	svi.set(
 		sv.NodeRewardNominationTimeoutName,
 		NewNamespacedKey(bpc, sv.NodeRewardNominationTimeoutName),
+	)
+
+	svi.set(
+		sv.CommandValidatorChangeAddressName,
+		NewNamespacedKey(bpc, sv.CommandValidatorChangeAddressName),
 	)
 
 	return svi
