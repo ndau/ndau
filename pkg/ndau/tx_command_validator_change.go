@@ -45,7 +45,7 @@ func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	return err
 }
 
-// Apply this GTVC to the node state
+// Apply this CVC to the node state
 func (tx *CommandValidatorChange) Apply(appI interface{}) error {
 	app := appI.(*App)
 	err := app.applyTxDetails(tx)
