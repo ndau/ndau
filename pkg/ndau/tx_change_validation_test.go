@@ -94,7 +94,7 @@ func TestValidChangeValidationUpdatesTransferKey(t *testing.T) {
 	app := initAppChangeValidation(t)
 
 	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	resp := deliverTr(t, app, &cv)
+	resp := deliverTx(t, app, &cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
@@ -108,17 +108,17 @@ func TestChangeValidationChain(t *testing.T) {
 	app := initAppChangeValidation(t)
 
 	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	resp := deliverTr(t, app, &cv)
+	resp := deliverTx(t, app, &cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	cv = NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 2, []signature.PrivateKey{transferPrivate})
-	resp = deliverTr(t, app, &cv)
+	resp = deliverTx(t, app, &cv)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	newPublic2, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	cv = NewChangeValidation(targetAddress, []signature.PublicKey{newPublic2}, []byte{}, 3, []signature.PrivateKey{newPrivate})
-	resp = deliverTr(t, app, &cv)
+	resp = deliverTx(t, app, &cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -173,7 +173,7 @@ func TestChangeValidationDeductsTxFee(t *testing.T) {
 			[]signature.PrivateKey{transferPrivate},
 		)
 
-		resp := deliverTrWithTxFee(t, app, &cv)
+		resp := deliverTxWithTxFee(t, app, &cv)
 
 		var expect code.ReturnCode
 		if i == 0 {

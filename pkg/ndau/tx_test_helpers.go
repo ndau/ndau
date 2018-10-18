@@ -139,66 +139,85 @@ func modifyNode(t *testing.T, addr string, app *App, f func(*backing.Node)) {
 	require.NoError(t, err)
 }
 
-func deliverTr(t *testing.T, app *App, transfer metatx.Transactable) abci.ResponseDeliverTx {
+func deliverTx(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
 	timestamp, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
-	return deliverTrAt(t, app, transfer, timestamp)
+	return deliverTxAt(t, app, tx, timestamp)
 }
 
-func deliverTrAt(
+func deliverTxs(t *testing.T, app *App, txs []metatx.Transactable) []abci.ResponseDeliverTx {
+	timestamp, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	return deliverTxsAt(t, app, txs, timestamp)
+}
+
+func deliverTxAt(
 	t *testing.T,
 	app *App,
-	transactable metatx.Transactable,
+	tx metatx.Transactable,
 	time math.Timestamp,
 ) abci.ResponseDeliverTx {
-	return deliverTrAtWithSV(
+	return deliverTxAtWithSV(
 		t,
 		app,
-		transactable,
+		tx,
 		time,
 		func(*cache.SystemCache) {},
 	)
 }
 
-func deliverTrWithSV(
+func deliverTxsAt(
 	t *testing.T,
 	app *App,
-	transactable metatx.Transactable,
+	txs []metatx.Transactable,
+	time math.Timestamp,
+) []abci.ResponseDeliverTx {
+	return deliverTxsAtWithSV(
+		t,
+		app,
+		txs,
+		time,
+		func(*cache.SystemCache) {},
+	)
+}
+
+func deliverTxWithSV(
+	t *testing.T,
+	app *App,
+	tx metatx.Transactable,
 	svUpdate func(*cache.SystemCache),
 ) abci.ResponseDeliverTx {
 	timestamp, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
-	return deliverTrAtWithSV(t, app, transactable, timestamp, svUpdate)
+	return deliverTxAtWithSV(t, app, tx, timestamp, svUpdate)
 }
 
-func deliverTrAtWithSV(
+func deliverTxsWithSV(
 	t *testing.T,
 	app *App,
-	transactable metatx.Transactable,
+	txs []metatx.Transactable,
+	svUpdate func(*cache.SystemCache),
+) []abci.ResponseDeliverTx {
+	timestamp, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	return deliverTxsAtWithSV(t, app, txs, timestamp, svUpdate)
+}
+
+func deliverTxAtWithSV(
+	t *testing.T,
+	app *App,
+	tx metatx.Transactable,
 	time math.Timestamp,
 	svUpdate func(*cache.SystemCache),
 ) abci.ResponseDeliverTx {
-	bytes, err := metatx.Marshal(transactable, TxIDs)
-	require.NoError(t, err)
-
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.AsTime(),
-	}})
-	svUpdate(app.systemCache)
-	resp := app.DeliverTx(bytes)
-	t.Log(code.ReturnCode(resp.Code))
-	if resp.Log != "" {
-		t.Log(resp.Log)
-	}
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
-
-	return resp
+	resps := deliverTxsAtWithSV(t, app, []metatx.Transactable{tx}, time, svUpdate)
+	require.Equal(t, 1, len(resps), "single transaction must produce single response")
+	return resps[0]
 }
 
 // delivers a transaction with a script which unconditionally sets a tx fee of 1 napu
-func deliverTrWithTxFee(t *testing.T, app *App, transactable metatx.Transactable) abci.ResponseDeliverTx {
-	return deliverTrWithSV(t, app, transactable, func(systemCache *cache.SystemCache) {
+func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
+	return deliverTxWithSV(t, app, tx, func(systemCache *cache.SystemCache) {
 		// set the cached tx fee script to unconditionally return 1
 		systemCache.Set(
 			sv.TxFeeScriptName,
@@ -206,4 +225,35 @@ func deliverTrWithTxFee(t *testing.T, app *App, transactable metatx.Transactable
 			wkt.Bytes([]byte{0xa0, 0x00, 0x1a, 0x88}),
 		)
 	})
+}
+
+func deliverTxsAtWithSV(
+	t *testing.T,
+	app *App,
+	txs []metatx.Transactable,
+	time math.Timestamp,
+	svUpdate func(*cache.SystemCache),
+) []abci.ResponseDeliverTx {
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: time.AsTime(),
+	}})
+	svUpdate(app.systemCache)
+
+	resps := make([]abci.ResponseDeliverTx, 0, len(txs))
+
+	for _, transactable := range txs {
+		bytes, err := metatx.Marshal(transactable, TxIDs)
+		require.NoError(t, err)
+
+		resp := app.DeliverTx(bytes)
+		t.Log(code.ReturnCode(resp.Code))
+		if resp.Log != "" {
+			t.Log(resp.Log)
+		}
+		resps = append(resps, resp)
+	}
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
+
+	return resps
 }

@@ -202,7 +202,7 @@ func TestClaimAccountDeductsTxFee(t *testing.T) {
 			targetPrivate,
 		)
 
-		resp := deliverTrWithTxFee(t, app, &tx)
+		resp := deliverTxWithTxFee(t, app, &tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

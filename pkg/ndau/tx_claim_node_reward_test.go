@@ -11,8 +11,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -146,7 +146,7 @@ func TestClaimNodeRewardChangesAppState(t *testing.T) {
 	acct, _ := state.GetAccount(nA, app.blockTime)
 	require.Equal(t, math.Ndau(cnrStake), acct.Balance)
 
-	resp := deliverTrAt(t, app, cnr, now+1)
+	resp := deliverTxAt(t, app, cnr, now+1)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state = app.GetState().(*backing.State)
@@ -181,7 +181,7 @@ func TestClaimNodeRewardDeductsTxFee(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		tx := NewClaimNodeReward(nA, 1+uint64(i), []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

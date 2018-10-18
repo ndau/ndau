@@ -48,7 +48,7 @@ func TestTnLsWhoseQtyLTE0AreInvalid(t *testing.T) {
 
 	for idx, negQty := range []int64{0, -1, -2} {
 		tr := generateTransferAndLock(t, generateRandomAddr(t), negQty, 999, uint64(idx+1), []signature.PrivateKey{private})
-		resp := deliverTr(t, app, tr)
+		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	}
 }
@@ -60,7 +60,7 @@ func TestTnLsFromLockedAddressesProhibited(t *testing.T) {
 	})
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -76,7 +76,7 @@ func TestTnLsFromLockedButExpiredAddressesAreValid(t *testing.T) {
 	})
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -92,7 +92,7 @@ func TestTnLsFromNotifiedAddressesAreInvalid(t *testing.T) {
 	})
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -107,7 +107,7 @@ func TestTnLsDeductBalanceFromSource(t *testing.T) {
 	const deltaNapu = 50 * constants.QuantaPerUnit
 
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 50, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modifySource(t, app, func(src *backing.AccountData) {
@@ -122,7 +122,7 @@ func TestTnLsAddBalanceToDest(t *testing.T) {
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	tr := generateTransferAndLock(t, d, 123, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, d, app, func(dest *backing.AccountData) {
@@ -137,7 +137,7 @@ func TestTnLsSetLockOnDest(t *testing.T) {
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	tr := generateTransferAndLock(t, d, 123, 90*math.Day, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, d, app, func(dest *backing.AccountData) {
@@ -156,7 +156,7 @@ func TestTnLsSettlementPeriod(t *testing.T) {
 	})
 
 	tr := generateTransferAndLock(t, d, 123, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, d, app, func(dest *backing.AccountData) {
@@ -175,7 +175,7 @@ func TestTnLsFailForExistingDest(t *testing.T) {
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	tr := generateTransferAndLock(t, d, 123, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, d, app, func(dest *backing.AccountData) {
@@ -183,7 +183,7 @@ func TestTnLsFailForExistingDest(t *testing.T) {
 	})
 
 	tr = generateTransferAndLock(t, d, 123, 888, 2, []signature.PrivateKey{private})
-	resp = deliverTr(t, app, tr)
+	resp = deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -217,7 +217,7 @@ func TestTnLsWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	bytes := tr.SignableBytes()
 	tr.Signatures = []signature.Signature{private.Sign(bytes)}
 
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -228,7 +228,7 @@ func TestTnLSignatureMustValidate(t *testing.T) {
 	sig, err := signature.RawSignature(signature.Ed25519, make([]byte, signature.Ed25519.SignatureSize()))
 	require.NoError(t, err)
 	tr.Signatures = []signature.Signature{*sig}
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -249,7 +249,7 @@ func TestInvalidTnLTransactionDoesntAffectAnyBalance(t *testing.T) {
 
 	// invalid: sequence 0
 	tr := generateTransferAndLock(t, "", 1, 0, 999, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	modifySource(t, app, func(src *backing.AccountData) {
@@ -269,21 +269,21 @@ func TestTnLsOfMoreThanSourceBalanceAreInvalid(t *testing.T) {
 		src.Balance = 1 * constants.QuantaPerUnit
 	})
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 2, 888, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, tr)
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
 func TestTnLSequenceMustIncrease(t *testing.T) {
 	app, private := initAppTx(t)
 	invalidZero := generateTransferAndLock(t, generateRandomAddr(t), 1, 999, 0, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, invalidZero)
+	resp := deliverTx(t, app, invalidZero)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	// valid now, because its sequence is greater than the account sequence
 	tr := generateTransferAndLock(t, generateRandomAddr(t), 1, 888, 1, []signature.PrivateKey{private})
-	resp = deliverTr(t, app, tr)
+	resp = deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	// invalid now because account sequence must have been updated
-	resp = deliverTr(t, app, tr)
+	resp = deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -308,7 +308,7 @@ func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
 	require.NoError(t, err)
 
 	// send transfer
-	resp := deliverTrAt(t, app, tr, tn)
+	resp := deliverTxAt(t, app, tr, tn)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -333,7 +333,7 @@ func TestTnLWithUnexpiredEscrowsFails(t *testing.T) {
 	require.NoError(t, err)
 
 	// send transfer
-	resp := deliverTrAt(t, app, tr, tn)
+	resp := deliverTxAt(t, app, tr, tn)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -355,22 +355,22 @@ func TestValidationScriptValidatesTnLs(t *testing.T) {
 
 	t.Run("only first key", func(t *testing.T) {
 		tr := generateTransferAndLock(t, generateRandomAddr(t), 123, 888, 1, []signature.PrivateKey{private})
-		resp := deliverTr(t, app, tr)
+		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	})
 	t.Run("both keys in order", func(t *testing.T) {
 		tr := generateTransferAndLock(t, generateRandomAddr(t), 123, 999, 2, []signature.PrivateKey{private, private2})
-		resp := deliverTr(t, app, tr)
+		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	})
 	t.Run("both keys out of order", func(t *testing.T) {
 		tr := generateTransferAndLock(t, generateRandomAddr(t), 123, 999, 3, []signature.PrivateKey{private2, private})
-		resp := deliverTr(t, app, tr)
+		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	})
 	t.Run("only second key", func(t *testing.T) {
 		tr := generateTransferAndLock(t, generateRandomAddr(t), 123, 999, 4, []signature.PrivateKey{private2})
-		resp := deliverTr(t, app, tr)
+		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	})
 }
@@ -390,7 +390,7 @@ func TestTnLDeductsTxFee(t *testing.T) {
 		tx, err := NewTransfer(sA, dA, 1, 1+i, []signature.PrivateKey{private})
 		require.NoError(t, err)
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		// this is different from the other TestXDeductsTxFee transactions:

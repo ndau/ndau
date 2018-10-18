@@ -7,8 +7,8 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +28,7 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
-	resp := deliverTrAt(t, app, &cep, ts)
+	resp := deliverTxAt(t, app, &cep, ts)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// the state of UpdateBalance is formally undefined at this point:
@@ -65,7 +65,7 @@ func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		resp := deliverTrWithTxFee(t, app, &tx)
+		resp := deliverTxWithTxFee(t, app, &tx)
 
 		var expect code.ReturnCode
 		if i == 0 {
