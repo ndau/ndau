@@ -140,104 +140,77 @@ func modifyNode(t *testing.T, addr string, app *App, f func(*backing.Node)) {
 }
 
 func deliverTx(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
-	timestamp, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
-	return deliverTxAt(t, app, tx, timestamp)
+	resp, _ := deliverTxContext(t, app, tx, ddc(t))
+	return resp
 }
 
-func deliverTxs(t *testing.T, app *App, txs []metatx.Transactable) []abci.ResponseDeliverTx {
-	timestamp, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
-	return deliverTxsAt(t, app, txs, timestamp)
-}
-
-func deliverTxAt(
-	t *testing.T,
-	app *App,
-	tx metatx.Transactable,
-	time math.Timestamp,
-) abci.ResponseDeliverTx {
-	return deliverTxAtWithSV(
-		t,
-		app,
-		tx,
-		time,
-		func(*cache.SystemCache) {},
-	)
-}
-
-func deliverTxsAt(
-	t *testing.T,
-	app *App,
-	txs []metatx.Transactable,
-	time math.Timestamp,
-) []abci.ResponseDeliverTx {
-	return deliverTxsAtWithSV(
-		t,
-		app,
-		txs,
-		time,
-		func(*cache.SystemCache) {},
-	)
-}
-
-func deliverTxWithSV(
-	t *testing.T,
-	app *App,
-	tx metatx.Transactable,
-	svUpdate func(*cache.SystemCache),
-) abci.ResponseDeliverTx {
-	timestamp, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
-	return deliverTxAtWithSV(t, app, tx, timestamp, svUpdate)
-}
-
-func deliverTxsWithSV(
-	t *testing.T,
-	app *App,
-	txs []metatx.Transactable,
-	svUpdate func(*cache.SystemCache),
-) []abci.ResponseDeliverTx {
-	timestamp, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
-	return deliverTxsAtWithSV(t, app, txs, timestamp, svUpdate)
-}
-
-func deliverTxAtWithSV(
-	t *testing.T,
-	app *App,
-	tx metatx.Transactable,
-	time math.Timestamp,
-	svUpdate func(*cache.SystemCache),
-) abci.ResponseDeliverTx {
-	resps := deliverTxsAtWithSV(t, app, []metatx.Transactable{tx}, time, svUpdate)
-	require.Equal(t, 1, len(resps), "single transaction must produce single response")
-	return resps[0]
+func deliverTxAt(t *testing.T, app *App, tx metatx.Transactable, at math.Timestamp) abci.ResponseDeliverTx {
+	resp, _ := deliverTxContext(t, app, tx, ddc(t).at(at))
+	return resp
 }
 
 // delivers a transaction with a script which unconditionally sets a tx fee of 1 napu
 func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
-	return deliverTxWithSV(t, app, tx, func(systemCache *cache.SystemCache) {
+	resp, _ := deliverTxContext(t, app, tx, ddc(t).sv(func(systemCache *cache.SystemCache) {
 		// set the cached tx fee script to unconditionally return 1
 		systemCache.Set(
 			sv.TxFeeScriptName,
 			// script: oAAaiA==
 			wkt.Bytes([]byte{0xa0, 0x00, 0x1a, 0x88}),
 		)
-	})
+	}))
+	return resp
 }
 
-func deliverTxsAtWithSV(
+type deliveryContext struct {
+	ts        math.Timestamp
+	svUpdater func(*cache.SystemCache)
+}
+
+// default delivery context
+func ddc(t *testing.T) deliveryContext {
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	return deliveryContext{
+		ts:        now,
+		svUpdater: func(*cache.SystemCache) {},
+	}
+}
+
+// note: we don't take a pointer, so this copies values, doesn't edit
+func (dc deliveryContext) at(ts math.Timestamp) deliveryContext {
+	dc.ts = ts
+	return dc
+}
+
+// note: we don't take a pointer, so this copies values, doesn't edit
+func (dc deliveryContext) sv(update func(*cache.SystemCache)) deliveryContext {
+	dc.svUpdater = update
+	return dc
+}
+
+func deliverTxContext(
+	t *testing.T,
+	app *App,
+	tx metatx.Transactable,
+	dc deliveryContext,
+) (abci.ResponseDeliverTx, abci.ResponseEndBlock) {
+	resps, reb := deliverTxsContext(t, app, []metatx.Transactable{tx}, dc)
+	require.Equal(t, 1, len(resps), "single transaction must produce single response")
+	return resps[0], reb
+}
+
+func deliverTxsContext(
 	t *testing.T,
 	app *App,
 	txs []metatx.Transactable,
-	time math.Timestamp,
-	svUpdate func(*cache.SystemCache),
-) []abci.ResponseDeliverTx {
+	dc deliveryContext,
+) ([]abci.ResponseDeliverTx, abci.ResponseEndBlock) {
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.AsTime(),
+		Time: dc.ts.AsTime(),
 	}})
-	svUpdate(app.systemCache)
+	dc.svUpdater(app.systemCache)
 
 	resps := make([]abci.ResponseDeliverTx, 0, len(txs))
 
@@ -252,8 +225,8 @@ func deliverTxsAtWithSV(
 		}
 		resps = append(resps, resp)
 	}
-	app.EndBlock(abci.RequestEndBlock{})
+	reb := app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
-	return resps
+	return resps, reb
 }
