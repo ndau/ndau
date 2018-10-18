@@ -83,5 +83,17 @@ func generateToolConf(conf *config.Config) {
 		Address: nnrAddr,
 		Keys:    nnrPriv,
 	}
+
+	// put CVC keys into tool conf
+	cvcAddr := address.Address{}
+	err = app.System(sv.NominateNodeRewardAddressName, &cvcAddr)
+	check(err)
+	cvcPriv, err := ndau.MockSystemAccount(app, cvcAddr)
+	check(err)
+	tconf.CVC = &tc.SysAccount{
+		Address: cvcAddr,
+		Keys:    cvcPriv,
+	}
+
 	check(tconf.Save())
 }
