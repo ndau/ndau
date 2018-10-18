@@ -234,8 +234,12 @@ var _ ndauTransactable = (*ClaimNodeReward)(nil)
 // This transaction replaces GTValidatorChange, which was too insecure
 // to ever actually deploy with.
 type CommandValidatorChange struct {
-	// No information about the public key format is
-	// currently available.
+	// PublicKey is a Tendermint Ed25519 PubKey object, serialized to bytes.
+	//
+	// See https://godoc.org/github.com/tendermint/tendermint/crypto#PubKey
+	// and its Bytes() method.
+	//
+	// See https://godoc.org/github.com/tendermint/tendermint/crypto/ed25519#PubKeyEd25519
 	PublicKey []byte `msg:"tm_pk" chain:"16,Tx_PublicKey"`
 
 	// Power is an arbitrary integer with no intrinsic

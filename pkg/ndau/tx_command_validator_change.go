@@ -1,12 +1,9 @@
 package ndau
 
 import (
-	"fmt"
-
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	log "github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -49,23 +46,17 @@ func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 }
 
 // Apply this GTVC to the node state
-func (tx *CommandValidatorChange) Apply(appInt interface{}) error {
-	app := appInt.(*App)
-
-	// from persistent_app.go: we now know that this public key should be in go-crypto format
-	logger := app.GetLogger().WithField("method", "GTValidatorChange.Apply")
-	logger.WithFields(log.Fields{
-		"PubKey": fmt.Sprintf("%x", tx.PublicKey),
-		"Power":  tx.Power,
-	}).Info("entered method")
-	if err := tx.Validate(app); err != nil {
-		logger.Info("exit method; invalid tx")
+func (tx *CommandValidatorChange) Apply(appI interface{}) error {
+	app := appI.(*App)
+	err := app.applyTxDetails(tx)
+	if err != nil {
 		return err
 	}
-	v := tx.ToValidator()
-	app.UpdateValidator(v)
 
-	logger.Info("exit method; success")
+	// unusually, we don't actually directly touch app state in this tx
+	// instead, we call UpdateValidator, which updates the metastate
+	// appropriately.
+	app.UpdateValidator(tx.ToValidator())
 	return nil
 }
 
