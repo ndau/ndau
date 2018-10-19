@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/base64"
 	"encoding/hex"
-
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
+	"fmt"
 
 	cli "github.com/jawher/mow.cli"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/crypto"
 )
 
 func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
@@ -34,11 +35,18 @@ func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
 			}
 			orQuit(err)
 
+			pk, err := crypto.PubKeyFromBytes(pkb)
+			orQuit(err)
+
 			// we'd like to validate the public key length here, but we don't
 			// actually know how long it should be
 
 			if *power < 0 {
 				orQuit(errors.New("cvc POWER must be > 0"))
+			}
+
+			if *verbose {
+				fmt.Printf("CommandValidatorChange: PubKey %x Power %d", pk.Bytes(), *power)
 			}
 
 			conf := getConfig()
@@ -49,7 +57,7 @@ func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
 			fkeys := config.FilterK(conf.CVC.Keys, keys)
 
 			cvc := ndau.NewCommandValidatorChange(
-				pkb, int64(*power),
+				pk.Bytes(), int64(*power),
 				sequence(conf, conf.CVC.Address),
 				fkeys,
 			)
