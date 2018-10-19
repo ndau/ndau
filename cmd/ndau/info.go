@@ -11,10 +11,11 @@ import (
 
 func getInfo(verbose *bool) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
-		key := cmd.BoolOpt("k key", false, "when set, emit only the public key of the connected node")
+		key := cmd.BoolOpt("k key", false, "when set, emit the public key of the connected node")
 		emithex := cmd.BoolOpt("x hex", false, "when set, emit the key as hex instead of base64")
+		pwr := cmd.BoolOpt("p power", false, "when set, emit the power of the connected node")
 
-		cmd.Spec = "[-k [-x]]"
+		cmd.Spec = "[-k [-x]] [-p]"
 
 		cmd.Action = func() {
 			config := getConfig()
@@ -29,7 +30,11 @@ func getInfo(verbose *bool) func(*cli.Cmd) {
 					p = base64.RawStdEncoding.EncodeToString(b)
 				}
 				fmt.Println(p)
-			} else {
+			}
+			if *pwr {
+				fmt.Println(info.ValidatorInfo.VotingPower)
+			}
+			if !(*key || *pwr) {
 				*verbose = true
 			}
 			finish(*verbose, info, err, "info")

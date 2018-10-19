@@ -86,7 +86,7 @@ func generateToolConf(conf *config.Config) {
 
 	// put CVC keys into tool conf
 	cvcAddr := address.Address{}
-	err = app.System(sv.NominateNodeRewardAddressName, &cvcAddr)
+	err = app.System(sv.CommandValidatorChangeAddressName, &cvcAddr)
 	check(err)
 	cvcPriv, err := ndau.MockSystemAccount(app, cvcAddr)
 	check(err)

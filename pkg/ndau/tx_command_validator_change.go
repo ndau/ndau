@@ -1,9 +1,11 @@
 package ndau
 
 import (
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -37,9 +39,15 @@ func NewCommandValidatorChange(
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	_, _, _, err := app.getTxAccount(tx)
+	_, exists, signatures, err := app.getTxAccount(tx)
 	if err != nil {
-		return err
+		logger := app.GetLogger().WithError(err).WithFields(logrus.Fields{
+			"method":      "CommandValidatorChange.Validate",
+			"tx hash":     metatx.Hash(tx),
+			"acct exists": exists,
+			"signatures":  signatures.String(),
+		})
+		logger.Error("cvc validation err")
 	}
 
 	return err
