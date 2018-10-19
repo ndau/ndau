@@ -25,9 +25,9 @@ func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
 			var err error
 
 			switch {
-			case pkx != nil:
+			case pkx != nil && len(*pkx) > 0:
 				pkb, err = hex.DecodeString(*pkx)
-			case pk64 != nil:
+			case pk64 != nil && len(*pk64) > 0:
 				pkb, err = base64.RawStdEncoding.DecodeString(*pk64)
 			default:
 				err = errors.New("PUBKEY must be set")

@@ -5,6 +5,7 @@ import (
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -38,6 +39,10 @@ func NewCommandValidatorChange(
 // Validate implements metatx.Transactable
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	app := appI.(*App)
+
+	if len(tx.PublicKey) == 0 {
+		return errors.New("cvc must have non-empty public key")
+	}
 
 	_, exists, signatures, err := app.getTxAccount(tx)
 	if err != nil {
