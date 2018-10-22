@@ -1,5 +1,5 @@
-hash: 87b8ef6c5b7ee8d60c608b0f42e9242c76e91f9200d0074519dd8e9ff2a3e2ba
-updated: 2018-10-17T14:12:09.929924+02:00
+hash: cdcc859e5c20426058e3fc2fed13afcc3611196bfcc5a00e90fcc61ae5be0060
+updated: 2018-10-22T14:21:16.356355+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -186,7 +186,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: f9d7a9aca13b4c1a657dfe06f645eba86e84a0a7
+  version: bd9dd76c22e91e6ca4bf7826960bc7e9db9a80b9
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -195,7 +195,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 9d9c1889e99b872b9cbe8536ba8e38b2b8efab71
+  version: a5f7edb5197336d52437f695e4e810c84cc39448
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -210,7 +210,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: d80e411cc6cfa7c5fe322eef450749940e97fed5
+  version: 4b9058bcd7187d0ceee6dafc32acec99f0019a29
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -306,6 +306,10 @@ imports:
   - leveldb/storage
   - leveldb/table
   - leveldb/util
+- name: github.com/tendermint/btcd
+  version: e5840949ff4fff0c56f9b6a541e22b63581ea9df
+  subpackages:
+  - btcec
 - name: github.com/tendermint/ed25519
   version: d8387025d2b9d158cf4efb07e7ebf814bcce2057
   subpackages:
@@ -314,7 +318,7 @@ imports:
 - name: github.com/tendermint/go-amino
   version: faa6e731944e2b7b6a46ad202902851e8ce85bee
 - name: github.com/tendermint/tendermint
-  version: d542d2c3945116697f60451e6a407082c41c3cc9
+  version: 0c9c3292c918617624f6f3fbcd95eceade18bcd5
   subpackages:
   - abci/client
   - abci/example/code
@@ -329,6 +333,8 @@ imports:
   - crypto/ed25519
   - crypto/encoding/amino
   - crypto/merkle
+  - crypto/multisig
+  - crypto/multisig/bitarray
   - crypto/secp256k1
   - crypto/tmhash
   - evidence
@@ -336,6 +342,7 @@ imports:
   - libs/clist
   - libs/common
   - libs/db
+  - libs/errors
   - libs/events
   - libs/flowrate
   - libs/log
@@ -346,7 +353,6 @@ imports:
   - p2p
   - p2p/conn
   - p2p/pex
-  - p2p/upnp
   - privval
   - proxy
   - rpc/client
@@ -362,6 +368,7 @@ imports:
   - state/txindex/kv
   - state/txindex/null
   - types
+  - types/time
   - version
 - name: github.com/tinylib/msgp
   version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
@@ -372,9 +379,12 @@ imports:
 - name: golang.org/x/crypto
   version: 7c1a557ab941a71c619514f229f0b27ccb0c27cf
   subpackages:
+  - chacha20poly1305
   - curve25519
   - ed25519
   - ed25519/internal/edwards25519
+  - hkdf
+  - internal/chacha20
   - internal/subtle
   - nacl/box
   - nacl/secretbox
@@ -396,6 +406,7 @@ imports:
 - name: golang.org/x/sys
   version: 4497e2df6f9e69048a54498c7affbbec3294ad47
   subpackages:
+  - cpu
   - unix
   - windows
 - name: golang.org/x/text
