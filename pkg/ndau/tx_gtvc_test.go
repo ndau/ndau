@@ -34,7 +34,7 @@ func validator(t *testing.T, power int64, app *App) GTValidatorChange {
 	return validatorOptCk(t, power, app, true)
 }
 
-func toVals(gtvcs []GTValidatorChange) (vals []types.Validator) {
+func toVals(gtvcs []GTValidatorChange) (vals []types.ValidatorUpdate) {
 	for _, gtvc := range gtvcs {
 		vals = append(vals, gtvc.ToValidator())
 	}
@@ -43,7 +43,7 @@ func toVals(gtvcs []GTValidatorChange) (vals []types.Validator) {
 
 func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 	app.BeginBlock(types.RequestBeginBlock{Header: types.Header{
-		Time: time.Now().Unix(),
+		Time: time.Now(),
 	}})
 	for _, gtvc := range updates {
 		tx, err := metatx.Marshal(&gtvc, TxIDs)
@@ -55,7 +55,7 @@ func updateValidators(t *testing.T, app *App, updates []GTValidatorChange) {
 
 	ebResp := app.EndBlock(types.RequestEndBlock{})
 	actual := ebResp.GetValidatorUpdates()
-	expect := make([]types.Validator, 0, len(updates))
+	expect := make([]types.ValidatorUpdate, 0, len(updates))
 	for _, gtvc := range updates {
 		expect = append(expect, gtvc.ToValidator())
 	}
@@ -70,7 +70,7 @@ func initAppValidators(t *testing.T, valQty int) (app *App, gtvcs []GTValidatorC
 	app, _ = initApp(t)
 
 	gtvcs = make([]GTValidatorChange, 0, valQty)
-	validators := make([]types.Validator, 0, valQty)
+	validators := make([]types.ValidatorUpdate, 0, valQty)
 
 	for i := 0; i < valQty; i++ {
 		gtvc := validatorOptCk(t, 1, app, false)
