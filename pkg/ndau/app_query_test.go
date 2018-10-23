@@ -88,7 +88,7 @@ func TestCanQuerySummary2(t *testing.T) {
 	// create a new account for different results
 	public, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
-	addr, err := address.Generate(address.KindUser, public.Bytes())
+	addr, err := address.Generate(address.KindUser, public.KeyBytes())
 	require.NoError(t, err)
 	modify(t, addr.String(), app, func(ad *backing.AccountData) {
 		ad.Balance = 1 * constants.QuantaPerUnit

@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -23,52 +21,11 @@ func TestTxClaimAccountNoServer(t *testing.T) {
 	valpub, _, _ := signature.Generate(signature.Ed25519, nil)
 
 	tests := []struct {
-		name    string
-		body    interface{}
-		status  int
-		want    PreparedTx
-		wanterr string
+		name   string
+		body   interface{}
+		status int
+		want   PreparedTx
 	}{
-		// {
-		// 	name:   "no body",
-		// 	body:   nil,
-		// 	status: http.StatusBadRequest,
-		// 	want:   PreparedTx{},
-		// 	// wanterr: "unable to decode",
-		// },
-		// {
-		// 	name:   "blank request",
-		// 	body:   &TxClaimAccountRequest{},
-		// 	status: http.StatusBadRequest,
-		// 	want:   PreparedTx{},
-		// 	// wanterr: "could not be decoded",
-		// },
-		// {
-		// 	name: "not the proper type of JSON object",
-		// 	body: &PreparedTx{
-		// 		TxData:        "not base64 tx data",
-		// 		SignableBytes: "not base64 bytes to be signed",
-		// 		Signatures:    []string{"base64 signature of SignableBytes"},
-		// 	},
-		// 	status: http.StatusBadRequest,
-		// 	want:   PreparedTx{},
-		// 	// wanterr: "could not be decoded as base64",
-		// },
-		// {
-		// 	name: "not a proper account",
-		// 	body: `{
-		//   "target": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
-		//   "ownership": "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3",
-		//   "keys": [
-		//     "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
-		//   ],
-		//   "script": "",
-		//   "seq": 13579
-		// }`,
-		// 	status: http.StatusBadRequest,
-		// 	want:   PreparedTx{},
-		// 	// wanterr: "could not be decoded into a transaction",
-		// },
 		{
 			name: "valid tx",
 			body: &TxClaimAccountRequest{
@@ -78,8 +35,11 @@ func TestTxClaimAccountNoServer(t *testing.T) {
 				Sequence:       12349,
 			},
 			status: http.StatusOK,
-			want:   PreparedTx{},
-			// wanterr: "error retrieving node",
+			want: PreparedTx{
+				TxData:        "some encoded data",
+				SignableBytes: "some more encoded data",
+				Signatures:    nil,
+			},
 		},
 	}
 
@@ -107,19 +67,14 @@ func TestTxClaimAccountNoServer(t *testing.T) {
 				return
 			}
 
-			var got TxResult
+			var got PreparedTx
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
 			}
-			if tt.wanterr != "" {
-				if !strings.Contains(got.Msg, tt.wanterr) {
-					t.Errorf("SubmitTx() expected err to contain %s, was %s", tt.wanterr, got.Msg)
-				}
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SubmitTx() = %v, want %v", got, tt.want)
+			// the tx will be different every time so we can't compare exactly
+			if len(got.TxData) < 80 || len(got.SignableBytes) < 80 {
+				t.Errorf("SubmitTx() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
