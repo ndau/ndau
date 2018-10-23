@@ -8,8 +8,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -136,7 +136,7 @@ func TestStakeChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
 
-	resp := deliverTr(t, app, d)
+	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
@@ -169,7 +169,7 @@ func TestStakeDeductsTxFee(t *testing.T) {
 
 		tx := NewStake(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

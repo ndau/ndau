@@ -134,7 +134,7 @@ func TestNNRIsValidOnlyWithSufficientTxFee(t *testing.T) {
 				[]signature.PrivateKey{private},
 			)
 
-			resp := deliverTrWithTxFee(t, app, &nnr)
+			resp := deliverTxWithTxFee(t, app, &nnr)
 
 			var expect code.ReturnCode
 			if i == 0 {
@@ -156,13 +156,13 @@ func TestNNRRequiresCooldown(t *testing.T) {
 		1,
 		[]signature.PrivateKey{privateKeys[0]},
 	)
-	resp := deliverTr(t, app, &nnr)
+	resp := deliverTx(t, app, &nnr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	nnr = NewNominateNodeReward(
 		0, 2, []signature.PrivateKey{privateKeys[0]},
 	)
-	resp = deliverTr(t, app, &nnr)
+	resp = deliverTx(t, app, &nnr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -197,7 +197,7 @@ func TestNNRCallsWebhook(t *testing.T) {
 		1,
 		[]signature.PrivateKey{privateKeys[0]},
 	)
-	resp := deliverTr(t, app, &nnr)
+	resp := deliverTx(t, app, &nnr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	require.Equal(t, 1, qtyCalls)

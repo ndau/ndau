@@ -110,7 +110,7 @@ func TestDelegateChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
-	resp := deliverTr(t, app, d)
+	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
@@ -130,14 +130,14 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	require.NoError(t, err)
 	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
 
-	resp := deliverTr(t, app, d)
+	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// now create a new delegation transaction
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
 	d = NewDelegate(sA, dA, 2, []signature.PrivateKey{private})
-	resp = deliverTr(t, app, d)
+	resp = deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
@@ -167,7 +167,7 @@ func TestDelegateDeductsTxFee(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		tx := NewDelegate(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

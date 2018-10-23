@@ -8,8 +8,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
 	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, d)
+	resp := deliverTx(t, app, d)
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.LastEAIUpdate = 0
 		ad.LastWAAUpdate = 0
@@ -112,7 +112,7 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	sourceInitial := acct.Balance
 
 	blockTime := math.Timestamp(45 * math.Day)
-	resp := deliverTrAt(t, app, compute, blockTime)
+	resp := deliverTxAt(t, app, compute, blockTime)
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
@@ -156,7 +156,7 @@ func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	})
 
 	blockTime := math.Timestamp(45 * math.Day)
-	resp := deliverTrAt(t, app, compute, blockTime)
+	resp := deliverTxAt(t, app, compute, blockTime)
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
@@ -203,7 +203,7 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	})
 
 	blockTime := math.Timestamp(45 * math.Day)
-	resp := deliverTrAt(t, app, compute, blockTime)
+	resp := deliverTxAt(t, app, compute, blockTime)
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
@@ -232,7 +232,7 @@ func TestCreditEAIDeductsTxFee(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		tx := NewCreditEAI(nA, 1+uint64(i), []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

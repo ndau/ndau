@@ -3,8 +3,8 @@ package ndau
 import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // We disable tests because every transaction except GTValidatorChange
@@ -14,44 +14,23 @@ import (
 
 // TxIDs is a map which defines canonical numeric ids for each transactable type.
 var TxIDs = map[metatx.TxID]metatx.Transactable{
-	metatx.TxID(1):    &Transfer{},
-	metatx.TxID(2):    &ChangeValidation{},
-	metatx.TxID(3):    &ReleaseFromEndowment{},
-	metatx.TxID(4):    &ChangeSettlementPeriod{},
-	metatx.TxID(5):    &Delegate{},
-	metatx.TxID(6):    &CreditEAI{},
-	metatx.TxID(7):    &Lock{},
-	metatx.TxID(8):    &Notify{},
-	metatx.TxID(9):    &SetRewardsDestination{},
-	metatx.TxID(10):   &ClaimAccount{},
-	metatx.TxID(11):   &Stake{},
-	metatx.TxID(12):   &RegisterNode{},
-	metatx.TxID(13):   &NominateNodeReward{},
-	metatx.TxID(14):   &ClaimNodeReward{},
-	metatx.TxID(15):   &TransferAndLock{},
-	metatx.TxID(0xff): &GTValidatorChange{},
+	metatx.TxID(1):  &Transfer{},
+	metatx.TxID(2):  &ChangeValidation{},
+	metatx.TxID(3):  &ReleaseFromEndowment{},
+	metatx.TxID(4):  &ChangeSettlementPeriod{},
+	metatx.TxID(5):  &Delegate{},
+	metatx.TxID(6):  &CreditEAI{},
+	metatx.TxID(7):  &Lock{},
+	metatx.TxID(8):  &Notify{},
+	metatx.TxID(9):  &SetRewardsDestination{},
+	metatx.TxID(10): &ClaimAccount{},
+	metatx.TxID(11): &Stake{},
+	metatx.TxID(12): &RegisterNode{},
+	metatx.TxID(13): &NominateNodeReward{},
+	metatx.TxID(14): &ClaimNodeReward{},
+	metatx.TxID(15): &TransferAndLock{},
+	metatx.TxID(16): &CommandValidatorChange{},
 }
-
-// A GTValidatorChange is a Globally Trusted Validator Change.
-//
-// No attempt is made to validate the validator change;
-// nobody watches the watchmen.
-//
-// THIS IS DANGEROUS AND MUST BE DISABLED PRIOR TO RELEASE
-type GTValidatorChange struct {
-	// No information about the public key format is
-	// currently available.
-	PublicKey []byte
-
-	// Power is an arbitrary integer with no intrinsic
-	// meaning; during the Global Trust period, it
-	// can be literally whatever. Setting it to 0
-	// removes the validator.
-	Power int64
-}
-
-// static assert that GTValidatorChange is metatx.Transactable
-var _ metatx.Transactable = (*GTValidatorChange)(nil)
 
 // A Transfer is the fundamental transaction of the Ndau chain.
 type Transfer struct {
@@ -245,3 +224,32 @@ type ClaimNodeReward struct {
 }
 
 var _ ndauTransactable = (*ClaimNodeReward)(nil)
+
+// A CommandValidatorChange changes a validator's power by fiat.
+//
+// Like NNR and RFE, there is a special account whose address is stored
+// as a system variable, which both authenticates this transaction
+// and pays its associated fees.
+//
+// This transaction replaces GTValidatorChange, which was too insecure
+// to ever actually deploy with.
+type CommandValidatorChange struct {
+	// PublicKey is a Tendermint Ed25519 PubKey object, serialized to bytes.
+	//
+	// See https://godoc.org/github.com/tendermint/tendermint/crypto#PubKey
+	// and its Bytes() method.
+	//
+	// See https://godoc.org/github.com/tendermint/tendermint/crypto/ed25519#PubKeyEd25519
+	PublicKey []byte `msg:"tm_pk" chain:"16,Tx_PublicKey"`
+
+	// Power is an arbitrary integer with no intrinsic
+	// meaning; during the Global Trust period, it
+	// can be literally whatever. Setting it to 0
+	// removes the validator.
+	Power int64 `msg:"pow" chain:"17,Tx_Power"`
+
+	Sequence   uint64                `msg:"seq"`
+	Signatures []signature.Signature `msg:"sig"`
+}
+
+var _ ndauTransactable = (*CommandValidatorChange)(nil)

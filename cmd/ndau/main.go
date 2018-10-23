@@ -30,9 +30,9 @@ func main() {
 
 	app.Command("nnr", "nominate node reward", getNNR(verbose, keys))
 
-	app.Command("info", "get information about node's current status", info)
+	app.Command("info", "get information about node's current status", getInfo(verbose))
 
-	app.Command("gtvc", "send a globally trusted validator change", getGtvc(verbose))
+	app.Command("cvc", "send a command validator change", getCVC(verbose, keys))
 
 	app.Command("server", "create server for API endpoint calls", server)
 

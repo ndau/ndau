@@ -34,6 +34,7 @@ type Config struct {
 	Accounts map[string]*Account `toml:"accounts"`
 	RFE      *SysAccount         `toml:"rfe"`
 	NNR      *SysAccount         `toml:"nnr"`
+	CVC      *SysAccount         `toml:"cvc"`
 }
 
 // NewConfig creates a new configuration with the given address
@@ -155,6 +156,7 @@ func (c Config) toToml() (tomlConfig, error) {
 		Accounts: tacs,
 		RFE:      c.RFE,
 		NNR:      c.NNR,
+		CVC:      c.CVC,
 	}, nil
 }
 
@@ -164,6 +166,7 @@ type tomlConfig struct {
 	Accounts []Account   `toml:"accounts"`
 	RFE      *SysAccount `toml:"rfe"`
 	NNR      *SysAccount `toml:"nnr"`
+	CVC      *SysAccount `toml:"cvc"`
 }
 
 func (tc tomlConfig) toConfig() (*Config, error) {
@@ -184,5 +187,6 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 		Accounts: acts,
 		RFE:      tc.RFE,
 		NNR:      tc.NNR,
+		CVC:      tc.CVC,
 	}, nil
 }

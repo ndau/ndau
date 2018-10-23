@@ -189,7 +189,7 @@ func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
 				[]signature.PrivateKey{private},
 			)
 
-			resp := deliverTrWithTxFee(t, app, &rfe)
+			resp := deliverTxWithTxFee(t, app, &rfe)
 
 			var expect code.ReturnCode
 			if i == 0 {

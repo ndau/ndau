@@ -377,7 +377,7 @@ Note that the balance remains 0, and the account is unclaimed.
 
 #### Change the settlement settings
 
-We can allow senders to create a "settlement period" which will cause transfers to be delayed before they can be spent. 
+We can allow senders to create a "settlement period" which will cause transfers to be delayed before they can be spent.
 The default will not always be convenient. A user might want to set a differet settlement period. They might do so like this:
 
 ```sh
@@ -459,7 +459,7 @@ $ ./ndau account query --address=$demo_receiver_addr
 
 ### Changing the validator set
 
-`ndau gtvc PUBKEY POWER` sends a globally trusted validator change. This won't work forever, but it does nicely for now.
+`ndau cvc PUBKEY POWER` sends a command validator change. On the real blockchain, this is likely to be disabled, but it works for now.
 
 ### Querying the node status
 
