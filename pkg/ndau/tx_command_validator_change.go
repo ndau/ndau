@@ -89,7 +89,7 @@ func (tx *CommandValidatorChange) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// ToValidator converts this struct into a Validator
-func (tx *CommandValidatorChange) ToValidator() abci.Validator {
-	return abci.Ed25519Validator(tx.PublicKey, tx.Power)
+// ToValidator converts this struct into a ValidatorUpdate
+func (tx *CommandValidatorChange) ToValidator() abci.ValidatorUpdate {
+	return abci.Ed25519ValidatorUpdate(tx.PublicKey, tx.Power)
 }

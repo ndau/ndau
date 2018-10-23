@@ -10,7 +10,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/crypto"
+	amino "github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
 func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
@@ -35,7 +35,7 @@ func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
 			}
 			orQuit(err)
 
-			pk, err := crypto.PubKeyFromBytes(pkb)
+			pk, err := amino.PubKeyFromBytes(pkb)
 			orQuit(err)
 
 			// we'd like to validate the public key length here, but we don't

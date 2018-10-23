@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
@@ -34,7 +35,8 @@ func initAppCVC(t *testing.T) (*App, config.MockAssociated) {
 
 // construct a new tendermint representation of an ed25519 key
 func makepub() []byte {
-	return ed25519.GenPrivKey().PubKey().Bytes()
+	pk := ed25519.GenPrivKey().PubKey().(ed25519.PubKeyEd25519)
+	return []byte(pk[:])
 }
 func TestCVCIsValidWithValidSignature(t *testing.T) {
 	app, assc := initAppCVC(t)
@@ -159,7 +161,7 @@ func TestCVCIsValidOnlyWithSufficientTxFee(t *testing.T) {
 // Those tests live below, along with some test helpers to make them work.
 
 // convert a list of cvcs into a list of validators
-func toVals(cvcs []CommandValidatorChange) (vals []abci.Validator) {
+func toVals(cvcs []CommandValidatorChange) (vals []abci.ValidatorUpdate) {
 	for _, cvc := range cvcs {
 		vals = append(vals, cvc.ToValidator())
 	}
@@ -181,7 +183,7 @@ func updateValidators(t *testing.T, app *App, updates []CommandValidatorChange) 
 	}
 
 	actual := ebResp.GetValidatorUpdates()
-	expect := make([]types.Validator, len(updates))
+	expect := make([]types.ValidatorUpdate, len(updates))
 	for i := 0; i < len(updates); i++ {
 		expect[i] = updates[i].ToValidator()
 	}
@@ -200,7 +202,7 @@ func initAppCVCValidators(
 	app, ma = initAppCVC(t)
 
 	vcs = make([]CommandValidatorChange, 0, valQty)
-	validators := make([]abci.Validator, 0, valQty)
+	validators := make([]abci.ValidatorUpdate, 0, valQty)
 
 	for i := 0; i < valQty; i++ {
 		cvc := NewCommandValidatorChange(
@@ -229,7 +231,11 @@ func TestCommandValidatorChangeInitChain(t *testing.T) {
 
 	actualValidators, err := app.Validators()
 	require.NoError(t, err)
-	require.ElementsMatch(t, toVals(cvcs), actualValidators)
+	metast.ValidatorsAreEquivalent(
+		t,
+		metast.ValUpdatesToVals(t, toVals(cvcs)),
+		actualValidators,
+	)
 }
 
 func TestCommandValidatorChangeAddValidator(t *testing.T) {
@@ -248,7 +254,11 @@ func TestCommandValidatorChangeAddValidator(t *testing.T) {
 
 	actualValidators, err := app.Validators()
 	require.NoError(t, err)
-	require.ElementsMatch(t, toVals(cvcs), actualValidators)
+	metast.ValidatorsAreEquivalent(
+		t,
+		metast.ValUpdatesToVals(t, toVals(cvcs)),
+		actualValidators,
+	)
 }
 
 func TestCommandValidatorChangeRemoveValidator(t *testing.T) {
@@ -269,5 +279,9 @@ func TestCommandValidatorChangeRemoveValidator(t *testing.T) {
 
 	actualValidators, err := app.Validators()
 	require.NoError(t, err)
-	require.ElementsMatch(t, toVals(cvcs), actualValidators)
+	metast.ValidatorsAreEquivalent(
+		t,
+		metast.ValUpdatesToVals(t, toVals(cvcs)),
+		actualValidators,
+	)
 }
