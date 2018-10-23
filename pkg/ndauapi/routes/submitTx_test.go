@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -11,7 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -21,24 +21,12 @@ import (
 func TestSubmitTxNoServer(t *testing.T) {
 	baseHandler := HandleSubmitTx
 
-	b64 := func(b []byte) string {
-		return base64.StdEncoding.EncodeToString(b)
-	}
-
-	b64str := func(s string) string {
-		return b64([]byte(s))
-	}
-
-	b64Tx := func(tx ndau.NTransactable) string {
-		m, err := metatx.Marshal(tx, ndau.TxIDs)
-		if err != nil {
-			panic("marshal failed!!!")
-		}
-		return b64(m)
-	}
-
-	addr, _ := address.Generate(address.KindUser, []byte("somerandomdatatomakeaddressfrom"))
+	keypub, keypvt, _ := signature.Generate(signature.Ed25519, nil)
+	addr, _ := address.Generate(address.KindUser, keypub.KeyBytes())
 	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234, nil)
+	signable := testLockTx.SignableBytes()
+	sigbytes, _ := keypvt.Sign(signable).Marshal()
+	testLockData, _ := b64Tx(testLockTx)
 
 	tests := []struct {
 		name    string
@@ -86,9 +74,9 @@ func TestSubmitTxNoServer(t *testing.T) {
 		{
 			name: "valid tx but no node",
 			body: &PreparedTx{
-				TxData:        b64Tx(testLockTx),
+				TxData:        testLockData,
 				SignableBytes: b64(testLockTx.SignableBytes()),
-				Signatures:    []string{},
+				Signatures:    []string{b64(sigbytes)},
 			},
 			status:  http.StatusInternalServerError,
 			want:    TxResult{},

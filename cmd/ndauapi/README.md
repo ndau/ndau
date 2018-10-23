@@ -171,8 +171,8 @@ _**Writes:**_
 ```json
         {
           "balance": 123000000,
-          "transferKeys": [
-            "kgHEIOzAXTvnjneE4il2g1PPhzjQ9imizVH0OsvLzCcktoi9"
+          "validationKeys": [
+            "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -190,7 +190,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk"
+          "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup"
         }
 ```
 
@@ -221,7 +221,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk"
+          "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup"
         ]
 ```
 
@@ -235,8 +235,8 @@ _**Writes:**_
           "addressData": [
             {
               "balance": 123000000,
-              "transferKeys": [
-                "kgHEIOzAXTvnjneE4il2g1PPhzjQ9imizVH0OsvLzCcktoi9"
+              "validationKeys": [
+                "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
               ],
               "rewardsTarget": null,
               "incomingRewardsFrom": null,
@@ -254,7 +254,7 @@ _**Writes:**_
                 "Next": null
               },
               "validationScript": null,
-              "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk"
+              "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup"
             }
           ]
         }
@@ -293,11 +293,12 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk",
+            "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
-              "unlocksOn": null
+              "unlocksOn": null,
+              "bonus": 20000000000
             }
           }
         ]
@@ -311,7 +312,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndafvjxzk8r2ek89zrc7wziza8i4up6aa2a6fwv8csdyjckk",
+            "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
             "eairate": 6000000
           }
         ]
@@ -1065,7 +1066,7 @@ _**Writes:**_
 ---
 ## OrderHistory
 
-### `GET /order/history/`
+### `GET /order/history`
 
 _Returns an array of data from the order chain at periodic intervals over time, sorted chronologically._
 
@@ -1193,7 +1194,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1235,7 +1236,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1265,7 +1266,15 @@ _**Consumes:**_ `[application/json]`
 
 _**Reads:**_
 ```json
-        {}
+        {
+          "target": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
+          "ownership": "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3",
+          "keys": [
+            "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
+          ],
+          "script": "",
+          "seq": 13579
+        }
 ```
 
 
@@ -1277,7 +1286,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1319,7 +1328,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1361,7 +1370,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1403,7 +1412,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1445,7 +1454,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1487,7 +1496,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1529,7 +1538,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1571,7 +1580,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1613,7 +1622,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1655,7 +1664,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1697,7 +1706,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1739,7 +1748,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1781,7 +1790,7 @@ _**Writes:**_
         {
           "TxData": "",
           "SignableBytes": "",
-          "Signature": ""
+          "Signatures": null
         }
 ```
 
@@ -1814,7 +1823,9 @@ _**Reads:**_
         {
           "TxData": "base64 tx data",
           "SignableBytes": "base64 bytes to be signed",
-          "Signature": "base64 signature of SignableBytes"
+          "Signatures": [
+            "base64 signature of SignableBytes"
+          ]
         }
 ```
 
@@ -1826,7 +1837,7 @@ _**Writes:**_
 ```json
         {
           "TxHash": "123abc34099f",
-          "ResultCode": 0,
-          "ErrorMsg": ""
+          "ResultCode": "",
+          "Msg": ""
         }
 ```

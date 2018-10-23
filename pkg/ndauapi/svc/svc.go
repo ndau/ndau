@@ -299,7 +299,13 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns a prepared ClaimAccount transaction for signature.").
 		Operation("TxClaimAccount").
 		Consumes(JSON).
-		Reads(routes.TxClaimAccountRequest{}).
+		Reads(routes.TxClaimAccountRequest{
+			Target:           dummyAddress,
+			OwnershipKey:     dummyPublic,
+			ValidationKeys:   []signature.PublicKey{dummyPublic},
+			ValidationScript: "",
+			Sequence:         13579,
+		}).
 		Produces(JSON).
 		Writes(routes.PreparedTx{}))
 
@@ -408,3 +414,13 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(dummyTxResult))
 	return svc
 }
+
+// Add call to get list of nodes
+// Add /version:
+// return version info as multiple fields:
+// {
+//      "version": "v1.2.3",
+//      "sha": "3123abc35",
+//      "network": "ndau mainnet",
+// }
+// The "network" field simply reports a specific value from the system variables on the chaos chain.

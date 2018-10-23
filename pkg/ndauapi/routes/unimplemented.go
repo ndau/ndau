@@ -31,9 +31,6 @@ type TxChangeValidationRequest struct {
 type TxChangeSettlementRequest struct {
 }
 
-type TxClaimAccountRequest struct {
-}
-
 type TxClaimNodeRewardsRequest struct {
 }
 
@@ -143,12 +140,6 @@ func HandleChangeValidation(cf cfg.Cfg) http.HandlerFunc {
 }
 
 func HandleChangeSettlement(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusNotImplemented))
-	}
-}
-
-func HandleClaimAccount(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusNotImplemented))
 	}

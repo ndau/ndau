@@ -22,13 +22,13 @@ Usage
 Environment variables
 
 	Log level. (default: info)
-	[LOG_LEVEL=(error|warn|info|debug)]
+	[NDAUAPI_LOG_LEVEL=(error|warn|info|debug)]
 
 	Port where this API will listen. (default: 3030)
-	[PORT=<3030>]
+	[NDAUAPI_PORT=<3030>]
 
 	Node address.
-	NODE_ADDRESS=<http://your_node_ip:your_rpc_port>
+	NDAUAPI_NODE_ADDRESS=<http://your_node_ip:your_rpc_port>
 
 Flags
 
@@ -36,7 +36,7 @@ Flags
 
 Example
 
-	NODE_ADDRESS=http://127.0.0.1:26658 ./nodeapi [-docs]
+	NDAUAPI_NODE_ADDRESS=http://127.0.0.1:26658 ./ndauapi [-docs]
 
 `)
 }
