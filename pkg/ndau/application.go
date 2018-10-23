@@ -6,7 +6,6 @@ package ndau
 
 import (
 	"io/ioutil"
-	"time"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -110,12 +109,10 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 
 	header := req.GetHeader()
 	tmTime := header.GetTime()
-	goTime := time.Unix(tmTime, 0)
-	blockTime, err := math.TimestampFrom(goTime)
+	blockTime, err := math.TimestampFrom(tmTime)
 	if err != nil {
-		app.GetLogger().Error(
-			"Failed to create ndau timestamp from block time",
-			"goTime", goTime,
+		app.GetLogger().WithError(err).WithField("block time", tmTime).Error(
+			"failed to create ndau timestamp from block time",
 		)
 		panic(err)
 	}

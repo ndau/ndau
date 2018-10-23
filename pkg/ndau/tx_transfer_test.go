@@ -10,8 +10,8 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -72,7 +72,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 
 	// update the app's cached timestamp
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: tn.Unix(),
+		Time: tn,
 	}})
 	app.EndBlock(abci.RequestEndBlock{})
 

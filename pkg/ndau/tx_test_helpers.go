@@ -182,7 +182,7 @@ func deliverTrAtWithSV(
 	require.NoError(t, err)
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.AsTime().Unix(),
+		Time: time.AsTime(),
 	}})
 	svUpdate(app.systemCache)
 	resp := app.DeliverTx(bytes)

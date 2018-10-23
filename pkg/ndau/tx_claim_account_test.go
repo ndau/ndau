@@ -96,7 +96,7 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 
 	// apply the transaction
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.Now().Unix(),
+		Time: time.Now(),
 	}})
 	dresp := app.DeliverTx(ctkBytes)
 	app.EndBlock(abci.RequestEndBlock{})

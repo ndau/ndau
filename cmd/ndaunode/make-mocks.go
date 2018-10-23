@@ -57,7 +57,7 @@ func generateToolConf(conf *config.Config) {
 	// we want to fetch the system variables, which means running
 	// beginning a block
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.Now().Unix(),
+		Time: time.Now(),
 	}})
 	// without the beginblock tx, we'd never actually load the mock
 	// system variables into the cache

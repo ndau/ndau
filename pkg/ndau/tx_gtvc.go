@@ -16,9 +16,9 @@ func (tx *GTValidatorChange) Validate(interface{}) error {
 	return nil
 }
 
-// ToValidator converts this struct into a Validator
-func (tx *GTValidatorChange) ToValidator() abci.Validator {
-	return abci.Ed25519Validator(tx.PublicKey, tx.Power)
+// ToValidator converts this struct into a ValidatorUpdate
+func (tx *GTValidatorChange) ToValidator() abci.ValidatorUpdate {
+	return abci.Ed25519ValidatorUpdate(tx.PublicKey, tx.Power)
 }
 
 // Apply this GTVC to the node state
