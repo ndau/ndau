@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
@@ -73,14 +74,15 @@ func TestCanQuerySummary1(t *testing.T) {
 		Path: query.SummaryEndpoint,
 		Data: nil,
 	})
+	expectedTotal := 10000 * constants.QuantaPerUnit
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "total ndau at height 1 is 1000000000000, in 1 accounts", resp.Log)
+	require.Equal(t, fmt.Sprintf("total ndau at height 1 is %d, in 1 accounts", expectedTotal), resp.Log)
 	summary := new(query.Summary)
 	_, err := summary.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), summary.BlockHeight)
 	require.Equal(t, 1, summary.NumAccounts)
-	require.Equal(t, math.Ndau(10000*constants.QuantaPerUnit), summary.TotalNdau)
+	require.Equal(t, math.Ndau(expectedTotal), summary.TotalNdau)
 }
 
 func TestCanQuerySummary2(t *testing.T) {
@@ -99,14 +101,15 @@ func TestCanQuerySummary2(t *testing.T) {
 		Path: query.SummaryEndpoint,
 		Data: nil,
 	})
+	expectedTotal := 10001 * constants.QuantaPerUnit
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "total ndau at height 2 is 1000100000000, in 2 accounts", resp.Log)
+	require.Equal(t, fmt.Sprintf("total ndau at height 2 is %d, in 2 accounts", expectedTotal), resp.Log)
 	summary := new(query.Summary)
 	_, err = summary.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), summary.BlockHeight)
 	require.Equal(t, 2, summary.NumAccounts)
-	require.Equal(t, math.Ndau(10001*constants.QuantaPerUnit), summary.TotalNdau)
+	require.Equal(t, math.Ndau(expectedTotal), summary.TotalNdau)
 }
 
 func TestCanQueryVersion(t *testing.T) {
