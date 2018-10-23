@@ -1,5 +1,5 @@
-hash: dbf4a8ef8220f9ed4c5e6f4848c22a0d94c7e9b585042061d55ce6cab5e85a05
-updated: 2018-10-30T10:44:08.705337+01:00
+hash: 8b6aa501e8a885c857b14f9d1d4925d960acaa5b47db4b9ef09c294aefd39307
+updated: 2018-10-23T10:45:27.257887-07:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -120,6 +120,8 @@ imports:
   - metrics/prometheus
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: github.com/go-redis/redis
+  version: fa76dd0e87967c95e6f7bef33a230ed2c263fe2d
 - name: github.com/go-zoo/bone
   version: 2270ec2a18cc13fba907d4ae5ad546a21473c0ed
 - name: github.com/gogo/protobuf
