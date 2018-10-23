@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/svc"
@@ -41,6 +43,31 @@ Example
 `)
 }
 
+type siglistener struct {
+	sigchan chan os.Signal
+}
+
+func (s *siglistener) watchSignals() {
+	go func() {
+		if s.sigchan == nil {
+			s.sigchan = make(chan os.Signal, 1)
+		}
+		signal.Notify(s.sigchan, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
+		for {
+			sig := <-s.sigchan
+			switch sig {
+			// case syscall.SIGHUP:
+			// s.Logger.Println("Got refresh request (SIGHUP) -- Refreshing vasco.")
+			// s.Refresh()
+			case syscall.SIGTERM, syscall.SIGINT:
+				// s.Logger.Println("Unregistering before shutting down.")
+				// s.Unregister()
+				os.Exit(0)
+			}
+		}
+	}()
+}
+
 func main() {
 
 	// handle flags to generate docs
@@ -69,5 +96,7 @@ func main() {
 		Addr:    fmt.Sprintf(":%v", cf.Port),
 		Handler: svc.NewLogMux(cf),
 	}
+	sl := &siglistener{}
+	sl.watchSignals()
 	log.Fatal(server.ListenAndServe())
 }

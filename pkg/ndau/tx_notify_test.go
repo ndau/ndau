@@ -8,8 +8,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -94,7 +94,7 @@ func TestNotifyChangesAppState(t *testing.T) {
 	require.NotNil(t, acct.Lock)
 	require.Nil(t, acct.Lock.UnlocksOn)
 
-	resp := deliverTr(t, app, notify)
+	resp := deliverTx(t, app, notify)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state = app.GetState().(*backing.State)
@@ -114,7 +114,7 @@ func TestNotifyDeductsTxFee(t *testing.T) {
 	for i := uint64(0); i < 2; i++ {
 		tx := NewNotify(sA, 1+i, []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

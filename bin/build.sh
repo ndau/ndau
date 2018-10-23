@@ -9,4 +9,4 @@ ROOT="$(cd "$(dirname "$0")"/..; pwd -P )"
 source "$ROOT"/bin/defaults.sh
 
 set -x # echo command
-docker-compose build "$@"
+docker-compose build "$@" && "$ROOT"/bin/tool-build.sh

@@ -9,8 +9,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -113,7 +113,7 @@ func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
 
-	resp := deliverTr(t, app, srt)
+	resp := deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
@@ -124,7 +124,7 @@ func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 
 	// resetting to source address saves as "nil" dest address
 	srt = NewSetRewardsDestination(sA, sA, 2, []signature.PrivateKey{private})
-	resp = deliverTr(t, app, srt)
+	resp = deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	state = app.GetState().(*backing.State)
 	// we must have updated the source's rewards target
@@ -201,7 +201,7 @@ func TestReSetRewardsDestinationChangesAppState(t *testing.T) {
 
 	// deliver transaction
 	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
-	resp := deliverTr(t, app, srt)
+	resp := deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
@@ -254,7 +254,7 @@ func TestSetRewardsDestinationDeductsTxFee(t *testing.T) {
 	for i := uint64(0); i < 2; i++ {
 		tx := NewSetRewardsDestination(sA, dA, 1+i, []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

@@ -12,5 +12,8 @@ func Version(node client.ABCIClient) (
 ) {
 	// perform the query
 	res, err := node.ABCIQuery(query.VersionEndpoint, []byte{})
-	return string(res.Response.Value), res, err
+	if err != nil {
+		return "", res, err
+	}
+	return string(res.Response.GetValue()), res, err
 }

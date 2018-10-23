@@ -96,7 +96,7 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 
 	// apply the transaction
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.Now().Unix(),
+		Time: time.Now(),
 	}})
 	dresp := app.DeliverTx(ctkBytes)
 	app.EndBlock(abci.RequestEndBlock{})
@@ -202,7 +202,7 @@ func TestClaimAccountDeductsTxFee(t *testing.T) {
 			targetPrivate,
 		)
 
-		resp := deliverTrWithTxFee(t, app, &tx)
+		resp := deliverTxWithTxFee(t, app, &tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

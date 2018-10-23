@@ -105,7 +105,7 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 			app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-				Time: time.Now().Unix(),
+				Time: time.Now(),
 			}})
 			dresp := app.DeliverTx(rfeBytes)
 			app.EndBlock(abci.RequestEndBlock{})
@@ -150,7 +150,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 			app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-				Time: time.Now().Unix(),
+				Time: time.Now(),
 			}})
 			dresp := app.DeliverTx(rfeBytes)
 			app.EndBlock(abci.RequestEndBlock{})
@@ -189,7 +189,7 @@ func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
 				[]signature.PrivateKey{private},
 			)
 
-			resp := deliverTrWithTxFee(t, app, &rfe)
+			resp := deliverTxWithTxFee(t, app, &rfe)
 
 			var expect code.ReturnCode
 			if i == 0 {

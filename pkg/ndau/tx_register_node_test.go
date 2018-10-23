@@ -162,7 +162,7 @@ func TestRegisterNodeDeductsTxFee(t *testing.T) {
 			[]signature.PrivateKey{transferPrivate},
 		)
 
-		resp := deliverTrWithTxFee(t, app, rn)
+		resp := deliverTxWithTxFee(t, app, rn)
 
 		var expect code.ReturnCode
 		if i == 0 {

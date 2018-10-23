@@ -1,5 +1,5 @@
-hash: c38e0beedff712e31d828e899b5baf7d6bc03b5028531bc0efcea2ec259fda64
-updated: 2018-10-18T10:22:04.13683-04:00
+hash: dbf4a8ef8220f9ed4c5e6f4848c22a0d94c7e9b585042061d55ce6cab5e85a05
+updated: 2018-10-23T09:26:37.134737-04:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -186,7 +186,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: f9d7a9aca13b4c1a657dfe06f645eba86e84a0a7
+  version: 38d264bfaf4d73f0549aa4b587f2dedb6415064e
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -195,7 +195,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 9d9c1889e99b872b9cbe8536ba8e38b2b8efab71
+  version: 4f60b392a6b55e89ea2dbf0bffd44d97ef201b64
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -307,6 +307,10 @@ imports:
   - leveldb/storage
   - leveldb/table
   - leveldb/util
+- name: github.com/tendermint/btcd
+  version: e5840949ff4fff0c56f9b6a541e22b63581ea9df
+  subpackages:
+  - btcec
 - name: github.com/tendermint/ed25519
   version: d8387025d2b9d158cf4efb07e7ebf814bcce2057
   subpackages:
@@ -315,7 +319,7 @@ imports:
 - name: github.com/tendermint/go-amino
   version: faa6e731944e2b7b6a46ad202902851e8ce85bee
 - name: github.com/tendermint/tendermint
-  version: d542d2c3945116697f60451e6a407082c41c3cc9
+  version: 0c9c3292c918617624f6f3fbcd95eceade18bcd5
   subpackages:
   - abci/client
   - abci/example/code
@@ -330,6 +334,8 @@ imports:
   - crypto/ed25519
   - crypto/encoding/amino
   - crypto/merkle
+  - crypto/multisig
+  - crypto/multisig/bitarray
   - crypto/secp256k1
   - crypto/tmhash
   - evidence
@@ -337,6 +343,7 @@ imports:
   - libs/clist
   - libs/common
   - libs/db
+  - libs/errors
   - libs/events
   - libs/flowrate
   - libs/log
@@ -347,7 +354,6 @@ imports:
   - p2p
   - p2p/conn
   - p2p/pex
-  - p2p/upnp
   - privval
   - proxy
   - rpc/client
@@ -363,6 +369,7 @@ imports:
   - state/txindex/kv
   - state/txindex/null
   - types
+  - types/time
   - version
 - name: github.com/tinylib/msgp
   version: b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1
@@ -373,9 +380,12 @@ imports:
 - name: golang.org/x/crypto
   version: 7c1a557ab941a71c619514f229f0b27ccb0c27cf
   subpackages:
+  - chacha20poly1305
   - curve25519
   - ed25519
   - ed25519/internal/edwards25519
+  - hkdf
+  - internal/chacha20
   - internal/subtle
   - nacl/box
   - nacl/secretbox
@@ -397,6 +407,7 @@ imports:
 - name: golang.org/x/sys
   version: 4497e2df6f9e69048a54498c7affbbec3294ad47
   subpackages:
+  - cpu
   - unix
   - windows
 - name: golang.org/x/text

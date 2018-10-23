@@ -10,8 +10,8 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -183,12 +183,12 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	unlockedTable := new(eai.RateTable)
 	err = app.System(sv.UnlockedRateTableName, unlockedTable)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
+		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
 	}
 	lockedTable := new(eai.RateTable)
 	err = app.System(sv.LockedRateTableName, lockedTable)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
+		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
 	}
 
 	state := app.GetState().(*backing.State)

@@ -8,8 +8,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,7 +85,7 @@ func TestLockChangesAppState(t *testing.T) {
 	acct, _ := state.GetAccount(sA, app.blockTime)
 	require.Nil(t, acct.Lock)
 
-	resp := deliverTr(t, app, lock)
+	resp := deliverTx(t, app, lock)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state = app.GetState().(*backing.State)
@@ -133,12 +133,12 @@ func TestRelockNotified(t *testing.T) {
 
 	// lock must be invalid before halfway point of notice period
 	halfway := math.Timestamp(int64(duration) / 2)
-	resp := deliverTrAt(t, app, lock, halfway.Sub(math.Duration(1)))
+	resp := deliverTxAt(t, app, lock, halfway.Sub(math.Duration(1)))
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// lock must be valid on and after halfway point of notice period
 	lock = NewLock(sA, newDuration, 2, []signature.PrivateKey{private})
-	resp = deliverTrAt(t, app, lock, halfway)
+	resp = deliverTxAt(t, app, lock, halfway)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// relock must have reset lock and cleared notification
@@ -161,7 +161,7 @@ func TestLockDeductsTxFee(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		tx := NewLock(sA, math.Duration(30*math.Day), 1+uint64(i), []signature.PrivateKey{private})
 
-		resp := deliverTrWithTxFee(t, app, tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

@@ -172,7 +172,7 @@ _**Writes:**_
         {
           "balance": 123000000,
           "validationKeys": [
-            "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
+            "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -190,7 +190,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup"
+          "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt"
         }
 ```
 
@@ -221,7 +221,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup"
+          "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt"
         ]
 ```
 
@@ -236,7 +236,7 @@ _**Writes:**_
             {
               "balance": 123000000,
               "validationKeys": [
-                "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
+                "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y"
               ],
               "rewardsTarget": null,
               "incomingRewardsFrom": null,
@@ -254,7 +254,7 @@ _**Writes:**_
                 "Next": null
               },
               "validationScript": null,
-              "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup"
+              "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt"
             }
           ]
         }
@@ -293,7 +293,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
+            "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -312,7 +312,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
+            "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt",
             "eairate": 6000000
           }
         ]
@@ -399,6 +399,7 @@ _**Writes:**_
               "height": 0,
               "time": "0001-01-01T00:00:00Z",
               "num_txs": 0,
+              "total_txs": 0,
               "last_block_id": {
                 "hash": "",
                 "parts": {
@@ -406,14 +407,15 @@ _**Writes:**_
                   "hash": ""
                 }
               },
-              "total_txs": 0,
               "last_commit_hash": "",
               "data_hash": "",
               "validators_hash": "",
+              "next_validators_hash": "",
               "consensus_hash": "",
               "app_hash": "",
               "last_results_hash": "",
-              "evidence_hash": ""
+              "evidence_hash": "",
+              "proposer_address": ""
             }
           },
           "block": {
@@ -422,6 +424,7 @@ _**Writes:**_
               "height": 0,
               "time": "0001-01-01T00:00:00Z",
               "num_txs": 0,
+              "total_txs": 0,
               "last_block_id": {
                 "hash": "",
                 "parts": {
@@ -429,14 +432,15 @@ _**Writes:**_
                   "hash": ""
                 }
               },
-              "total_txs": 0,
               "last_commit_hash": "",
               "data_hash": "",
               "validators_hash": "",
+              "next_validators_hash": "",
               "consensus_hash": "",
               "app_hash": "",
               "last_results_hash": "",
-              "evidence_hash": ""
+              "evidence_hash": "",
+              "proposer_address": ""
             },
             "data": {
               "txs": null
@@ -491,6 +495,7 @@ _**Writes:**_
               "height": 0,
               "time": "0001-01-01T00:00:00Z",
               "num_txs": 0,
+              "total_txs": 0,
               "last_block_id": {
                 "hash": "",
                 "parts": {
@@ -498,14 +503,15 @@ _**Writes:**_
                   "hash": ""
                 }
               },
-              "total_txs": 0,
               "last_commit_hash": "",
               "data_hash": "",
               "validators_hash": "",
+              "next_validators_hash": "",
               "consensus_hash": "",
               "app_hash": "",
               "last_results_hash": "",
-              "evidence_hash": ""
+              "evidence_hash": "",
+              "proposer_address": ""
             }
           },
           "block": {
@@ -514,6 +520,7 @@ _**Writes:**_
               "height": 0,
               "time": "0001-01-01T00:00:00Z",
               "num_txs": 0,
+              "total_txs": 0,
               "last_block_id": {
                 "hash": "",
                 "parts": {
@@ -521,14 +528,15 @@ _**Writes:**_
                   "hash": ""
                 }
               },
-              "total_txs": 0,
               "last_commit_hash": "",
               "data_hash": "",
               "validators_hash": "",
+              "next_validators_hash": "",
               "consensus_hash": "",
               "app_hash": "",
               "last_results_hash": "",
-              "evidence_hash": ""
+              "evidence_hash": "",
+              "proposer_address": ""
             },
             "data": {
               "txs": null
@@ -586,6 +594,7 @@ _**Writes:**_
                 "height": 0,
                 "time": "0001-01-01T00:00:00Z",
                 "num_txs": 0,
+                "total_txs": 0,
                 "last_block_id": {
                   "hash": "",
                   "parts": {
@@ -593,14 +602,15 @@ _**Writes:**_
                     "hash": ""
                   }
                 },
-                "total_txs": 0,
                 "last_commit_hash": "",
                 "data_hash": "",
                 "validators_hash": "",
+                "next_validators_hash": "",
                 "consensus_hash": "",
                 "app_hash": "",
                 "last_results_hash": "",
-                "evidence_hash": ""
+                "evidence_hash": "",
+                "proposer_address": ""
               }
             }
           ]
@@ -725,7 +735,14 @@ _**Writes:**_
             "version": "",
             "channels": "",
             "moniker": "",
-            "other": null
+            "other": {
+              "amino_version": "",
+              "p2p_version": "",
+              "consensus_version": "",
+              "rpc_version": "",
+              "tx_index": "",
+              "rpc_address": ""
+            }
           },
           "sync_info": {
             "latest_block_hash": "",
@@ -876,7 +893,14 @@ _**Writes:**_
             "version": "",
             "channels": "",
             "moniker": "",
-            "other": null
+            "other": {
+              "amino_version": "",
+              "p2p_version": "",
+              "consensus_version": "",
+              "rpc_version": "",
+              "tx_index": "",
+              "rpc_address": ""
+            }
           },
           "sync_info": {
             "latest_block_hash": "",
@@ -981,7 +1005,14 @@ _**Writes:**_
           "version": "",
           "channels": "",
           "moniker": "",
-          "other": null
+          "other": {
+            "amino_version": "",
+            "p2p_version": "",
+            "consensus_version": "",
+            "rpc_version": "",
+            "tx_index": "",
+            "rpc_address": ""
+          }
         }
 ```
 
@@ -1267,10 +1298,10 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         {
-          "target": "ndaanqp9wz5jxgdynttx3chq98ach7a54hgnvfb2tdzdsmup",
-          "ownership": "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3",
+          "target": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt",
+          "ownership": "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y",
           "keys": [
-            "npuba8jadtbbecrs7duz6xz78fd9hz7tempfh4gxzkwwuniumfn2dbje7wxswf8kp3uji2dux7w3"
+            "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y"
           ],
           "script": "",
           "seq": 13579
