@@ -47,6 +47,8 @@ type siglistener struct {
 	sigchan chan os.Signal
 }
 
+// this is a signal listener that will probably get more sophisticated, so
+// I'm leaving some code in it that is commented out.
 func (s *siglistener) watchSignals() {
 	go func() {
 		if s.sigchan == nil {
@@ -57,7 +59,7 @@ func (s *siglistener) watchSignals() {
 			sig := <-s.sigchan
 			switch sig {
 			// case syscall.SIGHUP:
-			// s.Logger.Println("Got refresh request (SIGHUP) -- Refreshing vasco.")
+			// s.Logger.Println("Got refresh request (SIGHUP) -- Refreshing.")
 			// s.Refresh()
 			case syscall.SIGTERM, syscall.SIGINT:
 				// s.Logger.Println("Unregistering before shutting down.")
