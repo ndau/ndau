@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"fmt"
+
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -8,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 // SignableBytes implements Transactable
@@ -42,6 +45,14 @@ func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 
 	if len(tx.PublicKey) == 0 {
 		return errors.New("cvc must have non-empty public key")
+	}
+
+	if len(tx.PublicKey) != ed25519.PubKeyEd25519Size {
+		return fmt.Errorf(
+			"Wrong length for Ed25519 public key: want %d, have %d",
+			ed25519.PubKeyEd25519Size,
+			len(tx.PublicKey),
+		)
 	}
 
 	_, exists, signatures, err := app.getTxAccount(tx)
