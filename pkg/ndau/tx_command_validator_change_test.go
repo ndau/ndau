@@ -94,6 +94,33 @@ func TestCVCPublicKeyMustNotBeEmpty(t *testing.T) {
 	}
 }
 
+func TestCVCPublicKeyMustBeCorrectSize(t *testing.T) {
+	app, assc := initAppCVC(t)
+	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
+	private := privateKeys[0]
+
+	// public keys must be exactly 32 bytes long
+	for i := 30; i < 35; i++ {
+		if i != ed25519.PubKeyEd25519Size {
+			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+				cvc := NewCommandValidatorChange(
+					make([]byte, i),
+					1,
+					1,
+					[]signature.PrivateKey{private},
+				)
+
+				cvcBytes, err := metatx.Marshal(&cvc, TxIDs)
+				require.NoError(t, err)
+
+				resp := app.CheckTx(cvcBytes)
+				t.Log(resp.Log)
+				require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+			})
+		}
+	}
+}
+
 func TestCVCIsInvalidWithInvalidSignature(t *testing.T) {
 	app, _ := initAppCVC(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
