@@ -10,6 +10,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	amino "github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
@@ -35,18 +36,27 @@ func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
 			}
 			orQuit(err)
 
-			pk, err := amino.PubKeyFromBytes(pkb)
-			orQuit(err)
+			if len(pkb) != ed25519.PubKeyEd25519Size {
+				// if we got a straight ed25519 key, just pass it through
+				// chances are good that we got something amino-encoded,
+				// though, so let's try parsing that
 
-			// we'd like to validate the public key length here, but we don't
-			// actually know how long it should be
+				pk, err := amino.PubKeyFromBytes(pkb)
+				orQuit(err)
+
+				pke, ised25519 := pk.(ed25519.PubKeyEd25519)
+				if !ised25519 {
+					orQuit(errors.New("PUBKEY must be of type Ed25519"))
+				}
+				pkb = []byte(pke[:])
+			}
 
 			if *power < 0 {
 				orQuit(errors.New("cvc POWER must be > 0"))
 			}
 
 			if *verbose {
-				fmt.Printf("CommandValidatorChange: PubKey %x Power %d", pk.Bytes(), *power)
+				fmt.Printf("CommandValidatorChange: PubKey %x (%d bytes) Power %d\n", pkb, len(pkb), *power)
 			}
 
 			conf := getConfig()
@@ -57,7 +67,7 @@ func getCVC(verbose *bool, keys *int) func(*cli.Cmd) {
 			fkeys := config.FilterK(conf.CVC.Keys, keys)
 
 			cvc := ndau.NewCommandValidatorChange(
-				pk.Bytes(), int64(*power),
+				pkb, int64(*power),
 				sequence(conf, conf.CVC.Address),
 				fkeys,
 			)
