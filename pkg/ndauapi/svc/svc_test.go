@@ -40,6 +40,7 @@ func TestRouting(t *testing.T) {
 		rt{"GET", "/order/current", "/order/current"},
 		rt{"GET", "/transaction/5469abfed", "/transaction/:txhash"},
 		rt{"POST", "/tx/submit", "/tx/submit"},
+		rt{"GET", "/version", "/version"},
 	}
 
 	cf := cfg.Cfg{}

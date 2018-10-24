@@ -144,7 +144,7 @@ _**Writes:**_
         {
           "balance": 123000000,
           "validationKeys": [
-            "npuba8jadtbbedv5d9xxj78zi44c2pv34yeg33cbsbah7p6z6pdszb2z3asq8ppatew2wscv443y"
+            "npuba8jadtbbeb7bnqxcvmy42nivqe29768uayvd84gcghns6khfatqrctztrrdp7qxvqq9qyszg"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -162,7 +162,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": "ndaq7d7p379vi4ur7m8gkb3r69vi3p2k6khwqnxn44v8s5vh"
+          "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft"
         }
 ```
 
@@ -193,7 +193,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndaq7d7p379vi4ur7m8gkb3r69vi3p2k6khwqnxn44v8s5vh"
+          "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft"
         ]
 ```
 
@@ -208,7 +208,7 @@ _**Writes:**_
             {
               "balance": 123000000,
               "validationKeys": [
-                "npuba8jadtbbedv5d9xxj78zi44c2pv34yeg33cbsbah7p6z6pdszb2z3asq8ppatew2wscv443y"
+                "npuba8jadtbbeb7bnqxcvmy42nivqe29768uayvd84gcghns6khfatqrctztrrdp7qxvqq9qyszg"
               ],
               "rewardsTarget": null,
               "incomingRewardsFrom": null,
@@ -226,7 +226,7 @@ _**Writes:**_
                 "Next": null
               },
               "validationScript": null,
-              "address": "ndaq7d7p379vi4ur7m8gkb3r69vi3p2k6khwqnxn44v8s5vh"
+              "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft"
             }
           ]
         }
@@ -265,7 +265,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndaq7d7p379vi4ur7m8gkb3r69vi3p2k6khwqnxn44v8s5vh",
+            "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -284,7 +284,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndaq7d7p379vi4ur7m8gkb3r69vi3p2k6khwqnxn44v8s5vh",
+            "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft",
             "eairate": 6000000
           }
         ]

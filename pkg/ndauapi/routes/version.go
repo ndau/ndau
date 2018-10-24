@@ -32,6 +32,9 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		version, _, err := tool.Version(node)
+
+		// chnode, err := ws.Node(cf.ChaosAddress)
+
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving version info", err, http.StatusInternalServerError))
 			return
