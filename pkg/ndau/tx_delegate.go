@@ -115,7 +115,7 @@ func (tx *Delegate) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// AppendSignatures implements Signable
-func (tx *Delegate) AppendSignatures(sa []signature.Signature) {
+// ExtendSignatures implements Signable
+func (tx *Delegate) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }

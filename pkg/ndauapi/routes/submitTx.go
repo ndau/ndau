@@ -102,7 +102,7 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 					return
 				}
 			}
-			signable.AppendSignatures(sigs)
+			signable.ExtendSignatures(sigs)
 		}
 
 		// now we have a signed tx, submit it

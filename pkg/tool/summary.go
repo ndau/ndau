@@ -1,10 +1,9 @@
 package tool
 
 import (
+	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
-
-	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
 // GetSummary gets the summary information from the state

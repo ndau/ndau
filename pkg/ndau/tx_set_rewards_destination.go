@@ -129,7 +129,7 @@ func (tx *SetRewardsDestination) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// AppendSignatures implements Signable
-func (tx *SetRewardsDestination) AppendSignatures(sa []signature.Signature) {
+// ExtendSignatures implements Signable
+func (tx *SetRewardsDestination) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }

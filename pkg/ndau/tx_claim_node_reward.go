@@ -8,8 +8,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -226,7 +226,7 @@ func (tx *ClaimNodeReward) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// AppendSignatures implements Signable
-func (tx *ClaimNodeReward) AppendSignatures(sa []signature.Signature) {
+// ExtendSignatures implements Signable
+func (tx *ClaimNodeReward) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }

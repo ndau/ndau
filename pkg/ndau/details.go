@@ -41,7 +41,7 @@ type signeder interface {
 // Signable allows signatures to be added to this TX
 type Signable interface {
 	// append to the list of signatures on this transaction
-	AppendSignatures([]signature.Signature)
+	ExtendSignatures([]signature.Signature)
 }
 
 // NTransactable is a wrapper around metatx.Transactable that allows us to

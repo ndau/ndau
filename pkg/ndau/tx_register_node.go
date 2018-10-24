@@ -110,7 +110,7 @@ func (tx *RegisterNode) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// AppendSignatures implements Signable
-func (tx *RegisterNode) AppendSignatures(sa []signature.Signature) {
+// ExtendSignatures implements Signable
+func (tx *RegisterNode) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }

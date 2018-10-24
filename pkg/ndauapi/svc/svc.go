@@ -204,12 +204,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(rpctypes.ResultABCIInfo{}))
 
-	svc.Route(svc.GET("/node/unconfirmed").To(routes.HandleNumUnconfirmedTxs(cf)).
-		Operation("NodeNumUnconfirmedTransactions").
-		Doc("Returns the number of unconfirmed transactions on the chain.").
-		Produces(JSON).
-		Writes(rpctypes.ResultStatus{}))
-
 	svc.Route(svc.GET("/node/consensus").To(routes.GetDumpConsensusState(cf)).
 		Operation("NodeConsensusState").
 		Doc("Returns the current Tendermint consensus state in JSON").

@@ -97,8 +97,6 @@ Each of these, in turn, has several endpoints within it.
 
 * [NodeABCIInfo](#nodeabciinfo)
 
-* [NodeNumUnconfirmedTransactions](#nodenumunconfirmedtransactions)
-
 * [NodeConsensusState](#nodeconsensusstate)
 
 * [NodeList](#nodelist)
@@ -172,7 +170,7 @@ _**Writes:**_
         {
           "balance": 123000000,
           "validationKeys": [
-            "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y"
+            "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -190,7 +188,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt"
+          "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac"
         }
 ```
 
@@ -221,7 +219,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt"
+          "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac"
         ]
 ```
 
@@ -236,7 +234,7 @@ _**Writes:**_
             {
               "balance": 123000000,
               "validationKeys": [
-                "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y"
+                "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f"
               ],
               "rewardsTarget": null,
               "incomingRewardsFrom": null,
@@ -254,7 +252,7 @@ _**Writes:**_
                 "Next": null
               },
               "validationScript": null,
-              "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt"
+              "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac"
             }
           ]
         }
@@ -293,7 +291,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt",
+            "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -312,7 +310,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt",
+            "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac",
             "eairate": 6000000
           }
         ]
@@ -867,59 +865,6 @@ _**Writes:**_
 
 
 ---
-## NodeNumUnconfirmedTransactions
-
-### `GET /node/unconfirmed`
-
-_Returns the number of unconfirmed transactions on the chain._
-
-
-
-
-
-
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "node_info": {
-            "id": "",
-            "listen_addr": "",
-            "network": "",
-            "version": "",
-            "channels": "",
-            "moniker": "",
-            "other": {
-              "amino_version": "",
-              "p2p_version": "",
-              "consensus_version": "",
-              "rpc_version": "",
-              "tx_index": "",
-              "rpc_address": ""
-            }
-          },
-          "sync_info": {
-            "latest_block_hash": "",
-            "latest_app_hash": "",
-            "latest_block_height": 0,
-            "latest_block_time": "0001-01-01T00:00:00Z",
-            "catching_up": false
-          },
-          "validator_info": {
-            "address": "",
-            "pub_key": null,
-            "voting_power": 0
-          }
-        }
-```
-
-
-
----
 ## NodeConsensusState
 
 ### `GET /node/consensus`
@@ -1298,10 +1243,10 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         {
-          "target": "ndam3r9psa6v8vauzabipkr4rnj6zf6i67t63zgsmtcz4gzt",
-          "ownership": "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y",
+          "target": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac",
+          "ownership": "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f",
           "keys": [
-            "npuba8jadtbbeb9ghu8cta74vcyft2xww9s5bzbi9k9j7w39gucihu7sgeizgs33zk9qfndhba9y"
+            "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f"
           ],
           "script": "",
           "seq": 13579

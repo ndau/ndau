@@ -7,6 +7,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 )
 
 // OrderChainInfo is a single instance of a rate response (it returns an array of them)
@@ -34,14 +35,15 @@ func getOrderChainInfo(cf cfg.Cfg) (OrderChainInfo, error) {
 		MarketPrice:   16.85,
 		TargetPrice:   17.00,
 		FloorPrice:    2.57,
-		EndowmentSold: 2919000 * 100000000,
+		EndowmentSold: 2919000 * constants.NapuPerNdau,
 		TotalNdau:     totalndau,
 		PriceUnits:    "USD",
 	}
 	return info, err
 }
 
-// GetOrderChainData returns a block of information for the
+// GetOrderChainData returns a block of information from the order chain
+// (Although for now it's mocked up to return fake data)
 func GetOrderChainData(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		response, err := getOrderChainInfo(cf)
