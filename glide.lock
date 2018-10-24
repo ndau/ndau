@@ -1,5 +1,5 @@
-hash: cdcc859e5c20426058e3fc2fed13afcc3611196bfcc5a00e90fcc61ae5be0060
-updated: 2018-10-23T13:12:19.918392+02:00
+hash: 72b1870c5d64f57b5faec09a22e4f49009de29b304331c77342ed50973196d10
+updated: 2018-10-24T13:17:32.601267+02:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -186,7 +186,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 38d264bfaf4d73f0549aa4b587f2dedb6415064e
+  version: 78c6dcd5a62384e84b8469d9c3de149a5a25d2f8
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -195,7 +195,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 4f60b392a6b55e89ea2dbf0bffd44d97ef201b64
+  version: c1a25f743f3af93e53f5c007d89e30c3856d2764
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -210,7 +210,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 4b9058bcd7187d0ceee6dafc32acec99f0019a29
+  version: 600a381033a0eecaee87893088344f51721f1039
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -220,6 +220,7 @@ imports:
   - pkg/constants
   - pkg/eai
   - pkg/key
+  - pkg/keyaddr
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
@@ -227,6 +228,7 @@ imports:
   - pkg/signed
   - pkg/types
   - pkg/unsigned
+  - pkg/words
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git

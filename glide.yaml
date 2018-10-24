@@ -21,7 +21,7 @@ import:
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
 - package: github.com/oneiro-ndev/ndaumath
   repo: git@github.com:oneiro-ndev/ndaumath.git
-  version: ~v0.6
+  version: prgn-sign-with-signature-pkg
 - package: github.com/oneiro-ndev/noms-util
   version: master
   repo: git@github.com:oneiro-ndev/noms-util.git
