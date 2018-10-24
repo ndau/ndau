@@ -66,7 +66,7 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
-              sha=${CIRCLE_SHA1: -7}
+              sha=$(git rev-parse --short "$CIRCLE_SHA1")
               sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
               if [ ! -z "$sha_check" ]; then
                 echo "Ndaunode container hash ${sha} already exists. Will not push." >&2
@@ -93,7 +93,7 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
-              sha=${CIRCLE_SHA1: -7}
+              sha=$(git rev-parse --short "$CIRCLE_SHA1")
               sha_check=$(aws ecr describe-images --repository-name ndauapi | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
               if [ ! -z "$sha_check" ]; then
                 echo "Ndauapi container hash ${sha} already exists. Will not push." >&2
@@ -112,11 +112,11 @@ jobs:
               fi
             fi
       - run:
-          name: Redeploy testnet
+          name: Don't redeploy single node testnet. TODO switch to nodegroup upgrade
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" && false]; then
 
-              sha=${CIRCLE_SHA1: -7}
+              sha=$(git rev-parse --short "$CIRCLE_SHA1")
 
               # Clone the automation repo master branch
               git clone git@github.com:oneiro-ndev/automation.git /root/automation
@@ -135,6 +135,5 @@ jobs:
                 /root/automation/testnet/ndau.js \
                   $STARTING_PORT \
                   $NODE_NAMES
-
             fi
 
