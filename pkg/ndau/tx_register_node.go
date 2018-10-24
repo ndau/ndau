@@ -109,3 +109,8 @@ func (tx *RegisterNode) GetSequence() uint64 {
 func (tx *RegisterNode) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
+
+// ExtendSignatures implements Signable
+func (tx *RegisterNode) ExtendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
+}

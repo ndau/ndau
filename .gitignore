@@ -39,3 +39,6 @@ dump_mock
 !*/dump_mock
 load_tool_config
 !*/load_tool_config
+
+# Mac debris
+**/.DS_Store

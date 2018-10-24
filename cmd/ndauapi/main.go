@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/svc"
@@ -22,13 +24,13 @@ Usage
 Environment variables
 
 	Log level. (default: info)
-	[LOG_LEVEL=(error|warn|info|debug)]
+	[NDAUAPI_LOG_LEVEL=(error|warn|info|debug)]
 
 	Port where this API will listen. (default: 3030)
-	[PORT=<3030>]
+	[NDAUAPI_PORT=<3030>]
 
 	Node address.
-	NODE_ADDRESS=<http://your_node_ip:your_rpc_port>
+	NDAUAPI_NODE_ADDRESS=<http://your_node_ip:your_rpc_port>
 
 Flags
 
@@ -36,9 +38,36 @@ Flags
 
 Example
 
-	NODE_ADDRESS=http://127.0.0.1:26658 ./nodeapi [-docs]
+	NDAUAPI_NODE_ADDRESS=http://127.0.0.1:26658 ./ndauapi [-docs]
 
 `)
+}
+
+type siglistener struct {
+	sigchan chan os.Signal
+}
+
+// this is a signal listener that will probably get more sophisticated, so
+// I'm leaving some code in it that is commented out.
+func (s *siglistener) watchSignals() {
+	go func() {
+		if s.sigchan == nil {
+			s.sigchan = make(chan os.Signal, 1)
+		}
+		signal.Notify(s.sigchan, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
+		for {
+			sig := <-s.sigchan
+			switch sig {
+			// case syscall.SIGHUP:
+			// s.Logger.Println("Got refresh request (SIGHUP) -- Refreshing.")
+			// s.Refresh()
+			case syscall.SIGTERM, syscall.SIGINT:
+				// s.Logger.Println("Unregistering before shutting down.")
+				// s.Unregister()
+				os.Exit(0)
+			}
+		}
+	}()
 }
 
 func main() {
@@ -69,5 +98,7 @@ func main() {
 		Addr:    fmt.Sprintf(":%v", cf.Port),
 		Handler: svc.NewLogMux(cf),
 	}
+	sl := &siglistener{}
+	sl.watchSignals()
 	log.Fatal(server.ListenAndServe())
 }

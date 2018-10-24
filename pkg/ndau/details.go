@@ -38,7 +38,16 @@ type signeder interface {
 	GetSignatures() []signature.Signature
 }
 
-type ndauTransactable interface {
+// Signable allows signatures to be added to this TX
+type Signable interface {
+	// append to the list of signatures on this transaction
+	ExtendSignatures([]signature.Signature)
+}
+
+// NTransactable is a wrapper around metatx.Transactable that allows us to
+// manipulate ndau tx specifically. It's a little confusing to just call it
+// Transactable.
+type NTransactable interface {
 	metatx.Transactable
 	sourcer
 	sequencer
@@ -55,7 +64,7 @@ type ndauTransactable interface {
 //       1 of N signature validation passes
 //  - if tx implements withdrawer:
 //       account contains enough available ndau to pay the withdrawal + tx fee
-func (app *App) getTxAccount(tx ndauTransactable) (backing.AccountData, bool, *bitset256.Bitset256, error) {
+func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bitset256.Bitset256, error) {
 	validateScript := func(acct backing.AccountData, sigset *bitset256.Bitset256) error {
 		if len(acct.ValidationScript) > 0 {
 			vm, err := BuildVMForTxValidation(acct.ValidationScript, acct, tx, sigset, app)
@@ -155,7 +164,7 @@ func (app *App) getTxAccount(tx ndauTransactable) (backing.AccountData, bool, *b
 // This function should only be called in Apply implementations; it assumes
 // that all necessary validation (such as occurs in getTxAccount) has already
 // been performed.
-func (app *App) applyTxDetails(tx ndauTransactable) error {
+func (app *App) applyTxDetails(tx NTransactable) error {
 	if tx == nil {
 		return errors.New("nil transactable")
 	}
