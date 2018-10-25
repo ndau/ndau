@@ -197,3 +197,31 @@ func (tx *Transfer) AppendSignature(sig *keyaddr.Signature) error {
 	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
+
+// Hash computes the hash of this transfer
+func (tx *Transfer) Hash() string {
+	if tx == nil {
+		return ""
+	}
+	return metatx.Hash(&tx.tx)
+}
+
+// Name returns the name of this transactable
+func (tx *Transfer) Name() string {
+	if tx == nil {
+		return ""
+	}
+	return metatx.NameOf(&tx.tx)
+}
+
+// TxID returns the transaction id of this transactable
+func (tx *Transfer) TxID() int {
+	if tx == nil {
+		return 0
+	}
+	id, err := metatx.TxIDOf(&tx.tx, ndau.TxIDs)
+	if err != nil {
+		return -1
+	}
+	return int(id)
+}
