@@ -39,6 +39,21 @@ func main() {
 
 	fmt.Printf("Found %d names:\n", len(txNames))
 	for _, n := range txNames {
-		fmt.Println("  ", n)
+		def := generator.FindDefinition(ast, n)
+		found := "not found"
+		if def != nil {
+			found = fmt.Sprintf(
+				"found at [%d:%d]",
+				def.Definition.Pos(),
+				def.Definition.End(),
+			)
+
+			// emit AST of typedef
+			// f, err := os.Create(fmt.Sprintf("%s.ast", n))
+			// check(err)
+			// check(def.Write(f))
+			// f.Close()
+		}
+		fmt.Printf("%25s: %s\n", n, found)
 	}
 }

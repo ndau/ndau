@@ -42,6 +42,13 @@ func (t *DefinitionFinder) Visit(n ast.Node) ast.Visitor {
 				}
 			}
 		}
+	case *ast.TypeSpec:
+		if node.Name.Name == t.Name {
+			t.DefinitionType = fmt.Sprintf("%T", node)
+			t.Definition = node.Type
+			return nil
+		}
+
 	}
 	return t
 }
