@@ -3,14 +3,12 @@ package mobile
 import (
 	"encoding/base64"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
-
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )

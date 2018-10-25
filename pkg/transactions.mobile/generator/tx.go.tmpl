@@ -1,0 +1,193 @@
+package mobile
+
+import (
+	"encoding/base64"
+
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/b32"
+	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/pkg/errors"
+)
+
+// Proof-of-concept: this file is a manual implementation so we can work out
+// design questions, so that we can implement a generator which will emit
+// something similar for each transaction.
+
+// This package provides an interface to the Ndau {{.Name | Lower}} transaction for use in React and in particular react-native.
+// It is built using the gomobile tool, so the API is constrained to particular types of parameters:
+//
+// * string
+// * signed integer and floating point types
+// * []byte
+// * functions with specific restrictions
+// * structs and interfaces consisting of only these types
+//
+// Unfortunately, react-native puts additional requirements that makes []byte particularly
+// challenging to use. So what we are going to do is use a base-64 encoding of []byte to convert
+// it to a string and pass the array of bytes back and forth that way.
+//
+// This is distinct from using base32 encoding (b32) in a signature; that's something we expect
+// to be user-visible, so we're using a specific variant of base 32.
+
+// This package, therefore, consists mainly of wrappers so that we don't have to modify our
+// idiomatic Go code to conform to these requirements.
+
+// {{.Comment}}
+type {{.Name}} struct {
+	tx ndau.{{.Name}}
+}
+
+// New{{.Name}} constructs a new unsigned {{.Name}} transaction
+func New{{.Name}}({{range .Fields}}
+	{{.Name | Lower}} {{.MobileType}},
+{{end}}) (*{{.Name}}, error) {
+	{{range .Fields}}
+	{{if .MobileType | IsPointer}}
+	if {{.Name | Lower}} == nil {
+		return nil, errors.New("{{.Name | Lower}} must not be nil")
+	}
+	{{end}}
+	{{if .NameNative}}
+	{{.NameNative}}{{.ConvertToNative}}
+	{{end}}
+	{{end}}
+
+	return &{{.Name}}{
+		tx: ndau.{{.Name}}{
+			{{range .Fields}}
+			{{.Name}}: {{if .NameNative}}{{.NameNative}}{{else}}{{.ConvertToNative}}{{end}},
+			{{end}}
+		},
+	}, nil
+}
+
+// Parse{{.Name}} parses a string into a {{.Name}}, if possible
+func Parse{{.Name}}(s string) (*{{.Name}}, error) {
+	bytes, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, errors.Wrap(err, "Parse{{.Name}}: b64-decode")
+	}
+	tx, err := metatx.Unmarshal(bytes, ndau.TxIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "Parse{{.Name}}: unmarshal")
+	}
+	trp, isTr := tx.(*ndau.{{.Name}})
+	if !isTr {
+		return nil, errors.New("Parse{{.Name}}: transactable was not {{.Name}}")
+	}
+
+	return &{{.Name}}{tx: *trp}, nil
+}
+
+// ToString produces the b64 encoding of the bytes of the transaction
+func (tx *{{.Name}}) ToString() (string, error) {
+	if tx == nil {
+		return "", errors.New("nil {{.Name | Lower}}")
+	}
+	bytes, err := metatx.Marshal(&tx.tx, ndau.TxIDs)
+	if err != nil {
+		return "", errors.Wrap(err, "{{.Name | Lower}}: marshalling bytes")
+	}
+	return base64.StdEncoding.EncodeToString(bytes), nil
+}
+
+{{ with $txName := .Name}}
+{{range .Fields}}
+{{if .IsSlice}}
+// GetNum{{.Name}} gets the number of {{.Name | Lower}} of the {{$txName}}
+//
+// If tx == nil, returns -1
+func (tx *{{$txName}}) GetNum{{.Name}}() int {
+	if tx == nil {
+		return -1
+	}
+	return len(tx.tx.{{.Name}})
+}
+
+// Get{{.Name | Singular}} gets a particular {{ .Name | Lower | Singular}} from this {{$txName}}
+func (tx *{{$txName}}) Get{{.Name | Singular}}(idx int) (*{{.MobileType | Unslice}}, error) {
+	if tx == nil {
+		return nil, errors.New("nil {{.Name | Lower}}")
+	}
+	if idx < 0 || idx >= len(tx.tx.{{.Name}}) {
+		return nil, errors.New("invalid index")
+	}
+	sigB, err := tx.tx.{{.Name}}[idx].Marshal()
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling signature")
+	}
+
+	return &{{.ConvertToNative}}, nil
+}
+{{else}}
+// Get{{.Name}} gets the {{.Name | Lower}} of the {{$txName}}
+func (tx *{{$txName}}) Get{{.Name}}() {{ .MobileType }} {
+	if tx == nil {
+		return {{if .MobileType | IsPointer}}nil{{else}}{{ .MobileType | Zero}}{{end}}
+	}
+	{{if .NameNative}}
+	{{.NameNative}}{{.ConvertToNative}}
+	{{end}}
+	return {{if .NameNative}}{{.NameNative}}{{else}}{{.ConvertToNative}}{{end}}
+}
+{{end}}
+{{end}}
+{{end}}
+
+// SignableBytes returns the b64 encoding of the signable bytes of this {{.Name | Lower}}
+func (tx *{{.Name}}) SignableBytes() (string, error) {
+	if tx == nil {
+		return "", errors.New("nil {{.Name | Lower}}")
+	}
+	return base64.StdEncoding.EncodeToString(tx.tx.SignableBytes()), nil
+}
+
+// AppendSignature appends a signature to this {{.Name | Lower}}
+func (tx *{{.Name}}) AppendSignature(sig *keyaddr.Signature) error {
+	if sig == nil {
+		return errors.New("sig must not be nil")
+	}
+	sigB, err := b32.Decode(sig.Signature)
+	if err != nil {
+		return errors.Wrap(err, "decoding signature bytes")
+	}
+	sigS := new(signature.Signature)
+	err = sigS.Unmarshal(sigB)
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling signature")
+	}
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
+	return nil
+}
+
+// Hash computes the hash of this {{.Name | Lower}}
+func (tx *{{.Name}}) Hash() string {
+	if tx == nil {
+		return ""
+	}
+	return metatx.Hash(&tx.tx)
+}
+
+// Name returns the name of this transactable
+func (tx *{{.Name}}) Name() string {
+	if tx == nil {
+		return ""
+	}
+	return metatx.NameOf(&tx.tx)
+}
+
+// TxID returns the transaction id of this transactable
+func (tx *{{.Name}}) TxID() int {
+	if tx == nil {
+		return 0
+	}
+	id, err := metatx.TxIDOf(&tx.tx, ndau.TxIDs)
+	if err != nil {
+		return -1
+	}
+	return int(id)
+}
