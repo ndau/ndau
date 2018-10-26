@@ -1,4 +1,4 @@
-package mobile
+package generator
 
 import (
 	"encoding/base64"

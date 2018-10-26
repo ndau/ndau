@@ -63,13 +63,14 @@ func main() {
 
 	// manually construct an example from which to emit the template
 	transfer := generator.Transaction{
-		Name: "Transfer",
+		Name:    "Transfer",
+		Comment: "A Transfer is the fundamental transaction of the Ndau chain.",
 		Fields: []generator.Field{
-			{Name: "Source"},
-			{Name: "Destination"},
-			{Name: "Qty"},
-			{Name: "Sequence"},
-			{Name: "Signatures"},
+			generator.NewField("Source", "address.Address", "*keyaddr.Address").ConvertNativeComplex("address.Validate(%s.Address)").ConvertMobile("keyaddr.Address{Address: %s.String()}"),
+			generator.NewField("Destination", "address.Address", "*keyaddr.Address").ConvertNativeComplex("address.Validate(%s.Address)").ConvertMobile("keyaddr.Address{Address: %s.String()}"),
+			generator.NewField("Qty", "math.Ndau", "int64").ConvertNativeSimple("math.Ndau(%s)").ConvertMobile("int64(%s)"),
+			generator.NewField("Sequence", "uint64", "int64").ConvertNativeSimple("uint64(%s)").ConvertMobile("int64(%s)"),
+			generator.NewField("Signatures", "[]signature.Signature", "[]string").ExcludeFromConstructor(),
 		},
 	}
 

@@ -17,9 +17,9 @@ func isPointer(s string) bool {
 func singular(s string) string {
 	idxLast := len(s) - 1
 	if s[idxLast] == 's' || s[idxLast] == 'S' {
-		idxLast--
+		return s[:idxLast]
 	}
-	return s[:idxLast]
+	return s
 }
 
 func unslice(s string) string {
@@ -45,17 +45,6 @@ func ParseTemplate() (*template.Template, error) {
 		"Unslice":   unslice,
 		"Zero":      zero,
 	}).ParseFiles(path)
-}
-
-// Field stores metadata about a field
-type Field struct {
-	Name string
-}
-
-// Transaction stores metadata about a transaction
-type Transaction struct {
-	Name   string
-	Fields []Field
 }
 
 // ApplyTemplate applies the template to the transaction
