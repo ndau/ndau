@@ -55,5 +55,25 @@ func main() {
 			// f.Close()
 		}
 		fmt.Printf("%25s: %s\n", n, found)
+
 	}
+	tmpl, err := generator.ParseTemplate()
+	check(err)
+	fmt.Println("successfully parsed template")
+
+	// manually construct an example from which to emit the template
+	transfer := generator.Transaction{
+		Name: "Transfer",
+		Fields: []generator.Field{
+			{Name: "Source"},
+			{Name: "Destination"},
+			{Name: "Qty"},
+			{Name: "Sequence"},
+			{Name: "Signatures"},
+		},
+	}
+
+	// now try applying the template
+	check(generator.ApplyTemplate(tmpl, transfer))
+	fmt.Println("successfully applied template")
 }

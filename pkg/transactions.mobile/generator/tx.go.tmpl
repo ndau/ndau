@@ -13,10 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Proof-of-concept: this file is a manual implementation so we can work out
-// design questions, so that we can implement a generator which will emit
-// something similar for each transaction.
-
 // This package provides an interface to the Ndau {{.Name | Lower}} transaction for use in React and in particular react-native.
 // It is built using the gomobile tool, so the API is constrained to particular types of parameters:
 //
@@ -52,14 +48,14 @@ func New{{.Name}}({{range .Fields}}
 	}
 	{{end}}
 	{{if .NameNative}}
-	{{.NameNative}}{{.ConvertToNative}}
+	{{.NameNative}}{{.ConvertToNative .Name}}
 	{{end}}
 	{{end}}
 
 	return &{{.Name}}{
 		tx: ndau.{{.Name}}{
 			{{range .Fields}}
-			{{.Name}}: {{if .NameNative}}{{.NameNative}}{{else}}{{.ConvertToNative}}{{end}},
+			{{.Name}}: {{if .NameNative}}{{.NameNative}}{{else}}{{.ConvertToNative .Name}}{{end}},
 			{{end}}
 		},
 	}, nil
@@ -121,7 +117,7 @@ func (tx *{{$txName}}) Get{{.Name | Singular}}(idx int) (*{{.MobileType | Unslic
 		return nil, errors.Wrap(err, "marshalling signature")
 	}
 
-	return &{{.ConvertToNative}}, nil
+	return &{{.ConvertToMobile .Name}}, nil
 }
 {{else}}
 // Get{{.Name}} gets the {{.Name | Lower}} of the {{$txName}}
@@ -130,9 +126,9 @@ func (tx *{{$txName}}) Get{{.Name}}() {{ .MobileType }} {
 		return {{if .MobileType | IsPointer}}nil{{else}}{{ .MobileType | Zero}}{{end}}
 	}
 	{{if .NameNative}}
-	{{.NameNative}}{{.ConvertToNative}}
+	{{.Name}}{{.ConvertToMobile .NameNative}}
 	{{end}}
-	return {{if .NameNative}}{{.NameNative}}{{else}}{{.ConvertToNative}}{{end}}
+	return {{if .NameNative}}{{.Name}}{{else}}{{.ConvertToMobile .Name}}{{end}}
 }
 {{end}}
 {{end}}
