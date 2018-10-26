@@ -18,7 +18,7 @@ const (
 type Cfg struct {
 	LogLevel     string // LogLevel is translated into a constant value from logrus.
 	NodeAddress  string // NodeAddress is the Tendermint IP and RPC port of the ndau node.
-	ChaosAddress string // ChaosAddress is the TM IP and RPC port of the chaos node.
+	ChaosAddress string // ChaosAddress is the Tendermint IP and RPC port of the chaos node.
 	Port         int    // Port is which port to listen for connections.
 }
 

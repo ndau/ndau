@@ -83,9 +83,13 @@ Each of these, in turn, has several endpoints within it.
 
 * [BlockRange](#blockrange)
 
-* [ChaosSystemNames](#chaossystemnames)
+* [ChaosSystemAll](#chaossystemall)
 
 * [ChaosSystemKey](#chaossystemkey)
+
+* [ChaosNamespaceAll](#chaosnamespaceall)
+
+* [ChaosNamespaceKey](#chaosnamespacekey)
 
 * [ChaosHistoryKey](#chaoshistorykey)
 
@@ -144,7 +148,7 @@ _**Writes:**_
         {
           "balance": 123000000,
           "validationKeys": [
-            "npuba8jadtbbeb7bnqxcvmy42nivqe29768uayvd84gcghns6khfatqrctztrrdp7qxvqq9qyszg"
+            "npuba8jadtbbecf5t7aqcht2hq3nafznav5f2sfqd9ssyv8ggv444673ithmqa4b9krex7zkcybp"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -162,7 +166,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft"
+          "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip"
         }
 ```
 
@@ -193,7 +197,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft"
+          "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip"
         ]
 ```
 
@@ -208,7 +212,7 @@ _**Writes:**_
             {
               "balance": 123000000,
               "validationKeys": [
-                "npuba8jadtbbeb7bnqxcvmy42nivqe29768uayvd84gcghns6khfatqrctztrrdp7qxvqq9qyszg"
+                "npuba8jadtbbecf5t7aqcht2hq3nafznav5f2sfqd9ssyv8ggv444673ithmqa4b9krex7zkcybp"
               ],
               "rewardsTarget": null,
               "incomingRewardsFrom": null,
@@ -226,7 +230,7 @@ _**Writes:**_
                 "Next": null
               },
               "validationScript": null,
-              "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft"
+              "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip"
             }
           ]
         }
@@ -265,7 +269,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft",
+            "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -284,7 +288,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndaq4m67mrv5gmwmnn2bmr86c7av9h9ehwf956wut3q258ft",
+            "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip",
             "eairate": 6000000
           }
         ]
@@ -682,11 +686,11 @@ _**Writes:**_
 
 
 ---
-## ChaosSystemNames
+## ChaosSystemAll
 
-### `GET /chaos/system/names`
+### `GET /chaos/system/all`
 
-_Returns all current named system variables on the chaos chain._
+_Returns the names and current values of all currently-defined system variables on the chaos chain._
 
 
 
@@ -710,7 +714,7 @@ _**Writes:**_
 
 ### `GET /chaos/system/:key`
 
-_Returns the current value of a system variable from the chaos chain._
+_Returns the current value of a single system variable from the chaos chain._
 
 
 
@@ -720,6 +724,62 @@ _**Parameters:**_
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  key | Path | Name of the system variable. | string
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        ""
+```
+
+
+
+---
+## ChaosNamespaceAll
+
+### `GET /chaos/:namespace/all`
+
+_Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain._
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        ""
+```
+
+
+
+---
+## ChaosNamespaceKey
+
+### `GET /chaos/:namespace/:key`
+
+_Returns the current value of a single namespaced variable from the chaos chain._
+
+
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ namespace | Path | Key for the namespace. | string
+ key | Path | Name of the variable. | string
 
 
 

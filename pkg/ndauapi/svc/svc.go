@@ -158,20 +158,34 @@ func New(cf cfg.Cfg) *boneful.Service {
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
-	svc.Route(svc.GET("/chaos/system/names").To(routes.HandleBlockRange(cf)).
-		Operation("ChaosSystemNames").
-		Doc("Returns all current named system variables on the chaos chain.").
+	svc.Route(svc.GET("/chaos/system/all").To(routes.HandleChaosSystemAll(cf)).
+		Operation("ChaosSystemAll").
+		Doc("Returns the names and current values of all currently-defined system variables on the chaos chain.").
 		Produces(JSON).
 		Writes(""))
 
-	svc.Route(svc.GET("/chaos/system/:key").To(routes.HandleBlockRange(cf)).
+	svc.Route(svc.GET("/chaos/system/:key").To(routes.HandleChaosSystemKey(cf)).
 		Operation("ChaosSystemKey").
-		Doc("Returns the current value of a system variable from the chaos chain.").
+		Doc("Returns the current value of a single system variable from the chaos chain.").
 		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 
-	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleBlockRange(cf)).
+	svc.Route(svc.GET("/chaos/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
+		Operation("ChaosNamespaceAll").
+		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
+		Produces(JSON).
+		Writes(""))
+
+	svc.Route(svc.GET("/chaos/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
+		Operation("ChaosNamespaceKey").
+		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
+		Param(boneful.PathParameter("namespace", "Key for the namespace.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(""))
+
+	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleChaosHistory(cf)).
 		Operation("ChaosHistoryKey").
 		Doc("Returns the history of changes to a value of a chaos chain system variable.").
 		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
