@@ -52,7 +52,7 @@ func New{{.Name}}({{range .Fields}}{{if not .ConstructorExcluded}}
 	{{- if .FallibleNativeConversion -}}
 	{{.NameNative}}{{.AssignmentStmt}}{{.ConvertToNative}}
 	{{.AssignmentErrHandler}}
-	{{- end}}
+	{{end}}
 	{{- end}}
 	return &{{.Name}}{
 		tx: ndau.{{.Name}}{
@@ -94,7 +94,7 @@ func (tx *{{.Name}}) ToString() (string, error) {
 }
 
 {{range  $field := .Fields}}
-{{if .IsSlice}}
+{{if .IsSlice -}}
 // GetNum{{$field.Name}} gets the number of {{$field.Name | Lower}} of the {{$.Name}}
 //
 // If tx == nil, returns -1
@@ -122,15 +122,15 @@ func (tx *{{$.Name}}) Get{{.Name | Singular}}(idx int) ({{.MobileType | Unslice}
 }
 {{else}}
 // Get{{$field.Name}} gets the {{$field.Name | Lower}} of the {{$.Name}}
-func (tx *{{$.Name}}) Get{{$field.Name}}() {{ .MobileType }} {
+func (tx *{{$.Name}}) Get{{$field.Name}}() {{if not (.MobileType | IsPointer)}}*{{end}}{{ .MobileType }} {
 	if tx == nil {
-		return {{if .MobileType | IsPointer}}nil{{else}}{{ .MobileType | Zero}}{{end}}
+		return nil
 	}
 	{{.Name | Lower}} := {{.ConvertToMobile}}
-	return {{if .MobileType | IsPointer}}&{{end}}{{.Name | Lower}}
+	return &{{.Name | Lower}}
 }
-{{end}}
-{{end}}
+{{- end}}
+{{- end}}
 
 // SignableBytes returns the b64 encoding of the signable bytes of this {{.Name | Lower}}
 func (tx *{{.Name}}) SignableBytes() (string, error) {

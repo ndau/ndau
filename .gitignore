@@ -33,6 +33,9 @@ github_chaos_deploy
 # Editor customization
 .vscode/
 
+# Apple chaff
+.DS_Store
+
 # Ignore the executable output of go build, but not the actual folder
 ndau
 !*/ndau
