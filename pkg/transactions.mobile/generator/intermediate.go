@@ -16,7 +16,6 @@ type Field struct {
 	FallibleNativeConversion bool
 	ConvertToMobile          string
 	ConstructorExcluded      bool
-	AssignmentErrHandler     string
 }
 
 // NewField creates a new Field struct
@@ -65,9 +64,16 @@ func (f Field) ConvertNativeSimple(conversion string) Field {
 // Error handling is inserted automatically.
 func (f Field) ConvertNativeComplex(conversion string) Field {
 	f.ConvertToNative = fmt.Sprintf(conversion, strings.ToLower(f.Name))
-	f.AssignmentErrHandler = fmt.Sprintf("if err != nil { return nil, errors.Wrap(err, \"%s\") }\n", strings.ToLower(f.Name))
 	f.FallibleNativeConversion = true
 	return f
+}
+
+// AssignmentErrHandler is the err handler for fallible conversions as appropriate
+func (f Field) AssignmentErrHandler() string {
+	if f.FallibleNativeConversion {
+		return fmt.Sprintf("if err != nil { return nil, errors.Wrap(err, \"%s\") }\n", strings.ToLower(f.Name))
+	}
+	return ""
 }
 
 // ConvertMobile adds mobile conversion
