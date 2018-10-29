@@ -1,5 +1,8 @@
 package mobile
 
+// generated with github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator
+// DO NOT EDIT
+
 import (
 	"encoding/base64"
 
@@ -13,11 +16,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// This package provides an interface to the Ndau {{.Name | Lower}} transaction
+// This file provides an interface to the Ndau {{.Name | Lower}} transaction
 // for use in React and in particular react-native.
 //
-// It is built using the gomobile tool, so the API is constrained to particular
-// types of parameters:
+// It is meant to be built using the gomobile tool, so the API is constrained
+// to particular types of parameters:
 //
 // * string
 // * signed integer and floating point types
@@ -115,10 +118,10 @@ func (tx *{{$.Name}}) GetNum{{.Name}}() int {
 // Get{{$field.Name | Singular}} gets a particular {{ $field.Name | Lower | Singular}} from this {{$.Name}}
 func (tx *{{$.Name}}) Get{{.Name | Singular}}(idx int) ({{if not (.MobileType | Unslice | IsPointer)}}*{{end}}{{.MobileType | Unslice}}, error) {
 	if tx == nil {
-		return {{.MobileType | Unslice | Zero}}, errors.New("nil {{$.Name | Lower}}")
+		return nil, errors.New("nil {{$.Name | Lower}}")
 	}
 	if idx < 0 || idx >= len(tx.tx.{{.Name}}) {
-		return {{.MobileType | Unslice | Zero}}, errors.New("invalid index")
+		return nil, errors.New("invalid index")
 	}
 	{{.Name | Lower | Singular}}{{.AssignmentStmt .FallibleMobileConversion false }}{{call .ConvertToMobile (printf "tx.tx.%s[idx]" .Name)}}
 	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler}}{{end}}
@@ -135,7 +138,6 @@ func (tx *{{$.Name}}) Get{{$field.Name}}() {{if not (.MobileType | IsPointer)}}*
 	}
 	{{.Name | Lower}}{{.AssignmentStmt .FallibleMobileConversion false }}{{call .ConvertToMobile (printf "tx.tx.%s" .Name)}}
 	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler}}{{end}}
-	{{.Name | Lower}} = {{ .MobileType | Dereferenced }}({{.Name | Lower}})
 	return &{{.Name | Lower}}
 }
 {{- end}}
