@@ -43,21 +43,28 @@ type {{.Name}} struct {
 func New{{.Name}}({{range .Fields}}{{if not .ConstructorExcluded}}
 	{{.Name | Lower}} {{.MobileType}},{{end}}{{end}}
 ) (*{{.Name}}, error) {
-	{{range .Fields -}}
-	{{- if .MobileType | IsPointer -}}
+	{{- range .Fields }}
+	{{- if not .ConstructorExcluded }}
+	{{- if .MobileType | IsPointer }}
 	if {{.Name | Lower}} == nil {
 		return nil, errors.New("{{.Name | Lower}} must not be nil")
 	}
 	{{end}}
 	{{- if .FallibleNativeConversion -}}
-	{{.NameNative}}{{.AssignmentStmt}}{{.ConvertToNative}}
+	{{- if .PreCreateNative -}}
+	{{.NameNative}} := new({{.Type | Dereferenced}})
+	err := {{.NameNative}}.{{call .ConvertToNative (.Name | Lower)}}
+	{{- else -}}
+	{{.NameNative}}{{.AssignmentStmt .FallibleNativeConversion .PreCreateNative }}{{call .ConvertToNative (.Name | Lower)}}
+	{{- end}}
 	{{.AssignmentErrHandler}}
 	{{end}}
 	{{- end}}
+	{{- end}}
 	return &{{.Name}}{
 		tx: ndau.{{.Name}}{
-			{{range .Fields}}{{if not .ConstructorExcluded}}
-			{{.Name}}: {{if .FallibleNativeConversion}}{{.NameNative}}{{else}}{{.ConvertToNative}}{{end}},
+			{{- range .Fields}}{{if not .ConstructorExcluded}}
+			{{.Name}}: {{if .FallibleNativeConversion}}{{.NameNative}}{{else}}{{call .ConvertToNative (.Name | Lower)}}{{end}},
 			{{- end}}{{end}}
 		},
 	}, nil
@@ -94,7 +101,7 @@ func (tx *{{.Name}}) ToString() (string, error) {
 }
 
 {{range  $field := .Fields}}
-{{if .IsSlice -}}
+{{if .Type | IsSlice }}
 // GetNum{{$field.Name}} gets the number of {{$field.Name | Lower}} of the {{$.Name}}
 //
 // If tx == nil, returns -1
@@ -106,27 +113,29 @@ func (tx *{{$.Name}}) GetNum{{.Name}}() int {
 }
 
 // Get{{$field.Name | Singular}} gets a particular {{ $field.Name | Lower | Singular}} from this {{$.Name}}
-func (tx *{{$.Name}}) Get{{.Name | Singular}}(idx int) ({{.MobileType | Unslice}}, error) {
+func (tx *{{$.Name}}) Get{{.Name | Singular}}(idx int) ({{if not (.MobileType | Unslice | IsPointer)}}*{{end}}{{.MobileType | Unslice}}, error) {
 	if tx == nil {
 		return {{.MobileType | Unslice | Zero}}, errors.New("nil {{$.Name | Lower}}")
 	}
 	if idx < 0 || idx >= len(tx.tx.{{.Name}}) {
 		return {{.MobileType | Unslice | Zero}}, errors.New("invalid index")
 	}
-	bytes, err := tx.tx.{{.Name}}[idx].Marshal()
-	if err != nil {
-		return {{.MobileType | Unslice | Zero}}, errors.Wrap(err, "marshalling signature")
-	}
-
-	return base64.StdEncoding.EncodeToString(bytes), nil
+	{{.Name | Lower | Singular}}{{.AssignmentStmt .FallibleMobileConversion false }}{{call .ConvertToMobile (printf "tx.tx.%s[idx]" .Name)}}
+	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler}}{{end}}
+	return {{if not (.MobileType | IsPointer)}}&{{end}}{{.Name | Lower | Singular}}, nil
 }
 {{else}}
 // Get{{$field.Name}} gets the {{$field.Name | Lower}} of the {{$.Name}}
+//
+// Returns `nil` if {{$.Name}} is `nil` or if native conversion is fallible and
+// conversion failed.
 func (tx *{{$.Name}}) Get{{$field.Name}}() {{if not (.MobileType | IsPointer)}}*{{end}}{{ .MobileType }} {
 	if tx == nil {
 		return nil
 	}
-	{{.Name | Lower}} := {{.ConvertToMobile}}
+	{{.Name | Lower}}{{.AssignmentStmt .FallibleMobileConversion false }}{{call .ConvertToMobile (printf "tx.tx.%s" .Name)}}
+	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler}}{{end}}
+	{{.Name | Lower}} = {{ .MobileType | Dereferenced }}({{.Name | Lower}})
 	return &{{.Name | Lower}}
 }
 {{- end}}
@@ -175,9 +184,11 @@ func (tx *{{.Name}}) Name() string {
 }
 
 // TxID returns the transaction id of this transactable
+//
+// Returns -2 if the transactable is nil, or -1 if the transactable is unknown.
 func (tx *{{.Name}}) TxID() int {
 	if tx == nil {
-		return 0
+		return -2
 	}
 	id, err := metatx.TxIDOf(&tx.tx, ndau.TxIDs)
 	if err != nil {

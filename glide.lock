@@ -1,5 +1,5 @@
 hash: 72b1870c5d64f57b5faec09a22e4f49009de29b304331c77342ed50973196d10
-updated: 2018-10-24T13:17:32.601267+02:00
+updated: 2018-10-29T13:26:25.02566+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -210,7 +210,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 600a381033a0eecaee87893088344f51721f1039
+  version: 174709819bbedc96f23955650ae0eaf0564fdcd0
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -281,7 +281,7 @@ imports:
 - name: github.com/rcrowley/go-metrics
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
-  version: 8ccf5352a842c034b1a69f28c863aff9b1cdb116
+  version: b2ce2384e17bbe0c6d34077efa39dbab3e09123b
 - name: github.com/sigurn/crc16
   version: da416fad5162ac0f3338ba24dccdb26e4da22485
 - name: github.com/sigurn/utils
@@ -418,6 +418,10 @@ imports:
   - transform
   - unicode/bidi
   - unicode/norm
+- name: golang.org/x/tools
+  version: f60e5f99f0816fc2d9ecb338008ea420248d2943
+  subpackages:
+  - go/ast/astutil
 - name: google.golang.org/genproto
   version: af9cb2a35e7f169ec875002c1829c9b315cddc04
   subpackages:

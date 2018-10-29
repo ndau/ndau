@@ -66,11 +66,11 @@ func main() {
 		Name:    "Transfer",
 		Comment: "A Transfer is the fundamental transaction of the Ndau chain.",
 		Fields: []generator.Field{
-			generator.NewField("Source", "address.Address", "*keyaddr.Address").ConvertNativeComplex("address.Validate(%s.Address)").ConvertMobile("keyaddr.Address{Address: %s.String()}"),
-			generator.NewField("Destination", "address.Address", "*keyaddr.Address").ConvertNativeComplex("address.Validate(%s.Address)").ConvertMobile("keyaddr.Address{Address: %s.String()}"),
-			generator.NewField("Qty", "math.Ndau", "int64").ConvertNativeSimple("math.Ndau(%s)").ConvertMobile("int64(%s)"),
-			generator.NewField("Sequence", "uint64", "int64").ConvertNativeSimple("uint64(%s)").ConvertMobile("int64(%s)"),
-			generator.NewField("Signatures", "[]signature.Signature", "[]string").ExcludeFromConstructor(),
+			generator.NewField("Source", "address.Address"),
+			generator.NewField("Destination", "address.Address"),
+			generator.NewField("Qty", "math.Ndau"),
+			generator.NewField("Sequence", "uint64"),
+			generator.NewField("Signatures", "[]signature.Signature"),
 		},
 	}
 

@@ -10,8 +10,19 @@ import (
 
 const templateName = "tx.go"
 
+func dereferenced(s string) string {
+	for isPointer(s) {
+		s = s[1:]
+	}
+	return s
+}
+
 func isPointer(s string) bool {
 	return strings.HasPrefix(s, "*")
+}
+
+func isSlice(s string) bool {
+	return strings.HasPrefix(s, "[]")
 }
 
 func singular(s string) string {
@@ -39,11 +50,13 @@ func ParseTemplate() (*template.Template, error) {
 	path := os.ExpandEnv(TemplatePath)
 
 	return template.New(templateName).Funcs(template.FuncMap{
-		"Lower":     strings.ToLower,
-		"IsPointer": isPointer,
-		"Singular":  singular,
-		"Unslice":   unslice,
-		"Zero":      zero,
+		"Dereferenced": dereferenced,
+		"IsPointer":    isPointer,
+		"IsSlice":      isSlice,
+		"Lower":        strings.ToLower,
+		"Singular":     singular,
+		"Unslice":      unslice,
+		"Zero":         zero,
 	}).ParseFiles(path)
 }
 

@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"strings"
 )
 
 // this file contains helpers used to map native to mobile-compatible types
@@ -11,59 +10,80 @@ import (
 //
 //     bat pkg/ndau/transactions.go | rg -vF '//' | rg -v '^\}?$' | rg -vF type | rg -vF 'var _' | tr -s '\t' ' ' | cut -d' ' -f3 | sort -u
 //
-// which produces some chaff, and then:
-//
-//     []byte
-//     []signature.PublicKey
-//     []signature.Signature
-//     address.Address
-//     int64
-//     math.Duration
-//     math.Ndau
-//     signature.PublicKey
-//     signature.Signature
-//     string
-//     uint64
+// which produces some chaff, and then the types implemented below:
+
+func nothing(s string) string { return s }
 
 func (f *Field) fillFieldFromType() error {
-	flname := strings.ToLower(f.Name)
-	switch f.Type {
-	case "[]byte":
-		f.MobileType = "string"
-		f.ConvertToMobile = fmt.Sprintf(
-			"base64.StdEncoding.EncodeToString(tx.tx.%s)",
-			f.Name,
-		)
-		f.ConvertToNative = fmt.Sprintf(
-			"base64.StdEncoding.DecodeString(%s)",
-			flname,
-		)
-		f.FallibleNativeConversion = true
+	f.ConvertToMobile = nothing
+	f.ConvertToNative = nothing
 
-	case "[]signature.PublicKey":
-		return fmt.Errorf("%s unimplemented", f.Type)
-	case "[]signature.Signature":
-		return fmt.Errorf("%s unimplemented", f.Type)
-	case "address.Address":
+	switch f.Type {
+	case "string":
 		f.MobileType = "string"
-		f.ConvertToMobile = fmt.Sprintf(
-			"keyaddr.Address{Address: tx.tx.%s.String()}",
-			f.Name,
-		)
-		f.ConvertToNative = fmt.Sprintf(
-			"address.Validate(%s.Address)",
-			flname,
-		)
-		f.FallibleNativeConversion = true
+
 	case "int64", "uint64", "math.Ndau", "math.Duration":
 		f.MobileType = "int64"
-		f.ConvertToMobile = fmt.Sprintf("int64(tx.tx.%s)", f.Name)
-		f.ConvertToNative = fmt.Sprintf("%s(%s)", f.Type, flname)
-	case "signature.PublicKey":
+		f.ConvertToMobile = func(s string) string { return fmt.Sprintf("int64(%s)", s) }
+		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s(%s)", f.Type, s) }
 
-	case "signature.Signature":
+	case "[]byte":
+		f.MobileType = "string"
+		f.ConvertToMobile = func(s string) string {
+			return fmt.Sprintf(
+				"base64.StdEncoding.EncodeToString(%s)",
+				s,
+			)
+		}
+		f.ConvertToNative = func(s string) string {
+			return fmt.Sprintf(
+				"base64.StdEncoding.DecodeString(%s)",
+				s,
+			)
+		}
+		f.FallibleNativeConversion = true
 
-	case "string":
+	case "address.Address":
+		f.MobileType = "*keyaddr.Address"
+		f.ConvertToMobile = func(s string) string {
+			return fmt.Sprintf(
+				"keyaddr.Address{Address: %s.String()}",
+				s,
+			)
+		}
+		f.ConvertToNative = func(s string) string {
+			return fmt.Sprintf(
+				"address.Validate(%s.Address)",
+				s,
+			)
+		}
+		f.FallibleNativeConversion = true
+
+	case "signature.PublicKey", "[]signature.PublicKey":
+		f.MobileType = "*keyaddr.Key"
+		f.ConvertToMobile = func(s string) string {
+			return fmt.Sprintf(
+				"keyaddr.KeyFromPublic(%s)",
+				s,
+			)
+		}
+		f.FallibleMobileConversion = true
+
+		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s.ToPublicKey()", s) }
+		f.FallibleNativeConversion = true
+
+	case "signature.Signature", "[]signature.Signature":
+		f.MobileType = "*keyaddr.Signature"
+		f.ConvertToMobile = func(s string) string {
+			return fmt.Sprintf(
+				"keyaddr.SignatureFrom(%s)",
+				s,
+			)
+		}
+		f.FallibleMobileConversion = true
+
+		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s.ToSignature()", s) }
+		f.FallibleNativeConversion = true
 
 	default:
 		return fmt.Errorf("unknown type: %s", f.Type)
