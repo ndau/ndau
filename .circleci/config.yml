@@ -3,20 +3,22 @@ jobs:
   build:
     working_directory: /app
     docker:
-      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.4
+      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.5
     environment:
       # Used for ECR
       AWS_DEFAULT_REGION: us-east-1
       # ECR's
       ECR_ENDPOINT: 578681496768.dkr.ecr.us-east-1.amazonaws.com
       # Bump these versions, and commit to master to upload a new version to ECR
-      TM_CONTAINER_VERSION: 0.0.2
       NOMS_CONTAINER_VERSION: 0.0.1
-      STARTING_PORT: "31000"
+      STARTING_PORT: "30050"
       ELB_SUBDOMAIN: api.ndau.tech # nodes will be accessible from mario.api.ndau.tech
       # These node names are removed first before new ones are installed.
       # If these names change, the old names will have to be removed manually.
-      NODE_NAMES: "mario luigi"
+      NODE_NAMES: "devnet-0 devnet-1"
+      RELEASE_NAME: "devnet"
+      # Number of nodes to deploy
+      NODE_NUM: "2"
     steps:
       - add_ssh_keys:
           fingerprints:
@@ -112,11 +114,47 @@ jobs:
               fi
             fi
       - run:
-          name: Don't redeploy single node testnet. TODO switch to nodegroup upgrade
+          name: Build and push Tendermint
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" && false]; then
+            # Only run on master
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # grab TM version from Docker file
+              git clone git@github.com:oneiro-ndev/chaos.git /root/chaos
 
-              sha=$(git rev-parse --short "$CIRCLE_SHA1")
+              TM_CONTAINER_VERSION=$(grep -e 'TM_VERSION_TAG' /root/chaos/tm-docker/Dockerfile -m 1 | cut -f3 -d ' ')
+              version_check=$(aws ecr describe-images --repository-name tendermint | jq ".imageDetails[].imageTags[]? | select (. == \"${TM_CONTAINER_VERSION}\")")
+              # only push if we have a different version.
+              if [ ! -z "$version_check" ]; then
+                echo "Tendermint container version ${TM_CONTAINER_VERSION} already exists. Will not push." >&2
+              else
+                docker build -t "${ECR_ENDPOINT}/tendermint:${TM_CONTAINER_VERSION}" /root/chaos/tm-docker
+                docker push "${ECR_ENDPOINT}/tendermint:${TM_CONTAINER_VERSION}"
+                echo "Pushed Tendermint container version ${TM_CONTAINER_VERSION}." >&2
+              fi
+            fi
+      - run:
+          name: Build and push Noms
+          command: |
+            # Only run on master
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              version_check=$(aws ecr describe-images --repository-name noms | jq ".imageDetails[].imageTags[]? | select (. == \"${NOMS_CONTAINER_VERSION}\")")
+              # only push if we have a different version.
+              if [ ! -z "$version_check" ]; then
+                echo "Noms container version ${NOMS_CONTAINER_VERSION} already exists. Will not push." >&2
+              else
+                docker build -t "${ECR_ENDPOINT}/noms:${NOMS_CONTAINER_VERSION}" /root/chaos/noms-docker
+                docker push "${ECR_ENDPOINT}/noms:${NOMS_CONTAINER_VERSION}"
+                echo "Pushed Noms container version ${NOMS_CONTAINER_VERSION}." >&2
+              fi
+            fi
+      - run:
+          name: Redeploy nodegroup testnet
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # get current container versions
+              TM_CONTAINER_VERSION=$(grep -e 'TM_VERSION_TAG' /root/chaos/tm-docker/Dockerfile -m 1 | cut -f3 -d ' ')
+              NDAU_CONTAINER_VERSION=$(git rev-parse --short "$CIRCLE_SHA1")
+              CHAOS_CONTAINER_VERSION=$(git rev-parse --short `git ls-remote git@github.com:oneiro-ndev/chaos.git master | cut -f1`)
 
               # Clone the automation repo master branch
               git clone git@github.com:oneiro-ndev/automation.git /root/automation
@@ -126,14 +164,18 @@ jobs:
                 helm del --purge $NODE_NAMES --tls ||\
                   echo "Releases: $NODE_NAMES could not be deleted" >&2
 
+              cd /root/automation/testnet
+
               # create new multinode test net
               KUBECONFIG=/root/kubeconfig \
-              NOMS_VERSION=$NOMS_CONTAINER_VERSION \
-              TM_VERSION=$TM_CONTAINER_VERSION \
-              ELB_SUBDOMAIN=$ELB_SUBDOMAIN \
-              VERSION_TAG=$sha  \
-                /root/automation/testnet/ndau.js \
-                  $STARTING_PORT \
-                  $NODE_NAMES
+              CHAOS_NOMS_TAG=$NOMS_CONTAINER_VERSION \
+              CHAOS_TM_TAG=$TM_CONTAINER_VERSION \
+              CHAOSNODE_TAG=$CHAOS_CONTAINER_VERSION \
+              NDAU_NOMS_TAG=$NOMS_CONTAINER_VERSION \
+              NDAU_TM_TAG=$TM_CONTAINER_VERSION \
+              NDAUNODE_TAG=$NDAU_CONTAINER_VERSION \
+              RELEASE=$RELEASE_NAME ELB_SUBDOMAIN=$ELB_SUBDOMAIN \
+                ./gen_node_groups.py $NODE_NUM $STARTING_PORT
+
             fi
 
