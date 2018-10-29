@@ -1,11 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator"
+	"github.com/pkg/errors"
 )
 
 func check(err error) {
@@ -37,8 +37,13 @@ func main() {
 	txNames, err := generator.GetTxNames(txIDs.Definition)
 	check(err)
 
+	tmpl, err := generator.ParseTemplate()
+	check(err)
+	fmt.Println("successfully parsed template")
+
 	fmt.Printf("Found %d names:\n", len(txNames))
 	for _, n := range txNames {
+		fmt.Printf("%25s: ", n)
 		def := generator.FindDefinition(ast, n)
 		found := "not found"
 		if def != nil {
@@ -47,34 +52,22 @@ func main() {
 				def.Definition.Pos(),
 				def.Definition.End(),
 			)
+		}
+		fmt.Print(found)
 
+		if def != nil {
 			// emit AST of typedef
 			// f, err := os.Create(fmt.Sprintf("%s.ast", n))
 			// check(err)
 			// check(def.Write(f))
 			// f.Close()
+
+			fmt.Print("...")
+			transaction, err := generator.ParseTransaction(n, def.Definition)
+			err = errors.Wrap(err, fmt.Sprintf("parsing %s tx", n))
+			check(err)
+			check(generator.ApplyTemplate(tmpl, transaction))
+			fmt.Println(" DONE")
 		}
-		fmt.Printf("%25s: %s\n", n, found)
-
 	}
-	tmpl, err := generator.ParseTemplate()
-	check(err)
-	fmt.Println("successfully parsed template")
-
-	// manually construct an example from which to emit the template
-	transfer := generator.Transaction{
-		Name:    "Transfer",
-		Comment: "A Transfer is the fundamental transaction of the Ndau chain.",
-		Fields: []generator.Field{
-			generator.NewField("Source", "address.Address"),
-			generator.NewField("Destination", "address.Address"),
-			generator.NewField("Qty", "math.Ndau"),
-			generator.NewField("Sequence", "uint64"),
-			generator.NewField("Signatures", "[]signature.Signature"),
-		},
-	}
-
-	// now try applying the template
-	check(generator.ApplyTemplate(tmpl, transfer))
-	fmt.Println("successfully applied template")
 }

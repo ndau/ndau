@@ -68,6 +68,7 @@ func (f *Field) fillFieldFromType() error {
 			)
 		}
 		f.FallibleMobileConversion = true
+		f.PointerMobileConversion = true
 
 		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s.ToPublicKey()", s) }
 		f.FallibleNativeConversion = true
@@ -81,6 +82,7 @@ func (f *Field) fillFieldFromType() error {
 			)
 		}
 		f.FallibleMobileConversion = true
+		f.PointerMobileConversion = true
 
 		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s.ToSignature()", s) }
 		f.FallibleNativeConversion = true

@@ -15,6 +15,7 @@ type Field struct {
 	PreCreateNative          bool
 	ConvertToMobile          func(string) string
 	FallibleMobileConversion bool
+	PointerMobileConversion  bool
 	ConstructorExcluded      bool
 }
 
@@ -25,7 +26,7 @@ func NewField(name, nativeType string) Field {
 		Type: nativeType,
 	}
 	f.fillFieldFromType()
-	if name == "Signatures" {
+	if name == "Signatures" || name == "Signature" {
 		f.ConstructorExcluded = true
 	}
 	return f
@@ -62,9 +63,27 @@ func (f Field) AssignmentStmt(fallible, precreate bool) string {
 	return fmt.Sprintf(" %s ", operator)
 }
 
+// MobileTypeS generates a slicy mobile type when appropriate
+func (f Field) MobileTypeS() string {
+	if isSlice(f.Type) {
+		return "[]" + f.MobileType
+	}
+	return f.MobileType
+}
+
 // Transaction stores metadata about a transaction
 type Transaction struct {
 	Name    string
 	Comment string
 	Fields  []Field
+}
+
+// HasField is true if the transaction has a field with the specified name
+func (t Transaction) HasField(name string) bool {
+	for _, f := range t.Fields {
+		if f.Name == name {
+			return true
+		}
+	}
+	return false
 }

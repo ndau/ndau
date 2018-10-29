@@ -22,6 +22,10 @@ func isPointer(s string) bool {
 }
 
 func isSlice(s string) bool {
+	// special case: "[]byte" isn't _actually_ a slice so much as a direct type
+	if s == "[]byte" {
+		return false
+	}
 	return strings.HasPrefix(s, "[]")
 }
 

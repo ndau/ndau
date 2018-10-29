@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -53,12 +54,35 @@ func ParseField(f *ast.Field) ([]Field, error) {
 
 	out := make([]Field, 0, len(f.Names))
 	for _, ident := range f.Names {
-		field := Field{
-			Name: ident.Name,
-			Type: fieldType,
-		}
-		field.fillFieldFromType()
+		field := NewField(ident.Name, fieldType)
 		out = append(out, field)
 	}
 	return out, err
+}
+
+// ParseTransaction parses the given node of the AST as if it were a Transaction
+func ParseTransaction(name string, node ast.Node) (out Transaction, err error) {
+	s, ok := node.(*ast.StructType)
+	if !ok {
+		err = errors.New("node must be a struct definition")
+		return
+	}
+
+	out.Name = name
+	out.Comment = fmt.Sprintf("%s is a mobile compatible wrapper for a %s transaction", name, name)
+	// TODO: docs
+	// Parsing go docs is kind of terrible, and not critically important, so we
+	// skip it for now. See: https://stackoverflow.com/a/19580785/504550
+
+	var parsedFields []Field
+	for _, field := range s.Fields.List {
+		parsedFields, err = ParseField(field)
+		if err != nil {
+			return
+		}
+
+		out.Fields = append(out.Fields, parsedFields...)
+	}
+
+	return
 }
