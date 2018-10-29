@@ -18,7 +18,11 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 )
 
-// Bump this any time we need to reset and reindex the ndau indexes.
+// Name of the ndau application.  Used in part to index blockchain data for this application.
+var ndauAppName = "ndau"
+
+// Bump this any time we need to reset and reindex the ndau chain.
+// Version 0: initial version
 var ndauSearchVersion = 0
 
 // App is an ABCI application which implements the Ndau chain
@@ -52,7 +56,7 @@ func NewAppSilent(dbSpec string, config config.Config) (*App, error) {
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
 func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogger) (*App, error) {
-	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", ndauSearchVersion, new(backing.State), TxIDs, logger)
+	metaapp, err := meta.NewAppWithLogger(dbSpec, ndauAppName, new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
 	}
@@ -66,6 +70,10 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create initial block time")
 	}
+
+	// Set up ndau-specific search client.
+	search := metaapp.GetSearch()
+	search.Init(ndauAppName, ndauSearchVersion)
 
 	app := App{
 		metaapp,
