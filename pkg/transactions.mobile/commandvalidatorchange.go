@@ -8,11 +8,7 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -37,16 +33,6 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// go build fails when there are unused imports, but we can't know a priori
-// which imports will actually be used in a particular transaction.
-// Therefore, let's force use of the frequent offenders
-var (
-	_ address.Address
-	_ = b32.NdauAlphabet
-	_ math.Ndau
-	_ signature.Signature
-)
-
 // CommandValidatorChange is a mobile compatible wrapper for a CommandValidatorChange transaction
 type CommandValidatorChange struct {
 	tx ndau.CommandValidatorChange
@@ -57,15 +43,17 @@ func NewCommandValidatorChange(
 	publickey string,
 	power int64,
 	sequence int64,
-) (*CommandValidatorChange, error) {publickeyN, err := base64.StdEncoding.DecodeString(publickey)
-	if err != nil { return nil, errors.Wrap(err, "publickey") }
+) (*CommandValidatorChange, error) {
+	publickeyN, err := base64.StdEncoding.DecodeString(publickey)
+	if err != nil {
+		return nil, errors.Wrap(err, "publickey")
+	}
 
-	
 	return &CommandValidatorChange{
 		tx: ndau.CommandValidatorChange{
 			PublicKey: publickeyN,
-			Power: int64(power),
-			Sequence: uint64(sequence),
+			Power:     int64(power),
+			Sequence:  uint64(sequence),
 		},
 	}, nil
 }
@@ -100,8 +88,6 @@ func (tx *CommandValidatorChange) ToString() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-
-
 // GetPublicKey gets the publickey of the CommandValidatorChange
 //
 // Returns `nil` if CommandValidatorChange is `nil` or if native conversion is fallible and
@@ -111,7 +97,7 @@ func (tx *CommandValidatorChange) GetPublicKey() *string {
 		return nil
 	}
 	publickey := base64.StdEncoding.EncodeToString(tx.tx.PublicKey)
-	
+
 	return &publickey
 }
 
@@ -124,7 +110,7 @@ func (tx *CommandValidatorChange) GetPower() *int64 {
 		return nil
 	}
 	power := int64(tx.tx.Power)
-	
+
 	return &power
 }
 
@@ -137,7 +123,7 @@ func (tx *CommandValidatorChange) GetSequence() *int64 {
 		return nil
 	}
 	sequence := int64(tx.tx.Sequence)
-	
+
 	return &sequence
 }
 
@@ -160,11 +146,12 @@ func (tx *CommandValidatorChange) GetSignature(idx int) (*keyaddr.Signature, err
 		return nil, errors.New("invalid index")
 	}
 	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
-	if err != nil { return nil, errors.Wrap(err, "signatures") }
+	if err != nil {
+		return nil, errors.Wrap(err, "signatures")
+	}
 
 	return signature, nil
 }
-
 
 // SignableBytes returns the b64 encoding of the signable bytes of this commandvalidatorchange
 func (tx *CommandValidatorChange) SignableBytes() (string, error) {

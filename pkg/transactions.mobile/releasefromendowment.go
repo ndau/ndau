@@ -9,9 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -37,16 +35,6 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// go build fails when there are unused imports, but we can't know a priori
-// which imports will actually be used in a particular transaction.
-// Therefore, let's force use of the frequent offenders
-var (
-	_ address.Address
-	_ = b32.NdauAlphabet
-	_ math.Ndau
-	_ signature.Signature
-)
-
 // ReleaseFromEndowment is a mobile compatible wrapper for a ReleaseFromEndowment transaction
 type ReleaseFromEndowment struct {
 	tx ndau.ReleaseFromEndowment
@@ -62,14 +50,15 @@ func NewReleaseFromEndowment(
 		return nil, errors.New("destination must not be nil")
 	}
 	destinationN, err := address.Validate(destination.Address)
-	if err != nil { return nil, errors.Wrap(err, "destination") }
+	if err != nil {
+		return nil, errors.Wrap(err, "destination")
+	}
 
-	
 	return &ReleaseFromEndowment{
 		tx: ndau.ReleaseFromEndowment{
 			Destination: destinationN,
-			Qty: math.Ndau(qty),
-			Sequence: uint64(sequence),
+			Qty:         math.Ndau(qty),
+			Sequence:    uint64(sequence),
 		},
 	}, nil
 }
@@ -104,8 +93,6 @@ func (tx *ReleaseFromEndowment) ToString() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-
-
 // GetDestination gets the destination of the ReleaseFromEndowment
 //
 // Returns `nil` if ReleaseFromEndowment is `nil` or if native conversion is fallible and
@@ -115,7 +102,7 @@ func (tx *ReleaseFromEndowment) GetDestination() *keyaddr.Address {
 		return nil
 	}
 	destination := keyaddr.Address{Address: tx.tx.Destination.String()}
-	
+
 	return &destination
 }
 
@@ -128,7 +115,7 @@ func (tx *ReleaseFromEndowment) GetQty() *int64 {
 		return nil
 	}
 	qty := int64(tx.tx.Qty)
-	
+
 	return &qty
 }
 
@@ -141,7 +128,7 @@ func (tx *ReleaseFromEndowment) GetSequence() *int64 {
 		return nil
 	}
 	sequence := int64(tx.tx.Sequence)
-	
+
 	return &sequence
 }
 
@@ -164,11 +151,12 @@ func (tx *ReleaseFromEndowment) GetSignature(idx int) (*keyaddr.Signature, error
 		return nil, errors.New("invalid index")
 	}
 	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
-	if err != nil { return nil, errors.Wrap(err, "signatures") }
+	if err != nil {
+		return nil, errors.Wrap(err, "signatures")
+	}
 
 	return signature, nil
 }
-
 
 // SignableBytes returns the b64 encoding of the signable bytes of this releasefromendowment
 func (tx *ReleaseFromEndowment) SignableBytes() (string, error) {

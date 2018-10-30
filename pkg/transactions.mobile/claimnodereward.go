@@ -9,10 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -37,16 +34,6 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// go build fails when there are unused imports, but we can't know a priori
-// which imports will actually be used in a particular transaction.
-// Therefore, let's force use of the frequent offenders
-var (
-	_ address.Address
-	_ = b32.NdauAlphabet
-	_ math.Ndau
-	_ signature.Signature
-)
-
 // ClaimNodeReward is a mobile compatible wrapper for a ClaimNodeReward transaction
 type ClaimNodeReward struct {
 	tx ndau.ClaimNodeReward
@@ -61,12 +48,13 @@ func NewClaimNodeReward(
 		return nil, errors.New("node must not be nil")
 	}
 	nodeN, err := address.Validate(node.Address)
-	if err != nil { return nil, errors.Wrap(err, "node") }
+	if err != nil {
+		return nil, errors.Wrap(err, "node")
+	}
 
-	
 	return &ClaimNodeReward{
 		tx: ndau.ClaimNodeReward{
-			Node: nodeN,
+			Node:     nodeN,
 			Sequence: uint64(sequence),
 		},
 	}, nil
@@ -102,8 +90,6 @@ func (tx *ClaimNodeReward) ToString() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-
-
 // GetNode gets the node of the ClaimNodeReward
 //
 // Returns `nil` if ClaimNodeReward is `nil` or if native conversion is fallible and
@@ -113,7 +99,7 @@ func (tx *ClaimNodeReward) GetNode() *keyaddr.Address {
 		return nil
 	}
 	node := keyaddr.Address{Address: tx.tx.Node.String()}
-	
+
 	return &node
 }
 
@@ -126,7 +112,7 @@ func (tx *ClaimNodeReward) GetSequence() *int64 {
 		return nil
 	}
 	sequence := int64(tx.tx.Sequence)
-	
+
 	return &sequence
 }
 
@@ -149,11 +135,12 @@ func (tx *ClaimNodeReward) GetSignature(idx int) (*keyaddr.Signature, error) {
 		return nil, errors.New("invalid index")
 	}
 	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
-	if err != nil { return nil, errors.Wrap(err, "signatures") }
+	if err != nil {
+		return nil, errors.Wrap(err, "signatures")
+	}
 
 	return signature, nil
 }
-
 
 // SignableBytes returns the b64 encoding of the signable bytes of this claimnodereward
 func (tx *ClaimNodeReward) SignableBytes() (string, error) {

@@ -9,10 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -37,16 +34,6 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// go build fails when there are unused imports, but we can't know a priori
-// which imports will actually be used in a particular transaction.
-// Therefore, let's force use of the frequent offenders
-var (
-	_ address.Address
-	_ = b32.NdauAlphabet
-	_ math.Ndau
-	_ signature.Signature
-)
-
 // Notify is a mobile compatible wrapper for a Notify transaction
 type Notify struct {
 	tx ndau.Notify
@@ -61,12 +48,13 @@ func NewNotify(
 		return nil, errors.New("target must not be nil")
 	}
 	targetN, err := address.Validate(target.Address)
-	if err != nil { return nil, errors.Wrap(err, "target") }
+	if err != nil {
+		return nil, errors.Wrap(err, "target")
+	}
 
-	
 	return &Notify{
 		tx: ndau.Notify{
-			Target: targetN,
+			Target:   targetN,
 			Sequence: uint64(sequence),
 		},
 	}, nil
@@ -102,8 +90,6 @@ func (tx *Notify) ToString() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-
-
 // GetTarget gets the target of the Notify
 //
 // Returns `nil` if Notify is `nil` or if native conversion is fallible and
@@ -113,7 +99,7 @@ func (tx *Notify) GetTarget() *keyaddr.Address {
 		return nil
 	}
 	target := keyaddr.Address{Address: tx.tx.Target.String()}
-	
+
 	return &target
 }
 
@@ -126,7 +112,7 @@ func (tx *Notify) GetSequence() *int64 {
 		return nil
 	}
 	sequence := int64(tx.tx.Sequence)
-	
+
 	return &sequence
 }
 
@@ -149,11 +135,12 @@ func (tx *Notify) GetSignature(idx int) (*keyaddr.Signature, error) {
 		return nil, errors.New("invalid index")
 	}
 	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
-	if err != nil { return nil, errors.Wrap(err, "signatures") }
+	if err != nil {
+		return nil, errors.Wrap(err, "signatures")
+	}
 
 	return signature, nil
 }
-
 
 // SignableBytes returns the b64 encoding of the signable bytes of this notify
 func (tx *Notify) SignableBytes() (string, error) {

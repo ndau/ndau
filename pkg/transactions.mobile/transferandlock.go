@@ -9,9 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -37,16 +35,6 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// go build fails when there are unused imports, but we can't know a priori
-// which imports will actually be used in a particular transaction.
-// Therefore, let's force use of the frequent offenders
-var (
-	_ address.Address
-	_ = b32.NdauAlphabet
-	_ math.Ndau
-	_ signature.Signature
-)
-
 // TransferAndLock is a mobile compatible wrapper for a TransferAndLock transaction
 type TransferAndLock struct {
 	tx ndau.TransferAndLock
@@ -64,23 +52,25 @@ func NewTransferAndLock(
 		return nil, errors.New("source must not be nil")
 	}
 	sourceN, err := address.Validate(source.Address)
-	if err != nil { return nil, errors.Wrap(err, "source") }
+	if err != nil {
+		return nil, errors.Wrap(err, "source")
+	}
 
-	
 	if destination == nil {
 		return nil, errors.New("destination must not be nil")
 	}
 	destinationN, err := address.Validate(destination.Address)
-	if err != nil { return nil, errors.Wrap(err, "destination") }
+	if err != nil {
+		return nil, errors.Wrap(err, "destination")
+	}
 
-	
 	return &TransferAndLock{
 		tx: ndau.TransferAndLock{
-			Source: sourceN,
+			Source:      sourceN,
 			Destination: destinationN,
-			Qty: math.Ndau(qty),
-			Period: math.Duration(period),
-			Sequence: uint64(sequence),
+			Qty:         math.Ndau(qty),
+			Period:      math.Duration(period),
+			Sequence:    uint64(sequence),
 		},
 	}, nil
 }
@@ -115,8 +105,6 @@ func (tx *TransferAndLock) ToString() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-
-
 // GetSource gets the source of the TransferAndLock
 //
 // Returns `nil` if TransferAndLock is `nil` or if native conversion is fallible and
@@ -126,7 +114,7 @@ func (tx *TransferAndLock) GetSource() *keyaddr.Address {
 		return nil
 	}
 	source := keyaddr.Address{Address: tx.tx.Source.String()}
-	
+
 	return &source
 }
 
@@ -139,7 +127,7 @@ func (tx *TransferAndLock) GetDestination() *keyaddr.Address {
 		return nil
 	}
 	destination := keyaddr.Address{Address: tx.tx.Destination.String()}
-	
+
 	return &destination
 }
 
@@ -152,7 +140,7 @@ func (tx *TransferAndLock) GetQty() *int64 {
 		return nil
 	}
 	qty := int64(tx.tx.Qty)
-	
+
 	return &qty
 }
 
@@ -165,7 +153,7 @@ func (tx *TransferAndLock) GetPeriod() *int64 {
 		return nil
 	}
 	period := int64(tx.tx.Period)
-	
+
 	return &period
 }
 
@@ -178,7 +166,7 @@ func (tx *TransferAndLock) GetSequence() *int64 {
 		return nil
 	}
 	sequence := int64(tx.tx.Sequence)
-	
+
 	return &sequence
 }
 
@@ -201,11 +189,12 @@ func (tx *TransferAndLock) GetSignature(idx int) (*keyaddr.Signature, error) {
 		return nil, errors.New("invalid index")
 	}
 	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
-	if err != nil { return nil, errors.Wrap(err, "signatures") }
+	if err != nil {
+		return nil, errors.Wrap(err, "signatures")
+	}
 
 	return signature, nil
 }
-
 
 // SignableBytes returns the b64 encoding of the signable bytes of this transferandlock
 func (tx *TransferAndLock) SignableBytes() (string, error) {
