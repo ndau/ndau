@@ -1,5 +1,5 @@
-hash: 72b1870c5d64f57b5faec09a22e4f49009de29b304331c77342ed50973196d10
-updated: 2018-10-29T13:26:25.02566+01:00
+hash: dbf4a8ef8220f9ed4c5e6f4848c22a0d94c7e9b585042061d55ce6cab5e85a05
+updated: 2018-10-30T10:33:50.792844+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -210,7 +210,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 174709819bbedc96f23955650ae0eaf0564fdcd0
+  version: 4c0365417b4d9a264ca42a9a1acfdece40767c11
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -224,6 +224,7 @@ imports:
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
+  - pkg/signature/algorithms/null
   - pkg/signature/algorithms/secp256k1
   - pkg/signed
   - pkg/types
@@ -419,7 +420,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: f60e5f99f0816fc2d9ecb338008ea420248d2943
+  version: a0a13e073c7bae39af55369bcd1c2dc7ebb88ede
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
