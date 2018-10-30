@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// This file provides an interface to the Ndau commandvalidatorchange transaction
+// This file provides an interface to the Ndau CommandValidatorChange transaction
 // for use in React and in particular react-native.
 //
 // It is meant to be built using the gomobile tool, so the API is constrained
