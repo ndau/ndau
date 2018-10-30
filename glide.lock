@@ -1,5 +1,5 @@
 hash: dbf4a8ef8220f9ed4c5e6f4848c22a0d94c7e9b585042061d55ce6cab5e85a05
-updated: 2018-10-23T09:26:37.134737-04:00
+updated: 2018-10-30T10:44:08.705337+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -186,7 +186,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 38d264bfaf4d73f0549aa4b587f2dedb6415064e
+  version: 78c6dcd5a62384e84b8469d9c3de149a5a25d2f8
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -195,7 +195,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 4f60b392a6b55e89ea2dbf0bffd44d97ef201b64
+  version: c1a25f743f3af93e53f5c007d89e30c3856d2764
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -210,7 +210,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: a090979cf34e154289bcccf502e7b68f04c0862c
+  version: 4c0365417b4d9a264ca42a9a1acfdece40767c11
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -220,6 +220,7 @@ imports:
   - pkg/constants
   - pkg/eai
   - pkg/key
+  - pkg/keyaddr
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
@@ -228,6 +229,7 @@ imports:
   - pkg/signed
   - pkg/types
   - pkg/unsigned
+  - pkg/words
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -280,7 +282,7 @@ imports:
 - name: github.com/rcrowley/go-metrics
   version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
-  version: 8ccf5352a842c034b1a69f28c863aff9b1cdb116
+  version: b2ce2384e17bbe0c6d34077efa39dbab3e09123b
 - name: github.com/sigurn/crc16
   version: da416fad5162ac0f3338ba24dccdb26e4da22485
 - name: github.com/sigurn/utils
@@ -417,6 +419,10 @@ imports:
   - transform
   - unicode/bidi
   - unicode/norm
+- name: golang.org/x/tools
+  version: a0a13e073c7bae39af55369bcd1c2dc7ebb88ede
+  subpackages:
+  - go/ast/astutil
 - name: google.golang.org/genproto
   version: af9cb2a35e7f169ec875002c1829c9b315cddc04
   subpackages:
