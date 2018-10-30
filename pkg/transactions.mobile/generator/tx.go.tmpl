@@ -37,16 +37,6 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// go build fails when there are unused imports, but we can't know a priori
-// which imports will actually be used in a particular transaction.
-// Therefore, let's force use of the frequent offenders
-var (
-	_ address.Address
-	_ = b32.NdauAlphabet
-	_ math.Ndau
-	_ signature.Signature
-)
-
 // {{.Comment}}
 type {{.Name}} struct {
 	tx ndau.{{.Name}}
