@@ -170,7 +170,7 @@ _**Writes:**_
         {
           "balance": 123000000,
           "validationKeys": [
-            "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f"
+            "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -188,7 +188,7 @@ _**Writes:**_
             "Next": null
           },
           "validationScript": null,
-          "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac"
+          "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue"
         }
 ```
 
@@ -219,7 +219,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac"
+          "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue"
         ]
 ```
 
@@ -234,7 +234,7 @@ _**Writes:**_
             {
               "balance": 123000000,
               "validationKeys": [
-                "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f"
+                "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
               ],
               "rewardsTarget": null,
               "incomingRewardsFrom": null,
@@ -252,7 +252,7 @@ _**Writes:**_
                 "Next": null
               },
               "validationScript": null,
-              "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac"
+              "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue"
             }
           ]
         }
@@ -291,7 +291,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac",
+            "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -310,7 +310,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac",
+            "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue",
             "eairate": 6000000
           }
         ]
@@ -1243,10 +1243,10 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         {
-          "target": "ndaa2ngtdixvuz2rj84jwgpupqpdpk9cvsm23gjjmhf7anac",
-          "ownership": "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f",
+          "target": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue",
+          "ownership": "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst",
           "keys": [
-            "npuba8jadtbbedawvi694553cgd7djh6ncg4667qn5y3c8kv6kwn27ftqkz9bjqxbayp95g99t4f"
+            "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
           ],
           "script": "",
           "seq": 13579
