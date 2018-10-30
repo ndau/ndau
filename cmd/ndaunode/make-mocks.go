@@ -51,7 +51,7 @@ func generateToolConf(conf *config.Config) {
 
 	// we want to address the noms home path directly
 	*useNh = true
-	app, err := ndau.NewApp(getDbSpec(), *conf)
+	app, err := ndau.NewApp(getDbSpec(), -1, *conf)
 	check(err)
 
 	// we want to fetch the system variables, which means running

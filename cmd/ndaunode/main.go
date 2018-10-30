@@ -25,6 +25,10 @@ var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash o
 var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
 var echoVersion = flag.Bool("version", false, "if set, echo the current version and exit")
 
+// Bump this any time we need to reset and reindex the ndau chain.
+// Version 0: initial version
+var ndauSearchVersion = 0
+
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
 	if len(nh) > 0 {
@@ -90,7 +94,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	app, err := ndau.NewApp(getDbSpec(), *conf)
+	app, err := ndau.NewApp(getDbSpec(), ndauSearchVersion, *conf)
 	check(err)
 
 	logger := app.GetLogger()

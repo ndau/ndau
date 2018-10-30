@@ -76,7 +76,7 @@ func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
 	configP, assc, err := config.MakeTmpMock("")
 	require.NoError(t, err)
 
-	app, err = NewApp("", *configP)
+	app, err = NewApp("", -1, *configP)
 	require.NoError(t, err)
 
 	// disable logging within the tests by sending output to devnull

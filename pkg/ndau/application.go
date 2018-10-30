@@ -21,10 +21,6 @@ import (
 // Name of the ndau application.  Used in part to index blockchain data for this application.
 var ndauAppName = "ndau"
 
-// Bump this any time we need to reset and reindex the ndau chain.
-// Version 0: initial version
-var ndauSearchVersion = 0
-
 // App is an ABCI application which implements the Ndau chain
 type App struct {
 	*meta.App
@@ -42,20 +38,20 @@ type App struct {
 }
 
 // NewApp prepares a new Ndau App
-func NewApp(dbSpec string, config config.Config) (*App, error) {
-	return NewAppWithLogger(dbSpec, config, nil)
+func NewApp(dbSpec string, ndauSearchVersion int, config config.Config) (*App, error) {
+	return NewAppWithLogger(dbSpec, ndauSearchVersion, config, nil)
 }
 
 // NewAppSilent prepares a new Ndau App which doesn't log
-func NewAppSilent(dbSpec string, config config.Config) (*App, error) {
+func NewAppSilent(dbSpec string, ndauSearchVersion int, config config.Config) (*App, error) {
 	logger := log.New()
 	logger.Out = ioutil.Discard
 
-	return NewAppWithLogger(dbSpec, config, logger)
+	return NewAppWithLogger(dbSpec, ndauSearchVersion, config, logger)
 }
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
-func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogger) (*App, error) {
+func NewAppWithLogger(dbSpec string, ndauSearchVersion int, config config.Config, logger log.FieldLogger) (*App, error) {
 	metaapp, err := meta.NewAppWithLogger(dbSpec, ndauAppName, new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
@@ -71,9 +67,18 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 		return nil, errors.Wrap(err, "NewApp failed to create initial block time")
 	}
 
-	// Set up ndau-specific search client.
-	search := metaapp.GetSearch()
-	search.Init(ndauAppName, ndauSearchVersion)
+	if ndauSearchVersion >= 0 {
+		// Set up ndau-specific search client.
+		search := NewNdauSearchClient()
+		err = search.SearchClient.Init(ndauAppName, ndauSearchVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "NewApp unable to init search client")
+		}
+
+		// TODO: Perform initial indexing here.
+
+		metaapp.SetSearch(search)
+	}
 
 	app := App{
 		metaapp,
