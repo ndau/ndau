@@ -104,3 +104,8 @@ func (tx *CommandValidatorChange) GetSignatures() []signature.Signature {
 func (tx *CommandValidatorChange) ToValidator() abci.ValidatorUpdate {
 	return abci.Ed25519ValidatorUpdate(tx.PublicKey, tx.Power)
 }
+
+// ExtendSignatures implements Signable
+func (tx *CommandValidatorChange) ExtendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
+}

@@ -5,17 +5,17 @@ import (
 	"github.com/tendermint/tendermint/rpc/client"
 )
 
-// SendCommit broadcasts and commits a Delegate transaction
+// SendCommit broadcasts and commits a transaction
 func SendCommit(node client.ABCIClient, tx metatx.Transactable) (interface{}, error) {
 	return sendGeneric(node, tx, broadcastCommit)
 }
 
-// SendSync broadcasts a Delegate transaction with Sync semantics
+// SendSync broadcasts a transaction with Sync semantics
 func SendSync(node client.ABCIClient, tx metatx.Transactable) (interface{}, error) {
 	return sendGeneric(node, tx, broadcastSync)
 }
 
-// SendAsync broadcasts a Delegate transaction with async semantics
+// SendAsync broadcasts a transaction with async semantics
 func SendAsync(node client.ABCIClient, tx metatx.Transactable) (interface{}, error) {
 	return sendGeneric(node, tx, broadcastAsync)
 }

@@ -85,3 +85,8 @@ func (tx *Notify) GetSequence() uint64 {
 func (tx *Notify) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
+
+// ExtendSignatures implements Signable
+func (tx *Notify) ExtendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
+}

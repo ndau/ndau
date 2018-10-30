@@ -128,3 +128,8 @@ func (tx *SetRewardsDestination) GetSequence() uint64 {
 func (tx *SetRewardsDestination) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
+
+// ExtendSignatures implements Signable
+func (tx *SetRewardsDestination) ExtendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
+}

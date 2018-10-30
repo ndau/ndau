@@ -133,3 +133,8 @@ func (tx *ChangeValidation) GetSequence() uint64 {
 func (tx *ChangeValidation) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
+
+// ExtendSignatures implements Signable
+func (tx *ChangeValidation) ExtendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
+}

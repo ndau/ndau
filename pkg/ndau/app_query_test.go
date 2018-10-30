@@ -1,13 +1,16 @@
 package ndau
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -63,6 +66,52 @@ func TestQueryRunsUpdateBalance(t *testing.T) {
 	require.NotEqual(t, math.Ndau(0), accountData.Balance)
 	require.Equal(t, 0, len(accountData.Settlements))
 }
+
+func TestCanQuerySummary1(t *testing.T) {
+	app, _ := initAppTx(t)
+
+	resp := app.Query(abci.RequestQuery{
+		Path: query.SummaryEndpoint,
+		Data: nil,
+	})
+	expectedTotal := 10000 * constants.QuantaPerUnit
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.Equal(t, fmt.Sprintf("total ndau at height 1 is %d, in 1 accounts", expectedTotal), resp.Log)
+	summary := new(query.Summary)
+	_, err := summary.UnmarshalMsg(resp.Value)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), summary.BlockHeight)
+	require.Equal(t, 1, summary.NumAccounts)
+	require.Equal(t, math.Ndau(expectedTotal), summary.TotalNdau)
+}
+
+func TestCanQuerySummary2(t *testing.T) {
+	app, _ := initAppTx(t)
+	// create a new account for different results
+	public, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	addr, err := address.Generate(address.KindUser, public.KeyBytes())
+	require.NoError(t, err)
+	modify(t, addr.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1 * constants.QuantaPerUnit
+	})
+	app.SetHeight(2)
+
+	resp := app.Query(abci.RequestQuery{
+		Path: query.SummaryEndpoint,
+		Data: nil,
+	})
+	expectedTotal := 10001 * constants.QuantaPerUnit
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.Equal(t, fmt.Sprintf("total ndau at height 2 is %d, in 2 accounts", expectedTotal), resp.Log)
+	summary := new(query.Summary)
+	_, err = summary.UnmarshalMsg(resp.Value)
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), summary.BlockHeight)
+	require.Equal(t, 2, summary.NumAccounts)
+	require.Equal(t, math.Ndau(expectedTotal), summary.TotalNdau)
+}
+
 func TestCanQueryVersion(t *testing.T) {
 	// this test can't pass unless you run it with ldflags set to inject
 	// the version information properly. It exists mainly as an example
