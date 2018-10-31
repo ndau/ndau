@@ -1,0 +1,225 @@
+package mobile
+
+// generated with github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator
+// DO NOT EDIT
+
+import (
+	"encoding/base64"
+
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/b32"
+	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/pkg/errors"
+)
+
+// This file provides an interface to the Ndau {{.Name}} transaction
+// for use in React and in particular react-native.
+//
+// It is meant to be built using the gomobile tool, so the API is constrained
+// to particular types of parameters:
+//
+// * string
+// * signed integer and floating point types
+// * []byte
+// * functions with specific restrictions
+// * structs and interfaces consisting of only these types
+//
+// Unfortunately, react-native puts additional requirements that makes `[]byte`
+// particularly challenging to use. To the degree possible, we take advantage
+// of types' `(Un)MarshalText` implementations to generate and parse strings.
+// Where that's impossible, we use the standard base64 encoding of the binary
+// representation of the type.
+//
+// This package, therefore, consists mainly of wrappers so that we don't have
+// to modify our idiomatic Go code to conform to these requirements.
+
+// {{.Comment}}
+type {{.Name}} struct {
+	tx ndau.{{.Name}}
+}
+
+// New{{.Name}} constructs a new unsigned {{.Name}} transaction
+func New{{.Name}}({{range .Fields}}{{if not .ConstructorExcluded}}
+	{{.Name | Lower}} {{.MobileTypeS}},{{end}}{{end}}
+) (*{{.Name}}, error) {
+	{{- range .Fields }}
+	{{- if not .ConstructorExcluded }}
+	{{- if .MobileType | IsPointer }}
+	if {{.Name | Lower}} == nil {
+		return nil, errors.New("{{.Name | Lower}} must not be nil")
+	}
+	{{end}}
+	{{- if .Type | IsSlice -}}
+	{{.NameSlice}} := make({{.Type}}, len({{.Name | Lower}}))
+	for idx := range {{.Name | Lower}} {
+		{{if .FallibleNativeConversion -}}
+		{{if .PreCreateNative -}}
+		err := {{.NameSlice}}[idx].{{call .ConvertToNative (printf "%s[idx]" (.Name | Lower))}}
+		{{- else -}}
+		{{.NameNative}}{{.AssignmentStmt .FallibleNativeConversion .PreCreateNative }}{{call .ConvertToNative (printf "%s[idx]" (.Name | Lower))}}
+		{{.NameSlice}}[idx] = {{.NameNative}}
+		{{- end}}
+		{{.AssignmentErrHandler}}
+		{{- end}}
+	}
+	{{else}}
+	{{- if .FallibleNativeConversion -}}
+	{{- if .PreCreateNative -}}
+	{{.NameNative}} := new({{.Type | Dereferenced}})
+	err := {{.NameNative}}.{{call .ConvertToNative (.Name | Lower)}}
+	{{- else -}}
+	{{.NameNative}}{{.AssignmentStmt .FallibleNativeConversion .PreCreateNative }}{{call .ConvertToNative (.Name | Lower)}}
+	{{- end}}
+	{{.AssignmentErrHandler}}
+	{{end}}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	return &{{.Name}}{
+		tx: ndau.{{.Name}}{
+			{{- range .Fields}}{{if not .ConstructorExcluded}}
+			{{.Name}}: {{ if .Type | IsSlice }}{{.NameSlice}}{{else if .FallibleNativeConversion}}{{.NameNative}}{{else}}{{call .ConvertToNative (.Name | Lower)}}{{end}},
+			{{- end}}{{end}}
+		},
+	}, nil
+}
+
+// Parse{{.Name}} parses a string into a {{.Name}}, if possible
+func Parse{{.Name}}(s string) (*{{.Name}}, error) {
+	bytes, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, errors.Wrap(err, "Parse{{.Name}}: b64-decode")
+	}
+	tx, err := metatx.Unmarshal(bytes, ndau.TxIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "Parse{{.Name}}: unmarshal")
+	}
+	trp, isTr := tx.(*ndau.{{.Name}})
+	if !isTr {
+		return nil, errors.New("Parse{{.Name}}: transactable was not {{.Name}}")
+	}
+
+	return &{{.Name}}{tx: *trp}, nil
+}
+
+// ToString produces the b64 encoding of the bytes of the transaction
+func (tx *{{.Name}}) ToString() (string, error) {
+	if tx == nil {
+		return "", errors.New("nil {{.Name | Lower}}")
+	}
+	bytes, err := metatx.Marshal(&tx.tx, ndau.TxIDs)
+	if err != nil {
+		return "", errors.Wrap(err, "{{.Name | Lower}}: marshalling bytes")
+	}
+	return base64.StdEncoding.EncodeToString(bytes), nil
+}
+
+{{range  $field := .Fields}}
+{{if .Type | IsSlice }}
+// GetNum{{$field.Name}} gets the number of {{$field.Name | Lower}} of the {{$.Name}}
+//
+// If tx == nil, returns -1
+func (tx *{{$.Name}}) GetNum{{.Name}}() int {
+	if tx == nil {
+		return -1
+	}
+	return len(tx.tx.{{.Name}})
+}
+
+// Get{{$field.Name | Singular}} gets a particular {{ $field.Name | Lower | Singular}} from this {{$.Name}}
+func (tx *{{$.Name}}) Get{{.Name | Singular}}(idx int) ({{if not (.MobileType | Unslice | IsPointer)}}*{{end}}{{.MobileType | Unslice}}, error) {
+	if tx == nil {
+		return nil, errors.New("nil {{$.Name | Lower}}")
+	}
+	if idx < 0 || idx >= len(tx.tx.{{.Name}}) {
+		return nil, errors.New("invalid index")
+	}
+	{{.Name | Lower | Singular}}{{.AssignmentStmt .FallibleMobileConversion false }}{{call .ConvertToMobile (printf "tx.tx.%s[idx]" .Name)}}
+	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler}}{{end}}
+	return {{if not (.MobileType | IsPointer)}}&{{end}}{{.Name | Lower | Singular}}, nil
+}
+{{else}}
+// Get{{$field.Name}} gets the {{$field.Name | Lower}} of the {{$.Name}}
+//
+// Returns `nil` if {{$.Name}} is `nil` or if native conversion is fallible and
+// conversion failed.
+func (tx *{{$.Name}}) Get{{$field.Name}}() {{if .FallibleMobileConversion}}({{end}}{{if not (.MobileType | IsPointer)}}*{{end}}{{ .MobileType }}{{if .FallibleMobileConversion}}, error){{end}} {
+	if tx == nil {
+		return nil {{- if .FallibleMobileConversion}}, errors.New("nil {{$.Name}}"){{end}}
+	}
+	{{.Name | Lower}}{{.AssignmentStmt .FallibleMobileConversion false }}{{call .ConvertToMobile (printf "tx.tx.%s" .Name)}}
+	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler}}{{end}}
+	return {{if not .PointerMobileConversion}}&{{end}}{{.Name | Lower}}{{if .FallibleMobileConversion}}, nil{{end}}
+}
+{{- end}}
+{{- end}}
+
+// SignableBytes returns the b64 encoding of the signable bytes of this {{.Name | Lower}}
+func (tx *{{.Name}}) SignableBytes() (string, error) {
+	if tx == nil {
+		return "", errors.New("nil {{.Name | Lower}}")
+	}
+	return base64.StdEncoding.EncodeToString(tx.tx.SignableBytes()), nil
+}
+
+{{ if .HasField "Signatures" -}}
+// AppendSignature appends a signature to this {{.Name | Lower}}
+func (tx *{{.Name}}) AppendSignature(sig *keyaddr.Signature) error {
+	if sig == nil {
+		return errors.New("sig must not be nil")
+	}
+	sigS, err := sig.ToSignature()
+	if err != nil {
+		return errors.Wrap(err, "converting signature")
+	}
+	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	return nil
+}
+{{- end }}{{ if .HasField "Signature" -}}
+// Sign signs this {{.Name | Lower}}
+func (tx *{{.Name}}) Sign(sig *keyaddr.Signature) error {
+	if sig == nil {
+		return errors.New("sig must not be nil")
+	}
+	sigS, err := sig.ToSignature()
+	if err != nil {
+		return errors.Wrap(err, "converting signature")
+	}
+	tx.tx.Signature = sigS
+	return nil
+}
+{{- end }}
+
+// Hash computes the hash of this {{.Name | Lower}}
+func (tx *{{.Name}}) Hash() string {
+	if tx == nil {
+		return ""
+	}
+	return metatx.Hash(&tx.tx)
+}
+
+// Name returns the name of this transactable
+func (tx *{{.Name}}) Name() string {
+	if tx == nil {
+		return ""
+	}
+	return "{{.Name}}"
+}
+
+// TxID returns the transaction id of this transactable
+//
+// Returns -2 if the transactable is nil, or -1 if the transactable is unknown.
+func (tx *{{.Name}}) TxID() int {
+	if tx == nil {
+		return -2
+	}
+	id, err := metatx.TxIDOf(&tx.tx, ndau.TxIDs)
+	if err != nil {
+		return -1
+	}
+	return int(id)
+}
