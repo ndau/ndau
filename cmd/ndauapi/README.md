@@ -73,7 +73,7 @@ Each of these, in turn, has several endpoints within it.
 
 * [AccountEAIRate](#accounteairate)
 
-* [AccountByID](#accountbyid)
+* [AccountHistory](#accounthistory)
 
 * [BlockCurrent](#blockcurrent)
 
@@ -87,11 +87,11 @@ Each of these, in turn, has several endpoints within it.
 
 * [ChaosSystemKey](#chaossystemkey)
 
+* [ChaosHistoryKey](#chaoshistorykey)
+
 * [ChaosNamespaceAll](#chaosnamespaceall)
 
 * [ChaosNamespaceKey](#chaosnamespacekey)
-
-* [ChaosHistoryKey](#chaoshistorykey)
 
 * [NodeStatus](#nodestatus)
 
@@ -148,7 +148,7 @@ _**Writes:**_
         {
           "balance": 123000000,
           "validationKeys": [
-            "npuba8jadtbbecf5t7aqcht2hq3nafznav5f2sfqd9ssyv8ggv444673ithmqa4b9krex7zkcybp"
+            "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
           ],
           "rewardsTarget": null,
           "incomingRewardsFrom": null,
@@ -165,8 +165,7 @@ _**Writes:**_
             "ChangesAt": null,
             "Next": null
           },
-          "validationScript": null,
-          "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip"
+          "validationScript": null
         }
 ```
 
@@ -197,7 +196,7 @@ _**Consumes:**_ `[application/json]`
 _**Reads:**_
 ```json
         [
-          "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip"
+          "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue"
         ]
 ```
 
@@ -208,31 +207,28 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "addressData": [
-            {
-              "balance": 123000000,
-              "validationKeys": [
-                "npuba8jadtbbecf5t7aqcht2hq3nafznav5f2sfqd9ssyv8ggv444673ithmqa4b9krex7zkcybp"
-              ],
-              "rewardsTarget": null,
-              "incomingRewardsFrom": null,
-              "delegationNode": null,
-              "lock": null,
-              "stake": null,
-              "lastEAIUpdate": 0,
-              "lastWAAUpdate": 0,
-              "weightedAverageAge": 2592000000000,
-              "Sequence": 0,
-              "settlements": null,
-              "settlementSettings": {
-                "Period": 0,
-                "ChangesAt": null,
-                "Next": null
-              },
-              "validationScript": null,
-              "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip"
-            }
-          ]
+          "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue": {
+            "balance": 123000000,
+            "validationKeys": [
+              "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
+            ],
+            "rewardsTarget": null,
+            "incomingRewardsFrom": null,
+            "delegationNode": null,
+            "lock": null,
+            "stake": null,
+            "lastEAIUpdate": 0,
+            "lastWAAUpdate": 0,
+            "weightedAverageAge": 2592000000000,
+            "Sequence": 0,
+            "settlements": null,
+            "settlementSettings": {
+              "Period": 0,
+              "ChangesAt": null,
+              "Next": null
+            },
+            "validationScript": null
+          }
         }
 ```
 
@@ -269,7 +265,7 @@ _**Reads:**_
 ```json
         [
           {
-            "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip",
+            "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue",
             "weightedAverageAge": 7776000000000,
             "lock": {
               "noticePeriod": 15552000000000,
@@ -288,7 +284,7 @@ _**Writes:**_
 ```json
         [
           {
-            "address": "ndadmipn6pmggkc5bdrm9dxnbanj5v5f2qpn2ms7sb2bfrip",
+            "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue",
             "eairate": 6000000
           }
         ]
@@ -297,7 +293,7 @@ _**Writes:**_
 
 
 ---
-## AccountByID
+## AccountHistory
 
 ### `GET /account/history/:accountid`
 
@@ -741,6 +737,40 @@ _**Writes:**_
 
 
 ---
+## ChaosHistoryKey
+
+### `GET /chaos/history/:key`
+
+_Returns the history of changes to a value of a chaos chain system variable._
+
+The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
+The result is reverse sorted chronologically from the current time, and supports paging by time.
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ key | Path | Name of the system variable. | string
+ limit | Query | Maximum number of values to return; default=10. | string
+ before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        {}
+```
+
+
+
+---
 ## ChaosNamespaceAll
 
 ### `GET /chaos/:namespace/all`
@@ -792,40 +822,6 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         ""
-```
-
-
-
----
-## ChaosHistoryKey
-
-### `GET /chaos/history/:key`
-
-_Returns the history of changes to a value of a chaos chain system variable._
-
-The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
-The result is reverse sorted chronologically from the current time, and supports paging by time.
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- key | Path | Name of the system variable. | string
- limit | Query | Maximum number of values to return; default=10. | string
- before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
-
-
-
-
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {}
 ```
 
 
@@ -1239,7 +1235,7 @@ _**Writes:**_
 
 ### `GET /transaction/:txhash`
 
-_Returns a transaction given its tx hash._
+_Returns a transaction from the blockchain given its tx hash._
 
 
 

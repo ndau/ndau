@@ -27,7 +27,15 @@ func NewLogMux(cf cfg.Cfg) http.HandlerFunc {
 // JSON is the MIME type that we process
 const JSON = "application/json"
 
-var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
+func keyFromString(s string) signature.PublicKey {
+	var k = signature.PublicKey{}
+	k.UnmarshalText([]byte(s))
+	return k
+}
+
+var dummyPublic = keyFromString("npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst")
+
+// var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
 var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.KeyBytes())
 var dummyAccount = backing.AccountData{
 	Balance:            123000000,
@@ -72,10 +80,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns current state of an account given its address.").
 		Operation("AccountByID").
 		Produces(JSON).
-		Writes(routes.AccountDataResponse{
-			AccountData: dummyAccount,
-			Address:     dummyAddress.String(),
-		}))
+		Writes(dummyAccount))
 
 	svc.Route(svc.POST("/account/accounts").To(routes.HandleAccounts(cf)).
 		Doc("Returns current state of several accounts given a list of addresses.").
@@ -83,11 +88,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Consumes(JSON).
 		Reads([]string{dummyAddress.String()}).
 		Produces(JSON).
-		Writes(routes.AccountResponse{
-			AcctData: []routes.AccountDataResponse{routes.AccountDataResponse{
-				AccountData: dummyAccount,
-				Address:     dummyAddress.String(),
-			}}}))
+		Writes(map[string]backing.AccountData{dummyAddress.String(): dummyAccount}))
 
 	svc.Route(svc.POST("/account/eai/rate").To(routes.GetEAIRate(cf)).
 		Operation("AccountEAIRate").
@@ -114,7 +115,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns the balance history of an account given its address.").
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
 		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
-		Operation("AccountByID").
+		Operation("AccountHistory").
 		Param(boneful.QueryParameter("limit", "Maximum number of transactions to return; default=10.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
 		Produces(JSON).
@@ -171,6 +172,17 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(""))
 
+	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleChaosHistory(cf)).
+		Operation("ChaosHistoryKey").
+		Doc("Returns the history of changes to a value of a chaos chain system variable.").
+		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
+		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(routes.ChaosHistoryResponse{}))
+
 	svc.Route(svc.GET("/chaos/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
 		Operation("ChaosNamespaceAll").
 		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
@@ -184,17 +196,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
-
-	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleChaosHistory(cf)).
-		Operation("ChaosHistoryKey").
-		Doc("Returns the history of changes to a value of a chaos chain system variable.").
-		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
-		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(routes.ChaosHistoryResponse{}))
 
 	svc.Route(svc.GET("/node/status").To(routes.GetStatus(cf)).
 		Operation("NodeStatus").
@@ -290,7 +291,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		}))
 
 	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetch(cf)).
-		Doc("Returns a transaction given its tx hash.").
+		Doc("Returns a transaction from the blockchain given its tx hash.").
 		Operation("TransactionByHash").
 		Produces(JSON).
 		Writes(routes.TransactionData{}))
