@@ -19,6 +19,7 @@ var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data an
 var makeChaosMocks = flag.Bool("make-chaos-mocks", false, "if set, make mock data on the chaos chain and exit")
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
+var indexAddr = flag.String("index", "", "search index address")
 var socketAddr = flag.String("addr", "0.0.0.0:26658", "socket address for incoming connection from tendermint")
 var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and then quit")
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
@@ -27,7 +28,7 @@ var echoVersion = flag.Bool("version", false, "if set, echo the current version 
 
 // Bump this any time we need to reset and reindex the ndau chain.
 // Version 0: initial version
-var ndauSearchVersion = 0
+var indexVersion = 0
 
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
@@ -50,6 +51,17 @@ func getDbSpec() string {
 	}
 	// default to noms server for dockerization
 	return "http://noms:8000"
+}
+
+func getIndexAddr() string {
+	if len(*indexAddr) > 0 {
+		return *indexAddr
+	}
+	if *useNh {
+		return filepath.Join(getNdauConfigDir(), "redis")
+	}
+	// default to redis server for dockerization
+	return "redis:6379"
 }
 
 func check(err error) {
@@ -94,7 +106,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	app, err := ndau.NewApp(getDbSpec(), ndauSearchVersion, *conf)
+	app, err := ndau.NewApp(getDbSpec(), getIndexAddr(), indexVersion, *conf)
 	check(err)
 
 	logger := app.GetLogger()
