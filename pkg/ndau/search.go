@@ -12,12 +12,15 @@ type NdauSearchClient struct {
 	maxHeight uint64
 }
 
-// Factory method.  Must call SearchClient.Init() before using the returned search client.
-func NewNdauSearchClient() *NdauSearchClient {
-	search := &NdauSearchClient{}
-	search.SearchClient = metasearch.NewSearchClient()
+// Factory method.
+func NewNdauSearchClient(address string, version int) (search *NdauSearchClient, err error) {
+	search = &NdauSearchClient{}
+	search.SearchClient, err = metasearch.NewSearchClient(address, version)
+	if err != nil {
+		return nil, err
+	}
 	search.maxHeight = 0
-	return search
+	return search, nil
 }
 
 // Reset our local cache for incrementally indexing the block at the given height.

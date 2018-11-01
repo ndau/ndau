@@ -18,9 +18,6 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 )
 
-// Name of the ndau application.  Used in part to index blockchain data for this application.
-var appName = "ndau"
-
 // App is an ABCI application which implements the Ndau chain
 type App struct {
 	*meta.App
@@ -52,7 +49,7 @@ func NewAppSilent(dbSpec string, indexAddr string, indexVersion int, config conf
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
 func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config config.Config, logger log.FieldLogger) (*App, error) {
-	metaapp, err := meta.NewAppWithLogger(dbSpec, appName, new(backing.State), TxIDs, logger)
+	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
 	}
@@ -69,8 +66,7 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 
 	if indexVersion >= 0 {
 		// Set up ndau-specific search client.
-		search := NewNdauSearchClient()
-		err = search.SearchClient.Init(appName, indexAddr, indexVersion)
+		search, err := NewNdauSearchClient(indexAddr, indexVersion)
 		if err != nil {
 			return nil, errors.Wrap(err, "NewApp unable to init search client")
 		}
