@@ -65,7 +65,7 @@ services:
     image: redis:4.0.11-alpine3.8
     expose:
       - "6379"
-    command: redis-server --dir /redis --save 60 1
+    command: redis-server --dir /redis --save 60 1 --tcp-backlog 128
     volumes:
       - type: bind
         source: ${NDAUHOME:?NDAUHOME is required}/ndau/redis
