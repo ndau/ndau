@@ -122,6 +122,9 @@ func (c Config) EmitAccounts(w io.Writer) {
 
 // CreateAccount creates an account with the given name
 func (c *Config) CreateAccount(name string) error {
+	if _, found := c.Accounts[name]; found {
+		return errors.New("account already exists: " + name)
+	}
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	if err != nil {
 		return errors.Wrap(err, "generate keypair")
