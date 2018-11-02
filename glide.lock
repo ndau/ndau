@@ -1,5 +1,5 @@
-hash: 8b6aa501e8a885c857b14f9d1d4925d960acaa5b47db4b9ef09c294aefd39307
-updated: 2018-10-23T10:45:27.257887-07:00
+hash: e1c2dd084fd1eb01a5f7a750cb741ad06afc972f3ee712aa59bbc33fc3840f25
+updated: 2018-11-02T13:19:40.681477-07:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -121,7 +121,15 @@ imports:
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
 - name: github.com/go-redis/redis
-  version: fa76dd0e87967c95e6f7bef33a230ed2c263fe2d
+  version: b3d9bf10f6666b2ee5100a6f3f84f4caf3b4e37d
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+  - internal/proto
+  - internal/singleflight
+  - internal/util
 - name: github.com/go-zoo/bone
   version: 2270ec2a18cc13fba907d4ae5ad546a21473c0ed
 - name: github.com/gogo/protobuf
@@ -188,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 78c6dcd5a62384e84b8469d9c3de149a5a25d2f8
+  version: 80fdcba71e937b56a13057b8127eee131fb9398d
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -197,11 +205,12 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: c1a25f743f3af93e53f5c007d89e30c3856d2764
+  version: 59a12bd4f106a55b3834256de621f2b792d060e9
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
   - pkg/meta/app/code
+  - pkg/meta/search
   - pkg/meta/state
   - pkg/meta/transaction
 - name: github.com/oneiro-ndev/msgp-well-known-types
@@ -212,7 +221,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 4c0365417b4d9a264ca42a9a1acfdece40767c11
+  version: 684523cd6530ce36c39a555b8e13d44a5ebd1c45
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
