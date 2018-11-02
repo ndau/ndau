@@ -68,7 +68,11 @@ func processAccounts(w http.ResponseWriter, nodeAddr string, addresses []string)
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address data: %s", err), http.StatusInternalServerError))
 			return
 		}
-		resp[oneAddy.String()] = *ad
+		// Check to see if the account was found on the blockchain or if this record was created
+		// because it wasn't found. Only create responses for accounts that were found.
+		if ad.LastWAAUpdate != 0 {
+			resp[oneAddy.String()] = *ad
+		}
 	}
 	reqres.RespondJSON(w, reqres.OKResponse(resp))
 }
