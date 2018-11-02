@@ -78,12 +78,14 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/account/account/:address").To(routes.HandleAccount(cf)).
 		Doc("Returns current state of an account given its address.").
+		Notes("Will return an empty result if the account is a valid ID but not on the blockchain.").
 		Operation("AccountByID").
 		Produces(JSON).
 		Writes(dummyAccount))
 
 	svc.Route(svc.POST("/account/accounts").To(routes.HandleAccounts(cf)).
 		Doc("Returns current state of several accounts given a list of addresses.").
+		Notes("Only returns data for accounts that actively exist on the blockchain.").
 		Operation("AccountsFromList").
 		Consumes(JSON).
 		Reads([]string{dummyAddress.String()}).

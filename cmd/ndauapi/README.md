@@ -133,7 +133,7 @@ Each of these, in turn, has several endpoints within it.
 
 _Returns current state of an account given its address._
 
-
+Will return an empty result if the account is a valid ID but not on the blockchain.
 
 
 
@@ -178,7 +178,7 @@ _**Writes:**_
 
 _Returns current state of several accounts given a list of addresses._
 
-
+Only returns data for accounts that actively exist on the blockchain.
 
 
 _**Parameters:**_
