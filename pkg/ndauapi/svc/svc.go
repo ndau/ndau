@@ -27,9 +27,13 @@ func NewLogMux(cf cfg.Cfg) http.HandlerFunc {
 // JSON is the MIME type that we process
 const JSON = "application/json"
 
+// this function is only intended for testing so it panics on errors
 func keyFromString(s string) signature.PublicKey {
 	var k = signature.PublicKey{}
-	k.UnmarshalText([]byte(s))
+	err := k.UnmarshalText([]byte(s))
+	if err != nil {
+		panic(err)
+	}
 	return k
 }
 
