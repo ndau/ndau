@@ -20,11 +20,6 @@ func getAccountQuery(verbose *bool) func(*cli.Cmd) {
 			if err != nil {
 				finish(*verbose, resp, err, "account")
 			}
-			if ad.LastWAAUpdate == 0 {
-				// this was a marker that the account was not on the blockchain. Here, we don't care about that information
-				// so restore it to its former glory
-				ad.LastWAAUpdate = ad.LastEAIUpdate
-			}
 			jsb, err := json.MarshalIndent(ad, "", "  ")
 			fmt.Println(string(jsb))
 			finish(*verbose, resp, err, "account")

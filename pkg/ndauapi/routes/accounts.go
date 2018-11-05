@@ -10,6 +10,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
@@ -63,14 +64,21 @@ func processAccounts(w http.ResponseWriter, nodeAddr string, addresses []string)
 
 	resp := make(map[string]backing.AccountData)
 	for _, oneAddy := range addies {
-		ad, _, err := tool.GetAccount(node, oneAddy)
+		ad, queryResult, err := tool.GetAccount(node, oneAddy)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address data: %s", err), http.StatusInternalServerError))
 			return
 		}
 		// Check to see if the account was found on the blockchain or if this record was created
 		// because it wasn't found. Only create responses for accounts that were found.
-		if ad.LastWAAUpdate != 0 {
+		var exists bool
+		_, err = fmt.Sscanf(queryResult.Response.Info, query.AccountInfoFmt, &exists)
+		if err != nil {
+			// if it didn't scan we probably have a compatibility or version issue
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("addr fetch (%s) didn't scan: %s", queryResult.Response.Info, err), http.StatusInternalServerError))
+			return
+		}
+		if exists {
 			resp[oneAddy.String()] = *ad
 		}
 	}

@@ -31,15 +31,9 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	state := app.GetState().(*backing.State)
 
 	ad, exists := state.GetAccount(address, app.blockTime)
-	response.Log = fmt.Sprintf("acct exists: %t", exists)
+	// we use the Info field in the response to indicate whether the account exists
+	response.Info = fmt.Sprintf(query.AccountInfoFmt, exists)
 	ad.UpdateSettlements(app.blockTime)
-	// if the account did not exist, we know that its LastWAAUpdate and its LastEAIUpdate should be
-	// identical, so to flag this state for our client we're going to set LastWAAUpdate to 0
-	// and expect the client to restore it. (Otherwise we need to wrap this whole thing for a single
-	// bit of information).
-	if !exists {
-		ad.LastWAAUpdate = 0
-	}
 	adBytes, err := ad.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "serializing account data")
