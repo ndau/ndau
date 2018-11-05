@@ -23,7 +23,7 @@ func TestRouting(t *testing.T) {
 		rt{"GET", "/block/hash/abc123", "/block/hash/:blockhash"},
 		rt{"GET", "/block/height/10234", "/block/height/:height"},
 		rt{"GET", "/block/range/123/143", "/block/range/:first/:last"},
-		rt{"GET", "/chaos/system/names", "/chaos/system/names"},
+		rt{"GET", "/chaos/system/all", "/chaos/system/all"},
 		rt{"GET", "/chaos/system/TargetPrice", "/chaos/system/:key"},
 		rt{"GET", "/chaos/history/FloorPrice", "/chaos/history/:key"},
 		rt{"GET", "/node/status", "/node/status"},
@@ -40,6 +40,7 @@ func TestRouting(t *testing.T) {
 		rt{"GET", "/order/current", "/order/current"},
 		rt{"GET", "/transaction/5469abfed", "/transaction/:txhash"},
 		rt{"POST", "/tx/submit", "/tx/submit"},
+		rt{"GET", "/version", "/version"},
 	}
 
 	cf := cfg.Cfg{}

@@ -1,7 +1,9 @@
 package tool
 
 import (
+	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -13,6 +15,9 @@ func GetSummary(node client.ABCIClient) (*query.Summary, *rpctypes.ResultABCIQue
 	res, err := node.ABCIQuery(query.SummaryEndpoint, nil)
 	if err != nil {
 		return nil, res, err
+	}
+	if code.ReturnCode(res.Response.Code) != code.OK {
+		return nil, res, errors.New(code.ReturnCode(res.Response.Code).String() + ": " + res.Response.Log)
 	}
 
 	// parse the response

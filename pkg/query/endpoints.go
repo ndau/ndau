@@ -6,3 +6,5 @@ const (
 	SummaryEndpoint = "/summary"
 	VersionEndpoint = "/version"
 )
+
+const AccountInfoFmt = "acct exists: %t"

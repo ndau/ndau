@@ -11,12 +11,12 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 )
 
-func TestGetAccounts(t *testing.T) {
+func TestHandleAccounts(t *testing.T) {
 	if !isIntegration {
 		t.Skip("integration tests are opt-in")
 	}
 
-	baseHandler := routes.GetAccount
+	baseHandler := routes.HandleAccounts
 
 	// set up tests
 	tests := []struct {
@@ -26,7 +26,7 @@ func TestGetAccounts(t *testing.T) {
 	}{
 		{
 			name:   "empty request",
-			body:   "{}",
+			body:   "[]",
 			status: http.StatusOK,
 		},
 		// Can't really do this test without mocking an address first
@@ -37,7 +37,7 @@ func TestGetAccounts(t *testing.T) {
 		//},
 		{
 			name:   "invalid address",
-			body:   "{\"addresses\":[\"asdf\"]}",
+			body:   "[\"asdf\"]}",
 			status: http.StatusBadRequest,
 		},
 		{

@@ -73,7 +73,9 @@ Each of these, in turn, has several endpoints within it.
 
 * [AccountEAIRate](#accounteairate)
 
-* [AccountByID](#accountbyid)
+* [AccountHistory](#accounthistory)
+
+* [BlockCurrent](#blockcurrent)
 
 * [BlockHash](#blockhash)
 
@@ -81,11 +83,15 @@ Each of these, in turn, has several endpoints within it.
 
 * [BlockRange](#blockrange)
 
-* [ChaosSystemNames](#chaossystemnames)
+* [ChaosSystemAll](#chaossystemall)
 
 * [ChaosSystemKey](#chaossystemkey)
 
 * [ChaosHistoryKey](#chaoshistorykey)
+
+* [ChaosNamespaceAll](#chaosnamespaceall)
+
+* [ChaosNamespaceKey](#chaosnamespacekey)
 
 * [NodeStatus](#nodestatus)
 
@@ -113,37 +119,9 @@ Each of these, in turn, has several endpoints within it.
 
 * [TransactionByHash](#transactionbyhash)
 
-* [TxChangeValidation](#txchangevalidation)
-
-* [TxChangeSettlement](#txchangesettlement)
-
-* [TxClaimAccount](#txclaimaccount)
-
-* [TxClaimNodeRewards](#txclaimnoderewards)
-
-* [TxCreditEAI](#txcrediteai)
-
-* [TxDelegate](#txdelegate)
-
-* [TxLock](#txlock)
-
-* [TxNominateNodeReward](#txnominatenodereward)
-
-* [TxNotify](#txnotify)
-
-* [TxRegisterNode](#txregisternode)
-
-* [TxReleaseFromEndowment](#txreleasefromendowment)
-
-* [TxSetRewardsDest](#txsetrewardsdest)
-
-* [TxStake](#txstake)
-
-* [TxTransfer](#txtransfer)
-
-* [TxTransferAndLock](#txtransferandlock)
-
 * [TxSubmit](#txsubmit)
+
+* [Version](#version)
 
 
 
@@ -155,7 +133,7 @@ Each of these, in turn, has several endpoints within it.
 
 _Returns current state of an account given its address._
 
-
+Will return an empty result if the account is a valid ID but not on the blockchain.
 
 
 
@@ -187,8 +165,7 @@ _**Writes:**_
             "ChangesAt": null,
             "Next": null
           },
-          "validationScript": null,
-          "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue"
+          "validationScript": null
         }
 ```
 
@@ -201,7 +178,7 @@ _**Writes:**_
 
 _Returns current state of several accounts given a list of addresses._
 
-
+Only returns data for accounts that actively exist on the blockchain.
 
 
 _**Parameters:**_
@@ -230,31 +207,28 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "addressData": [
-            {
-              "balance": 123000000,
-              "validationKeys": [
-                "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
-              ],
-              "rewardsTarget": null,
-              "incomingRewardsFrom": null,
-              "delegationNode": null,
-              "lock": null,
-              "stake": null,
-              "lastEAIUpdate": 0,
-              "lastWAAUpdate": 0,
-              "weightedAverageAge": 2592000000000,
-              "Sequence": 0,
-              "settlements": null,
-              "settlementSettings": {
-                "Period": 0,
-                "ChangesAt": null,
-                "Next": null
-              },
-              "validationScript": null,
-              "address": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue"
-            }
-          ]
+          "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue": {
+            "balance": 123000000,
+            "validationKeys": [
+              "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
+            ],
+            "rewardsTarget": null,
+            "incomingRewardsFrom": null,
+            "delegationNode": null,
+            "lock": null,
+            "stake": null,
+            "lastEAIUpdate": 0,
+            "lastWAAUpdate": 0,
+            "weightedAverageAge": 2592000000000,
+            "Sequence": 0,
+            "settlements": null,
+            "settlementSettings": {
+              "Period": 0,
+              "ChangesAt": null,
+              "Next": null
+            },
+            "validationScript": null
+          }
         }
 ```
 
@@ -319,7 +293,7 @@ _**Writes:**_
 
 
 ---
-## AccountByID
+## AccountHistory
 
 ### `GET /account/history/:accountid`
 
@@ -358,6 +332,95 @@ _**Writes:**_
 
 
 ---
+## BlockCurrent
+
+### `GET /block/current`
+
+_Returns the most recent block in the chain_
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        {
+          "block_meta": {
+            "block_id": {
+              "hash": "",
+              "parts": {
+                "total": 0,
+                "hash": ""
+              }
+            },
+            "header": {
+              "chain_id": "",
+              "height": 0,
+              "time": "0001-01-01T00:00:00Z",
+              "num_txs": 0,
+              "total_txs": 0,
+              "last_block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "last_commit_hash": "",
+              "data_hash": "",
+              "validators_hash": "",
+              "next_validators_hash": "",
+              "consensus_hash": "",
+              "app_hash": "",
+              "last_results_hash": "",
+              "evidence_hash": "",
+              "proposer_address": ""
+            }
+          },
+          "block": {
+            "header": {
+              "chain_id": "",
+              "height": 0,
+              "time": "0001-01-01T00:00:00Z",
+              "num_txs": 0,
+              "total_txs": 0,
+              "last_block_id": {
+                "hash": "",
+                "parts": {
+                  "total": 0,
+                  "hash": ""
+                }
+              },
+              "last_commit_hash": "",
+              "data_hash": "",
+              "validators_hash": "",
+              "next_validators_hash": "",
+              "consensus_hash": "",
+              "app_hash": "",
+              "last_results_hash": "",
+              "evidence_hash": "",
+              "proposer_address": ""
+            },
+            "data": {
+              "txs": null
+            },
+            "evidence": {
+              "evidence": null
+            },
+            "last_commit": null
+          }
+        }
+```
+
+
+
+---
 ## BlockHash
 
 ### `GET /block/hash/:blockhash`
@@ -371,7 +434,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
- blockhash | Query | Hash of the block in chain to return. | string
+ blockhash | Query | Hex hash of the block in chain to return. | string
 
 
 
@@ -467,7 +530,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
- height | Query | Height of the block in chain to return. | int
+ height | Path | Height of the block in chain to return. | int
 
 
 
@@ -554,7 +617,7 @@ _**Writes:**_
 
 ### `GET /block/range/:first/:last`
 
-_Returns a sequence of blocks starting at first and ending at last_
+_Returns a sequence of block metadata starting at first and ending at last_
 
 
 
@@ -565,6 +628,7 @@ Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  first | Path | Height at which to begin retrieval of blocks. | int
  last | Path | Height at which to end retrieval of blocks. | int
+ noempty | Query | Set to nonblank value to exclude empty blocks | string
 
 
 
@@ -577,7 +641,7 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "last_height": 0,
+          "last_height": 12345,
           "block_metas": [
             {
               "block_id": {
@@ -618,11 +682,11 @@ _**Writes:**_
 
 
 ---
-## ChaosSystemNames
+## ChaosSystemAll
 
-### `GET /chaos/system/names`
+### `GET /chaos/system/all`
 
-_Returns all current named system variables on the chaos chain._
+_Returns the names and current values of all currently-defined system variables on the chaos chain._
 
 
 
@@ -646,7 +710,7 @@ _**Writes:**_
 
 ### `GET /chaos/system/:key`
 
-_Returns the current value of a system variable from the chaos chain._
+_Returns the current value of a single system variable from the chaos chain._
 
 
 
@@ -702,6 +766,62 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {}
+```
+
+
+
+---
+## ChaosNamespaceAll
+
+### `GET /chaos/:namespace/all`
+
+_Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain._
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        ""
+```
+
+
+
+---
+## ChaosNamespaceKey
+
+### `GET /chaos/:namespace/:key`
+
+_Returns the current value of a single namespaced variable from the chaos chain._
+
+
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ namespace | Path | Key for the namespace. | string
+ key | Path | Name of the variable. | string
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        ""
 ```
 
 
@@ -1115,7 +1235,7 @@ _**Writes:**_
 
 ### `GET /transaction/:txhash`
 
-_Returns a transaction given its tx hash._
+_Returns a transaction from the blockchain given its tx hash._
 
 
 
@@ -1130,644 +1250,6 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {}
-```
-
-
-
----
-## TxChangeValidation
-
-### `POST /tx/changevalidation`
-
-_Returns a prepared ChangeValidation transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxChangeValidationRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxChangeSettlement
-
-### `POST /tx/changesettlement`
-
-_Returns a prepared ChangeSettlement transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxChangeSettlementRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxClaimAccount
-
-### `POST /tx/claimaccount`
-
-_Returns a prepared ClaimAccount transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxClaimAccountRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {
-          "target": "ndamgmmntjwhq37gi6rwpazy4fka6zgzix55x85kkhepvuue",
-          "ownership": "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst",
-          "keys": [
-            "npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst"
-          ],
-          "script": "",
-          "seq": 13579
-        }
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxClaimNodeRewards
-
-### `POST /tx/claimnoderewards`
-
-_Returns a prepared ClaimNodeRewards transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxClaimNodeRewardsRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxCreditEAI
-
-### `POST /tx/crediteai`
-
-_Returns a prepared CreditEAI transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxCreditEAIRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxDelegate
-
-### `POST /tx/delegate`
-
-_Returns a prepared Delegate transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxDelegateRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxLock
-
-### `POST /tx/lock`
-
-_Returns a prepared Lock transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxLockRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxNominateNodeReward
-
-### `POST /tx/nominatenodereward`
-
-_Returns a prepared NominateNodeReward transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxNominateNodeRewardRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxNotify
-
-### `POST /tx/notify`
-
-_Returns a prepared Notify transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxNotifyRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxRegisterNode
-
-### `POST /tx/registernode`
-
-_Returns a prepared RegisterNode transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxRegisterNodeRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxReleaseFromEndowment
-
-### `POST /tx/releasefromendowment`
-
-_Returns a prepared ReleaseFromEndowment transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxReleaseFromEndowmentRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxSetRewardsDest
-
-### `POST /tx/setrewardsdest`
-
-_Returns a prepared SetRewardsDest transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxSetRewardsDestRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxStake
-
-### `POST /tx/stake`
-
-_Returns a prepared Stake transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxStakeRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxTransfer
-
-### `POST /tx/transfer`
-
-_Returns a prepared Transfer transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxTransferRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
-```
-
-
-
----
-## TxTransferAndLock
-
-### `POST /tx/transferandlock`
-
-_Returns a prepared TransferAndLock	transaction for signature._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- body | Body |  | routes.TxTransferAndLockRequest
-
-
-
-
-_**Consumes:**_ `[application/json]`
-
-
-_**Reads:**_
-```json
-        {}
-```
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        {
-          "TxData": "",
-          "SignableBytes": "",
-          "Signatures": null
-        }
 ```
 
 
@@ -1815,5 +1297,35 @@ _**Writes:**_
           "TxHash": "123abc34099f",
           "ResultCode": "",
           "Msg": ""
+        }
+```
+
+
+
+---
+## Version
+
+### `GET /version`
+
+_Delivers version information_
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        {
+          "ChaosVersion": "",
+          "ChaosSha": "",
+          "NdauVersion": "v1.2.3",
+          "NdauSha": "3123abc35",
+          "Network": "ndau mainnet"
         }
 ```

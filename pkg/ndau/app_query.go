@@ -31,7 +31,8 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	state := app.GetState().(*backing.State)
 
 	ad, exists := state.GetAccount(address, app.blockTime)
-	response.Log = fmt.Sprintf("acct exists: %t", exists)
+	// we use the Info field in the response to indicate whether the account exists
+	response.Info = fmt.Sprintf(query.AccountInfoFmt, exists)
 	ad.UpdateSettlements(app.blockTime)
 	adBytes, err := ad.MarshalMsg(nil)
 	if err != nil {

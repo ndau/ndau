@@ -27,7 +27,19 @@ func NewLogMux(cf cfg.Cfg) http.HandlerFunc {
 // JSON is the MIME type that we process
 const JSON = "application/json"
 
-var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
+// this function is only intended for testing so it panics on errors
+func keyFromString(s string) signature.PublicKey {
+	var k = signature.PublicKey{}
+	err := k.UnmarshalText([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
+var dummyPublic = keyFromString("npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst")
+
+// var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
 var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.KeyBytes())
 var dummyAccount = backing.AccountData{
 	Balance:            123000000,
@@ -70,24 +82,19 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/account/account/:address").To(routes.HandleAccount(cf)).
 		Doc("Returns current state of an account given its address.").
+		Notes("Will return an empty result if the account is a valid ID but not on the blockchain.").
 		Operation("AccountByID").
 		Produces(JSON).
-		Writes(routes.AccountDataResponse{
-			AccountData: dummyAccount,
-			Address:     dummyAddress.String(),
-		}))
+		Writes(dummyAccount))
 
 	svc.Route(svc.POST("/account/accounts").To(routes.HandleAccounts(cf)).
 		Doc("Returns current state of several accounts given a list of addresses.").
+		Notes("Only returns data for accounts that actively exist on the blockchain.").
 		Operation("AccountsFromList").
 		Consumes(JSON).
 		Reads([]string{dummyAddress.String()}).
 		Produces(JSON).
-		Writes(routes.AccountResponse{
-			AcctData: []routes.AccountDataResponse{routes.AccountDataResponse{
-				AccountData: dummyAccount,
-				Address:     dummyAddress.String(),
-			}}}))
+		Writes(map[string]backing.AccountData{dummyAddress.String(): dummyAccount}))
 
 	svc.Route(svc.POST("/account/eai/rate").To(routes.GetEAIRate(cf)).
 		Operation("AccountEAIRate").
@@ -114,7 +121,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns the balance history of an account given its address.").
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
 		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
-		Operation("AccountByID").
+		Operation("AccountHistory").
 		Param(boneful.QueryParameter("limit", "Maximum number of transactions to return; default=10.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
 		Produces(JSON).
@@ -126,44 +133,52 @@ func New(cf cfg.Cfg) *boneful.Service {
 			},
 		}))
 
+	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
+		Operation("BlockCurrent").
+		Doc("Returns the most recent block in the chain").
+		Produces(JSON).
+		Writes(dummyResultBlock))
+
 	svc.Route(svc.GET("/block/hash/:blockhash").To(routes.HandleBlockHash(cf)).
 		Operation("BlockHash").
 		Doc("Returns the block in the chain with the given hash.").
-		Param(boneful.QueryParameter("blockhash", "Hash of the block in chain to return.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("blockhash", "Hex hash of the block in chain to return.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(dummyResultBlock))
 
 	svc.Route(svc.GET("/block/height/:height").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockHeight").
 		Doc("Returns the block in the chain at the given height.").
-		Param(boneful.QueryParameter("height", "Height of the block in chain to return.").DataType("int").Required(true)).
+		Param(boneful.PathParameter("height", "Height of the block in chain to return.").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(dummyResultBlock))
 
 	svc.Route(svc.GET("/block/range/:first/:last").To(routes.HandleBlockRange(cf)).
 		Operation("BlockRange").
-		Doc("Returns a sequence of blocks starting at first and ending at last").
+		Doc("Returns a sequence of block metadata starting at first and ending at last").
 		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
 		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
-	svc.Route(svc.GET("/chaos/system/names").To(routes.HandleBlockRange(cf)).
-		Operation("ChaosSystemNames").
-		Doc("Returns all current named system variables on the chaos chain.").
+	svc.Route(svc.GET("/chaos/system/all").To(routes.HandleChaosSystemAll(cf)).
+		Operation("ChaosSystemAll").
+		Doc("Returns the names and current values of all currently-defined system variables on the chaos chain.").
 		Produces(JSON).
 		Writes(""))
 
-	svc.Route(svc.GET("/chaos/system/:key").To(routes.HandleBlockRange(cf)).
+	svc.Route(svc.GET("/chaos/system/:key").To(routes.HandleChaosSystemKey(cf)).
 		Operation("ChaosSystemKey").
-		Doc("Returns the current value of a system variable from the chaos chain.").
+		Doc("Returns the current value of a single system variable from the chaos chain.").
 		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 
-	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleBlockRange(cf)).
+	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleChaosHistory(cf)).
 		Operation("ChaosHistoryKey").
 		Doc("Returns the history of changes to a value of a chaos chain system variable.").
 		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
@@ -173,6 +188,20 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{}))
+
+	svc.Route(svc.GET("/chaos/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
+		Operation("ChaosNamespaceAll").
+		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
+		Produces(JSON).
+		Writes(""))
+
+	svc.Route(svc.GET("/chaos/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
+		Operation("ChaosNamespaceKey").
+		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
+		Param(boneful.PathParameter("namespace", "Key for the namespace.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(""))
 
 	svc.Route(svc.GET("/node/status").To(routes.GetStatus(cf)).
 		Operation("NodeStatus").
@@ -268,136 +297,10 @@ func New(cf cfg.Cfg) *boneful.Service {
 		}))
 
 	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetch(cf)).
-		Doc("Returns a transaction given its tx hash.").
+		Doc("Returns a transaction from the blockchain given its tx hash.").
 		Operation("TransactionByHash").
 		Produces(JSON).
 		Writes(routes.TransactionData{}))
-
-	svc.Route(svc.POST("/tx/changevalidation").To(routes.HandleChangeValidation(cf)).
-		Doc("Returns a prepared ChangeValidation transaction for signature.").
-		Operation("TxChangeValidation").
-		Consumes(JSON).
-		Reads(routes.TxChangeValidationRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/changesettlement").To(routes.HandleChangeSettlement(cf)).
-		Doc("Returns a prepared ChangeSettlement transaction for signature.").
-		Operation("TxChangeSettlement").
-		Consumes(JSON).
-		Reads(routes.TxChangeSettlementRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/claimaccount").To(routes.HandleClaimAccount(cf)).
-		Doc("Returns a prepared ClaimAccount transaction for signature.").
-		Operation("TxClaimAccount").
-		Consumes(JSON).
-		Reads(routes.TxClaimAccountRequest{
-			Target:           dummyAddress,
-			OwnershipKey:     dummyPublic,
-			ValidationKeys:   []signature.PublicKey{dummyPublic},
-			ValidationScript: "",
-			Sequence:         13579,
-		}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/claimnoderewards").To(routes.HandleClaimNodeRewards(cf)).
-		Doc("Returns a prepared ClaimNodeRewards transaction for signature.").
-		Operation("TxClaimNodeRewards").
-		Consumes(JSON).
-		Reads(routes.TxClaimNodeRewardsRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/crediteai").To(routes.HandleCreditEAI(cf)).
-		Doc("Returns a prepared CreditEAI transaction for signature.").
-		Operation("TxCreditEAI").
-		Consumes(JSON).
-		Reads(routes.TxCreditEAIRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/delegate").To(routes.HandleDelegate(cf)).
-		Doc("Returns a prepared Delegate transaction for signature.").
-		Operation("TxDelegate").
-		Consumes(JSON).
-		Reads(routes.TxDelegateRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/lock").To(routes.HandleLock(cf)).
-		Doc("Returns a prepared Lock transaction for signature.").
-		Operation("TxLock").
-		Consumes(JSON).
-		Reads(routes.TxLockRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/nominatenodereward").To(routes.HandleNominateNodeReward(cf)).
-		Doc("Returns a prepared NominateNodeReward transaction for signature.").
-		Operation("TxNominateNodeReward").
-		Consumes(JSON).
-		Reads(routes.TxNominateNodeRewardRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/notify").To(routes.HandleNotify(cf)).
-		Doc("Returns a prepared Notify transaction for signature.").
-		Operation("TxNotify").
-		Consumes(JSON).
-		Reads(routes.TxNotifyRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/registernode").To(routes.HandleRegisterNode(cf)).
-		Doc("Returns a prepared RegisterNode transaction for signature.").
-		Operation("TxRegisterNode").
-		Consumes(JSON).
-		Reads(routes.TxRegisterNodeRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/releasefromendowment").To(routes.HandleReleaseFromEndowment(cf)).
-		Doc("Returns a prepared ReleaseFromEndowment transaction for signature.").
-		Operation("TxReleaseFromEndowment").
-		Consumes(JSON).
-		Reads(routes.TxReleaseFromEndowmentRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/setrewardsdest").To(routes.HandleSetRewardsDest(cf)).
-		Doc("Returns a prepared SetRewardsDest transaction for signature.").
-		Operation("TxSetRewardsDest").
-		Consumes(JSON).
-		Reads(routes.TxSetRewardsDestRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/stake").To(routes.HandleStake(cf)).
-		Doc("Returns a prepared Stake transaction for signature.").
-		Operation("TxStake").
-		Consumes(JSON).
-		Reads(routes.TxStakeRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/transfer").To(routes.HandleTransfer(cf)).
-		Doc("Returns a prepared Transfer transaction for signature.").
-		Operation("TxTransfer").
-		Consumes(JSON).
-		Reads(routes.TxTransferRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
-
-	svc.Route(svc.POST("/tx/transferandlock").To(routes.HandleTransferAndLock(cf)).
-		Doc("Returns a prepared TransferAndLock	transaction for signature.").
-		Operation("TxTransferAndLock").
-		Consumes(JSON).
-		Reads(routes.TxTransferAndLockRequest{}).
-		Produces(JSON).
-		Writes(routes.PreparedTx{}))
 
 	svc.Route(svc.POST("/tx/submit").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a prepared transaction.").
@@ -406,15 +309,17 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Reads(dummyPreparedTx).
 		Produces(JSON).
 		Writes(dummyTxResult))
+
+	svc.Route(svc.GET("/version").To(routes.HandleVersion(cf)).
+		Doc("Delivers version information").
+		Operation("Version").
+		Produces(JSON).
+		Writes(routes.VersionResult{
+			NdauVersion: "v1.2.3",
+			NdauSha:     "3123abc35",
+			Network:     "ndau mainnet",
+		}))
 	return svc
 }
 
 // Add call to get list of nodes
-// Add /version:
-// return version info as multiple fields:
-// {
-//      "version": "v1.2.3",
-//      "sha": "3123abc35",
-//      "network": "ndau mainnet",
-// }
-// The "network" field simply reports a specific value from the system variables on the chaos chain.
