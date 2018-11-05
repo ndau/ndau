@@ -25,7 +25,7 @@ func TestCanQueryAccountStatusSource(t *testing.T) {
 		Data: []byte(source),
 	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "acct exists: true", resp.Log)
+	require.Equal(t, "acct exists: true", resp.Info)
 	accountData := new(backing.AccountData)
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestCanQueryAccountStatusDest(t *testing.T) {
 		Data: []byte(dest),
 	})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.Equal(t, "acct exists: false", resp.Log)
+	require.Equal(t, "acct exists: false", resp.Info)
 	accountData := new(backing.AccountData)
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
