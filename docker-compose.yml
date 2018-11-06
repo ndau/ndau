@@ -48,7 +48,9 @@ services:
     environment:
       - HONEYCOMB_KEY=${HONEYCOMB_KEY:?HONEYCOMB_KEY is required}
       - HONEYCOMB_DATASET=${HONEYCOMB_DATASET:?HONEYCOMB_DATASET is required}
-      - NDAUAPI_NODE_ADDRESS=http://tendermint:26657
+      - NDAUAPI_NDAU_RPC_URL=http://tendermint:26657
+      # If you have a chaos chain running, you may specify it here.
+      - NDAUAPI_CHAOS_RPC_URL=${NDAUAPI_CHAOS_RPC_URL}
     build:
       context: .
       dockerfile: ./docker/ndauapi-run.docker
