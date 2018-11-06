@@ -72,7 +72,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			wanterr: "could not be decoded into a transaction",
 		},
 		{
-			name: "valid tx but no node",
+			name: "invalid tx but no node",
 			body: &PreparedTx{
 				TxData:        testLockData,
 				SignableBytes: b64(testLockTx.SignableBytes()),
@@ -80,7 +80,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			},
 			status:  http.StatusInternalServerError,
 			want:    TxResult{},
-			wanterr: "error retrieving node",
+			wanterr: "error",
 		},
 	}
 

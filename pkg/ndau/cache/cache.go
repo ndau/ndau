@@ -145,6 +145,15 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	return nil
 }
 
+// GetNames returns the set of names currently known to the system cache
+func (c *SystemCache) GetNames() []string {
+	result := make([]string, 0)
+	for name := range c.inner {
+		result = append(result, name)
+	}
+	return result
+}
+
 // GetRaw returns the raw bytes of the specified system variable
 func (c *SystemCache) GetRaw(name string) []byte {
 	c.lock.RLock()

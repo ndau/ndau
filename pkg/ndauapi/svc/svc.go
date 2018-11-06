@@ -142,7 +142,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/block/hash/:blockhash").To(routes.HandleBlockHash(cf)).
 		Operation("BlockHash").
 		Doc("Returns the block in the chain with the given hash.").
-		Param(boneful.QueryParameter("blockhash", "Hex hash of the block in chain to return.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("blockhash", "Hex hash of the block in chain to return.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(dummyResultBlock))
 
@@ -211,9 +211,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/node/health").To(routes.GetHealth(cf)).
 		Operation("NodeHealth").
-		Doc("Returns the health of the current node.").
+		Doc("Returns the health of the current ndau node and chaos node.").
 		Produces(JSON).
-		Writes(rpctypes.ResultHealth{}))
+		Writes(routes.HealthResponse{}))
 
 	svc.Route(svc.GET("/node/net").To(routes.GetNetInfo(cf)).
 		Operation("NodeNetInfo").
