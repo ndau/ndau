@@ -28,8 +28,13 @@ var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash o
 var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
 var echoVersion = flag.Bool("version", false, "if set, echo the current version and exit")
 
-// Bump this any time we need to reset and reindex the ndau chain.
-// Version 0: initial version
+// Bump this any time we need to reset and reindex the ndau chain.  For example, if we change the
+// format of something in the index, say, needing to use unsorted sets instead of sorted sets; if
+// our new searching code doesn't expect the old format in the index, we can bump this to cause a
+// wipe and full reindex of the blockchain using the new format that the new search code expects.
+// That is why this is tied to code here, rather than a variable we pass in.
+// History:
+//   0 = initial version
 var indexVersion = 0
 
 func getNdauhome() string {
