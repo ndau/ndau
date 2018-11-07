@@ -12,6 +12,10 @@ import (
 )
 
 func TestBlockHeight(t *testing.T) {
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
+
 	// set up tests
 	tests := []struct {
 		name   string
@@ -60,6 +64,10 @@ func TestBlockHeight(t *testing.T) {
 }
 
 func TestBlockRange(t *testing.T) {
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
+
 	// set up tests
 	tests := []struct {
 		name   string
