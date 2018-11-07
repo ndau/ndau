@@ -3,7 +3,7 @@ package ndau
 import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
-	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )

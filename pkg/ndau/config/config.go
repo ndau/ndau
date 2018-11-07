@@ -8,6 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
 )
 
 // A Keypair holds a pair of keys
@@ -41,10 +42,7 @@ type Config struct {
 	// This is very sensitive information! Changing it will lead to a fork!
 	// Users should never change this! On the other hand, it's still better
 	// to have it defined as a configuration variable than to hardcode it.
-	//
-	// The value on the chaos chain to which this points must be the
-	// serialized Protobuf encoding of a SVIMap.
-	SystemVariableIndirect NamespacedKey
+	SystemVariableIndirect svi.Location
 
 	// ChaosTimeout is the time in milliseconds which should be allowed
 	// for reads from the chaos chain.

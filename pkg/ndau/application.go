@@ -5,8 +5,15 @@
 package ndau
 
 import (
+	"encoding/base64"
 	"io/ioutil"
+	"os"
 
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
+
+	"github.com/BurntSushi/toml"
+	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
+	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
@@ -125,4 +132,71 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 	}).Info("ndaunode per block custom processing complete")
 
 	return response
+}
+
+// InitMockApp creates an empty test application, which is mainly useful for testing.
+//
+// This uses a freshly-generated chaos config and an in-memory noms.
+func InitMockApp() (app *App, assc generator.Associated, err error) {
+	var bpc []byte
+	var gfilepath, asscpath string
+
+	bpc, gfilepath, asscpath, err = generator.GenerateIn("")
+	if err != nil {
+		return
+	}
+
+	// update the config with the genesisfile path and the
+	// svi location
+	var gfile genesisfile.GFile
+	gfile, err = genesisfile.Load(gfilepath)
+	if err != nil {
+		return
+	}
+	var svi *svi.Location
+	svi, err = gfile.FindSVIStub()
+	if err != nil {
+		return
+	}
+	if svi == nil {
+		err = errors.New("svi stub must exist in generated genesisfile")
+		return
+	}
+
+	var configfile *os.File
+	configfile, err = ioutil.TempFile("", "config.*.toml")
+	if err != nil {
+		return
+	}
+	var conf *config.Config
+	conf, err = config.LoadDefault(configfile.Name())
+	if err != nil {
+		return
+	}
+	conf.UseMock = &gfilepath
+	conf.SystemVariableIndirect = *svi
+	err = conf.Dump(configfile.Name())
+	if err != nil {
+		return
+	}
+
+	app, err = NewAppSilent("", *conf)
+	if err != nil {
+		return
+	}
+
+	// now load the appropriate associated data
+	var af generator.AssociatedFile
+	_, err = toml.DecodeFile(asscpath, &af)
+	if err != nil {
+		return
+	}
+	var ok bool
+	assc, ok = af[base64.StdEncoding.EncodeToString(bpc)]
+	if !ok {
+		err = errors.New("associated data for this bpc not found in assc file")
+		return
+	}
+
+	return
 }
