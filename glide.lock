@@ -196,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 80fdcba71e937b56a13057b8127eee131fb9398d
+  version: def77c8fab89ebd1f8207f58017a74b91f33f63a
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -205,7 +205,7 @@ imports:
   - pkg/chaos/query
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 59a12bd4f106a55b3834256de621f2b792d060e9
+  version: 382e21903e2509fc7179317eeb78a0dd9b310814
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
