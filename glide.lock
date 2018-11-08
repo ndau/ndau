@@ -1,5 +1,5 @@
 hash: e1c2dd084fd1eb01a5f7a750cb741ad06afc972f3ee712aa59bbc33fc3840f25
-updated: 2018-11-02T13:19:40.681477-07:00
+updated: 2018-11-08T09:55:57.0978-08:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -203,6 +203,7 @@ imports:
   - pkg/chaos/backing
   - pkg/chaos/ns
   - pkg/chaos/query
+  - pkg/chaos/search
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
   version: 382e21903e2509fc7179317eeb78a0dd9b310814
@@ -221,7 +222,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 684523cd6530ce36c39a555b8e13d44a5ebd1c45
+  version: a193b8c93b2ccfdc033f2bc685a99f0f020eeca7
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -431,7 +432,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: a0a13e073c7bae39af55369bcd1c2dc7ebb88ede
+  version: c26e340d2f6d4e95b683e6fe994653436ca30337
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
