@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/system_vars/pkg/svi"
+	"github.com/pkg/errors"
 )
 
 // A Keypair holds a pair of keys
@@ -127,4 +129,30 @@ func (c *Config) Dump(configPath string) error {
 		return err
 	}
 	return toml.NewEncoder(fp).Encode(c)
+}
+
+// UpdateFrom updates the config file from the given genesisfile path
+func (c *Config) UpdateFrom(gfilepath string) error {
+	// check all potential error conditions before modifying c
+	gfile, err := genesisfile.Load(gfilepath)
+	if err != nil {
+		return errors.Wrap(err, "loading genesisfile")
+	}
+	sviLoc, err := gfile.FindSVIStub()
+	if err != nil {
+		return errors.Wrap(err, "searching for svi stub")
+	}
+	if sviLoc == nil {
+		return errors.New("svi stub not present in genesisfile")
+	}
+
+	gfileabspath, err := filepath.Abs(gfilepath)
+	if err != nil {
+		return errors.Wrap(err, "finding genesisfile absolute path")
+	}
+
+	// update c
+	c.SystemVariableIndirect = *sviLoc
+	c.UseMock = &gfileabspath
+	return nil
 }

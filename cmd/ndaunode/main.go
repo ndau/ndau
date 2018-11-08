@@ -22,6 +22,7 @@ var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and 
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
 var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
 var echoVersion = flag.Bool("version", false, "if set, echo the current version and exit")
+var updateFrom = flag.String("update-from", "", "if set, update app configuration from the given genesisfile and exit")
 
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
@@ -75,6 +76,14 @@ func main() {
 
 	conf, err := config.LoadDefault(configPath)
 	check(err)
+
+	if updateFrom != nil && len(*updateFrom) > 0 {
+		err = conf.UpdateFrom(*updateFrom)
+		check(err)
+		err = conf.Dump(configPath)
+		check(err)
+		os.Exit(0)
+	}
 
 	if *echoHash {
 		fmt.Println(getHash(conf))
