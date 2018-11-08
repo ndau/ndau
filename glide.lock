@@ -1,5 +1,5 @@
 hash: c709a3bd06527d3449ba5877996726f83bedd59a175b0f5fdb5ed67beb6cb3f5
-updated: 2018-11-08T11:34:21.234531+01:00
+updated: 2018-11-08T13:45:01.821368+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -186,7 +186,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 8fd3ec85602c545066916b17f3f06ce680ec7d78
+  version: 4863c7f34be0b0031846f9b9ea2d465110cb9270
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -196,7 +196,7 @@ imports:
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
-  version: a877b9a0efccb9b1d1259eea4b4f9a229fc90f50
+  version: c5a1686997a394dcbf1a0cd0ab0205d418516411
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
   subpackages:
   - pkg/genesis.generator
