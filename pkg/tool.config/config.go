@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,7 +10,10 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/oneiro-ndev/system_vars/pkg/system_vars"
+
 	"github.com/BurntSushi/toml"
+	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
@@ -192,4 +196,80 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 		NNR:      tc.NNR,
 		CVC:      tc.CVC,
 	}, nil
+}
+
+// UpdateFrom updates the config file given the path to the associated data file
+// and the public key of the BPC.
+func (c *Config) UpdateFrom(asscPath string, bpcPublic []byte) error {
+	asscFile := make(generator.AssociatedFile)
+	_, err := toml.DecodeFile(asscPath, &asscFile)
+	if err != nil {
+		return errors.Wrap(err, "reading asscfile path")
+	}
+	bpcs := base64.StdEncoding.EncodeToString(bpcPublic)
+	assc, ok := asscFile[bpcs]
+	if !ok {
+		return errors.New("bpc key not found in associated data file")
+	}
+
+	sysaccts := []struct {
+		acct        string
+		addrName    string
+		privkeyName string
+	}{
+		{"CVC", sv.CommandValidatorChangeAddressName, sv.CommandValidatorChangeOwnershipPrivateName},
+		{"NNR", sv.NominateNodeRewardAddressName, sv.NominateNodeRewardOwnershipPrivateName},
+		{"RFE", sv.ReleaseFromEndowmentAddressName, sv.ReleaseFromEndowmentOwnershipPrivateName},
+	}
+	for _, sa := range sysaccts {
+		addrI, pubOk := assc[sa.addrName]
+		privkeyI, privOk := assc[sa.privkeyName]
+		if pubOk != privOk {
+			fmt.Fprintf(
+				os.Stderr, "assc:\n  %25s set: %t\n  %25s set: %t\n",
+				sa.addrName, pubOk,
+				sa.privkeyName, privOk,
+			)
+		}
+		if !(pubOk && privOk) {
+			continue
+		}
+
+		addrS, pubOk := addrI.(string)
+		if !pubOk {
+			return fmt.Errorf("assc: value of %s was not a string", sa.addrName)
+		}
+		privkeyS, privOk := privkeyI.(string)
+		if !privOk {
+			return fmt.Errorf("assc: value of %s was not a string", sa.privkeyName)
+		}
+
+		addr, err := address.Validate(addrS)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("decoding %s address", sa.addrName))
+		}
+
+		var privkey signature.PrivateKey
+		err = privkey.UnmarshalText([]byte(privkeyS))
+		if err != nil {
+			return errors.Wrap(err, "decoding "+sa.privkeyName)
+		}
+
+		sysacct := &SysAccount{
+			Address: addr,
+			Keys:    []signature.PrivateKey{privkey},
+		}
+
+		// this is not great, but the fancy pointer tricks just weren't working
+		switch sa.acct {
+		case "CVC":
+			c.CVC = sysacct
+		case "NNR":
+			c.NNR = sysacct
+		case "RFE":
+			c.RFE = sysacct
+		}
+	}
+
+	return nil
 }
