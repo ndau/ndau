@@ -1,5 +1,5 @@
-hash: 2ac6f7dc12ec95c45e93d298ff1a44a59beddbda25f3d1a82bb2bd1adfc7c902
-updated: 2018-11-08T10:22:07.374836-08:00
+hash: 04b2572a8afa0b1e620b2dbc52395ace0a2fb7535ab5fcf51a52a06f2843d576
+updated: 2018-11-09T10:14:34.042953-08:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -196,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: d2b0aba78bbded016534c7b9c4748b4bce148707
+  version: bbe1c1f4090a4ae9157088078dbc5297cbe6252a
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -206,7 +206,7 @@ imports:
   - pkg/chaos/search
   - pkg/tool
 - name: github.com/oneiro-ndev/metanode
-  version: 4de7c8ca771f1a6aed2668a842b03f2d07f29ea6
+  version: ab7319817d1cc1bb4672d5f1c5502c96eb541c9e
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
