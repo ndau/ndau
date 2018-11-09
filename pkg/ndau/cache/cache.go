@@ -54,14 +54,22 @@ type kv struct {
 func (c *SystemCache) getKV(
 	name string, nsk svi.Location,
 	results chan<- kv, errors chan<- error,
+	done <-chan struct{},
 ) {
 	value, err := c.store.GetRaw(nsk)
-	if err != nil {
-		errors <- err
-	} else {
-		results <- kv{
-			k: name,
-			v: value,
+	select {
+	case <-done:
+		// return without sending anything; since we never write to
+		// done, a successful read means that the channel is closed, which
+		// means that the output channels must also be closed
+	default:
+		if err != nil {
+			errors <- err
+		} else {
+			results <- kv{
+				k: name,
+				v: value,
+			}
 		}
 	}
 }
@@ -93,6 +101,16 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	defer close(resultsStream)
 	errorsStream := make(chan error)
 	defer close(errorsStream)
+	// send isn't actually a stream: we use it for simultaneous multi-channel
+	// communication: if it's open, it's probably safe to send on the streams.
+	// Given that its closing is deferred last, it's closed first, so this
+	// will work well most of the time.
+	//
+	// It isn't perfect: it's easy to imagine a race condition in which
+	// a child goroutine selects not the marker, then the parent process exits,
+	// then the child writes, causing a panic. Hopefully that case is rare.
+	done := make(chan struct{})
+	defer close(done)
 
 	// actually getting the keys and values is super IO-heavy,
 	// so we do it asynchronously
@@ -108,7 +126,7 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 		} else {
 			nsk = dc.Current
 		}
-		go c.getKV(name, nsk, resultsStream, errorsStream)
+		go c.getKV(name, nsk, resultsStream, errorsStream, done)
 	}
 
 	// create a new cache map.
@@ -117,27 +135,28 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// we keep the results of the previous cache
 	newCache := make(map[string][]byte)
 
-	// now collect the results: we know we should get one result from each
-	// goroutine, and we had one of those per key in sviMap
-	errs := make([]error, 0)
+	// create the timeout channel outside the loop so it's not reset on each
+	// iteration
+	timeout := time.After(c.timeout)
+
+	// now collect the results: we know each goroutine will send once on either
+	// the resultsStream or the errorsStream, so we can just use a static for
+	// loop to collect the right number of results
 	for i := 0; i < len(sviMap); i++ {
 		var kv kv
 		select {
 		case kv = <-resultsStream:
 			newCache[kv.k] = kv.v
 		case err = <-errorsStream:
-			errs = append(errs, errors.Wrap(err, "could not get system variable from chaos chain"))
-		case <-time.After(c.timeout):
-			errs = append(errs, errors.New("Attempt to get system variables from chaos chain timed out"))
-			break
+			return errors.Wrap(err, "could not get system variable "+kv.k)
+		case <-timeout:
+			return fmt.Errorf(
+				"attempt to get system variables timed out: collected %d of %d values in %s",
+				len(newCache),
+				len(sviMap),
+				c.timeout,
+			)
 		}
-	}
-	switch len(errs) {
-	case 0: // no error
-	case 1:
-		return errs[0]
-	default:
-		return fmt.Errorf("multiple errors: %s", errs)
 	}
 
 	// log the sys variable keys available here
