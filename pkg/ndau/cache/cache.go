@@ -148,16 +148,22 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// iteration
 	timeout := time.After(c.timeout)
 
-	// now collect the results: we know each goroutine will send once on either
-	// the resultsStream or the errorsStream, so we can just use a static for
-	// loop to collect the right number of results
-	for i := 0; i < len(sviMap); i++ {
+	// now collect the results:
+	// we can't know how many iterations we'll get, or whether we'll get phantom
+	// values from the errorsStream due to pseudorandom selection of a closed channel,
+	// so we have to break the loop manually
+	for {
 		var kv kv
+		var real bool
 		select {
-		case kv = <-resultsStream:
-			newCache[kv.k] = kv.v
+		case kv, real = <-resultsStream:
+			if real {
+				newCache[kv.k] = kv.v
+			}
 		case err = <-errorsStream:
-			return errors.Wrap(err, "could not get system variable "+kv.k)
+			if err != nil {
+				return errors.Wrap(err, "could not get system variable "+kv.k)
+			}
 		case <-timeout:
 			return fmt.Errorf(
 				"attempt to get system variables timed out: collected %d of %d values in %s",
@@ -165,6 +171,9 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 				len(sviMap),
 				c.timeout,
 			)
+		}
+		if len(newCache) == len(sviMap) {
+			break // we're done
 		}
 	}
 
@@ -176,7 +185,7 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// 	keys[i] = k
 	// 	i++
 	// }
-	// logger.WithField("system variable keys", keys).Info("SystemCache.Update completed")
+	// fmt.Printf("sv keys:\n%#v\n", keys)
 
 	// everything's fine; just replace the inner cache with the new one now
 	c.inner = newCache
