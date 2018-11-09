@@ -73,11 +73,12 @@ func TestSystemCacheTimeout(t *testing.T) {
 		wanterr bool
 	}{
 		{0 * time.Millisecond, 50 * time.Millisecond, false},
+		{50 * time.Millisecond, 50 * time.Millisecond, true},
 		{100 * time.Millisecond, 50 * time.Millisecond, true},
 	}
 	for idx, tcase := range tcases {
 		t.Run(
-			fmt.Sprintf("latency: %s; timeout: %s", tcase.latency, tcase.timeout),
+			fmt.Sprintf("latency: %5s; timeout: %5s", tcase.latency, tcase.timeout),
 			func(t *testing.T) {
 				sc := makecache(t, tcase.latency, tcase.timeout)
 				err := sc.Update(uint64(idx+1), logger)

@@ -52,26 +52,35 @@ type kv struct {
 }
 
 func (c *SystemCache) getKV(
-	name string, nsk svi.Location,
-	results chan<- kv, errors chan<- error,
 	done <-chan struct{},
-) {
-	value, err := c.store.GetRaw(nsk)
-	select {
-	case <-done:
-		// return without sending anything; since we never write to
-		// done, a successful read means that the channel is closed, which
-		// means that the output channels must also be closed
-	default:
-		if err != nil {
-			errors <- err
-		} else {
-			results <- kv{
-				k: name,
-				v: value,
+	name string, nsk svi.Location,
+) (<-chan kv, <-chan error) {
+	results := make(chan kv)
+	errors := make(chan error)
+
+	go func() {
+		defer close(results)
+		defer close(errors)
+
+		value, err := c.store.GetRaw(nsk)
+		select {
+		case <-done:
+			// return without sending anything; since we never write to
+			// done, a successful read means that the channel is closed, which
+			// means that the output channels must also be closed
+		default:
+			if err != nil {
+				errors <- err
+			} else {
+				results <- kv{
+					k: name,
+					v: value,
+				}
 			}
 		}
-	}
+	}()
+
+	return results, errors
 }
 
 // Update the cache
@@ -94,31 +103,26 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 		return errors.Wrap(err, "could not get SVI map")
 	}
 
-	// set up some channels
-	// we don't buffer them; the block time on reads should be trivial
-	// compared to the network lag
-	resultsStream := make(chan kv)
-	defer close(resultsStream)
-	errorsStream := make(chan error)
-	defer close(errorsStream)
-	// send isn't actually a stream: we use it for simultaneous multi-channel
-	// communication: if it's open, it's probably safe to send on the streams.
-	// Given that its closing is deferred last, it's closed first, so this
-	// will work well most of the time.
-	//
-	// It isn't perfect: it's easy to imagine a race condition in which
-	// a child goroutine selects not the marker, then the parent process exits,
-	// then the child writes, causing a panic. Hopefully that case is rare.
-	done := make(chan struct{})
-	defer close(done)
-
 	// actually getting the keys and values is super IO-heavy,
 	// so we do it asynchronously
 	//
 	// here, we dispatch a bunch of goroutines, each of which is
 	// responsible for fetching a single value for the requested key
 	//
-	// the results and any errors are sent along the channels we set up earlier
+	// unfortunately, golang's channels _really_ don't like to play nicely
+	// in a MPSC configuration, and are super easy to panic if you try, so
+	// we have to faff around with some boilerplate to make this work right.
+	//
+	// done isn't actually a stream: we use it for simultaneous multi-channel
+	// communication: if it's still open, we're still reading from the streams.
+	done := make(chan struct{})
+	defer close(done)
+
+	// construct some lists of channels which we can populate, one per gorountine
+	resultschannels := make([]<-chan kv, 0, len(sviMap))
+	errorschannels := make([]<-chan error, 0, len(sviMap))
+
+	// dispatch goroutines, collecting results channels in the process
 	for name, dc := range sviMap {
 		var nsk svi.Location
 		if height >= dc.ChangeOn {
@@ -126,8 +130,13 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 		} else {
 			nsk = dc.Current
 		}
-		go c.getKV(name, nsk, resultsStream, errorsStream, done)
+		r, e := c.getKV(done, name, nsk)
+		resultschannels = append(resultschannels, r)
+		errorschannels = append(errorschannels, e)
 	}
+
+	resultsStream := mergeKV(done, resultschannels...)
+	errorsStream := mergeErr(done, errorschannels...)
 
 	// create a new cache map.
 	//
