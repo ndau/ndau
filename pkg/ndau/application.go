@@ -11,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
@@ -66,7 +67,7 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 
 	if indexVersion >= 0 {
 		// Set up ndau-specific search client.
-		search, err := NewNdauSearchClient(indexAddr, indexVersion)
+		search, err := search.NewNdauSearchClient(indexAddr, indexVersion)
 		if err != nil {
 			return nil, errors.Wrap(err, "NewApp unable to init search client")
 		}
