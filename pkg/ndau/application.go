@@ -42,20 +42,20 @@ type App struct {
 }
 
 // NewApp prepares a new Ndau App
-func NewApp(dbSpec string, config config.Config) (*App, error) {
-	return NewAppWithLogger(dbSpec, config, nil)
+func NewApp(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
+	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, nil)
 }
 
 // NewAppSilent prepares a new Ndau App which doesn't log
-func NewAppSilent(dbSpec string, config config.Config) (*App, error) {
+func NewAppSilent(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
 	logger := log.New()
 	logger.Out = ioutil.Discard
 
-	return NewAppWithLogger(dbSpec, config, logger)
+	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, logger)
 }
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
-func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogger) (*App, error) {
+func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config config.Config, logger log.FieldLogger) (*App, error) {
 	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
@@ -69,6 +69,31 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 	initialBlockTime, err := math.TimestampFrom(constants.Epoch)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create initial block time")
+	}
+
+	if indexVersion >= 0 {
+		// Set up ndau-specific search client.
+		search, err := NewNdauSearchClient(indexAddr, indexVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "NewApp unable to init search client")
+		}
+
+		// Log initial indexing in case it takes a long time, people can see why.
+		metaapp.GetLogger().WithFields(log.Fields{
+			"valIndexVersion": indexVersion,
+		}).Info("ndau waiting for initial indexing to complete")
+
+		// TODO: Perform initial indexing here.
+		updateCount := 0
+		insertCount := 0
+
+		// It might be useful to see what kind of results came from the initial indexing.
+		metaapp.GetLogger().WithFields(log.Fields{
+			"valUpdateCount": updateCount,
+			"valInsertCount": insertCount,
+		}).Info("ndau initial indexing complete")
+
+		metaapp.SetSearch(search)
 	}
 
 	app := App{
@@ -180,7 +205,7 @@ func InitMockApp() (app *App, assc generator.Associated, err error) {
 		return
 	}
 
-	app, err = NewAppSilent("", *conf)
+	app, err = NewAppSilent("", "", -1, *conf)
 	if err != nil {
 		return
 	}

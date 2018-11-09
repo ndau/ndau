@@ -1,5 +1,5 @@
-hash: c709a3bd06527d3449ba5877996726f83bedd59a175b0f5fdb5ed67beb6cb3f5
-updated: 2018-11-08T15:21:23.930766+01:00
+hash: 7a12c63e138a71cdd0cef5be98ea0efb82548382eda999ce78c0b192c6add48f
+updated: 2018-11-09T11:14:01.534811+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: e3ec6cc051a374d90ae18c89d6c6a7bb17064d15
+  version: bcf2dfef3f28c8ac3d245e6b0f684bbf34d55a05
   subpackages:
   - aws
   - aws/awserr
@@ -120,6 +120,16 @@ imports:
   - metrics/prometheus
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: github.com/go-redis/redis
+  version: b3d9bf10f6666b2ee5100a6f3f84f4caf3b4e37d
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+  - internal/proto
+  - internal/singleflight
+  - internal/util
 - name: github.com/go-zoo/bone
   version: 2270ec2a18cc13fba907d4ae5ad546a21473c0ed
 - name: github.com/gogo/protobuf
@@ -132,7 +142,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: 75dceb112b174be156fa9952e66d3e99945572b4
+  version: 951a149f90371fb8858c6c979d03bb2583611052
   subpackages:
   - proto
   - ptypes
@@ -146,7 +156,7 @@ imports:
 - name: github.com/gorilla/websocket
   version: 483fb8d7c32fcb4b5636cd293a92e3935932e2f4
 - name: github.com/honeycombio/libhoney-go
-  version: 86ceb69a9b89f381631caac96f24df15b88bedad
+  version: bcf3e733a3d0b44635de98e172072b653032454a
 - name: github.com/jawher/mow.cli
   version: 2f22195f169da29d54624afd9eb83ada5c9e4ee9
   subpackages:
@@ -186,13 +196,14 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 4863c7f34be0b0031846f9b9ea2d465110cb9270
+  version: 1c3e70471de2e1bf9293a2fb7c5a4dd6bff658a6
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
   - pkg/chaos/backing
   - pkg/chaos/ns
   - pkg/chaos/query
+  - pkg/chaos/search
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
@@ -201,11 +212,12 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: c1a25f743f3af93e53f5c007d89e30c3856d2764
+  version: 4de7c8ca771f1a6aed2668a842b03f2d07f29ea6
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
   - pkg/meta/app/code
+  - pkg/meta/search
   - pkg/meta/state
   - pkg/meta/transaction
 - name: github.com/oneiro-ndev/msgp-well-known-types
@@ -280,7 +292,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 7e9e6cabbd393fc208072eedef99188d0ce788b6
+  version: 0b1957f9d949dfa3084171a6ec5642b38055276a
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -432,7 +444,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: a28dfb48e06b2296b66678872c2cb638f0304f20
+  version: 77439c55185e6a04040f35d2fe78f2b9bc61d8cc
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto

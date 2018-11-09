@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
@@ -17,12 +19,22 @@ import (
 
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
+var indexAddr = flag.String("index", "", "search index address")
 var socketAddr = flag.String("addr", "0.0.0.0:26658", "socket address for incoming connection from tendermint")
 var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and then quit")
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
 var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
 var echoVersion = flag.Bool("version", false, "if set, echo the current version and exit")
 var updateFrom = flag.String("update-from", "", "if set, update app configuration from the given genesisfile and exit")
+
+// Bump this any time we need to reset and reindex the ndau chain.  For example, if we change the
+// format of something in the index, say, needing to use unsorted sets instead of sorted sets; if
+// our new searching code doesn't expect the old format in the index, we can bump this to cause a
+// wipe and full reindex of the blockchain using the new format that the new search code expects.
+// That is why this is tied to code here, rather than a variable we pass in.
+// History:
+//   0 = initial version
+var indexVersion = 0
 
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
@@ -47,11 +59,43 @@ func getDbSpec() string {
 	return "http://noms:8000"
 }
 
+func getIndexAddr() string {
+	if len(*indexAddr) > 0 {
+		return *indexAddr
+	}
+	if *useNh {
+		return filepath.Join(getNdauConfigDir(), "redis")
+	}
+	// default to redis server for dockerization
+	return "redis:6379"
+}
+
 func check(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
+}
+
+type siglistener struct {
+	sigchan chan os.Signal
+}
+
+// Support closing the app with Ctrl+C when running in a shell.
+func (s *siglistener) watchSignals() {
+	go func() {
+		if s.sigchan == nil {
+			s.sigchan = make(chan os.Signal, 1)
+		}
+		signal.Notify(s.sigchan, syscall.SIGTERM, syscall.SIGINT)
+		for {
+			sig := <-s.sigchan
+			switch sig {
+			case syscall.SIGTERM, syscall.SIGINT:
+				os.Exit(0)
+			}
+		}
+	}()
 }
 
 func main() {
@@ -90,7 +134,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	app, err := ndau.NewApp(getDbSpec(), *conf)
+	app, err := ndau.NewApp(getDbSpec(), getIndexAddr(), indexVersion, *conf)
 	check(err)
 
 	logger := app.GetLogger()
@@ -130,6 +174,8 @@ func main() {
 	} else {
 		entry = entry.WithError(err)
 	}
+	sl := &siglistener{}
+	sl.watchSignals()
 	entry.Info("started ABCI socket server")
 	// we want to keep this service running indefinitely
 	// if there were more commands to run, we'd probably want to split this into a separate

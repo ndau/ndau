@@ -11,7 +11,6 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/svc"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,8 +28,11 @@ Environment variables
 	Port where this API will listen. (default: 3030)
 	[NDAUAPI_PORT=<3030>]
 
-	Node address.
-	NDAUAPI_NODE_ADDRESS=<http://your_node_ip:your_rpc_port>
+	ndau node address.
+	NDAUAPI_NDAU_RPC_URL=<http://ndau_tendermint_ip:rpc_port>
+
+	chaos node address.
+	NDAUAPI_CHAOS_RPC_URL=<http://chaos_tendermint_ip:rpc_port>
 
 Flags
 
@@ -38,7 +40,9 @@ Flags
 
 Example
 
-	NDAUAPI_NODE_ADDRESS=http://127.0.0.1:26658 ./ndauapi [-docs]
+	NDAUAPI_NDAU_RPC_URL=http://127.0.0.1:26658 \
+	NDAUAPI_CHAOS_RPC_URL=http://127.0.0.1:26665 \
+	  ./ndauapi [-docs]
 
 `)
 }

@@ -3,8 +3,9 @@ jobs:
   build:
     working_directory: /app
     docker:
-      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.5
+      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.7
     environment:
+      shell: /bin/bash
       # Used for ECR
       AWS_DEFAULT_REGION: us-east-1
       # ECR's
@@ -37,8 +38,15 @@ jobs:
       - run:
           name: Checkout code
           command: |
+            # depth=1 makes the clone a lot faster
             git clone $CIRCLE_REPOSITORY_URL -b $CIRCLE_BRANCH /app --depth=1
             echo -e "$gomu" > /app/github_chaos_deploy
+      - run:
+          name: Save computed environment variables
+          command: |
+            cd /app
+            echo "export VERSION=$(git describe --long --tags)" >> $BASH_ENV
+            echo "export SHA=$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
@@ -52,7 +60,7 @@ jobs:
           command: docker build -t ndaunode_test . -f /app/docker/ndaunode-test.docker --build-arg CI=true
       - run:
           name: Build ndaunode-build
-          command: docker build -t ndaunode-build -f /app/docker/ndaunode-build.docker /app
+          command: docker build -t ndaunode-build -f /app/docker/ndaunode-build.docker /app  --build-arg VERSION=$VERSION
       - run:
           name: Build ndaunode-run
           command: docker build -t ndaunode -f /app/docker/ndaunode-run.docker /app
@@ -68,16 +76,14 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
-              sha=$(git rev-parse --short "$CIRCLE_SHA1")
-              sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
+              sha_check=$(aws ecr describe-images --repository-name ndaunode | jq ".imageDetails[].imageTags[]? | select (. == \"${SHA}\")")
               if [ ! -z "$sha_check" ]; then
-                echo "Ndaunode container hash ${sha} already exists. Will not push." >&2
+                echo "Ndaunode container hash ${SHA} already exists. Will not push." >&2
                 # If a container with this hash is built already, docker will overwrite
                 # with a push. This could change the containers behavior if, for example,
                 # dependencies have changed between subsequent build times.
-                exit 1
               else
-                commit_tag="${ECR_ENDPOINT}/ndaunode:${sha}"
+                commit_tag="${ECR_ENDPOINT}/ndaunode:${SHA}"
                 latest_tag="${ECR_ENDPOINT}/ndaunode:latest"
 
                 docker tag ndaunode $commit_tag
@@ -86,7 +92,7 @@ jobs:
                 docker push $commit_tag
                 docker push $latest_tag
 
-                echo "Pushed ndaunode with tags :${sha}, :latest." >&2
+                echo "Pushed ndaunode with tags :${SHA}, :latest." >&2
               fi
             fi
       - run:
@@ -95,13 +101,11 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # Do not upload commit hash that already exists.
               # Should never really happen as long as master is not tampered with.
-              sha=$(git rev-parse --short "$CIRCLE_SHA1")
-              sha_check=$(aws ecr describe-images --repository-name ndauapi | jq ".imageDetails[].imageTags[]? | select (. == \"${sha}\")")
+              sha_check=$(aws ecr describe-images --repository-name ndauapi | jq ".imageDetails[].imageTags[]? | select (. == \"${SHA}\")")
               if [ ! -z "$sha_check" ]; then
-                echo "Ndauapi container hash ${sha} already exists. Will not push." >&2
-                exit 1
+                echo "Ndauapi container hash ${SHA} already exists. Will not push." >&2
               else
-                commit_tag="${ECR_ENDPOINT}/ndauapi:${sha}"
+                commit_tag="${ECR_ENDPOINT}/ndauapi:${SHA}"
                 latest_tag="${ECR_ENDPOINT}/ndauapi:latest"
 
                 docker tag ndauapi $commit_tag
@@ -110,7 +114,7 @@ jobs:
                 docker push $commit_tag
                 docker push $latest_tag
 
-                echo "Pushed ndauapi with tags :${sha}, :latest." >&2
+                echo "Pushed ndauapi with tags :${SHA}, :latest." >&2
               fi
             fi
       - run:

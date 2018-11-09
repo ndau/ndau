@@ -30,8 +30,8 @@ func New() (Cfg, []string, error) {
 	cf := Cfg{
 		// get configuration from env vars
 		LogLevel:     os.Getenv("NDAUAPI_LOG_LEVEL"),
-		NodeAddress:  os.Getenv("NDAUAPI_NODE_ADDRESS"),
-		ChaosAddress: os.Getenv("NDAUAPI_CHAOS_ADDRESS"),
+		NodeAddress:  os.Getenv("NDAUAPI_NDAU_RPC_URL"),
+		ChaosAddress: os.Getenv("NDAUAPI_CHAOS_RPC_URL"),
 		Port:         0,
 	}
 
@@ -41,12 +41,12 @@ func New() (Cfg, []string, error) {
 	}
 
 	if cf.NodeAddress == "" {
-		return cf, nil, errors.New("NDAUAPI_NODE_ADDRESS is required")
+		return cf, nil, errors.New("NDAUAPI_NDAU_RPC_URL is required")
 	}
 
-	// if cf.ChaosAddress == "" {
-	// 	return cf, nil, errors.New("NDAUAPI_CHAOS_ADDRESS was not provided; some functions will not work.")
-	// }
+	if cf.ChaosAddress == "" {
+		warn = append(warn, "NDAUAPI_CHAOS_RPC_URL was not provided; some functions will not work")
+	}
 
 	// validate
 	strPort := os.Getenv("NDAUAPI_PORT")
