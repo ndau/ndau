@@ -67,7 +67,7 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 
 	if indexVersion >= 0 {
 		// Set up ndau-specific search client.
-		search, err := search.NewNdauSearchClient(indexAddr, indexVersion)
+		search, err := search.NewClient(indexAddr, indexVersion)
 		if err != nil {
 			return nil, errors.Wrap(err, "NewApp unable to init search client")
 		}
