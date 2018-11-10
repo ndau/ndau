@@ -4,9 +4,15 @@ package search
 
 import (
 	"fmt"
+	"strings"
 
 	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 )
+
+// We use these prefixes to help us group keys in the index.  They could prove useful if we ever
+// want to do things like "wipe all hash-to-height keys" without affecting any other keys.  The
+// prefixes also give us some sanity, so that we completely avoid inter-index key conflicts.
+var hashToHeightSearchKeyPrefix = "h:"
 
 // Client is a search Client that implements IncrementalIndexer.
 type Client struct {
@@ -32,11 +38,15 @@ func NewClient(address string, version int) (search *Client, err error) {
 	return search, nil
 }
 
-func (search *Client) onIndexingComplete() (updateCount int, insertCount int, err error) {
-	key := search.blockHash
-	value := fmt.Sprintf("%d", search.blockHeight)
+func formatHashToHeightSearchKey(hash string) string {
+	return hashToHeightSearchKeyPrefix + strings.ToLower(hash)
+}
 
-	updateCount, insertCount, err = search.indexKeyValue(key, value)
+func (search *Client) onIndexingComplete() (updateCount int, insertCount int, err error) {
+	searchKey := formatHashToHeightSearchKey(search.blockHash)
+	searchValue := fmt.Sprintf("%d", search.blockHeight)
+
+	updateCount, insertCount, err = search.indexKeyValue(searchKey, searchValue)
 	if err != nil {
 		return updateCount, insertCount, err
 	}
@@ -53,15 +63,15 @@ func (search *Client) onIndexingComplete() (updateCount int, insertCount int, er
 
 // Index a single key-value pair at the given height.
 func (search *Client) indexKeyValue(
-	key string,
-	value string,
+	searchKey string,
+	searchValue string,
 ) (updateCount int, insertCount int, err error) {
-	existingValue, err := search.Client.Get(key)
+	existingValue, err := search.Client.Get(searchKey)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	err = search.Client.Set(key, value)
+	err = search.Client.Set(searchKey, searchValue)
 	if err != nil {
 		return 0, 0, err
 	}

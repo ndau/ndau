@@ -4,14 +4,14 @@ package search
 
 import (
 	"strconv"
-	"strings"
 )
 
 // SearchBlockHeightByBlockHash returns the height of the given block hash.
 // Returns 0 and no error if the given block hash was not found in the index.
 func (search *Client) SearchBlockHeightByBlockHash(hash string) (uint64, error) {
-	hash = strings.ToLower(hash)
-	value, err := search.Client.Get(hash)
+	searchKey := formatHashToHeightSearchKey(hash)
+
+	value, err := search.Client.Get(searchKey)
 	if err != nil {
 		return 0, err
 	}
