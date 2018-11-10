@@ -3,13 +3,15 @@ package search
 // Methods used for incremental indexing.
 
 import (
+	"strings"
+
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
 func (search *Client) OnBeginBlock(hash string, height uint64) error {
 	// There's only one block to consider for incremental indexing.
-	search.blockHash = hash
+	search.blockHash = strings.ToLower(hash)
 	search.blockHeight = height
 	search.maxHeight = height
 	return nil

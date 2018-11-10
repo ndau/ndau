@@ -20,7 +20,7 @@ Testing depends on a test net to be available and as such are not very pure unit
 
 ```shell
 ./build.sh
-NDAUAPI_NODE_ADDRESS=http://127.0.0.1:31001 ./ndauapi
+NDAUAPI_NDAU_RPC_URL=http://127.0.0.1:31001 ./ndauapi
 ```
 
 # Basic Usage

@@ -3,12 +3,15 @@ package ndau
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -17,6 +20,7 @@ import (
 
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
+	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
@@ -44,6 +48,55 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	}
 
 	response.Value = adBytes
+}
+
+func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	params := string(request.GetData())
+	keyValues := strings.Split(params, "&")
+
+	// Look for params we support.
+	cmd := ""
+	hash := ""
+	for _, keyValue := range keyValues {
+		kv := strings.Split(keyValue, "=")
+		if len(kv) == 2 {
+			k := kv[0]
+			v := kv[1]
+			switch k {
+			case "cmd":
+				cmd = v
+			case "hash":
+				hash = v
+			}
+		}
+	}
+
+	if cmd == "" {
+		app.QueryError(errors.New("Unsupported search command"),
+			response, "invalid search command")
+		return
+	}
+
+	search := app.GetSearch()
+	if search == nil {
+		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		return
+	}
+
+	switch cmd {
+	case "heightbyhash":
+		height, err := search.(*srch.Client).SearchBlockHeightByBlockHash(hash)
+		if err != nil {
+			app.QueryError(err, response, "height by hash search fail")
+			return
+		}
+		value := fmt.Sprintf("%d", height)
+		response.Value = []byte(value)
+	}
+
+	app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 }
 
 var lastSummary query.Summary
