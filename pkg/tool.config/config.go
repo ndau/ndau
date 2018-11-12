@@ -213,61 +213,17 @@ func (c *Config) UpdateFrom(asscPath string, bpcPublic []byte) error {
 	}
 
 	sysaccts := []struct {
-		acct        string
-		addrName    string
-		privkeyName string
+		configAcct **SysAccount
+		sys        sv.SysAcct
 	}{
-		{"CVC", sv.CommandValidatorChangeAddressName, sv.CommandValidatorChangeOwnershipPrivateName},
-		{"NNR", sv.NominateNodeRewardAddressName, sv.NominateNodeRewardOwnershipPrivateName},
-		{"RFE", sv.ReleaseFromEndowmentAddressName, sv.ReleaseFromEndowmentOwnershipPrivateName},
+		{&c.CVC, sv.CommandValidatorChange},
+		{&c.NNR, sv.NominateNodeReward},
+		{&c.RFE, sv.ReleaseFromEndowment},
 	}
 	for _, sa := range sysaccts {
-		addrI, pubOk := assc[sa.addrName]
-		privkeyI, privOk := assc[sa.privkeyName]
-		if pubOk != privOk {
-			fmt.Fprintf(
-				os.Stderr, "assc:\n  %25s set: %t\n  %25s set: %t\n",
-				sa.addrName, pubOk,
-				sa.privkeyName, privOk,
-			)
-		}
-		if !(pubOk && privOk) {
-			continue
-		}
-
-		addrS, pubOk := addrI.(string)
-		if !pubOk {
-			return fmt.Errorf("assc: value of %s was not a string", sa.addrName)
-		}
-		privkeyS, privOk := privkeyI.(string)
-		if !privOk {
-			return fmt.Errorf("assc: value of %s was not a string", sa.privkeyName)
-		}
-
-		addr, err := address.Validate(addrS)
+		*sa.configAcct, err = SysAccountFromAssc(assc, sa.sys)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("decoding %s address", sa.addrName))
-		}
-
-		var privkey signature.PrivateKey
-		err = privkey.UnmarshalText([]byte(privkeyS))
-		if err != nil {
-			return errors.Wrap(err, "decoding "+sa.privkeyName)
-		}
-
-		sysacct := &SysAccount{
-			Address: addr,
-			Keys:    []signature.PrivateKey{privkey},
-		}
-
-		// this is not great, but the fancy pointer tricks just weren't working
-		switch sa.acct {
-		case "CVC":
-			c.CVC = sysacct
-		case "NNR":
-			c.NNR = sysacct
-		case "RFE":
-			c.RFE = sysacct
+			return err
 		}
 	}
 
