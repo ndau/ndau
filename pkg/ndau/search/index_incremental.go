@@ -7,23 +7,23 @@ import (
 )
 
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
-func (search *Client) OnBeginBlock(hash string, height uint64) error {
+func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
-	search.blockHash = hash
+	search.txHashes = nil
 	search.blockHeight = height
 	search.maxHeight = height
 	return nil
 }
 
 // OnDeliverTx grabs the fields out of this transaction to index when the block is committed.
-func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
-	// We ignore all transactions.  We currently only care to index the block hash with height.
+func (search *Client) OnDeliverTx(tx metatx.Transactable, tmHash string) error {
+	search.txHashes = append(search.txHashes, tmHash)
 	return nil
 }
 
 // OnCommit indexes all the transaction data we collected since the last BeginBlock().
-func (search *Client) OnCommit() error {
-	search.indexHashToHeight()
+func (search *Client) OnCommit(appHash string) error {
+	search.index()
 	search.onIndexingComplete()
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -186,31 +185,36 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		top, err := getCurrentBlockHeight(cf)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("getting block height", err, http.StatusBadRequest))
+			return
+		}
+
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
 			return
 		}
 
-		params := fmt.Sprintf("cmd=heightbyhash&hash=%s", blockhash)
-		blockheight, err := tool.GetSearchResults(node, params)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
+		var blocks *rpctypes.ResultBlockchainInfo
+		const stepsize = 100
+
+		for top > 0 {
+			bottom := top - stepsize
+			if bottom <= 0 {
+				bottom = 1
+			}
+			blocks, err = getBlocksMatching(node, bottom, top, hasHashOf(blockhash))
+			if len(blocks.BlockMetas) > 0 {
+				break
+			}
+			top = bottom - 1
+		}
+		if blocks == nil || len(blocks.BlockMetas) == 0 {
+			reqres.RespondJSON(w, reqres.NewAPIError("no matching blocks found", http.StatusBadRequest))
 			return
 		}
-
-		if blockheight <= 0 {
-			// The search was valid, but there were no results.
-			reqres.RespondJSON(w, reqres.OKResponse(nil))
-			return
-		}
-
-		block, err := node.Block(&blockheight)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
-			return
-		}
-
-		reqres.RespondJSON(w, reqres.OKResponse(block))
+		reqres.RespondJSON(w, reqres.OKResponse(blocks))
 	}
 }

@@ -6,10 +6,10 @@ import (
 	"strconv"
 )
 
-// SearchBlockHeightByBlockHash returns the height of the given block hash.
-// Returns 0 and no error if the given block hash was not found in the index.
-func (search *Client) SearchBlockHeightByBlockHash(hash string) (uint64, error) {
-	searchKey := formatHashToHeightSearchKey(hash)
+// SearchBlockHeightByTxHash returns the height of block containing the given tx hash.
+// Returns 0 and no error if the given tx hash was not found in the index.
+func (search *Client) SearchBlockHeightByTxHash(hash string) (uint64, error) {
+	searchKey := formatTxHashToHeightSearchKey(hash)
 
 	value, err := search.Client.Get(searchKey)
 	if err != nil {
