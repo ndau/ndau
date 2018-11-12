@@ -51,7 +51,7 @@ func (search *Client) IndexBlockchain(
 		}
 		lastHeight = height
 
-		// TODO: Get tm tx hash.
+		// TODO: Get transactions from tendermint.
 		//search.txHashes.append(txHash)
 		search.blockHeight = height
 

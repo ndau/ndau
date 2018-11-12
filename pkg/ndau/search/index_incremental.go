@@ -16,8 +16,8 @@ func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 }
 
 // OnDeliverTx grabs the fields out of this transaction to index when the block is committed.
-func (search *Client) OnDeliverTx(tx metatx.Transactable, tmHash string) error {
-	search.txHashes = append(search.txHashes, tmHash)
+func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
+	search.txHashes = append(search.txHashes, metatx.Hash(tx))
 	return nil
 }
 
