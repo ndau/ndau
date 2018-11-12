@@ -123,6 +123,11 @@ func LoadDefault(configPath string) (*Config, error) {
 
 // Dump writes the given config object to the specified file
 func (c *Config) Dump(configPath string) error {
+	// if the parent directories of this config don't exist, make them
+	err := os.MkdirAll(filepath.Dir(configPath), 0700)
+	if err != nil {
+		return err
+	}
 	fp, err := os.Create(configPath)
 	defer fp.Close()
 	if err != nil {
