@@ -1,5 +1,5 @@
-hash: 7a12c63e138a71cdd0cef5be98ea0efb82548382eda999ce78c0b192c6add48f
-updated: 2018-11-12T12:04:51.847136+01:00
+hash: cc1046938d1e0dd7c7846bb624499b0edf324b7401bd04c26d145b416650808d
+updated: 2018-11-12T15:49:57.495669+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -196,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 1c3e70471de2e1bf9293a2fb7c5a4dd6bff658a6
+  version: b07872d3305e856e23e6830eb27ee6aae31272c6
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -212,7 +212,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 4de7c8ca771f1a6aed2668a842b03f2d07f29ea6
+  version: ab7319817d1cc1bb4672d5f1c5502c96eb541c9e
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -343,7 +343,7 @@ imports:
   - edwards25519
   - extra25519
 - name: github.com/tendermint/go-amino
-  version: a8328986c1608950fa5d3d1c0472cccc4f8fc02c
+  version: dc14acf9ef15f85828bfbc561ed9dd9d2a284885
 - name: github.com/tendermint/tendermint
   version: 0c9c3292c918617624f6f3fbcd95eceade18bcd5
   subpackages:
