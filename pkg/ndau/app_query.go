@@ -86,13 +86,22 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	}
 
 	switch cmd {
-	case "heightbytxhash":
-		height, err := search.(*srch.Client).SearchBlockHeightByTxHash(hash)
+	case "heightbyblockhash":
+		height, err := search.(*srch.Client).SearchBlockHeightByBlockHash(hash)
 		if err != nil {
-			app.QueryError(err, response, "height by hash search fail")
+			app.QueryError(err, response, "height by block hash search fail")
 			return
 		}
 		value := fmt.Sprintf("%d", height)
+		response.Value = []byte(value)
+	case "heightbytxhash":
+		height, offset, err := search.(*srch.Client).SearchBlockHeightByTxHash(hash)
+		if err != nil {
+			app.QueryError(err, response, "height by tx hash search fail")
+			return
+		}
+		valueData := srch.TxValueData{height, offset}
+		value := valueData.Marshal()
 		response.Value = []byte(value)
 	}
 

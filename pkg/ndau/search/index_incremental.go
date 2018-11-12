@@ -10,6 +10,7 @@ import (
 func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
 	search.txHashes = nil
+	search.blockHash = tmHash
 	search.blockHeight = height
 	search.maxHeight = height
 	return nil

@@ -6,19 +6,45 @@ import (
 	"strconv"
 )
 
-// SearchBlockHeightByTxHash returns the height of block containing the given tx hash.
-// Returns 0 and no error if the given tx hash was not found in the index.
-func (search *Client) SearchBlockHeightByTxHash(hash string) (uint64, error) {
-	searchKey := formatTxHashToHeightSearchKey(hash)
+// SearchBlockHeightByBlockHash returns the height of the given block hash.
+// Returns 0 and no error if the given block hash was not found in the index.
+func (search *Client) SearchBlockHeightByBlockHash(blockHash string) (uint64, error) {
+	searchKey := formatBlockHashToHeightSearchKey(blockHash)
 
-	value, err := search.Client.Get(searchKey)
+	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
 		return 0, err
 	}
 
-	if value == "" {
+	if searchValue == "" {
+		// Empty search results.  No error.
 		return 0, nil
 	}
 
-	return strconv.ParseUint(value, 10, 64)
+	return strconv.ParseUint(searchValue, 10, 64)
+}
+
+// SearchBlockHeightByTxHash returns the height of block containing the given tx hash.
+// It also returns the transaction offset within the block.
+// Returns 0, 0 and no error if the given tx hash was not found in the index.
+func (search *Client) SearchBlockHeightByTxHash(txHash string) (uint64, uint64, error) {
+	searchKey := formatTxHashToHeightSearchKey(txHash)
+
+	searchValue, err := search.Client.Get(searchKey)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if searchValue == "" {
+		// Empty search results.  No error.
+		return 0, 0, nil
+	}
+
+	valueData := TxValueData{}
+	err = valueData.Unmarshal(searchValue)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return valueData.BlockHeight, valueData.TxOffset, nil
 }

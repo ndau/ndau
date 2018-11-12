@@ -18,6 +18,7 @@ func (search *Client) IndexBlockchain(
 
 	// Start fresh.  It should already be zero'd out upon entry.
 	search.txHashes = nil
+	search.blockHash = ""
 	search.blockHeight = 0
 	search.maxHeight = 0
 
@@ -51,8 +52,9 @@ func (search *Client) IndexBlockchain(
 		}
 		lastHeight = height
 
-		// TODO: Get transactions from tendermint.
+		// TODO: Get hashes.
 		//search.txHashes.append(txHash)
+		//search.blockHash = blockHash
 		search.blockHeight = height
 
 		updCount, insCount, err := search.index()
