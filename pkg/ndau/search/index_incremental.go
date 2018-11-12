@@ -23,6 +23,7 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 
 // OnCommit indexes all the transaction data we collected since the last BeginBlock().
 func (search *Client) OnCommit() error {
-	_, _, err := search.onIndexingComplete()
-	return err
+	search.indexHashToHeight()
+	search.onIndexingComplete()
+	return nil
 }

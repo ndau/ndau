@@ -12,7 +12,7 @@ import (
 // We use these prefixes to help us group keys in the index.  They could prove useful if we ever
 // want to do things like "wipe all hash-to-height keys" without affecting any other keys.  The
 // prefixes also give us some sanity, so that we completely avoid inter-index key conflicts.
-var hashToHeightSearchKeyPrefix = "h:"
+const hashToHeightSearchKeyPrefix = "h:"
 
 // Client is a search Client that implements IncrementalIndexer.
 type Client struct {
@@ -42,30 +42,16 @@ func formatHashToHeightSearchKey(hash string) string {
 	return hashToHeightSearchKeyPrefix + strings.ToLower(hash)
 }
 
-func (search *Client) onIndexingComplete() (updateCount int, insertCount int, err error) {
-	searchKey := formatHashToHeightSearchKey(search.blockHash)
-	searchValue := fmt.Sprintf("%d", search.blockHeight)
-
-	updateCount, insertCount, err = search.indexKeyValue(searchKey, searchValue)
-	if err != nil {
-		return updateCount, insertCount, err
-	}
-
-	// No need to keep this data around any longer.
-	search.blockHash = ""
-	search.blockHeight = 0
-
+func (search *Client) onIndexingComplete() {
 	// Save this off so the next initial scan will only go this far.
 	search.Client.SetHeight(search.maxHeight)
-
-	return updateCount, insertCount, nil
 }
 
 // Index a single key-value pair at the given height.
-func (search *Client) indexKeyValue(
-	searchKey string,
-	searchValue string,
-) (updateCount int, insertCount int, err error) {
+func (search *Client) indexHashToHeight() (updateCount int, insertCount int, err error) {
+	searchKey := formatHashToHeightSearchKey(search.blockHash)
+	searchValue := fmt.Sprintf("%d", search.blockHeight)
+
 	existingValue, err := search.Client.Get(searchKey)
 	if err != nil {
 		return 0, 0, err
@@ -83,6 +69,10 @@ func (search *Client) indexKeyValue(
 		updateCount = 1
 		insertCount = 0
 	}
+
+	// No need to keep this data around any longer.
+	search.blockHash = ""
+	search.blockHeight = 0
 
 	return updateCount, insertCount, nil
 }

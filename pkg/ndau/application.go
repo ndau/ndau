@@ -81,17 +81,20 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 
 		// Log initial indexing in case it takes a long time, people can see why.
 		metaapp.GetLogger().WithFields(log.Fields{
-			"valIndexVersion": indexVersion,
+			"search.indexVersion": indexVersion,
 		}).Info("ndau waiting for initial indexing to complete")
 
-		// TODO: Perform initial indexing here.
-		updateCount := 0
-		insertCount := 0
+		// Perform initial indexing.
+		updateCount, insertCount, err := search.IndexBlockchain(
+			metaapp.GetDB(), metaapp.GetDS())
+		if err != nil {
+			return nil, errors.Wrap(err, "NewApp unable to perform initial indexing")
+		}
 
 		// It might be useful to see what kind of results came from the initial indexing.
 		metaapp.GetLogger().WithFields(log.Fields{
-			"valUpdateCount": updateCount,
-			"valInsertCount": insertCount,
+			"search.updateCount": updateCount,
+			"search.insertCount": insertCount,
 		}).Info("ndau initial indexing complete")
 
 		metaapp.SetSearch(search)
