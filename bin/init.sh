@@ -49,27 +49,6 @@ errcho "$me" "config diff:"
 diff "$config_backup" "$config"
 rm "$config_backup"
 
-# detect if the chaos chain is currently running
-# if so, we want to connect to that chain instead of using a mockfile
-chaospath="$ROOT/../chaos"
-if [ -d "$chaospath" ]; then
-    errcho "$me" "found chaos path: $chaospath"
-    cn_port=$(
-        cd "$chaospath"
-        bin/defaults.sh docker-compose port tendermint "$TM_RPC" 2>/dev/null |\
-        cut -d: -f2
-    )
-    local_ip=$(ipconfig getifaddr en0)
-    cn_addr=$(printf '%s:%s' "$local_ip" "$cn_port")
-else
-    errcho "$me" "chaosnode not found at $chaospath"
-fi
-if [ -n "$cn_port" ]; then
-    errcho "$me" "chaosnode appears to be running at $cn_addr"
-else
-    errcho "$me" "chaosnode appears not to be running"
-fi
-
 # ndaunode, unlike chaosnode, needs a configuration file to work right
 # in a real node, we'd need to specify parameters such as where to connect
 # to the chaos chain, and so on.
@@ -78,20 +57,12 @@ fi
 # a dev server for debugging purposes. In that case, we just want a default
 # config file to be put in place
 ndauconf="${NDAUHOME}/ndau/config.toml"
-if [ -n "$NDAUNODE_CONFIG" ]; then
-    cp -v "$NDAUNODE_CONFIG" "$ndauconf"
-else
-    errcho "$me" "ndaunode making mocks"
-    docker-compose run --rm --no-deps ndaunode --make-mocks
-
-    if [ -n "$cn_port" ]; then
-        errcho "$me" "updating config with chaos port"
-        $sed -E \
-            -e "/^ChaosAddress/s/\"[^\"]*\"/\"$cn_addr\"/" \
-            -i "$ndauconf"
-        errcho "$me" "ndaunode making chaos mocks"
-        docker-compose run --rm --no-deps ndaunode --make-chaos-mocks
-    fi
+if [ -z "$NDAUNODE_CONFIG" ]; then
+    # shellcheck disable=SC2016
+    errcho "$me" '$NDAUNODE_CONFIG unset'
+    # shellcheck disable=SC2016
+    errcho "$me" '$NDAUNODE_CONFIG must be the path to a valid ndau node config file'
+    exit 1
 fi
-
+cp -v "$NDAUNODE_CONFIG" "$ndauconf"
 "$ROOT"/bin/update-hash.sh
