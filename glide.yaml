@@ -45,6 +45,8 @@ import:
   version: ^1.2.1
   subpackages:
   - require
+- package: github.com/tendermint/go-amino
+  version: a8328986c1608950fa5d3d1c0472cccc4f8fc02c
 - package: github.com/tendermint/tendermint
   version: ~0.25
 - package: github.com/tinylib/msgp

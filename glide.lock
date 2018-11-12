@@ -1,5 +1,5 @@
-hash: cc1046938d1e0dd7c7846bb624499b0edf324b7401bd04c26d145b416650808d
-updated: 2018-11-12T15:49:57.495669+01:00
+hash: 13374375ab0a5743012f23edb6c8accc50812f3128eee477d00f7bca8a13ca2c
+updated: 2018-11-12T16:10:14.781592+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -207,7 +207,7 @@ imports:
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
-  version: c632f6e21bfcf6a425884386d1aabbc478d44185
+  version: d5610a2ce21241203327911c7f8b883978da281d
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
   subpackages:
   - pkg/genesis.generator
@@ -237,8 +237,6 @@ imports:
   - pkg/bitset256
   - pkg/constants
   - pkg/eai
-  - pkg/key
-  - pkg/keyaddr
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
@@ -247,7 +245,6 @@ imports:
   - pkg/signed
   - pkg/types
   - pkg/unsigned
-  - pkg/words
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -343,7 +340,7 @@ imports:
   - edwards25519
   - extra25519
 - name: github.com/tendermint/go-amino
-  version: dc14acf9ef15f85828bfbc561ed9dd9d2a284885
+  version: a8328986c1608950fa5d3d1c0472cccc4f8fc02c
 - name: github.com/tendermint/tendermint
   version: 0c9c3292c918617624f6f3fbcd95eceade18bcd5
   subpackages:
