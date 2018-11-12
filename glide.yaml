@@ -13,14 +13,14 @@ import:
   version: ~0.10
   repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
-  version: prgn-genesisfile
+  version: ~v0.10
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/chaos_genesis
   version: master
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: v0.11.4
+  version: v0.11.5
 - package: github.com/oneiro-ndev/msgp-well-known-types
   version: ~0.1.0
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
@@ -45,6 +45,8 @@ import:
   version: ^1.2.1
   subpackages:
   - require
+- package: github.com/tendermint/go-amino
+  version: a8328986c1608950fa5d3d1c0472cccc4f8fc02c
 - package: github.com/tendermint/tendermint
   version: ~0.25
 - package: github.com/tinylib/msgp

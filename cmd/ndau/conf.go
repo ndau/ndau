@@ -65,7 +65,7 @@ func confUpdateFrom(cmd *cli.Cmd) {
 		}
 
 		if bpcs == nil || len(*bpcs) == 0 {
-			orQuit(errors.New("if assc data file has not 1 key, bpcs must be set"))
+			orQuit(errors.New("if assc data file has other than 1 key, bpcs must be set"))
 		}
 
 		bpc, err := base64.StdEncoding.DecodeString(*bpcs)

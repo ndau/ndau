@@ -1,5 +1,5 @@
-hash: 7a12c63e138a71cdd0cef5be98ea0efb82548382eda999ce78c0b192c6add48f
-updated: 2018-11-09T11:14:01.534811+01:00
+hash: 13374375ab0a5743012f23edb6c8accc50812f3128eee477d00f7bca8a13ca2c
+updated: 2018-11-12T16:10:14.781592+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: bcf2dfef3f28c8ac3d245e6b0f684bbf34d55a05
+  version: 028b1f5c18c5a65839c9bd10f5afdedc4f37cce3
   subpackages:
   - aws
   - aws/awserr
@@ -196,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 1c3e70471de2e1bf9293a2fb7c5a4dd6bff658a6
+  version: b07872d3305e856e23e6830eb27ee6aae31272c6
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -207,12 +207,12 @@ imports:
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
-  version: a4da1fcc866cc05dc750ac3f6490e11fe878e841
+  version: d5610a2ce21241203327911c7f8b883978da281d
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 4de7c8ca771f1a6aed2668a842b03f2d07f29ea6
+  version: ab7319817d1cc1bb4672d5f1c5502c96eb541c9e
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -237,8 +237,6 @@ imports:
   - pkg/bitset256
   - pkg/constants
   - pkg/eai
-  - pkg/key
-  - pkg/keyaddr
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
@@ -247,7 +245,6 @@ imports:
   - pkg/signed
   - pkg/types
   - pkg/unsigned
-  - pkg/words
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -257,7 +254,7 @@ imports:
   subpackages:
   - pkg/honeycomb
 - name: github.com/oneiro-ndev/system_vars
-  version: e1061595b17e299056e8ec206f28ae521c30ac34
+  version: f07907b6a8c22dd5c6525a2d29e6a77ff35c771a
   repo: git@github.com:oneiro-ndev/system_vars.git
   subpackages:
   - pkg/svi
@@ -444,15 +441,15 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: 77439c55185e6a04040f35d2fe78f2b9bc61d8cc
+  version: 6d71ab8aade08605ffc36622332264e2f6991952
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
-  version: 5fc9ac5403620be16bcdb0c8e7644b1178472c3b
+  version: b5d43981345bdb2c233eb4bf3277847b48c6fdc6
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 12ed5d0f69e19d7db71d6152b7163adca2604bd8
+  version: eb55fa50e6c987e6b847fc13381d10f8bf9ab5db
   subpackages:
   - balancer
   - balancer/base
@@ -470,6 +467,7 @@ imports:
   - internal/channelz
   - internal/envconfig
   - internal/grpcrand
+  - internal/grpcsync
   - internal/syscall
   - internal/transport
   - keepalive

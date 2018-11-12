@@ -45,6 +45,8 @@ ndau
 !*/ndau
 ndaunode
 !*/ndaunode
+ndauapi
+!*/ndauapi
 dump_mock
 !*/dump_mock
 load_tool_config
