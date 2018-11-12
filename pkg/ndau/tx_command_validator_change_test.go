@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
+	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
-	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -20,7 +20,7 @@ import (
 
 const cvcKeys = "cvc private keys"
 
-func initAppCVC(t *testing.T) (*App, config.MockAssociated) {
+func initAppCVC(t *testing.T) (*App, generator.Associated) {
 	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
@@ -225,7 +225,7 @@ func updateValidators(t *testing.T, app *App, updates []CommandValidatorChange) 
 func initAppCVCValidators(
 	t *testing.T,
 	valQty int,
-) (app *App, ma config.MockAssociated, vcs []CommandValidatorChange) {
+) (app *App, ma generator.Associated, vcs []CommandValidatorChange) {
 	app, ma = initAppCVC(t)
 
 	vcs = make([]CommandValidatorChange, 0, valQty)

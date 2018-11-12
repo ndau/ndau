@@ -17,8 +17,6 @@ import (
 	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
-var makeMocks = flag.Bool("make-mocks", false, "if set, make mock config data and exit")
-var makeChaosMocks = flag.Bool("make-chaos-mocks", false, "if set, make mock data on the chaos chain and exit")
 var useNh = flag.Bool("use-ndauhome", false, "if set, keep database within $NDAUHOME/ndau")
 var dbspec = flag.String("spec", "", "manually set the noms db spec")
 var indexAddr = flag.String("index", "", "search index address")
@@ -27,6 +25,8 @@ var echoSpec = flag.Bool("echo-spec", false, "if set, echo the DB spec used and 
 var echoEmptyHash = flag.Bool("echo-empty-hash", false, "if set, echo the hash of the empty DB and then quit")
 var echoHash = flag.Bool("echo-hash", false, "if set, echo the current DB hash and then quit")
 var echoVersion = flag.Bool("version", false, "if set, echo the current version and exit")
+var updateConfFrom = flag.String("update-conf-from", "", "if set, update app configuration from the given genesisfile and exit")
+var updateChainFrom = flag.String("update-chain-from", "", "if set, update noms from the given associated data file and exit")
 
 // Bump this any time we need to reset and reindex the ndau chain.  For example, if we change the
 // format of something in the index, say, needing to use unsorted sets instead of sorted sets; if
@@ -118,19 +118,25 @@ func main() {
 
 	ndauhome := getNdauhome()
 	configPath := config.DefaultConfigPath(ndauhome)
-	if *makeMocks {
-		generateMocks(ndauhome, configPath)
-	}
-
-	if *makeChaosMocks {
-		generateChaosMocks(ndauhome, configPath)
-	}
 
 	conf, err := config.LoadDefault(configPath)
 	check(err)
 
+	if updateConfFrom != nil && len(*updateConfFrom) > 0 {
+		err = conf.UpdateFrom(*updateConfFrom)
+		check(err)
+		err = conf.Dump(configPath)
+		check(err)
+		os.Exit(0)
+	}
+
 	if *echoHash {
 		fmt.Println(getHash(conf))
+		os.Exit(0)
+	}
+
+	if updateChainFrom != nil && len(*updateChainFrom) > 0 {
+		updateChain(*updateChainFrom, conf)
 		os.Exit(0)
 	}
 

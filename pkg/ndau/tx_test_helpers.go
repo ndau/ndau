@@ -4,20 +4,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/writers/pkg/testwriter"
-
+	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
-	sv "github.com/oneiro-ndev/ndau/pkg/ndau/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	log "github.com/sirupsen/logrus"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	"github.com/oneiro-ndev/writers/pkg/testwriter"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -72,15 +71,13 @@ func init() {
 	}
 }
 
-func initApp(t *testing.T) (app *App, assc config.MockAssociated) {
-	configP, assc, err := config.MakeTmpMock("")
+func initApp(t *testing.T) (app *App, assc generator.Associated) {
+	var err error
+	app, assc, err = InitMockApp()
 	require.NoError(t, err)
 
-	app, err = NewApp("", "", -1, *configP)
-	require.NoError(t, err)
-
-	// disable logging within the tests by sending output to devnull
-	logger := log.StandardLogger()
+	// send log output to the test logger
+	logger := logrus.StandardLogger()
 	logger.Out = testwriter.New(t)
 	app.SetLogger(logger)
 
