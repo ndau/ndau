@@ -1,5 +1,5 @@
-hash: 73e1be132eb4b9b3be7e08b0ee2305fcaa07ee2be5bfd70341c5e144326017f5
-updated: 2018-11-13T16:45:58.45515+01:00
+hash: c51421e983b0baeb68a96c135c8c210d12c6da5d64f15ff20f7f5e5c00f69718
+updated: 2018-11-13T18:24:14.404477+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -196,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 25841b4c5c9b97f7c078919dac8dc0d683cc5bb4
+  version: 905f072e154815f026936987b5b4d0986f2c3c41
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -207,7 +207,7 @@ imports:
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
-  version: 4dfccda113e2f26082aa851d7d1629aa7731f21a
+  version: d00b8cf26e56cbc01f8e0f62e098c195b01250b4
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
   subpackages:
   - pkg/genesis.generator
@@ -257,7 +257,7 @@ imports:
   subpackages:
   - pkg/honeycomb
 - name: github.com/oneiro-ndev/system_vars
-  version: 88088f239e042245c5e043ac7bd2ab9e1270e1d6
+  version: 099b11ceb69af3a295b25b44c0d986f7dcd0ac62
   repo: git@github.com:oneiro-ndev/system_vars.git
   subpackages:
   - pkg/svi
@@ -282,7 +282,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: abad2d1bd44235a26707c172eab6bca5bf2dbad3
+  version: ca9acd2391c21ed243ef577fc3aaa856aaae1acf
   subpackages:
   - prometheus
   - prometheus/internal
@@ -420,7 +420,7 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: 03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe
+  version: 88d92db4c548972d942ac2a3531a8a9a34c82ca6
   subpackages:
   - context
   - http/httpguts

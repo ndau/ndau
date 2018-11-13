@@ -13,10 +13,10 @@ import:
   version: ~0.10
   repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
-  version: prgn-update-system-vars
+  version: ~v0.10
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/chaos_genesis
-  version: prgn-update-system-vars
+  version: ~v0.1
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
@@ -34,7 +34,7 @@ import:
   version: master
   repo: git@github.com:oneiro-ndev/o11y.git
 - package: github.com/oneiro-ndev/system_vars
-  version: prgn-use-wkt-for-locations
+  version: ~v0.1
   repo: git@github.com:oneiro-ndev/system_vars.git
 - package: github.com/oneiro-ndev/writers
   version: master
