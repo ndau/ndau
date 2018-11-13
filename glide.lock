@@ -1,5 +1,5 @@
-hash: 13374375ab0a5743012f23edb6c8accc50812f3128eee477d00f7bca8a13ca2c
-updated: 2018-11-12T16:10:14.781592+01:00
+hash: 73e1be132eb4b9b3be7e08b0ee2305fcaa07ee2be5bfd70341c5e144326017f5
+updated: 2018-11-13T16:45:58.45515+01:00
 imports:
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
@@ -39,7 +39,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 028b1f5c18c5a65839c9bd10f5afdedc4f37cce3
+  version: a1cf564001efacc3326b79254f0a7378c54959cf
   subpackages:
   - aws
   - aws/awserr
@@ -109,7 +109,7 @@ imports:
 - name: github.com/facebookgo/muster
   version: fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a
 - name: github.com/go-kit/kit
-  version: 12210fb6ace19e0496167bb3e667dcd91fa9f69b
+  version: 0f5dceadc828705294351f22648ffc3b49f1c317
   subpackages:
   - log
   - log/level
@@ -196,7 +196,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: b07872d3305e856e23e6830eb27ee6aae31272c6
+  version: 25841b4c5c9b97f7c078919dac8dc0d683cc5bb4
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -207,7 +207,7 @@ imports:
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
-  version: d5610a2ce21241203327911c7f8b883978da281d
+  version: 4dfccda113e2f26082aa851d7d1629aa7731f21a
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
   subpackages:
   - pkg/genesis.generator
@@ -237,6 +237,8 @@ imports:
   - pkg/bitset256
   - pkg/constants
   - pkg/eai
+  - pkg/key
+  - pkg/keyaddr
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
@@ -245,6 +247,7 @@ imports:
   - pkg/signed
   - pkg/types
   - pkg/unsigned
+  - pkg/words
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
@@ -254,7 +257,7 @@ imports:
   subpackages:
   - pkg/honeycomb
 - name: github.com/oneiro-ndev/system_vars
-  version: f07907b6a8c22dd5c6525a2d29e6a77ff35c771a
+  version: 88088f239e042245c5e043ac7bd2ab9e1270e1d6
   repo: git@github.com:oneiro-ndev/system_vars.git
   subpackages:
   - pkg/svi
@@ -289,7 +292,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 0b1957f9d949dfa3084171a6ec5642b38055276a
+  version: 41aa239b4cce3c56ab88fc366ae8b0a6423fa239
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -401,7 +404,7 @@ imports:
 - name: github.com/ybbus/jsonrpc
   version: 649ede3181b7a6d7329afc6612b494434c641499
 - name: golang.org/x/crypto
-  version: e4dc69e5b2fd71dcaf8bd5d054eb936deb78d1fa
+  version: 3d3f9f413869b949e48070b5bc593aa22cc2b8f2
   subpackages:
   - chacha20poly1305
   - curve25519
@@ -441,7 +444,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: 6d71ab8aade08605ffc36622332264e2f6991952
+  version: 150d8ac28524ccbf76b28c54cc349359fc77060e
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
@@ -449,7 +452,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: eb55fa50e6c987e6b847fc13381d10f8bf9ab5db
+  version: 04ea82009cdb9ecdefc6289f4c93ec919a10b3b6
   subpackages:
   - balancer
   - balancer/base
