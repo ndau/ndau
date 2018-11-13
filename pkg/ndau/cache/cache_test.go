@@ -72,9 +72,9 @@ func TestSystemCacheTimeout(t *testing.T) {
 		timeout time.Duration
 		wanterr bool
 	}{
-		{0 * time.Millisecond, 50 * time.Millisecond, false},
-		{50 * time.Millisecond, 50 * time.Millisecond, true},
-		{100 * time.Millisecond, 50 * time.Millisecond, true},
+		{30 * time.Millisecond, 50 * time.Millisecond, false},
+		{55 * time.Millisecond, 50 * time.Millisecond, true},
+		{105 * time.Millisecond, 50 * time.Millisecond, true},
 	}
 	for idx, tcase := range tcases {
 		t.Run(
