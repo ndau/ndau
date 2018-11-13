@@ -14,6 +14,10 @@ import (
 	"github.com/tinylib/msgp/msgp"
 )
 
+// What we want here is to be able to spawn a bunch of query goroutines, each of which could
+// possibly fail, and then return a collection of the results; if there are any errors,
+// we want to return all of them.
+
 // SystemCache is a thread-safe cache of system variables
 type SystemCache struct {
 	inner map[string][]byte
@@ -47,40 +51,9 @@ func NewSystemCache(conf config.Config) (*SystemCache, error) {
 }
 
 type kv struct {
-	k string
-	v []byte
-}
-
-func (c *SystemCache) getKV(
-	done <-chan struct{},
-	name string, nsk svi.Location,
-) (<-chan kv, <-chan error) {
-	results := make(chan kv)
-	errors := make(chan error)
-
-	go func() {
-		defer close(results)
-		defer close(errors)
-
-		value, err := c.store.GetRaw(nsk)
-		select {
-		case <-done:
-			// return without sending anything; since we never write to
-			// done, a successful read means that the channel is closed, which
-			// means that the output channels must also be closed
-		default:
-			if err != nil {
-				errors <- err
-			} else {
-				results <- kv{
-					k: name,
-					v: value,
-				}
-			}
-		}
-	}()
-
-	return results, errors
+	k   string
+	v   []byte
+	err error
 }
 
 // Update the cache
@@ -109,20 +82,14 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// here, we dispatch a bunch of goroutines, each of which is
 	// responsible for fetching a single value for the requested key
 	//
-	// unfortunately, golang's channels _really_ don't like to play nicely
-	// in a MPSC configuration, and are super easy to panic if you try, so
-	// we have to faff around with some boilerplate to make this work right.
-	//
 	// done isn't actually a stream: we use it for simultaneous multi-channel
 	// communication: if it's still open, we're still reading from the streams.
 	done := make(chan struct{})
 	defer close(done)
 
-	// construct some lists of channels which we can populate, one per gorountine
+	// construct a list of channels which we can populate, one per gorountine
 	resultschannels := make([]<-chan kv, 0, len(sviMap))
-	errorschannels := make([]<-chan error, 0, len(sviMap))
 
-	// dispatch goroutines, collecting results channels in the process
 	for name, dc := range sviMap {
 		var nsk svi.Location
 		if height >= dc.ChangeOn {
@@ -130,13 +97,37 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 		} else {
 			nsk = dc.Current
 		}
-		r, e := c.getKV(done, name, nsk)
-		resultschannels = append(resultschannels, r)
-		errorschannels = append(errorschannels, e)
+
+		// make a channel for this goroutine
+		results := make(chan kv)
+		// and record it in the result list
+		resultschannels = append(resultschannels, results)
+		// now spawn a goroutine to retrieve one result and stuff it into the results channel
+		// it also monitors the done channel to know if it should bail out early
+		// it closes the results channel in either case
+		// we pass in name and nsk so that they're bound to this goroutine
+		go func(results chan kv, name string, nsk svi.Location) {
+			value, err := c.store.GetRaw(nsk)
+			result := kv{k: name, v: value}
+			if err != nil {
+				result = kv{err: err}
+			}
+			select {
+			case <-done:
+				// return without sending anything; since we never write to
+				// done, a successful read means that the channel is closed
+			case results <- result:
+				// feed back the result; if err is non-nil, then it should be logged and the value ignored
+			}
+			// no matter what, we want to close our channel
+			close(results)
+		}(results, name, nsk)
 	}
 
+	// it is probably overkill to do a general channel merge since each one of these
+	// channels either errors or delivers a value, but it does defend against
+	// slowing everything down because one query is slow.
 	resultsStream := mergeKV(done, resultschannels...)
-	errorsStream := mergeErr(done, errorschannels...)
 
 	// create a new cache map.
 	//
@@ -149,20 +140,28 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	timeout := time.After(c.timeout)
 
 	// now collect the results:
-	// we can't know how many iterations we'll get, or whether we'll get phantom
-	// values from the errorsStream due to pseudorandom selection of a closed channel,
+	// we can't know how many iterations we'll get and we want to have a timeout option,
 	// so we have to break the loop manually
+outer:
 	for {
-		var kv kv
-		var real bool
 		select {
-		case kv, real = <-resultsStream:
+		case kv, real := <-resultsStream:
 			if real {
+				if kv.err != nil {
+					return errors.Wrap(kv.err, "could not get system variable "+kv.k)
+				}
 				newCache[kv.k] = kv.v
-			}
-		case err = <-errorsStream:
-			if err != nil {
-				return errors.Wrap(err, "could not get system variable "+kv.k)
+			} else {
+				// we're done, there are no more values to accumulate
+				// did we get all of them?
+				if len(newCache) != len(sviMap) {
+					return fmt.Errorf("some system variables were not received: collected %d of %d values in %s",
+						len(newCache),
+						len(sviMap),
+						c.timeout,
+					)
+				}
+				break outer
 			}
 		case <-timeout:
 			return fmt.Errorf(
@@ -171,9 +170,6 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 				len(sviMap),
 				c.timeout,
 			)
-		}
-		if len(newCache) == len(sviMap) {
-			break // we're done
 		}
 	}
 
