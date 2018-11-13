@@ -193,9 +193,15 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		params := fmt.Sprintf("cmd=heightbyblockhash&hash=%s", blockhash)
-		blockheight, err := tool.GetSearchResults(node, params)
+		searchValue, err := tool.GetSearchResults(node, params)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		blockheight, err := strconv.ParseInt(searchValue, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
 			return
 		}
 

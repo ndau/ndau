@@ -27,7 +27,7 @@ func (search *Client) SearchBlockHeightByBlockHash(blockHash string) (uint64, er
 // SearchBlockHeightByTxHash returns the height of block containing the given tx hash.
 // It also returns the transaction offset within the block.
 // Returns 0, 0 and no error if the given tx hash was not found in the index.
-func (search *Client) SearchBlockHeightByTxHash(txHash string) (uint64, uint64, error) {
+func (search *Client) SearchBlockHeightByTxHash(txHash string) (uint64, int, error) {
 	searchKey := formatTxHashToHeightSearchKey(txHash)
 
 	searchValue, err := search.Client.Get(searchKey)

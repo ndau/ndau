@@ -99,7 +99,7 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 
 	for txOffset, txHash := range search.txHashes {
 		txHashKey := formatTxHashToHeightSearchKey(txHash)
-		valueData.TxOffset = uint64(txOffset)
+		valueData.TxOffset = txOffset
 		searchValue := valueData.Marshal()
 
 		updCount, insCount, err := search.indexKeyValue(txHashKey, searchValue)

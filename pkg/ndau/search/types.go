@@ -11,7 +11,7 @@ import (
 // TxValueData is used for storing the block height and transaction offset within the block.
 type TxValueData struct {
 	BlockHeight uint64
-	TxOffset uint64
+	TxOffset int
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
@@ -28,13 +28,13 @@ func (valueData *TxValueData) Unmarshal(searchValue string) error {
 		return err
 	}
 
-	offset, err := strconv.ParseUint(searchValue[separator+1:], 10, 64)
+	offset, err := strconv.ParseInt(searchValue[separator+1:], 10, 32)
 	if err != nil {
 		return err
 	}
 
 	valueData.BlockHeight = height
-	valueData.TxOffset = offset
+	valueData.TxOffset = int(offset)
 
 	return nil
 }
