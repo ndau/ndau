@@ -16,7 +16,7 @@ import (
 
 // What we want here is to be able to spawn a bunch of query goroutines, each of which could
 // possibly fail, and then return a collection of the results; if there are any errors,
-// we want to return all of them.
+// we will return one of them.
 
 // SystemCache is a thread-safe cache of system variables
 type SystemCache struct {
@@ -161,6 +161,7 @@ outer:
 						c.timeout,
 					)
 				}
+				// in either case, if real was false, we're done here.
 				break outer
 			}
 		case <-timeout:
