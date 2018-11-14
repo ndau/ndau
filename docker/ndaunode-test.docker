@@ -1,5 +1,5 @@
 # Build stage: this all gets discarded later
-FROM golang:1.11-alpine3.8
+FROM golang:1.10-alpine3.8
 
 # Allow us to pass in a flag for CI builds
 ARG CI
