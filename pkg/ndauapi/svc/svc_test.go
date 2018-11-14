@@ -39,6 +39,7 @@ func TestRouting(t *testing.T) {
 		rt{"GET", "/order/history", "/order/history"},
 		rt{"GET", "/order/current", "/order/current"},
 		rt{"GET", "/transaction/5469abfed", "/transaction/:txhash"},
+		rt{"POST", "/tx/prevalidate", "/tx/prevalidate"},
 		rt{"POST", "/tx/submit", "/tx/submit"},
 		rt{"GET", "/version", "/version"},
 	}
