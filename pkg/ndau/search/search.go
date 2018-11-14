@@ -6,9 +6,9 @@ import (
 	"strconv"
 )
 
-// SearchBlockHeightByBlockHash returns the height of the given block hash.
+// SearchBlockHash returns the height of the given block hash.
 // Returns 0 and no error if the given block hash was not found in the index.
-func (search *Client) SearchBlockHeightByBlockHash(blockHash string) (uint64, error) {
+func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 	searchKey := formatBlockHashToHeightSearchKey(blockHash)
 
 	searchValue, err := search.Client.Get(searchKey)
@@ -24,10 +24,10 @@ func (search *Client) SearchBlockHeightByBlockHash(blockHash string) (uint64, er
 	return strconv.ParseUint(searchValue, 10, 64)
 }
 
-// SearchBlockHeightByTxHash returns the height of block containing the given tx hash.
+// SearchTxHash returns the height of block containing the given tx hash.
 // It also returns the transaction offset within the block.
 // Returns 0, 0 and no error if the given tx hash was not found in the index.
-func (search *Client) SearchBlockHeightByTxHash(txHash string) (uint64, int, error) {
+func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
 	searchKey := formatTxHashToHeightSearchKey(txHash)
 
 	searchValue, err := search.Client.Get(searchKey)

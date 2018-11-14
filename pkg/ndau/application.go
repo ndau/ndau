@@ -167,6 +167,16 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 //
 // This uses a freshly-generated chaos config and an in-memory noms.
 func InitMockApp() (app *App, assc generator.Associated, err error) {
+	return InitMockAppWithIndex("", -1)
+}
+
+// InitMockAppWithIndex creates an empty test application with indexing and search capability,
+// which is mainly useful for testing.
+//
+// This uses a freshly-generated chaos config and an in-memory noms.
+func InitMockAppWithIndex(indexAddr string, indexVersion int) (
+	app *App, assc generator.Associated, err error,
+) {
 	var bpc []byte
 	var gfilepath, asscpath string
 
@@ -209,7 +219,7 @@ func InitMockApp() (app *App, assc generator.Associated, err error) {
 		return
 	}
 
-	app, err = NewAppSilent("", "", -1, *conf)
+	app, err = NewAppSilent("", indexAddr, indexVersion, *conf)
 	if err != nil {
 		return
 	}
