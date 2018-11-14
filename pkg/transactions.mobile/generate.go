@@ -10,6 +10,6 @@ package mobile
 // if they include unused imports. It should be fast, though, at least after
 // the first time.
 //
-//go:generate go run $GOPATH/src/github.com/oneiro-ndev/ndau/cmd/tx.mobile/main.go
+//go:generate go run $GOPATH/src/github.com/oneiro-ndev/ndau/cmd/tx.mobile/main.go CreditEAI ReleaseFromEndowment RegisterNode NominateNodeReward ClaimNodeReward CommandValidatorChange
 //go:generate go get golang.org/x/tools/cmd/goimports
 //go:generate goimports -w $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/transactions.mobile
