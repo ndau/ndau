@@ -20,6 +20,7 @@ jobs:
       RELEASE_NAME: "devnet"
       # Number of nodes to deploy
       NODE_NUM: "2"
+      KUBECONFIG: /root/kubeconfig
     steps:
       - add_ssh_keys:
           fingerprints:
@@ -28,8 +29,6 @@ jobs:
           name: Transfer environment variables to files
           command: |
             # install helm certs
-            echo -e "$gomu" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
             mkdir -p /root/.helm
             echo -e "$helm_ca_pem" > /root/.helm/ca.pem
             echo -e "$helm_cert_pem" > /root/.helm/cert.pem
@@ -50,19 +49,55 @@ jobs:
             echo "export VERSION=$(git describe --long --tags)" >> $BASH_ENV
             echo "export SHA=$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
+      - run:
+          name: AWS ECR Login
+          command: eval $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
+      - run:
+          name: Build and push Tendermint
+          command: |
+            # Only run on master
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # grab TM version from Docker file
+              git clone git@github.com:oneiro-ndev/chaos.git /root/chaos
+
+              TM_CONTAINER_VERSION=$(grep -e 'TM_VERSION_TAG' /root/chaos/tm-docker/Dockerfile -m 1 | cut -f3 -d ' ')
+              version_check=$(aws ecr describe-images --repository-name tendermint | jq ".imageDetails[].imageTags[]? | select (. == \"${TM_CONTAINER_VERSION}\")")
+              # only push if we have a different version.
+              if [ ! -z "$version_check" ]; then
+                echo "Tendermint container version ${TM_CONTAINER_VERSION} already exists. Will not push." >&2
+              else
+                docker build -t "${ECR_ENDPOINT}/tendermint:${TM_CONTAINER_VERSION}" /root/chaos/tm-docker
+                docker push "${ECR_ENDPOINT}/tendermint:${TM_CONTAINER_VERSION}"
+                echo "Pushed Tendermint container version ${TM_CONTAINER_VERSION}." >&2
+              fi
+            fi
+      - run:
+          name: Build and push Noms
+          command: |
+            # Only run on master
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              version_check=$(aws ecr describe-images --repository-name noms | jq ".imageDetails[].imageTags[]? | select (. == \"${NOMS_CONTAINER_VERSION}\")")
+              # only push if we have a different version.
+              if [ ! -z "$version_check" ]; then
+                echo "Noms container version ${NOMS_CONTAINER_VERSION} already exists. Will not push." >&2
+              else
+                docker build -t "${ECR_ENDPOINT}/noms:${NOMS_CONTAINER_VERSION}" /root/chaos/noms-docker
+                docker push "${ECR_ENDPOINT}/noms:${NOMS_CONTAINER_VERSION}"
+                echo "Pushed Noms container version ${NOMS_CONTAINER_VERSION}." >&2
+              fi
+            fi
       - run:
           name: Redeploy nodegroup testnet
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # get current container versions
-              git clone git@github.com:oneiro-ndev/chaos.git /root/chaos
               TM_CONTAINER_VERSION=$(grep -e 'TM_VERSION_TAG' /root/chaos/tm-docker/Dockerfile -m 1 | cut -f3 -d ' ')
               NDAU_CONTAINER_VERSION=$(git rev-parse --short "$CIRCLE_SHA1")
               CHAOS_CONTAINER_VERSION=$(git rev-parse --short `git ls-remote git@github.com:oneiro-ndev/chaos.git master | cut -f1`)
 
               # Clone the automation repo master branch
-              git clone git@github.com:oneiro-ndev/automation.git /root/automation
+              git clone git@github.com:oneiro-ndev/automation.git -b jsg-pre-s3 /root/automation
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig \
@@ -80,13 +115,13 @@ jobs:
               NDAU_TM_TAG=$TM_CONTAINER_VERSION \
               NDAUNODE_TAG=$NDAU_CONTAINER_VERSION \
               RELEASE=$RELEASE_NAME ELB_SUBDOMAIN=$ELB_SUBDOMAIN \
-                ./gen_node_groups.py -v $NODE_NUM $STARTING_PORT
+                ./gen_node_groups.py $NODE_NUM $STARTING_PORT
 
             fi
       - run:
           name: Run integration tests
           command: |
-            if [ "${CIRCLE_BRANCH}" == "jsg-circle-inttests" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # get address and port of devnet0 RPC
               NODE_IP_ADDRESS=$(kubectl get nodes -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}' | cut -d " " -f1)
               NODE_PORT0=$(kubectl get service --namespace default -o jsonpath='{.spec.ports[?(@.name=="rpc")].nodePort}' devnet-0-nodegroup-ndau-tendermint-service)
