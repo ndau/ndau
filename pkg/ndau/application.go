@@ -5,12 +5,20 @@
 package ndau
 
 import (
+	"encoding/base64"
 	"io/ioutil"
+	"os"
 
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
+
+	"github.com/BurntSushi/toml"
+	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
+	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
@@ -35,20 +43,20 @@ type App struct {
 }
 
 // NewApp prepares a new Ndau App
-func NewApp(dbSpec string, config config.Config) (*App, error) {
-	return NewAppWithLogger(dbSpec, config, nil)
+func NewApp(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
+	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, nil)
 }
 
 // NewAppSilent prepares a new Ndau App which doesn't log
-func NewAppSilent(dbSpec string, config config.Config) (*App, error) {
+func NewAppSilent(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
 	logger := log.New()
 	logger.Out = ioutil.Discard
 
-	return NewAppWithLogger(dbSpec, config, logger)
+	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, logger)
 }
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
-func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogger) (*App, error) {
+func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config config.Config, logger log.FieldLogger) (*App, error) {
 	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
@@ -62,6 +70,31 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 	initialBlockTime, err := math.TimestampFrom(constants.Epoch)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create initial block time")
+	}
+
+	if indexVersion >= 0 {
+		// Set up ndau-specific search client.
+		search, err := search.NewClient(indexAddr, indexVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "NewApp unable to init search client")
+		}
+
+		// Log initial indexing in case it takes a long time, people can see why.
+		metaapp.GetLogger().WithFields(log.Fields{
+			"valIndexVersion": indexVersion,
+		}).Info("ndau waiting for initial indexing to complete")
+
+		// TODO: Perform initial indexing here.
+		updateCount := 0
+		insertCount := 0
+
+		// It might be useful to see what kind of results came from the initial indexing.
+		metaapp.GetLogger().WithFields(log.Fields{
+			"valUpdateCount": updateCount,
+			"valInsertCount": insertCount,
+		}).Info("ndau initial indexing complete")
+
+		metaapp.SetSearch(search)
 	}
 
 	app := App{
@@ -125,4 +158,71 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 	}).Info("ndaunode per block custom processing complete")
 
 	return response
+}
+
+// InitMockApp creates an empty test application, which is mainly useful for testing.
+//
+// This uses a freshly-generated chaos config and an in-memory noms.
+func InitMockApp() (app *App, assc generator.Associated, err error) {
+	var bpc []byte
+	var gfilepath, asscpath string
+
+	bpc, gfilepath, asscpath, err = generator.GenerateIn("")
+	if err != nil {
+		return
+	}
+
+	// update the config with the genesisfile path and the
+	// svi location
+	var gfile genesisfile.GFile
+	gfile, err = genesisfile.Load(gfilepath)
+	if err != nil {
+		return
+	}
+	var svi *svi.Location
+	svi, err = gfile.FindSVIStub()
+	if err != nil {
+		return
+	}
+	if svi == nil {
+		err = errors.New("svi stub must exist in generated genesisfile")
+		return
+	}
+
+	var configfile *os.File
+	configfile, err = ioutil.TempFile("", "config.*.toml")
+	if err != nil {
+		return
+	}
+	var conf *config.Config
+	conf, err = config.LoadDefault(configfile.Name())
+	if err != nil {
+		return
+	}
+	conf.UseMock = &gfilepath
+	conf.SystemVariableIndirect = *svi
+	err = conf.Dump(configfile.Name())
+	if err != nil {
+		return
+	}
+
+	app, err = NewAppSilent("", "", -1, *conf)
+	if err != nil {
+		return
+	}
+
+	// now load the appropriate associated data
+	var af generator.AssociatedFile
+	_, err = toml.DecodeFile(asscpath, &af)
+	if err != nil {
+		return
+	}
+	var ok bool
+	assc, ok = af[base64.StdEncoding.EncodeToString(bpc)]
+	if !ok {
+		err = errors.New("associated data for this bpc not found in assc file")
+		return
+	}
+
+	return
 }

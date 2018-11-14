@@ -99,7 +99,10 @@ func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
 		return 0, errors.New("could not get node client")
 	}
 	block, err := node.Block(nil)
-	return block.Block.Height, err
+	if err != nil {
+		return 0, errors.New("could not get block")
+	}
+	return block.Block.Height, nil
 }
 
 func getBlocksMatching(node *client.HTTP, start, end int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {

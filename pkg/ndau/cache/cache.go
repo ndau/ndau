@@ -6,29 +6,34 @@ import (
 	"sync"
 	"time"
 
+	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tinylib/msgp/msgp"
-
-	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
-	"github.com/pkg/errors"
 )
+
+// What we want here is to be able to spawn a bunch of query goroutines, each of which could
+// possibly fail, and then return a collection of the results; if there are any errors,
+// we will return one of them.
 
 // SystemCache is a thread-safe cache of system variables
 type SystemCache struct {
 	inner map[string][]byte
 	lock  sync.RWMutex
 
-	store   config.SystemStore
-	svi     config.NamespacedKey
+	store   svi.SystemStore
+	svi     svi.Location
 	timeout time.Duration
 }
 
 // NewSystemCache constructs a SystemCache
 func NewSystemCache(conf config.Config) (*SystemCache, error) {
-	var ss config.SystemStore
+	var ss svi.SystemStore
 	var err error
 	if conf.UseMock != nil && len(*conf.UseMock) > 0 {
-		ss, err = config.LoadMock(*conf.UseMock)
+		ss, err = genesisfile.Load(*conf.UseMock)
 		if err != nil {
 			return nil, errors.Wrap(err, "System() failed to load mock")
 		}
@@ -46,23 +51,9 @@ func NewSystemCache(conf config.Config) (*SystemCache, error) {
 }
 
 type kv struct {
-	k string
-	v []byte
-}
-
-func (c *SystemCache) getKV(
-	name string, nsk config.NamespacedKey,
-	results chan<- kv, errors chan<- error,
-) {
-	value, err := c.store.GetRaw(nsk.Namespace.Bytes(), nsk.Key)
-	if err != nil {
-		errors <- err
-	} else {
-		results <- kv{
-			k: name,
-			v: value,
-		}
-	}
+	k   string
+	v   []byte
+	err error
 }
 
 // Update the cache
@@ -80,18 +71,10 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// get the map of system variables
 	// we get this each time instead of caching because
 	// we want to stay updated in case the map is updated
-	sviMap, err := config.GetSVI(c.store, c.svi)
+	sviMap, err := svi.GetSVI(c.store, c.svi)
 	if err != nil {
 		return errors.Wrap(err, "could not get SVI map")
 	}
-
-	// set up some channels
-	// we don't buffer them; the block time on reads should be trivial
-	// compared to the network lag
-	resultsStream := make(chan kv)
-	defer close(resultsStream)
-	errorsStream := make(chan error)
-	defer close(errorsStream)
 
 	// actually getting the keys and values is super IO-heavy,
 	// so we do it asynchronously
@@ -99,16 +82,52 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// here, we dispatch a bunch of goroutines, each of which is
 	// responsible for fetching a single value for the requested key
 	//
-	// the results and any errors are sent along the channels we set up earlier
+	// done isn't actually a stream: we use it for simultaneous multi-channel
+	// communication: if it's still open, we're still reading from the streams.
+	done := make(chan struct{})
+	defer close(done)
+
+	// construct a list of channels which we can populate, one per gorountine
+	resultschannels := make([]<-chan kv, 0, len(sviMap))
+
 	for name, dc := range sviMap {
-		var nsk config.NamespacedKey
+		var nsk svi.Location
 		if height >= dc.ChangeOn {
 			nsk = dc.Future
 		} else {
 			nsk = dc.Current
 		}
-		go c.getKV(name, nsk, resultsStream, errorsStream)
+
+		// make a channel for this goroutine
+		results := make(chan kv)
+		// and record it in the result list
+		resultschannels = append(resultschannels, results)
+		// now spawn a goroutine to retrieve one result and stuff it into the results channel
+		// it also monitors the done channel to know if it should bail out early
+		// it closes the results channel in either case
+		// we pass in name and nsk so that they're bound to this goroutine
+		go func(results chan kv, name string, nsk svi.Location) {
+			value, err := c.store.GetRaw(nsk)
+			result := kv{k: name, v: value}
+			if err != nil {
+				result = kv{err: err}
+			}
+			select {
+			case <-done:
+				// return without sending anything; since we never write to
+				// done, a successful read means that the channel is closed
+			case results <- result:
+				// feed back the result; if err is non-nil, then it should be logged and the value ignored
+			}
+			// no matter what, we want to close our channel
+			close(results)
+		}(results, name, nsk)
 	}
+
+	// it is probably overkill to do a general channel merge since each one of these
+	// channels either errors or delivers a value, but it does defend against
+	// slowing everything down because one query is slow.
+	resultsStream := mergeKV(done, resultschannels...)
 
 	// create a new cache map.
 	//
@@ -116,17 +135,42 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// we keep the results of the previous cache
 	newCache := make(map[string][]byte)
 
-	// now collect the results: we know we should get one result from each
-	// goroutine, and we had one of those per key in sviMap
-	for i := 0; i < len(sviMap); i++ {
-		var kv kv
+	// create the timeout channel outside the loop so it's not reset on each
+	// iteration
+	timeout := time.After(c.timeout)
+
+	// now collect the results:
+	// we can't know how many iterations we'll get and we want to have a timeout option,
+	// so we have to break the loop manually
+outer:
+	for {
 		select {
-		case kv = <-resultsStream:
-			newCache[kv.k] = kv.v
-		case err = <-errorsStream:
-			return errors.Wrap(err, "could not get system variable from chaos chain")
-		case <-time.After(c.timeout):
-			return errors.New("Attempt to get system variables from chaos chain timed out")
+		case kv, real := <-resultsStream:
+			if real {
+				if kv.err != nil {
+					return errors.Wrap(kv.err, "could not get system variable "+kv.k)
+				}
+				newCache[kv.k] = kv.v
+			} else {
+				// we're done, there are no more values to accumulate
+				// did we get all of them?
+				if len(newCache) != len(sviMap) {
+					return fmt.Errorf("some system variables were not received: collected %d of %d values in %s",
+						len(newCache),
+						len(sviMap),
+						c.timeout,
+					)
+				}
+				// in either case, if real was false, we're done here.
+				break outer
+			}
+		case <-timeout:
+			return fmt.Errorf(
+				"attempt to get system variables timed out: collected %d of %d values in %s",
+				len(newCache),
+				len(sviMap),
+				c.timeout,
+			)
 		}
 	}
 
@@ -138,7 +182,7 @@ func (c *SystemCache) Update(height uint64, logger log.FieldLogger) error {
 	// 	keys[i] = k
 	// 	i++
 	// }
-	// logger.WithField("system variable keys", keys).Info("SystemCache.Update completed")
+	// fmt.Printf("sv keys:\n%#v\n", keys)
 
 	// everything's fine; just replace the inner cache with the new one now
 	c.inner = newCache

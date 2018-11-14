@@ -3,8 +3,9 @@ jobs:
   build:
     working_directory: /app
     docker:
-      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.5
+      - image: 578681496768.dkr.ecr.us-east-1.amazonaws.com/circle-ci:0.0.7
     environment:
+      shell: /bin/bash
       # Used for ECR
       AWS_DEFAULT_REGION: us-east-1
       # ECR's
@@ -43,8 +44,8 @@ jobs:
       - run:
           name: Save computed environment variables
           command: |
-            echo "export VERSION=$(git describe --long --tags)" >> $BASH_ENV
             cd /app
+            echo "export VERSION=$(git describe --long --tags)" >> $BASH_ENV
             echo "export SHA=$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
       - setup_remote_docker:
           docker_layer_caching: false

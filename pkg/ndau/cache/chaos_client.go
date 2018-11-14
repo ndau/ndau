@@ -2,7 +2,7 @@ package cache
 
 import (
 	"github.com/oneiro-ndev/chaos/pkg/tool"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/pkg/errors"
 	trpc "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tinylib/msgp/msgp"
@@ -13,7 +13,7 @@ type chaosClient struct {
 }
 
 // Static type assertion that chaosClient implements the SystemStore interface
-var _ config.SystemStore = (*chaosClient)(nil)
+var _ svi.SystemStore = (*chaosClient)(nil)
 
 func newChaosClient(address string) chaosClient {
 	return chaosClient{
@@ -22,12 +22,8 @@ func newChaosClient(address string) chaosClient {
 }
 
 // GetRaw implements the SystemStore interface
-func (cc chaosClient) GetRaw(namespace []byte, key msgp.Marshaler) ([]byte, error) {
-	keyBytes, err := key.MarshalMsg([]byte{})
-	if err != nil {
-		return nil, errors.Wrap(err, "chaosClient.GetRaw failed to marshal key")
-	}
-	response, _, err := tool.GetNamespacedAt(cc.inner, namespace, keyBytes, 0)
+func (cc chaosClient) GetRaw(loc svi.Location) ([]byte, error) {
+	response, _, err := tool.GetNamespacedAt(cc.inner, loc.Namespace, loc.Key, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "chaosClient.GetRaw failed to get value")
 	}
@@ -36,11 +32,13 @@ func (cc chaosClient) GetRaw(namespace []byte, key msgp.Marshaler) ([]byte, erro
 
 // Get implements the SystemStore interface
 func (cc chaosClient) Get(
-	namespace []byte,
-	key msgp.Marshaler,
+	loc svi.Location,
 	value msgp.Unmarshaler,
 ) error {
-	return tool.GetStructured(
-		cc.inner, namespace, key, value, 0,
-	)
+	bytes, err := cc.GetRaw(loc)
+	if err != nil {
+		return errors.Wrap(err, "chaosClient.Get")
+	}
+	_, err = value.UnmarshalMsg(bytes)
+	return errors.Wrap(err, "unmarshalling chaos bytes")
 }

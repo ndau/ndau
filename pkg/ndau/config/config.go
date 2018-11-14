@@ -6,8 +6,11 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
+	"github.com/pkg/errors"
 )
 
 // A Keypair holds a pair of keys
@@ -41,10 +44,7 @@ type Config struct {
 	// This is very sensitive information! Changing it will lead to a fork!
 	// Users should never change this! On the other hand, it's still better
 	// to have it defined as a configuration variable than to hardcode it.
-	//
-	// The value on the chaos chain to which this points must be the
-	// serialized Protobuf encoding of a SVIMap.
-	SystemVariableIndirect NamespacedKey
+	SystemVariableIndirect svi.Location
 
 	// ChaosTimeout is the time in milliseconds which should be allowed
 	// for reads from the chaos chain.
@@ -123,10 +123,41 @@ func LoadDefault(configPath string) (*Config, error) {
 
 // Dump writes the given config object to the specified file
 func (c *Config) Dump(configPath string) error {
+	// if the parent directories of this config don't exist, make them
+	err := os.MkdirAll(filepath.Dir(configPath), 0700)
+	if err != nil {
+		return err
+	}
 	fp, err := os.Create(configPath)
 	defer fp.Close()
 	if err != nil {
 		return err
 	}
 	return toml.NewEncoder(fp).Encode(c)
+}
+
+// UpdateFrom updates the config file from the given genesisfile path
+func (c *Config) UpdateFrom(gfilepath string) error {
+	// check all potential error conditions before modifying c
+	gfile, err := genesisfile.Load(gfilepath)
+	if err != nil {
+		return errors.Wrap(err, "loading genesisfile")
+	}
+	sviLoc, err := gfile.FindSVIStub()
+	if err != nil {
+		return errors.Wrap(err, "searching for svi stub")
+	}
+	if sviLoc == nil {
+		return errors.New("svi stub not present in genesisfile")
+	}
+
+	gfileabspath, err := filepath.Abs(gfilepath)
+	if err != nil {
+		return errors.Wrap(err, "finding genesisfile absolute path")
+	}
+
+	// update c
+	c.SystemVariableIndirect = *sviLoc
+	c.UseMock = &gfileabspath
+	return nil
 }

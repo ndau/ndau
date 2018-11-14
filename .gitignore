@@ -33,11 +33,20 @@ github_chaos_deploy
 # Editor customization
 .vscode/
 
+# emacs support files
+*~
+.#*
+
+# OSX
+.DS_Store
+
 # Ignore the executable output of go build, but not the actual folder
 ndau
 !*/ndau
 ndaunode
 !*/ndaunode
+ndauapi
+!*/ndauapi
 dump_mock
 !*/dump_mock
 load_tool_config

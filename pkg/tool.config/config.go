@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,7 +10,10 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/oneiro-ndev/system_vars/pkg/system_vars"
+
 	"github.com/BurntSushi/toml"
+	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
@@ -192,4 +196,36 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 		NNR:      tc.NNR,
 		CVC:      tc.CVC,
 	}, nil
+}
+
+// UpdateFrom updates the config file given the path to the associated data file
+// and the public key of the BPC.
+func (c *Config) UpdateFrom(asscPath string, bpcPublic []byte) error {
+	asscFile := make(generator.AssociatedFile)
+	_, err := toml.DecodeFile(asscPath, &asscFile)
+	if err != nil {
+		return errors.Wrap(err, "reading asscfile path")
+	}
+	bpcs := base64.StdEncoding.EncodeToString(bpcPublic)
+	assc, ok := asscFile[bpcs]
+	if !ok {
+		return errors.New("bpc key not found in associated data file")
+	}
+
+	sysaccts := []struct {
+		configAcct **SysAccount
+		sys        sv.SysAcct
+	}{
+		{&c.CVC, sv.CommandValidatorChange},
+		{&c.NNR, sv.NominateNodeReward},
+		{&c.RFE, sv.ReleaseFromEndowment},
+	}
+	for _, sa := range sysaccts {
+		*sa.configAcct, err = SysAccountFromAssc(assc, sa.sys)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

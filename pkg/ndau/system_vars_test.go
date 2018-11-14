@@ -3,37 +3,80 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
+	"github.com/oneiro-ndev/chaos/pkg/chaos/ns"
+	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func testSystem(t *testing.T, app *App, name, expect string) {
-	// Note: all these keys/values are presets and defined in
-	// config/make_mock.go
-	var value wkt.String
-	err := app.System(name, &value)
-	require.NoError(t, err)
-	require.Equal(t, expect, string(value))
+var (
+	bpcvalone signature.PublicKey
+)
+
+func init() {
+	var err error
+	bpcvalone, _, err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
 }
-func TestAppCanGetCurrentValueOfDeferredUpdate(t *testing.T) {
-	app := initAppAtHeight(t, 0)
+
+func initAppSystem(t *testing.T, height uint64) *App {
+	app, _ := initApp(t)
+
+	// inject some test variables
+	require.NotNil(t, app.config.UseMock)
+	gfile, err := genesisfile.Load(*app.config.UseMock)
+	require.NoError(t, err)
+
+	sets := func(ns []byte, key string, value genesisfile.Valuable) {
+		tru := true
+
+		loc := svi.Location{
+			Namespace: ns,
+			Key:       []byte(key),
+		}
+		err = gfile.Set(loc, value)
+		require.NoError(t, err)
+		err = gfile.Edit(loc, func(val *genesisfile.Value) error {
+			val.System = &tru
+			return nil
+		})
+		require.NoError(t, err)
+	}
+
+	sets(ns.System, "one", &bpcvalone)
+
+	// dump the genesisfile
+	err = gfile.Dump(*app.config.UseMock)
+	require.NoError(t, err)
+
+	// refresh the systemcache
+	sc, err := cache.NewSystemCache(app.config)
+	require.NoError(t, err)
+	app.systemCache = sc
+
+	// update the system cache
+	app.InitChain(abci.RequestInitChain{})
+
+	return app
+}
+
+func TestAppCanGetValue(t *testing.T) {
+	app := initAppSystem(t, 0)
 	// this fixture will switch from "bpc val one" to "system value one"
 	// at height 1000. Given that we just created this app and haven't
 	// run it, we can be confident that it is still at the first value
-	testSystem(t, app, "one", "bpc val one")
+	var value signature.PublicKey
+	err := app.System("one", &value)
+	require.NoError(t, err)
+	require.Equal(t, bpcvalone.String(), value.String())
 }
 
-func TestAppCanGetFutureValueOnceHeightIsAppropriate(t *testing.T) {
-	app := initAppAtHeight(t, 1000)
-	testSystem(t, app, "one", "system value one")
-}
-
-func TestAppCanGetSimpleValue(t *testing.T) {
-	app := initAppAtHeight(t, 0)
-	testSystem(t, app, "two", "system value two")
-}
-
-func TestAppCanGetAliasedValue(t *testing.T) {
-	app := initAppAtHeight(t, 0)
-	testSystem(t, app, "foo", "baz")
-}
+// there used to be more tests here, but they depended on the detailed behavior
+// of SVI maps. Becuase we are operating in a genesisfile context, and genesisfiles
+// always automatically derive SVI maps on load, we can no longer test those
+// features. We've therefore just deleted the tests which can no longer run.
