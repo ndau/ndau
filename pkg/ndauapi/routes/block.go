@@ -18,8 +18,8 @@ import (
 
 // BlockchainRequest represents a blockchain request.
 type BlockchainRequest struct {
-	end     int64
-	start   int64
+	first   int64
+	last    int64
 	noempty bool
 }
 
@@ -33,7 +33,7 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 	keys := []string{"first", "last"}
 	vals := [2]int64{}
 	for i, k := range keys {
-		p := bone.GetValue(r, k)
+		p := r.URL.Query().Get(k)
 		if p == "" {
 			return req, fmt.Errorf("%s parameter required", k)
 		}
@@ -46,22 +46,22 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 		}
 		vals[i] = v
 	}
-	start := vals[0]
-	end := vals[1]
+	first := vals[0]
+	last := vals[1]
 
-	if start > end {
+	if first > last {
 		return req, fmt.Errorf("%s must be higher than %s", keys[0], keys[1])
 	}
 
-	if end-start > MaximumRange {
-		return req, fmt.Errorf("%v range is larger than %v", end-start, MaximumRange)
+	if last-first > MaximumRange {
+		return req, fmt.Errorf("%v range is larger than %v", last-first, MaximumRange)
 	}
 
 	noempty := (r.URL.Query().Get("noempty") != "")
 
 	return BlockchainRequest{
-		start:   start,
-		end:     end,
+		first:   first,
+		last:    last,
 		noempty: noempty,
 	}, nil
 }
@@ -106,8 +106,8 @@ func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
 	return block.Block.Height, nil
 }
 
-func getBlocksMatching(node *client.HTTP, start, end int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
-	blocks, err := node.BlockchainInfo(start, end)
+func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
+	blocks, err := node.BlockchainInfo(first, last)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
 		if reqdata.noempty {
 			f = nonemptyFilter
 		}
-		blocks, err := getBlocksMatching(node, reqdata.start, reqdata.end, f)
+		blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, f)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 			return

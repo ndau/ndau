@@ -80,7 +80,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			},
 			status:  http.StatusInternalServerError,
 			want:    TxResult{},
-			wanterr: "error",
+			wanterr: "error from commit",
 		},
 	}
 

@@ -43,7 +43,7 @@ func TestHandleAccounts(t *testing.T) {
 		{
 			name:   "invalid json",
 			body:   "{\"addresses\"}:[\"asdf\"]}",
-			status: http.StatusBadRequest,
+			status: http.StatusInternalServerError,
 		},
 	}
 

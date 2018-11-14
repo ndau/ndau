@@ -119,7 +119,12 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 			reqres.RespondJSON(w, reqres.NewFromErr("error from commit", err, http.StatusInternalServerError))
 			return
 		}
-		txresult := cr.(*ctypes.ResultBroadcastTxCommit)
+
+		txresult, ok := cr.(*ctypes.ResultBroadcastTxCommit)
+		if !ok {
+			reqres.RespondJSON(w, reqres.NewFromErr("error casting tx result", err, http.StatusInternalServerError))
+			return
+		}
 
 		result := TxResult{TxHash: base64.StdEncoding.EncodeToString(txresult.Hash)}
 		code := http.StatusOK // if we ever do this without synchronous commit, change to StatusAccepted
