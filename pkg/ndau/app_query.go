@@ -3,18 +3,19 @@ package ndau
 import (
 	"fmt"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
+	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 }
@@ -41,6 +42,32 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	}
 
 	response.Value = adBytes
+}
+
+func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	tx, err := metatx.Unmarshal(request.GetData(), TxIDs)
+	if err != nil {
+		app.QueryError(err, response, "deserializing transactable")
+		return
+	}
+
+	// we use the Info field to communicate the estimated tx fee
+	fee, err := app.calculateTxFee(tx)
+	if err != nil {
+		app.QueryError(err, response, "calculating tx fee")
+		return
+	}
+	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee)
+
+	err = tx.Validate(appI)
+	if err != nil {
+		app.QueryError(err, response, "validating transactable")
+		return
+	}
+
+	return
 }
 
 var lastSummary query.Summary

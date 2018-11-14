@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
@@ -129,4 +131,44 @@ func TestCanQueryVersion(t *testing.T) {
 
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Value)
+}
+
+func TestPrevalidateValidTx(t *testing.T) {
+	app, private := initAppTx(t)
+	tr := generateTransfer(t, 50, 1, []signature.PrivateKey{private})
+	trb, err := metatx.Marshal(tr, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.Query(abci.RequestQuery{
+		Path: query.PrevalidateEndpoint,
+		Data: trb,
+	})
+
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, resp.Info)
+
+	var fee math.Ndau
+	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee)
+	require.NoError(t, err)
+	require.Equal(t, 1, n)
+}
+
+func TestPrevalidateInvalidTx(t *testing.T) {
+	app, private := initAppTx(t)
+	tr := generateTransfer(t, 50, 0, []signature.PrivateKey{private})
+	trb, err := metatx.Marshal(tr, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.Query(abci.RequestQuery{
+		Path: query.PrevalidateEndpoint,
+		Data: trb,
+	})
+
+	require.Equal(t, code.QueryError, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, resp.Info)
+
+	var fee math.Ndau
+	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee)
+	require.NoError(t, err)
+	require.Equal(t, 1, n)
 }

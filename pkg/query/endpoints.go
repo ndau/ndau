@@ -2,9 +2,8 @@ package query
 
 // These constants define the endpoints at which the Tm RPC will forward requests
 const (
-	AccountEndpoint = "/account"
-	SummaryEndpoint = "/summary"
-	VersionEndpoint = "/version"
+	AccountEndpoint     = "/account"
+	PrevalidateEndpoint = "/prevalidate"
+	SummaryEndpoint     = "/summary"
+	VersionEndpoint     = "/version"
 )
-
-const AccountInfoFmt = "acct exists: %t"

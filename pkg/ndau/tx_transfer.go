@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -71,6 +72,24 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 
 	if source.IsLocked(app.blockTime) {
 		return errors.New("source is locked")
+	}
+
+	// is there enough money in the source?
+	source.UpdateSettlements(app.blockTime)
+	available, err := source.AvailableBalance()
+	if err != nil {
+		return errors.Wrap(err, "calculating available balance")
+	}
+	fee, err := app.calculateTxFee(tx)
+	if err != nil {
+		return errors.Wrap(err, "calculating tx fee")
+	}
+	need := fee + tx.Qty
+	if available < need {
+		return fmt.Errorf(
+			"not enough ndau in source: require %d napu, have %d",
+			need, available,
+		)
 	}
 
 	dest, _ := state.GetAccount(tx.Destination, app.blockTime)
