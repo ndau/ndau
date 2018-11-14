@@ -1,4 +1,4 @@
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -11,24 +11,29 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 func TestGetEAIRate(t *testing.T) {
-	baseHandler := GetEAIRate
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
+
+	baseHandler := routes.GetEAIRate
 
 	tests := []struct {
 		name   string
-		body   []EAIRateRequest
+		body   []routes.EAIRateRequest
 		status int
-		want   []EAIRateResponse
+		want   []routes.EAIRateResponse
 	}{
 		{
 			name:   "empty request",
-			body:   []EAIRateRequest{},
+			body:   []routes.EAIRateRequest{},
 			status: http.StatusOK,
-			want:   []EAIRateResponse{},
+			want:   []routes.EAIRateResponse{},
 		},
 		{
 			name:   "no body",
@@ -38,54 +43,58 @@ func TestGetEAIRate(t *testing.T) {
 		},
 		{
 			name: "zero rate",
-			body: []EAIRateRequest{
-				EAIRateRequest{"zero", types.Duration(0), backing.Lock{}},
+			body: []routes.EAIRateRequest{
+				routes.EAIRateRequest{"zero", types.Duration(0), backing.Lock{}},
 			},
 			status: http.StatusOK,
-			want: []EAIRateResponse{
-				EAIRateResponse{"zero", 0},
+			want: []routes.EAIRateResponse{
+				routes.EAIRateResponse{"zero", 0},
 			},
 		},
 		{
 			name: "unlocked 3month rate",
-			body: []EAIRateRequest{
-				EAIRateRequest{"3L0", types.Month * 3, backing.Lock{}},
+			body: []routes.EAIRateRequest{
+				routes.EAIRateRequest{"3L0", types.Month * 3, backing.Lock{}},
 			},
 			status: http.StatusOK,
-			want: []EAIRateResponse{
-				EAIRateResponse{"3L0", uint64(eai.RateFromPercent(4))},
+			want: []routes.EAIRateResponse{
+				routes.EAIRateResponse{"3L0", uint64(eai.RateFromPercent(4))},
 			},
 		},
 		{
 			name: "locked 90 days at time 0",
-			body: []EAIRateRequest{
-				EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
+			body: []routes.EAIRateRequest{
+				routes.EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
 			},
 			status: http.StatusOK,
-			want: []EAIRateResponse{
-				EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
+			want: []routes.EAIRateResponse{
+				routes.EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
 			},
 		},
 		{
 			name: "several accounts",
-			body: []EAIRateRequest{
-				EAIRateRequest{"90L90", 90 * types.Day, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
-				EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
-				EAIRateRequest{"90L0", 90 * types.Day, backing.Lock{}},
-				EAIRateRequest{"400L1095", 400 * types.Day, *backing.NewLock(1095*types.Day, eai.DefaultLockBonusEAI)},
+			body: []routes.EAIRateRequest{
+				routes.EAIRateRequest{"90L90", 90 * types.Day, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
+				routes.EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
+				routes.EAIRateRequest{"90L0", 90 * types.Day, backing.Lock{}},
+				routes.EAIRateRequest{"400L1095", 400 * types.Day, *backing.NewLock(1095*types.Day, eai.DefaultLockBonusEAI)},
 			},
 			status: http.StatusOK,
-			want: []EAIRateResponse{
-				EAIRateResponse{"90L90", uint64(eai.RateFromPercent(5))},
-				EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
-				EAIRateResponse{"90L0", uint64(eai.RateFromPercent(4))},
-				EAIRateResponse{"400L1095", uint64(eai.RateFromPercent(15))},
+			want: []routes.EAIRateResponse{
+				routes.EAIRateResponse{"90L90", uint64(eai.RateFromPercent(5))},
+				routes.EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
+				routes.EAIRateResponse{"90L0", uint64(eai.RateFromPercent(4))},
+				routes.EAIRateResponse{"400L1095", uint64(eai.RateFromPercent(15))},
 			},
 		},
 	}
 
 	// set up apparatus
-	cf, _, _ := cfg.New()
+	cf, _, err := cfg.New()
+	if err != nil {
+		t.Errorf("Error creating cfg: %s", err)
+		return
+	}
 	handler := baseHandler(cf)
 
 	// run tests
@@ -107,7 +116,7 @@ func TestGetEAIRate(t *testing.T) {
 				t.Errorf("got status code %v, want %v. (%s)", res.StatusCode, tt.status, body)
 				return
 			}
-			var got []EAIRateResponse
+			var got []routes.EAIRateResponse
 			json.NewDecoder(res.Body).Decode(&got)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetEAIRate() = %v, want %v", got, tt.want)
