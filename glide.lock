@@ -1,5 +1,5 @@
 hash: d98f7602b34d4cc4224c9cad7d77362e4c2a22d49733dbd08938cb5ec6e46be3
-updated: 2018-11-09T14:20:45.934207-08:00
+updated: 2018-11-14T09:17:39.601141-08:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -200,7 +200,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 92ee9347d43169322c1145faf66484f7359fd97d
+  version: 7bea9435475d78d833b393f9c0dc082d88f22c67
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -216,7 +216,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 31b18a84d73240215c56b74206a44a7d159a0dc5
+  version: 9711a1b8b7fdeb59c4852132eaa905d6d681bdd8
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
