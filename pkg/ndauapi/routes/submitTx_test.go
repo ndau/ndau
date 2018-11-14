@@ -10,76 +10,71 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSubmitTxNoServer(t *testing.T) {
 	baseHandler := HandleSubmitTx
 
-	keypub, keypvt, _ := signature.Generate(signature.Ed25519, nil)
-	addr, _ := address.Generate(address.KindUser, keypub.KeyBytes())
+	keypub, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	addr, err := address.Generate(address.KindUser, keypub.KeyBytes())
+	require.NoError(t, err)
 	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234, nil)
-	signable := testLockTx.SignableBytes()
-	sigbytes, _ := keypvt.Sign(signable).Marshal()
-	testLockData, _ := b64Tx(testLockTx)
+	testLockData, err := b64Tx(testLockTx)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
-		body    *PreparedTx
+		body    *TxJSON
 		status  int
-		want    TxResult
+		want    SubmitResult
 		wanterr string
 	}{
 		{
 			name:    "no body",
 			body:    nil,
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "unable to decode",
 		},
 		{
 			name:    "blank request",
-			body:    &PreparedTx{},
+			body:    &TxJSON{},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "could not be decoded",
 		},
 		{
 			name: "not base64",
-			body: &PreparedTx{
-				TxData:        "not base64 tx data",
-				SignableBytes: "not base64 bytes to be signed",
-				Signatures:    []string{"base64 signature of SignableBytes"},
+			body: &TxJSON{
+				Data: "not base64 tx data",
 			},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "could not be decoded as base64",
 		},
 		{
 			name: "not a tx",
-			body: &PreparedTx{
-				TxData:        b64str("not a tx"),
-				SignableBytes: b64str("not signable"),
-				Signatures:    []string{b64str("not a signature of SignableBytes")},
+			body: &TxJSON{
+				Data: b64str("not a tx"),
 			},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "could not be decoded into a transaction",
 		},
 		{
 			name: "valid tx but no node",
-			body: &PreparedTx{
-				TxData:        testLockData,
-				SignableBytes: b64(testLockTx.SignableBytes()),
-				Signatures:    []string{b64(sigbytes)},
+			body: &TxJSON{
+				Data: testLockData,
 			},
 			status:  http.StatusInternalServerError,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "error retrieving node",
 		},
 	}
@@ -108,7 +103,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 				return
 			}
 
-			var got TxResult
+			var got SubmitResult
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)

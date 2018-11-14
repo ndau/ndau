@@ -36,21 +36,21 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 		name    string
 		body    *TxJSON
 		status  int
-		want    TxResult
+		want    SubmitResult
 		wanterr string
 	}{
 		{
 			name:    "no body",
 			body:    nil,
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "unable to decode",
 		},
 		{
 			name:    "blank request",
 			body:    &TxJSON{},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "could not unmarshal",
 		},
 		{
@@ -59,7 +59,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				Data: "not base64 tx data",
 			},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "could not be decoded as base64",
 		},
 		{
@@ -68,7 +68,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				Data: b64str("not a tx"),
 			},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "deserialization failed",
 		},
 		{
@@ -77,7 +77,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				Data: testLockData,
 			},
 			status:  http.StatusInternalServerError,
-			want:    TxResult{},
+			want:    SubmitResult{},
 			wanterr: "error retrieving node",
 		},
 	}
@@ -106,7 +106,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				return
 			}
 
-			var got TxResult
+			var got SubmitResult
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
