@@ -33,7 +33,7 @@ func HandleAccounts(cf cfg.Cfg) http.HandlerFunc {
 		addrs := []string{}
 		err := decoder.Decode(&addrs)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not parse request body as json", http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError("could not parse request body as json", http.StatusBadRequest))
 			return
 		}
 		processAccounts(w, cf.NodeAddress, addrs)
