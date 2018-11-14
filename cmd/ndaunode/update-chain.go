@@ -77,6 +77,7 @@ func updateChain(asscpath string, conf *config.Config) {
 			ad, _ := st.GetAccount(addr, now)
 
 			ad.ValidationKeys = append(ad.ValidationKeys, valkey)
+			ad.Balance = 1000000
 			st.Accounts[addr.String()] = ad
 		}
 
