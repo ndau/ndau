@@ -5,7 +5,7 @@ import (
 	"os"
 
 	arg "github.com/alexflint/go-arg"
-	"github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator"
+	"github.com/oneiro-ndev/ndau/pkg/txmobile/generator"
 	"github.com/pkg/errors"
 )
 

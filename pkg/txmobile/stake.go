@@ -1,6 +1,6 @@
-package mobile
+package txmobile
 
-// generated with github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator
+// generated with github.com/oneiro-ndev/ndau/pkg/txmobile/generator
 // DO NOT EDIT
 
 import (

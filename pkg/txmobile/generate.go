@@ -1,4 +1,4 @@
-package mobile
+package txmobile
 
 // To avoid unnecessary imports, go generate has to run a mini-toolchain here:
 //   1. generate the wrapper source
@@ -10,6 +10,6 @@ package mobile
 // if they include unused imports. It should be fast, though, at least after
 // the first time.
 //
-//go:generate go run $GOPATH/src/github.com/oneiro-ndev/ndau/cmd/tx.mobile/main.go CreditEAI ReleaseFromEndowment RegisterNode NominateNodeReward ClaimNodeReward CommandValidatorChange
+//go:generate go run $GOPATH/src/github.com/oneiro-ndev/ndau/cmd/txmobile/main.go CreditEAI ReleaseFromEndowment RegisterNode NominateNodeReward ClaimNodeReward CommandValidatorChange
 //go:generate go get golang.org/x/tools/cmd/goimports
-//go:generate goimports -w $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/transactions.mobile
+//go:generate goimports -w $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/txmobile

@@ -4,7 +4,7 @@ ANDROID_HOME ?= $(HOME)/Library/Android/sdk/
 
 default: all
 
-all: generate test build ios android keyaddr.zip
+all: generate test build ios android txmobile.zip
 
 generate:
 	go generate
@@ -14,23 +14,23 @@ test:
 
 build: ios android
 
-ios: Keyaddr.framework
+ios: Txmobile.framework
 
 sources: *.go
 
-Keyaddr.framework: sources
+Txmobile.framework: sources
 	gomobile bind -target ios -v
 
-keyaddr.zip: Keyaddr.framework
-	rm -f keyaddr.zip
-	zip -ur keyaddr Keyaddr.framework/
+txmobile.zip: Txmobile.framework
+	rm -f txmobile.zip
+	zip -ur txmobile Txmobile.framework/
 
-android: keyaddr.aar
+android: txmobile.aar
 
-keyaddr.aar: sources
+txmobile.aar: sources
 	gomobile bind -target android -v
 
 clean:
-	rm -rf Keyaddr.framework
-	rm -f keyaddr.aar
-	rm -f keyaddr-sources.jar
+	rm -rf Txmobile.framework
+	rm -f txmobile.aar
+	rm -f txmobile-sources.jar
