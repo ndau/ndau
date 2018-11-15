@@ -26,6 +26,7 @@ func init() {
 	flag.StringVar(&chaosRPC, "chaosrpc", "", "chaos rpc url")
 	flag.Parse()
 
+	// Put these into environment variables so cfg.New() finds them where it's looking for them.
 	os.Setenv("NDAUAPI_NDAU_RPC_URL", ndauRPC)
 	os.Setenv("NDAUAPI_CHAOS_RPC_URL", chaosRPC)
 }

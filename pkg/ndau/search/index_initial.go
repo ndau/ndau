@@ -52,9 +52,11 @@ func (search *Client) IndexBlockchain(
 		}
 		lastHeight = height
 
-		// TODO: Get hashes.
-		//search.txHashes.append(txHash)
-		//search.blockHash = blockHash
+		// Here's where we index data out of noms.
+		// We will get block and tx hashes to index from our external indexer application.
+		// TODO: Add something here to index.  If we don't need to index anything out of noms,
+		// then remove this entire function.
+
 		search.blockHeight = height
 
 		updCount, insCount, err := search.index()
