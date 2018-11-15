@@ -13,7 +13,6 @@ import:
   version: ~0.10
   repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
-  version: ~v0.10
   version: eas-whitepapers-26
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/chaos_genesis
