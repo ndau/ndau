@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"net/url"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -95,7 +96,12 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 		value := fmt.Sprintf("%d", height)
 		response.Value = []byte(value)
 	case "heightbytxhash":
-		height, offset, err := search.(*srch.Client).SearchTxHash(hash)
+		txhash, err := url.PathUnescape(hash)
+		if err != nil {
+			app.QueryError(err, response, "height by tx hash unescape fail")
+			return
+		}
+		height, offset, err := search.(*srch.Client).SearchTxHash(txhash)
 		if err != nil {
 			app.QueryError(err, response, "height by tx hash search fail")
 			return
