@@ -88,8 +88,8 @@ func ParseStake(s string) (*Stake, error) {
 	return &Stake{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *Stake) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *Stake) ToB64String() (string, error) {
 	if tx == nil {
 		return "", errors.New("nil stake")
 	}

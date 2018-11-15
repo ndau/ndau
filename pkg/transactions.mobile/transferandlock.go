@@ -93,8 +93,8 @@ func ParseTransferAndLock(s string) (*TransferAndLock, error) {
 	return &TransferAndLock{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *TransferAndLock) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *TransferAndLock) ToB64String() (string, error) {
 	if tx == nil {
 		return "", errors.New("nil transferandlock")
 	}

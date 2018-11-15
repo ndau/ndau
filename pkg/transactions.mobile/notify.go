@@ -78,8 +78,8 @@ func ParseNotify(s string) (*Notify, error) {
 	return &Notify{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *Notify) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *Notify) ToB64String() (string, error) {
 	if tx == nil {
 		return "", errors.New("nil notify")
 	}

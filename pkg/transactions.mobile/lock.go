@@ -81,8 +81,8 @@ func ParseLock(s string) (*Lock, error) {
 	return &Lock{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *Lock) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *Lock) ToB64String() (string, error) {
 	if tx == nil {
 		return "", errors.New("nil lock")
 	}

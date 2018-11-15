@@ -99,8 +99,9 @@ func ParseTransfer(s string) (*Transfer, error) {
 	return &Transfer{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *Transfer) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+// We can't call it ToString because that conflicts with a native Java feature.
+func (tx *Transfer) ToB64String() (string, error) {
 	if tx == nil {
 		return "", errors.New("nil transfer")
 	}
