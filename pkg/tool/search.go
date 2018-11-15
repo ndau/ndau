@@ -18,5 +18,5 @@ func GetSearchResults(node client.ABCIClient, params string) (
 
 	// parse the response
 	searchValue := string(res.Response.GetValue())
-	return searchValue, err
+	return searchValue, nil
 }
