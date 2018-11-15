@@ -75,9 +75,9 @@ func TestBlockRange(t *testing.T) {
 
 	// If a reset has occurred recently, the blockchain height can sometimes be as low as 2.
 	// The tests below require a height of at least 3.  Assume the height is zero, worst case.
-	createBlock(t)
-	createBlock(t)
-	createBlock(t)
+	for i := 0; i < 3; i++ {
+		createBlock(t)
+	}
 
 	// set up tests
 	tests := []struct {
