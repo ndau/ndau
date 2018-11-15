@@ -33,7 +33,7 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 	keys := []string{"first", "last"}
 	vals := [2]int64{}
 	for i, k := range keys {
-		p := r.URL.Query().Get(k)
+		p := bone.GetValue(r, k)
 		if p == "" {
 			return req, fmt.Errorf("%s parameter required", k)
 		}
