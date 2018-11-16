@@ -19,6 +19,12 @@ func getAccount(verbose *bool, keys *int) func(*cli.Cmd) {
 		)
 
 		cmd.Command(
+			"recover",
+			"recover an account from its recovery phrase",
+			getAccountRecover(verbose),
+		)
+
+		cmd.Command(
 			"claim",
 			"claim this account on the blockchain",
 			getAccountClaim(verbose),
