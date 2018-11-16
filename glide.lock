@@ -1,6 +1,10 @@
 hash: c51421e983b0baeb68a96c135c8c210d12c6da5d64f15ff20f7f5e5c00f69718
-updated: 2018-11-16T15:00:16.126183+01:00
+updated: 2018-11-16T16:50:28.935604+01:00
 imports:
+- name: github.com/alexflint/go-arg
+  version: f7c0423bd11ee80ab81d25c6d46f492998af8547
+- name: github.com/alexflint/go-scalar
+  version: e80c3b7ed292b052c7083b6fd7154a8422c33f65
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
   subpackages:
@@ -282,7 +286,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 7e9098b20fb8e103a7a5691878272d7e3d703663
+  version: 3fb53dff765f8a3e0f9d8b1d5b86d4f8c4eb3a09
   subpackages:
   - prometheus
   - prometheus/internal
@@ -431,7 +435,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399
+  version: 5ac8a444bdc56cee774f8f2b3382156bd27c63c3
   subpackages:
   - cpu
   - unix

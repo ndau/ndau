@@ -1,4 +1,7 @@
-package generator
+package txmobile
+
+// generated with github.com/oneiro-ndev/ndau/pkg/txmobile/generator
+// DO NOT EDIT
 
 import (
 	"encoding/base64"
@@ -6,19 +9,16 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/b32"
 	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
-// Proof-of-concept: this file is a manual implementation so we can work out
-// design questions, so that we can implement a generator which will emit
-// something similar for each transaction.
-
-// This package provides an interface to the Ndau transfer transaction for use in React and in particular react-native.
-// It is built using the gomobile tool, so the API is constrained to particular types of parameters:
+// This file provides an interface to the Ndau Transfer transaction
+// for use in React and in particular react-native.
+//
+// It is meant to be built using the gomobile tool, so the API is constrained
+// to particular types of parameters:
 //
 // * string
 // * signed integer and floating point types
@@ -26,26 +26,16 @@ import (
 // * functions with specific restrictions
 // * structs and interfaces consisting of only these types
 //
-// Unfortunately, react-native puts additional requirements that makes []byte particularly
-// challenging to use. So what we are going to do is use a base-64 encoding of []byte to convert
-// it to a string and pass the array of bytes back and forth that way.
+// Unfortunately, react-native puts additional requirements that makes `[]byte`
+// particularly challenging to use. To the degree possible, we take advantage
+// of types' `(Un)MarshalText` implementations to generate and parse strings.
+// Where that's impossible, we use the standard base64 encoding of the binary
+// representation of the type.
 //
-// This is distinct from using base32 encoding (b32) in a signature; that's something we expect
-// to be user-visible, so we're using a specific variant of base 32.
+// This package, therefore, consists mainly of wrappers so that we don't have
+// to modify our idiomatic Go code to conform to these requirements.
 
-// This package, therefore, consists mainly of wrappers so that we don't have to modify our
-// idiomatic Go code to conform to these requirements.
-
-// // A Transfer is the fundamental transaction of the Ndau chain.
-// type Transfer struct {
-// 	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
-// 	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-// 	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-// 	Sequence    uint64                `msg:"seq"`
-// 	Signatures  []signature.Signature `msg:"sig"`
-// }
-
-// A Transfer is the fundamental transaction of the Ndau chain.
+// Transfer is a mobile compatible wrapper for a Transfer transaction
 type Transfer struct {
 	tx ndau.Transfer
 }
@@ -53,28 +43,30 @@ type Transfer struct {
 // NewTransfer constructs a new unsigned Transfer transaction
 func NewTransfer(
 	source *keyaddr.Address,
-	dest *keyaddr.Address,
+	destination *keyaddr.Address,
 	qty int64,
 	sequence int64,
 ) (*Transfer, error) {
 	if source == nil {
 		return nil, errors.New("source must not be nil")
 	}
-	sourceA, err := address.Validate(source.Address)
+	sourceN, err := address.Validate(source.Address)
 	if err != nil {
 		return nil, errors.Wrap(err, "source")
 	}
-	if dest == nil {
-		return nil, errors.New("dest must not be nil")
+
+	if destination == nil {
+		return nil, errors.New("destination must not be nil")
 	}
-	destA, err := address.Validate(dest.Address)
+	destinationN, err := address.Validate(destination.Address)
 	if err != nil {
-		return nil, errors.Wrap(err, "dest")
+		return nil, errors.Wrap(err, "destination")
 	}
+
 	return &Transfer{
 		tx: ndau.Transfer{
-			Source:      sourceA,
-			Destination: destA,
+			Source:      sourceN,
+			Destination: destinationN,
 			Qty:         math.Ndau(qty),
 			Sequence:    uint64(sequence),
 		},
@@ -99,8 +91,8 @@ func ParseTransfer(s string) (*Transfer, error) {
 	return &Transfer{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *Transfer) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *Transfer) ToB64String() (string, error) {
 	if tx == nil {
 		return "", errors.New("nil transfer")
 	}
@@ -111,50 +103,69 @@ func (tx *Transfer) ToString() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-// GetSource gets the source of the transfer
+// GetSource gets the source of the Transfer
+//
+// Returns `nil` if Transfer is `nil` or if native conversion is fallible and
+// conversion failed.
 func (tx *Transfer) GetSource() *keyaddr.Address {
 	if tx == nil {
 		return nil
 	}
-	return &keyaddr.Address{Address: tx.tx.Source.String()}
+	source := keyaddr.Address{Address: tx.tx.Source.String()}
+
+	return &source
 }
 
-// GetDestination gets the destination of the transfer
+// GetDestination gets the destination of the Transfer
+//
+// Returns `nil` if Transfer is `nil` or if native conversion is fallible and
+// conversion failed.
 func (tx *Transfer) GetDestination() *keyaddr.Address {
 	if tx == nil {
 		return nil
 	}
-	return &keyaddr.Address{Address: tx.tx.Destination.String()}
+	destination := keyaddr.Address{Address: tx.tx.Destination.String()}
+
+	return &destination
 }
 
-// GetQty gets the qty of the transfer
+// GetQty gets the qty of the Transfer
+//
+// Returns `nil` if Transfer is `nil` or if native conversion is fallible and
+// conversion failed.
 func (tx *Transfer) GetQty() *int64 {
 	if tx == nil {
 		return nil
 	}
-	q := int64(tx.tx.Qty)
-	return &q
+	qty := int64(tx.tx.Qty)
+
+	return &qty
 }
 
-// GetSequence gets the sequence of the transfer
+// GetSequence gets the sequence of the Transfer
+//
+// Returns `nil` if Transfer is `nil` or if native conversion is fallible and
+// conversion failed.
 func (tx *Transfer) GetSequence() *int64 {
 	if tx == nil {
 		return nil
 	}
-	s := int64(tx.tx.Sequence)
-	return &s
+	sequence := int64(tx.tx.Sequence)
+
+	return &sequence
 }
 
-// GetNumSignatures gets the number of signatures of the transfer
-func (tx *Transfer) GetNumSignatures() *int {
+// GetNumSignatures gets the number of signatures of the Transfer
+//
+// If tx == nil, returns -1
+func (tx *Transfer) GetNumSignatures() int {
 	if tx == nil {
-		return nil
+		return -1
 	}
-	l := len(tx.tx.Signatures)
-	return &l
+	return len(tx.tx.Signatures)
 }
 
-// GetSignature gets a particular signature from this transfer
+// GetSignature gets a particular signature from this Transfer
 func (tx *Transfer) GetSignature(idx int) (*keyaddr.Signature, error) {
 	if tx == nil {
 		return nil, errors.New("nil transfer")
@@ -162,12 +173,12 @@ func (tx *Transfer) GetSignature(idx int) (*keyaddr.Signature, error) {
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
 		return nil, errors.New("invalid index")
 	}
-	sigB, err := tx.tx.Signatures[idx].Marshal()
+	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling signature")
+		return nil, errors.Wrap(err, "signatures")
 	}
 
-	return &keyaddr.Signature{Signature: b32.Encode(sigB)}, nil
+	return signature, nil
 }
 
 // SignableBytes returns the b64 encoding of the signable bytes of this transfer
@@ -183,16 +194,11 @@ func (tx *Transfer) AppendSignature(sig *keyaddr.Signature) error {
 	if sig == nil {
 		return errors.New("sig must not be nil")
 	}
-	sigB, err := b32.Decode(sig.Signature)
+	sigS, err := sig.ToSignature()
 	if err != nil {
-		return errors.Wrap(err, "decoding signature bytes")
+		return errors.Wrap(err, "converting signature")
 	}
-	sigS := new(signature.Signature)
-	err = sigS.Unmarshal(sigB)
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling signature")
-	}
-	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
 	return nil
 }
 
@@ -209,13 +215,15 @@ func (tx *Transfer) Name() string {
 	if tx == nil {
 		return ""
 	}
-	return metatx.NameOf(&tx.tx)
+	return "Transfer"
 }
 
 // TxID returns the transaction id of this transactable
+//
+// Returns -2 if the transactable is nil, or -1 if the transactable is unknown.
 func (tx *Transfer) TxID() int {
 	if tx == nil {
-		return 0
+		return -2
 	}
 	id, err := metatx.TxIDOf(&tx.tx, ndau.TxIDs)
 	if err != nil {

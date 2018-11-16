@@ -16,7 +16,7 @@ var (
 func init() {
 	project = os.ExpandEnv(rawProject)
 	TransactionPath = project + "pkg/ndau/transactions.go"
-	txmobile = project + "pkg/transactions.mobile/"
+	txmobile = project + "pkg/txmobile/"
 	generator = txmobile + "generator/"
 	TemplatePath = generator + "tx.go.tmpl"
 }

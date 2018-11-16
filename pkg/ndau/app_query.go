@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -17,6 +19,7 @@ func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
+	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
 }
 
 func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -79,4 +82,21 @@ func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 		app.QueryError(err, response, "getting ndaunode version")
 	}
 	response.Value = []byte(v)
+}
+
+func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+	names := app.systemCache.GetNames()
+
+	sysvars := make(map[string][]byte)
+	for _, n := range names {
+		v := app.systemCache.GetRaw(n)
+		sysvars[n] = v
+	}
+	buf := &bytes.Buffer{}
+	err := json.NewEncoder(buf).Encode(sysvars)
+	if err != nil {
+		app.QueryError(err, response, "encoding sysvars")
+	}
+	response.Value = buf.Bytes()
 }
