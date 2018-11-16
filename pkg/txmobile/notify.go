@@ -1,6 +1,6 @@
-package mobile
+package txmobile
 
-// generated with github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator
+// generated with github.com/oneiro-ndev/ndau/pkg/txmobile/generator
 // DO NOT EDIT
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// This file provides an interface to the Ndau Stake transaction
+// This file provides an interface to the Ndau Notify transaction
 // for use in React and in particular react-native.
 //
 // It is meant to be built using the gomobile tool, so the API is constrained
@@ -34,17 +34,16 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// Stake is a mobile compatible wrapper for a Stake transaction
-type Stake struct {
-	tx ndau.Stake
+// Notify is a mobile compatible wrapper for a Notify transaction
+type Notify struct {
+	tx ndau.Notify
 }
 
-// NewStake constructs a new unsigned Stake transaction
-func NewStake(
+// NewNotify constructs a new unsigned Notify transaction
+func NewNotify(
 	target *keyaddr.Address,
-	node *keyaddr.Address,
 	sequence int64,
-) (*Stake, error) {
+) (*Notify, error) {
 	if target == nil {
 		return nil, errors.New("target must not be nil")
 	}
@@ -53,58 +52,49 @@ func NewStake(
 		return nil, errors.Wrap(err, "target")
 	}
 
-	if node == nil {
-		return nil, errors.New("node must not be nil")
-	}
-	nodeN, err := address.Validate(node.Address)
-	if err != nil {
-		return nil, errors.Wrap(err, "node")
-	}
-
-	return &Stake{
-		tx: ndau.Stake{
+	return &Notify{
+		tx: ndau.Notify{
 			Target:   targetN,
-			Node:     nodeN,
 			Sequence: uint64(sequence),
 		},
 	}, nil
 }
 
-// ParseStake parses a string into a Stake, if possible
-func ParseStake(s string) (*Stake, error) {
+// ParseNotify parses a string into a Notify, if possible
+func ParseNotify(s string) (*Notify, error) {
 	bytes, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseStake: b64-decode")
+		return nil, errors.Wrap(err, "ParseNotify: b64-decode")
 	}
 	tx, err := metatx.Unmarshal(bytes, ndau.TxIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseStake: unmarshal")
+		return nil, errors.Wrap(err, "ParseNotify: unmarshal")
 	}
-	trp, isTr := tx.(*ndau.Stake)
+	trp, isTr := tx.(*ndau.Notify)
 	if !isTr {
-		return nil, errors.New("ParseStake: transactable was not Stake")
+		return nil, errors.New("ParseNotify: transactable was not Notify")
 	}
 
-	return &Stake{tx: *trp}, nil
+	return &Notify{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *Stake) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *Notify) ToB64String() (string, error) {
 	if tx == nil {
-		return "", errors.New("nil stake")
+		return "", errors.New("nil notify")
 	}
 	bytes, err := metatx.Marshal(&tx.tx, ndau.TxIDs)
 	if err != nil {
-		return "", errors.Wrap(err, "stake: marshalling bytes")
+		return "", errors.Wrap(err, "notify: marshalling bytes")
 	}
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-// GetTarget gets the target of the Stake
+// GetTarget gets the target of the Notify
 //
-// Returns `nil` if Stake is `nil` or if native conversion is fallible and
+// Returns `nil` if Notify is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetTarget() *keyaddr.Address {
+func (tx *Notify) GetTarget() *keyaddr.Address {
 	if tx == nil {
 		return nil
 	}
@@ -113,24 +103,11 @@ func (tx *Stake) GetTarget() *keyaddr.Address {
 	return &target
 }
 
-// GetNode gets the node of the Stake
+// GetSequence gets the sequence of the Notify
 //
-// Returns `nil` if Stake is `nil` or if native conversion is fallible and
+// Returns `nil` if Notify is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetNode() *keyaddr.Address {
-	if tx == nil {
-		return nil
-	}
-	node := keyaddr.Address{Address: tx.tx.Node.String()}
-
-	return &node
-}
-
-// GetSequence gets the sequence of the Stake
-//
-// Returns `nil` if Stake is `nil` or if native conversion is fallible and
-// conversion failed.
-func (tx *Stake) GetSequence() *int64 {
+func (tx *Notify) GetSequence() *int64 {
 	if tx == nil {
 		return nil
 	}
@@ -139,20 +116,20 @@ func (tx *Stake) GetSequence() *int64 {
 	return &sequence
 }
 
-// GetNumSignatures gets the number of signatures of the Stake
+// GetNumSignatures gets the number of signatures of the Notify
 //
 // If tx == nil, returns -1
-func (tx *Stake) GetNumSignatures() int {
+func (tx *Notify) GetNumSignatures() int {
 	if tx == nil {
 		return -1
 	}
 	return len(tx.tx.Signatures)
 }
 
-// GetSignature gets a particular signature from this Stake
-func (tx *Stake) GetSignature(idx int) (*keyaddr.Signature, error) {
+// GetSignature gets a particular signature from this Notify
+func (tx *Notify) GetSignature(idx int) (*keyaddr.Signature, error) {
 	if tx == nil {
-		return nil, errors.New("nil stake")
+		return nil, errors.New("nil notify")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
 		return nil, errors.New("invalid index")
@@ -165,16 +142,16 @@ func (tx *Stake) GetSignature(idx int) (*keyaddr.Signature, error) {
 	return signature, nil
 }
 
-// SignableBytes returns the b64 encoding of the signable bytes of this stake
-func (tx *Stake) SignableBytes() (string, error) {
+// SignableBytes returns the b64 encoding of the signable bytes of this notify
+func (tx *Notify) SignableBytes() (string, error) {
 	if tx == nil {
-		return "", errors.New("nil stake")
+		return "", errors.New("nil notify")
 	}
 	return base64.StdEncoding.EncodeToString(tx.tx.SignableBytes()), nil
 }
 
-// AppendSignature appends a signature to this stake
-func (tx *Stake) AppendSignature(sig *keyaddr.Signature) error {
+// AppendSignature appends a signature to this notify
+func (tx *Notify) AppendSignature(sig *keyaddr.Signature) error {
 	if sig == nil {
 		return errors.New("sig must not be nil")
 	}
@@ -186,8 +163,8 @@ func (tx *Stake) AppendSignature(sig *keyaddr.Signature) error {
 	return nil
 }
 
-// Hash computes the hash of this stake
-func (tx *Stake) Hash() string {
+// Hash computes the hash of this notify
+func (tx *Notify) Hash() string {
 	if tx == nil {
 		return ""
 	}
@@ -195,17 +172,17 @@ func (tx *Stake) Hash() string {
 }
 
 // Name returns the name of this transactable
-func (tx *Stake) Name() string {
+func (tx *Notify) Name() string {
 	if tx == nil {
 		return ""
 	}
-	return "Stake"
+	return "Notify"
 }
 
 // TxID returns the transaction id of this transactable
 //
 // Returns -2 if the transactable is nil, or -1 if the transactable is unknown.
-func (tx *Stake) TxID() int {
+func (tx *Notify) TxID() int {
 	if tx == nil {
 		return -2
 	}
