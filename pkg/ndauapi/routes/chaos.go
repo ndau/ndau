@@ -28,8 +28,8 @@ type ChaosAllResult struct {
 	Data      []ChaosItem
 }
 
-// HandleChaosSystemAll retrieves all the system keys at the current block height.
-func HandleChaosSystemAll(cf cfg.Cfg) http.HandlerFunc {
+// HandleSystemAll retrieves all the system keys at the current block height.
+func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
@@ -96,7 +96,7 @@ func getSystemValue(cf cfg.Cfg, key string) (string, error) {
 }
 
 // HandleChaosSystemKey retrieves a single system key at the current block height
-func HandleChaosSystemKey(cf cfg.Cfg) http.HandlerFunc {
+func HandleSystemKey(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := bone.GetValue(r, "key")
 		value, err := getSystemValue(cf, key)
@@ -152,6 +152,12 @@ func HandleChaosNamespaceKey(cf cfg.Cfg) http.HandlerFunc {
 
 // HandleChaosHistory retrieves the history of a single value in the chaos chain.
 func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+	}
+}
+
+// HandleSystemHistory retrieves the history of a single system variable.
+func HandleSystemHistory(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 	}
 }
