@@ -12,7 +12,7 @@ func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 	search.txHashes = nil
 	search.blockHash = tmHash
 	search.blockHeight = height
-	search.maxHeight = height
+	search.nextHeight = height + 1
 	return nil
 }
 

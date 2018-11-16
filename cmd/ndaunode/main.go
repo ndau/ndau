@@ -35,7 +35,8 @@ var updateChainFrom = flag.String("update-chain-from", "", "if set, update noms 
 // That is why this is tied to code here, rather than a variable we pass in.
 // History:
 //   0 = initial version
-const indexVersion = 0
+//   1 = fix for indexing data at noms height zero
+const indexVersion = 1
 
 func getNdauhome() string {
 	nh := os.ExpandEnv("$NDAUHOME")
