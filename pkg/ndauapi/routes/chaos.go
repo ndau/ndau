@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/go-zoo/bone"
 	cns "github.com/oneiro-ndev/chaos/pkg/chaos/ns"
@@ -26,6 +27,10 @@ type ChaosItem struct {
 type ChaosAllResult struct {
 	Namespace string
 	Data      []ChaosItem
+}
+
+// SystemHistoryResponse represents the result of querying system history
+type SystemHistoryResponse struct {
 }
 
 // HandleSystemAll retrieves all the system keys at the current block height.
@@ -95,7 +100,7 @@ func getSystemValue(cf cfg.Cfg, key string) (string, error) {
 	return string(resp), nil
 }
 
-// HandleChaosSystemKey retrieves a single system key at the current block height
+// HandleSystemKey retrieves a single system key at the current block height
 func HandleSystemKey(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := bone.GetValue(r, "key")
@@ -126,10 +131,14 @@ func HandleChaosNamespaceAll(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		nskey64 := bone.GetValue(r, "namespace")
+		nskey64, err := url.PathUnescape(bone.GetValue(r, "namespace"))
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("error unescaping namespace", err, http.StatusBadRequest))
+			return
+		}
 		nskey, err := base64.StdEncoding.DecodeString(nskey64)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error decoding key", err, http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewFromErr("error decoding namespace", err, http.StatusBadRequest))
 			return
 		}
 

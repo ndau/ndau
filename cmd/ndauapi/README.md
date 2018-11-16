@@ -687,11 +687,11 @@ _**Writes:**_
 ---
 ## ChaosHistoryKey
 
-### `GET /chaos/history/:key`
+### `GET /chaos/history/:namespace/:key`
 
-_Returns the history of changes to a value of a chaos chain system variable._
+_Returns the history of changes to a value of a single chaos chain value._
 
-The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
+The history includes the timestamp, new value, and transaction ID of each change to value.
 The result is reverse sorted chronologically from the current time, and supports paging by time.
 
 
@@ -699,6 +699,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
+ namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
  key | Path | Name of the system variable. | string
  limit | Query | Maximum number of values to return; default=10. | string
  before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
@@ -726,6 +727,13 @@ _**Writes:**_
 _Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain._
 
 
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
 
 
 
@@ -756,7 +764,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
- namespace | Path | Key for the namespace. | string
+ namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
  key | Path | Name of the variable. | string
 
 
@@ -1247,7 +1255,7 @@ _**Writes:**_
 
 _Returns the history of changes to a value of a system variable._
 
-The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
+The history includes the timestamp, new value, and transaction ID of each change to the value.
 The result is reverse sorted chronologically from the current time, and supports paging by time.
 
 
