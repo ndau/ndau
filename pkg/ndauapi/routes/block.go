@@ -1,12 +1,15 @@
 package routes
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-zoo/bone"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
@@ -192,8 +195,16 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		params := fmt.Sprintf("cmd=heightbyblockhash&hash=%s", blockhash)
-		searchValue, err := tool.GetSearchResults(node, params)
+		// Prepare search params.
+		params := search.QueryParams{
+			Command: search.HeightByBlockHashCommand,
+			Hash:    blockhash, // Hex digits are path-escaped by default.
+		}
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+		paramsString := paramsBuf.String()
+
+		searchValue, err := tool.GetSearchResults(node, paramsString)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
 			return

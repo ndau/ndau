@@ -2,8 +2,10 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -35,8 +37,23 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		params := fmt.Sprintf("cmd=heightbytxhash&hash=%s", txhash)
-		searchValue, err := tool.GetSearchResults(node, params)
+		// Base 64 characters need path-escaping.
+		txhash, err = url.PathUnescape(txhash)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError("could not unescape tx hash", http.StatusInternalServerError))
+			return
+		}
+
+		// Prepare search params.
+		params := search.QueryParams{
+			Command: search.HeightByTxHashCommand,
+			Hash:    txhash,
+		}
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+		paramsString := paramsBuf.String()
+
+		searchValue, err := tool.GetSearchResults(node, paramsString)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
 			return

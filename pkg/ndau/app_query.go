@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"net/url"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -54,54 +53,33 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	params := string(request.GetData())
-	keyValues := strings.Split(params, "&")
-
-	// Look for params we support.
-	cmd := ""
-	hash := ""
-	for _, keyValue := range keyValues {
-		kv := strings.Split(keyValue, "=")
-		if len(kv) == 2 {
-			k := kv[0]
-			v := kv[1]
-			switch k {
-			case "cmd":
-				cmd = v
-			case "hash":
-				hash = v
-			}
-		}
-	}
-
-	if cmd == "" {
-		app.QueryError(errors.New("Unsupported search command"),
-			response, "invalid search command")
-		return
-	}
-
 	search := app.GetSearch()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
 	}
+	metasearch := search.(*srch.Client)
 
-	switch cmd {
-	case "heightbyblockhash":
-		height, err := search.(*srch.Client).SearchBlockHash(hash)
+	paramsString := string(request.GetData())
+	var params srch.QueryParams
+	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	if err != nil {
+		app.QueryError(
+			errors.New("Cannot decode search params json"), response, "invalid search query")
+		return
+	}
+	
+	switch params.Command {
+	case srch.HeightByBlockHashCommand:
+		height, err := metasearch.SearchBlockHash(params.Hash)
 		if err != nil {
 			app.QueryError(err, response, "height by block hash search fail")
 			return
 		}
 		value := fmt.Sprintf("%d", height)
 		response.Value = []byte(value)
-	case "heightbytxhash":
-		txhash, err := url.PathUnescape(hash)
-		if err != nil {
-			app.QueryError(err, response, "height by tx hash unescape fail")
-			return
-		}
-		height, offset, err := search.(*srch.Client).SearchTxHash(txhash)
+	case srch.HeightByTxHashCommand:
+		height, offset, err := metasearch.SearchTxHash(params.Hash)
 		if err != nil {
 			app.QueryError(err, response, "height by tx hash search fail")
 			return
@@ -109,9 +87,9 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 		valueData := srch.TxValueData{height, offset}
 		value := valueData.Marshal()
 		response.Value = []byte(value)
+	default:
+		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 	}
-
-	app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 }
 
 var lastSummary query.Summary
