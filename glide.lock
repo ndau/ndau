@@ -1,5 +1,5 @@
 hash: 8b74be22ae9cd539af7629746789efc93a3aec56f6ec63741278e32fa448620a
-updated: 2018-11-15T10:01:44.577669-08:00
+updated: 2018-11-16T09:33:44.801867-08:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 52527d5d53f5c24f5b843d75cc7fbea7ad41db16
+  version: dd97388fa17776e82d6cd2777cc8e07932e436b0
   subpackages:
   - aws
   - aws/awserr
@@ -137,7 +137,7 @@ imports:
 - name: github.com/go-zoo/bone
   version: 2270ec2a18cc13fba907d4ae5ad546a21473c0ed
 - name: github.com/gogo/protobuf
-  version: 07eab6a8298cf32fac45cceaac59424f98421bbc
+  version: 211a54c57504366b3bf4b490fb3c0a5f5b8d290b
   subpackages:
   - gogoproto
   - jsonpb
@@ -200,7 +200,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 92ee9347d43169322c1145faf66484f7359fd97d
+  version: 691dabad99dd0cd6b728c873428e7061bcea7231
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -216,7 +216,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 31b18a84d73240215c56b74206a44a7d159a0dc5
+  version: 9711a1b8b7fdeb59c4852132eaa905d6d681bdd8
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -286,7 +286,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 3fb53dff765f8a3e0f9d8b1d5b86d4f8c4eb3a09
+  version: c4c1f3461e40e5c6a4f570f5b00415cf5eacbd79
   subpackages:
   - prometheus
   - prometheus/internal
@@ -296,7 +296,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 1f2c4f3cd6db5fd6f68f36af6b6d5d936fd93c4e
+  version: 41aa239b4cce3c56ab88fc366ae8b0a6423fa239
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -316,7 +316,7 @@ imports:
 - name: github.com/sigurn/utils
   version: f19e41f79f8f006116f682c1af454591bc278ad4
 - name: github.com/sirupsen/logrus
-  version: 91da99df23e3bad7f384338a5a8f636d04093d9a
+  version: 44067abb194b1bc8b342e1f2120f8d3ea691b834
 - name: github.com/stretchr/testify
   version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
@@ -435,7 +435,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 5ac8a444bdc56cee774f8f2b3382156bd27c63c3
+  version: 66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399
   subpackages:
   - cpu
   - unix
@@ -448,7 +448,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: f87c222f148786695d2ee5761b06751bb9211f61
+  version: 1a405fd27e6556a89186464ce4fc110e42b95d52
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
@@ -456,7 +456,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: ef2b8e2f53fcd6654d12966394462f84e0f04066
+  version: 0fccf8bf5972297a93c0d58d7ad94b6a2724b5f5
   subpackages:
   - balancer
   - balancer/base
@@ -465,7 +465,6 @@ imports:
   - codes
   - connectivity
   - credentials
-  - credentials/internal
   - encoding
   - encoding/proto
   - grpclog
