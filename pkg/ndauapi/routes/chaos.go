@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
 // ChaosItem expresses a single Key/Value on the chaos chain
@@ -28,26 +31,52 @@ type ChaosAllResult struct {
 // HandleChaosSystemAll retrieves all the system keys at the current block height.
 func HandleChaosSystemAll(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		node, err := ws.Node(cf.NodeAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
+			return
+		}
+
+		resp, err := node.ABCIQuery(query.SysvarsEndpoint, []byte{})
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("Query error: ", err, http.StatusInternalServerError))
+			return
+		}
+
+		// resp.Value is actually JSON so decode it
+		values := make(map[string][]byte)
+		err = json.NewDecoder(bytes.NewReader(resp.Response.Value)).Decode(&values)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("Decode error: ", err, http.StatusInternalServerError))
+			return
+		}
+		reqres.RespondJSON(w, reqres.OKResponse(values))
+
+		// ------ REMOVEME -------
+		// leaving this here temporarily in case eric wants it
 		// find the chaos node
-		chnode, err := ws.Node(cf.ChaosAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos node", err, http.StatusInternalServerError))
-			return
-		}
+		// chnode, err := ws.Node(cf.ChaosAddress)
+		// if err != nil {
+		// 	reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos node", err, http.StatusInternalServerError))
+		// 	return
+		// }
 
-		systemns := cns.System
-		resp, _, err := chtool.DumpNamespacedAt(chnode, systemns, 0)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
-			return
-		}
+		// 	fmt.Println(values)
 
-		result := ChaosAllResult{Namespace: "system"}
-		for _, r := range (*resp).Data {
-			// TODO: Handle Values other than strings?
-			result.Data = append(result.Data, ChaosItem{Key: string(r.Key), Value: string(r.Value)})
-		}
-		reqres.RespondJSON(w, reqres.OKResponse(result))
+		// 	systemns := cns.System
+		// 	resp, _, err := chtool.DumpNamespacedAt(chnode, systemns, 0)
+		// 	if err != nil {
+		// 		reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
+		// 		return
+		// 	}
+
+		// 	result := ChaosAllResult{Namespace: "system"}
+		// 	for _, r := range (*resp).Data {
+		// 		// TODO: Handle Values other than strings?
+		// 		result.Data = append(result.Data, ChaosItem{Key: string(r.Key), Value: string(r.Value)})
+		// 	}
+		// 	reqres.RespondJSON(w, reqres.OKResponse(result))
+		// -------------------------
 	}
 }
 

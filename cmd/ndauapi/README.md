@@ -435,7 +435,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
- blockhash | Query | Hex hash of the block in chain to return. | string
+ blockhash | Path | Hex hash of the block in chain to return. | string
 
 
 
@@ -885,7 +885,7 @@ _**Writes:**_
 
 ### `GET /node/health`
 
-_Returns the health of the current node._
+_Returns the health of the current ndau node and chaos node._
 
 
 
@@ -899,7 +899,14 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "Chaos": {
+            "Status": ""
+          },
+          "Ndau": {
+            "Status": ""
+          }
+        }
 ```
 
 
@@ -1116,7 +1123,7 @@ _**Writes:**_
           "floorPrice": 0,
           "endowmentSold": 0,
           "totalNdau": 0,
-          "USD": ""
+          "priceUnit": ""
         }
 ```
 
@@ -1154,7 +1161,7 @@ _**Writes:**_
           "floorPrice": 0,
           "endowmentSold": 0,
           "totalNdau": 0,
-          "USD": ""
+          "priceUnit": ""
         }
 ```
 
@@ -1225,7 +1232,7 @@ _**Writes:**_
           "floorPrice": 2.57,
           "endowmentSold": 291900000000000,
           "totalNdau": 314159300000000,
-          "USD": "USD"
+          "priceUnit": "USD"
         }
 ```
 
