@@ -1,10 +1,10 @@
-hash: 8b74be22ae9cd539af7629746789efc93a3aec56f6ec63741278e32fa448620a
-updated: 2018-11-16T09:33:44.801867-08:00
+hash: 29af5a62b738ef1ea3037ca8f02b986823b9ab7ef18d8eb0818ad8cc85fb0bab
+updated: 2018-11-16T10:20:50.252879-08:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
 - name: github.com/alexflint/go-scalar
-  version: e80c3b7ed292b052c7083b6fd7154a8422c33f65
+  version: 45e5d6cd8605faef82fda2bacc59e734a0b6f1f0
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
   subpackages:
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: dd97388fa17776e82d6cd2777cc8e07932e436b0
+  version: a1cf564001efacc3326b79254f0a7378c54959cf
   subpackages:
   - aws
   - aws/awserr
@@ -146,7 +146,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: 52132540909e117f2b98b0694383dc0ab1e1deca
+  version: 951a149f90371fb8858c6c979d03bb2583611052
   subpackages:
   - proto
   - ptypes
@@ -158,7 +158,7 @@ imports:
 - name: github.com/google/go-cmp
   version: 3af367b6b30c263d47e8895973edcca9a49cf029
 - name: github.com/gorilla/websocket
-  version: 483fb8d7c32fcb4b5636cd293a92e3935932e2f4
+  version: a51a35ae3232254685f26a0b6d995ca0e81e2248
 - name: github.com/honeycombio/libhoney-go
   version: bcf3e733a3d0b44635de98e172072b653032454a
 - name: github.com/jawher/mow.cli
@@ -200,7 +200,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 691dabad99dd0cd6b728c873428e7061bcea7231
+  version: e4ccab313ce20a9758c7f95286ecb01656d78194
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -216,7 +216,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 9711a1b8b7fdeb59c4852132eaa905d6d681bdd8
+  version: b36f1c9643c5fc5bec9945c9119eab1955970a9f
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -286,7 +286,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: c4c1f3461e40e5c6a4f570f5b00415cf5eacbd79
+  version: 7866eead363ec334628dbc56e32df590a05f4696
   subpackages:
   - prometheus
   - prometheus/internal
@@ -296,7 +296,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 41aa239b4cce3c56ab88fc366ae8b0a6423fa239
+  version: c7de2306084e37d54b8be01f3541a8464345e9a5
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -308,7 +308,7 @@ imports:
   - nfs
   - xfs
 - name: github.com/rcrowley/go-metrics
-  version: 3113b8401b8a98917cde58f8bbd42a1b1c03b1fd
+  version: e2704e165165ec55d062f5919b4b29494e9fa790
 - name: github.com/satori/go.uuid
   version: b2ce2384e17bbe0c6d34077efa39dbab3e09123b
 - name: github.com/sigurn/crc16
@@ -424,7 +424,7 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: adae6a3d119ae4890b46832a2e88a95adc62b8e7
+  version: 88d92db4c548972d942ac2a3531a8a9a34c82ca6
   subpackages:
   - context
   - http/httpguts
@@ -456,7 +456,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 0fccf8bf5972297a93c0d58d7ad94b6a2724b5f5
+  version: 04ea82009cdb9ecdefc6289f4c93ec919a10b3b6
   subpackages:
   - balancer
   - balancer/base
