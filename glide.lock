@@ -1,6 +1,10 @@
 hash: c51421e983b0baeb68a96c135c8c210d12c6da5d64f15ff20f7f5e5c00f69718
-updated: 2018-11-13T18:24:14.404477+01:00
+updated: 2018-11-15T14:16:03.556321-05:00
 imports:
+- name: github.com/alexflint/go-arg
+  version: f7c0423bd11ee80ab81d25c6d46f492998af8547
+- name: github.com/alexflint/go-scalar
+  version: 45e5d6cd8605faef82fda2bacc59e734a0b6f1f0
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
   subpackages:
@@ -228,7 +232,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: a193b8c93b2ccfdc033f2bc685a99f0f020eeca7
+  version: 548c867383238e98de02ea33f175be8bd7ef4b21
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -306,7 +310,7 @@ imports:
 - name: github.com/rcrowley/go-metrics
   version: 3113b8401b8a98917cde58f8bbd42a1b1c03b1fd
 - name: github.com/satori/go.uuid
-  version: b2ce2384e17bbe0c6d34077efa39dbab3e09123b
+  version: 8ccf5352a842c034b1a69f28c863aff9b1cdb116
 - name: github.com/sigurn/crc16
   version: da416fad5162ac0f3338ba24dccdb26e4da22485
 - name: github.com/sigurn/utils
