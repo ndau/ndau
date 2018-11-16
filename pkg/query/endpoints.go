@@ -5,5 +5,6 @@ const (
 	AccountEndpoint     = "/account"
 	PrevalidateEndpoint = "/prevalidate"
 	SummaryEndpoint     = "/summary"
+	SysvarsEndpoint     = "/sysvars"
 	VersionEndpoint     = "/version"
 )

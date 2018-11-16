@@ -84,10 +84,6 @@ Each of these, in turn, has several endpoints within it.
 
 * [BlockRange](#blockrange)
 
-* [ChaosSystemAll](#chaossystemall)
-
-* [ChaosSystemKey](#chaossystemkey)
-
 * [ChaosHistoryKey](#chaoshistorykey)
 
 * [ChaosNamespaceAll](#chaosnamespaceall)
@@ -117,6 +113,12 @@ Each of these, in turn, has several endpoints within it.
 * [OrderHistory](#orderhistory)
 
 * [OrderCurrent](#ordercurrent)
+
+* [SystemAll](#systemall)
+
+* [SystemKey](#systemkey)
+
+* [SystemHistoryKey](#systemhistorykey)
 
 * [TransactionByHash](#transactionbyhash)
 
@@ -435,7 +437,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
- blockhash | Query | Hex hash of the block in chain to return. | string
+ blockhash | Path | Hex hash of the block in chain to return. | string
 
 
 
@@ -683,68 +685,13 @@ _**Writes:**_
 
 
 ---
-## ChaosSystemAll
-
-### `GET /chaos/system/all`
-
-_Returns the names and current values of all currently-defined system variables on the chaos chain._
-
-
-
-
-
-
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        ""
-```
-
-
-
----
-## ChaosSystemKey
-
-### `GET /chaos/system/:key`
-
-_Returns the current value of a single system variable from the chaos chain._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- key | Path | Name of the system variable. | string
-
-
-
-
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        ""
-```
-
-
-
----
 ## ChaosHistoryKey
 
-### `GET /chaos/history/:key`
+### `GET /chaos/history/:namespace/:key`
 
-_Returns the history of changes to a value of a chaos chain system variable._
+_Returns the history of changes to a value of a single chaos chain value._
 
-The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
+The history includes the timestamp, new value, and transaction ID of each change to value.
 The result is reverse sorted chronologically from the current time, and supports paging by time.
 
 
@@ -752,6 +699,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
+ namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
  key | Path | Name of the system variable. | string
  limit | Query | Maximum number of values to return; default=10. | string
  before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
@@ -779,6 +727,13 @@ _**Writes:**_
 _Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain._
 
 
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
 
 
 
@@ -809,7 +764,7 @@ _**Parameters:**_
 
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
- namespace | Path | Key for the namespace. | string
+ namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
  key | Path | Name of the variable. | string
 
 
@@ -885,7 +840,7 @@ _**Writes:**_
 
 ### `GET /node/health`
 
-_Returns the health of the current node._
+_Returns the health of the current ndau node and chaos node._
 
 
 
@@ -899,7 +854,14 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "Chaos": {
+            "Status": ""
+          },
+          "Ndau": {
+            "Status": ""
+          }
+        }
 ```
 
 
@@ -1116,7 +1078,7 @@ _**Writes:**_
           "floorPrice": 0,
           "endowmentSold": 0,
           "totalNdau": 0,
-          "USD": ""
+          "priceUnit": ""
         }
 ```
 
@@ -1154,7 +1116,7 @@ _**Writes:**_
           "floorPrice": 0,
           "endowmentSold": 0,
           "totalNdau": 0,
-          "USD": ""
+          "priceUnit": ""
         }
 ```
 
@@ -1225,8 +1187,97 @@ _**Writes:**_
           "floorPrice": 2.57,
           "endowmentSold": 291900000000000,
           "totalNdau": 314159300000000,
-          "USD": "USD"
+          "priceUnit": "USD"
         }
+```
+
+
+
+---
+## SystemAll
+
+### `GET /system/all`
+
+_Returns the names and current values of all currently-defined system variables._
+
+
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        ""
+```
+
+
+
+---
+## SystemKey
+
+### `GET /system/:key`
+
+_Returns the current value of a single system variable._
+
+
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ key | Path | Name of the system variable. | string
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        ""
+```
+
+
+
+---
+## SystemHistoryKey
+
+### `GET /system/history/:key`
+
+_Returns the history of changes to a value of a system variable._
+
+The history includes the timestamp, new value, and transaction ID of each change to the value.
+The result is reverse sorted chronologically from the current time, and supports paging by time.
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ key | Path | Name of the system variable. | string
+ limit | Query | Maximum number of values to return; default=10. | string
+ before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
+
+
+
+
+
+
+_**Produces:**_ `[application/json]`
+
+
+_**Writes:**_
+```json
+        {}
 ```
 
 
