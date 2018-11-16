@@ -27,8 +27,14 @@ func init() {
 	flag.Parse()
 
 	// Put these into environment variables so cfg.New() finds them where it's looking for them.
-	os.Setenv("NDAUAPI_NDAU_RPC_URL", ndauRPC)
-	os.Setenv("NDAUAPI_CHAOS_RPC_URL", chaosRPC)
+	// But only if they were specified on the command line.  Otherwise, they may already be in
+	// environment variables.
+	if ndauRPC != "" {
+		os.Setenv("NDAUAPI_NDAU_RPC_URL", ndauRPC)
+	}
+	if chaosRPC != "" {
+		os.Setenv("NDAUAPI_CHAOS_RPC_URL", chaosRPC)
+	}
 }
 
 // Invoke the ndau tool to create an account, claim it, and rfe to it.
