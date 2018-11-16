@@ -10,12 +10,13 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/oneiro-ndev/system_vars/pkg/system_vars"
-
 	"github.com/BurntSushi/toml"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/key"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/words"
+	"github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -125,22 +126,94 @@ func (c Config) EmitAccounts(w io.Writer) {
 }
 
 // CreateAccount creates an account with the given name
-func (c *Config) CreateAccount(name string) error {
+func (c *Config) CreateAccount(name string, hd bool) error {
 	if _, found := c.Accounts[name]; found {
 		return errors.New("account already exists: " + name)
 	}
-	public, private, err := signature.Generate(signature.Ed25519, nil)
+	acct := Account{
+		Name: name,
+	}
+	if hd {
+		seed, err := key.GenerateSeed(key.RecommendedSeedLen)
+		if err != nil {
+			return errors.Wrap(err, "generating seed")
+		}
+		root := "/"
+		acct.Ownership.Path = &root
+
+		ekey, err := key.NewMaster(seed)
+		if err != nil {
+			return errors.Wrap(err, "generating master key")
+		}
+		private, err := ekey.SPrivKey()
+		if err != nil {
+			return errors.Wrap(err, "converting master key to ndau format")
+		}
+		acct.Ownership.Private = *private
+
+		publice, err := ekey.Public()
+		if err != nil {
+			return errors.Wrap(err, "generating master public key")
+		}
+		public, err := publice.SPubKey()
+		if err != nil {
+			return errors.Wrap(err, "converting public key to ndau format")
+		}
+		acct.Ownership.Public = *public
+
+		acct.Address, err = address.Generate(address.KindUser, public.KeyBytes())
+		if err != nil {
+			return errors.Wrap(err, "generating address")
+		}
+	} else {
+		var err error
+		acct.Ownership.Public, acct.Ownership.Private, err = signature.Generate(signature.Ed25519, nil)
+		if err != nil {
+			return errors.Wrap(err, "generating keypair")
+		}
+		acct.Address, err = address.Generate(address.KindUser, acct.Ownership.Public.KeyBytes())
+		if err != nil {
+			return errors.Wrap(err, "generating address")
+		}
+	}
+	c.SetAccount(acct)
+	return nil
+}
+
+// RecoverAccount recovers an account with the given name and phrase
+func (c *Config) RecoverAccount(name string, phrase []string, lang string) error {
+	if _, found := c.Accounts[name]; found {
+		return errors.New("account already exists: " + name)
+	}
+	seed, err := words.ToBytes(lang, phrase)
 	if err != nil {
-		return errors.Wrap(err, "generate keypair")
+		return errors.Wrap(err, "recovering account")
+	}
+	ekey, err := key.NewMaster(seed)
+	if err != nil {
+		return errors.Wrap(err, "recovering master key")
+	}
+	private, err := ekey.SPrivKey()
+	if err != nil {
+		return errors.Wrap(err, "converting private key to ndau format")
+	}
+	publice, err := ekey.Public()
+	if err != nil {
+		return errors.Wrap(err, "recovering master public key")
+	}
+	public, err := publice.SPubKey()
+	if err != nil {
+		return errors.Wrap(err, "converting public key to ndau format")
 	}
 	addr, err := address.Generate(address.KindUser, public.KeyBytes())
 	if err != nil {
-		return errors.Wrap(err, "generate address")
+		return errors.Wrap(err, "recovering address")
 	}
+	root := "/"
 	acct := Account{
 		Name:      name,
 		Address:   addr,
-		Ownership: Keypair{Public: public, Private: private},
+		Ownership: Keypair{Path: &root, Public: *public, Private: *private},
 	}
 	c.SetAccount(acct)
 	return nil

@@ -15,7 +15,7 @@ func getAccountClaim(verbose *bool) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
 		cmd.Spec = "NAME"
 
-		var name = cmd.StringArg("NAME", "", "Name of account to change")
+		var name = cmd.StringArg("NAME", "", "Name of account to claim")
 
 		cmd.Action = func() {
 			conf := getConfig()
@@ -24,13 +24,13 @@ func getAccountClaim(verbose *bool) func(*cli.Cmd) {
 				orQuit(errors.New("No such account"))
 			}
 
-			public, private, err := signature.Generate(signature.Ed25519, nil)
-			orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
+			newKeys, err := acct.MakeTransferKey(nil)
+			orQuit(err)
 
 			ca := ndau.NewClaimAccount(
 				acct.Address,
 				acct.Ownership.Public,
-				[]signature.PublicKey{public},
+				[]signature.PublicKey{newKeys.Public},
 				acct.ValidationScript,
 				sequence(conf, acct.Address),
 				acct.Ownership.Private,
@@ -40,7 +40,7 @@ func getAccountClaim(verbose *bool) func(*cli.Cmd) {
 
 			// only persist this change if there was no error
 			if err == nil && code.ReturnCode(resp.(*rpc.ResultBroadcastTxCommit).DeliverTx.Code) == code.OK {
-				acct.Transfer = []config.Keypair{config.Keypair{Public: public, Private: private}}
+				acct.Transfer = []config.Keypair{*newKeys}
 				conf.SetAccount(*acct)
 				err = conf.Save()
 				orQuit(errors.Wrap(err, "saving config"))
