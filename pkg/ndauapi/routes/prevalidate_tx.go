@@ -24,6 +24,7 @@ type TxJSON struct {
 type PrevalidateResult struct {
 	FeeNapu int64  `json:"fee_napu"`
 	Err     string `json:"err,omitempty"`
+	ErrCode int    `json:"err_code,omitempty"`
 }
 
 // HandlePrevalidateTx generates a handler that implements the /tx/prevalidate endpoint
@@ -69,6 +70,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		code := http.StatusOK // if we ever do this without synchronous commit, change to StatusAccepted
 		if err != nil {
 			result.Err = err.Error()
+			result.ErrCode = -1
 			code = http.StatusInternalServerError // probably not the request's fault, actually
 		}
 
