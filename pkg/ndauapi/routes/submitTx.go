@@ -115,6 +115,10 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 
 		// and now commit it synchronously
 		cr, err := tool.SendCommit(node, tx)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("error from commit", err, http.StatusInternalServerError))
+			return
+		}
 		txresult := cr.(*ctypes.ResultBroadcastTxCommit)
 
 		result := TxResult{TxHash: base64.StdEncoding.EncodeToString(txresult.Hash)}

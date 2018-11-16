@@ -143,7 +143,7 @@ func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
 	}
 }
 
-// HandleBlockHeight returns data for a single block
+// HandleBlockHeight returns data for a single block; if height is 0, it's the current block
 func HandleBlockHeight(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var pheight *int64
@@ -168,7 +168,7 @@ func HandleBlockHeight(cf cfg.Cfg) http.HandlerFunc {
 		}
 		block, err := node.Block(pheight)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusBadRequest))
 			return
 		}
 
