@@ -80,7 +80,7 @@ func TestTxHash(t *testing.T) {
 			}
 
 			if !strings.Contains(string(body), tt.wantbody) {
-				t.Errorf("SubmitTx() expected err to contain '%s', was '%s'", tt.wantbody, body)
+				t.Errorf("expected err to contain '%s', was '%s'", tt.wantbody, body)
 			}
 		})
 	}
