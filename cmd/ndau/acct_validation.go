@@ -33,6 +33,12 @@ func getAccountValidation(verbose *bool, keys *int) func(*cli.Cmd) {
 		)
 
 		cmd.Command(
+			"recover",
+			"add a recovered key to this account from its path, not touching the blockchain",
+			getRecover(verbose, name),
+		)
+
+		cmd.Command(
 			"set-script",
 			"set validation script for this account",
 			getSetScript(verbose, name, keys),
@@ -42,6 +48,10 @@ func getAccountValidation(verbose *bool, keys *int) func(*cli.Cmd) {
 
 func getReset(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
+		cmd.Spec = getKeypathSpec(true)
+
+		getKeypath := getKeypathClosure(cmd, true)
+
 		cmd.Action = func() {
 			conf := getConfig()
 			acct, hasAcct := conf.Accounts[*name]
@@ -53,12 +63,13 @@ func getReset(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 				orQuit(errors.New("account is not yet claimed"))
 			}
 
-			public, private, err := signature.Generate(signature.Ed25519, nil)
-			orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
+			keypath := getKeypath()
+			newkeys, err := acct.MakeTransferKey(&keypath)
+			orQuit(errors.Wrap(err, "failed to generate new transfer key"))
 
 			cv := ndau.NewChangeValidation(
 				acct.Address,
-				[]signature.PublicKey{public},
+				[]signature.PublicKey{newkeys.Public},
 				acct.ValidationScript,
 				sequence(conf, acct.Address),
 				acct.TransferPrivateK(keys),
@@ -68,7 +79,7 @@ func getReset(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 
 			// only persist this change if there was no error
 			if err == nil && code.ReturnCode(resp.(*rpc.ResultBroadcastTxCommit).DeliverTx.Code) == code.OK {
-				acct.Transfer = []config.Keypair{config.Keypair{Public: public, Private: private}}
+				acct.Transfer = []config.Keypair{*newkeys}
 				conf.SetAccount(*acct)
 				err = conf.Save()
 				orQuit(errors.Wrap(err, "saving config"))
@@ -80,6 +91,10 @@ func getReset(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 
 func getAdd(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 	return func(cmd *cli.Cmd) {
+		cmd.Spec = getKeypathSpec(true)
+
+		getKeypath := getKeypathClosure(cmd, true)
+
 		cmd.Action = func() {
 			conf := getConfig()
 			acct, hasAcct := conf.Accounts[*name]
@@ -91,12 +106,13 @@ func getAdd(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 				orQuit(errors.New("account is not yet claimed"))
 			}
 
-			public, private, err := signature.Generate(signature.Ed25519, nil)
-			orQuit(errors.Wrap(err, "Failed to generate new transfer key"))
+			keypath := getKeypath()
+			newkeys, err := acct.MakeTransferKey(&keypath)
+			orQuit(errors.Wrap(err, "failed to generate new transfer key"))
 
 			cv := ndau.NewChangeValidation(
 				acct.Address,
-				append(acct.TransferPublic(), public),
+				append(acct.TransferPublic(), newkeys.Public),
 				acct.ValidationScript,
 				sequence(conf, acct.Address),
 				acct.TransferPrivateK(keys),
@@ -106,12 +122,39 @@ func getAdd(verbose *bool, name *string, keys *int) func(*cli.Cmd) {
 
 			// only persist this change if there was no error
 			if err == nil && code.ReturnCode(resp.(*rpc.ResultBroadcastTxCommit).DeliverTx.Code) == code.OK {
-				acct.Transfer = append(acct.Transfer, config.Keypair{Public: public, Private: private})
+				acct.Transfer = append(acct.Transfer, *newkeys)
 				conf.SetAccount(*acct)
 				err = conf.Save()
 				orQuit(errors.Wrap(err, "saving config"))
 			}
 			finish(*verbose, resp, err, "account validation add")
+		}
+	}
+}
+
+func getRecover(verbose *bool, name *string) func(*cli.Cmd) {
+	return func(cmd *cli.Cmd) {
+		cmd.Spec = getKeypathSpec(false)
+
+		getKeypath := getKeypathClosure(cmd, false)
+
+		cmd.Action = func() {
+			conf := getConfig()
+			acct, hasAcct := conf.Accounts[*name]
+			if !hasAcct {
+				orQuit(errors.New("No such account"))
+			}
+
+			keypath := getKeypath()
+			newkeys, err := acct.MakeTransferKey(&keypath)
+			orQuit(errors.Wrap(err, "failed to key from path"))
+
+			acct.Transfer = []config.Keypair{*newkeys}
+			conf.SetAccount(*acct)
+			err = conf.Save()
+			orQuit(errors.Wrap(err, "saving config"))
+
+			finish(*verbose, nil, err, "account validation recover")
 		}
 	}
 }
