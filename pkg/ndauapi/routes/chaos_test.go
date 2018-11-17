@@ -65,7 +65,7 @@ func TestKeyHistory(t *testing.T) {
 			name:     "valid namespace and key",
 			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", namespaceBase64Esc, keyEsc), nil),
 			status:   http.StatusOK,
-			// The key isn't part of the response, just make sure a non-empty history is returned.
+			// The key isn't part of the response, but we can look for the expected value.
 			wantbody: fmt.Sprintf("\"Value\":\"%s\"", valueBase64),
 		},
 	}
