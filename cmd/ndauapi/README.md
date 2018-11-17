@@ -84,7 +84,7 @@ Each of these, in turn, has several endpoints within it.
 
 * [BlockRange](#blockrange)
 
-* [ChaosHistoryKey](#chaoshistorykey)
+* [ChaosHistory](#chaoshistory)
 
 * [ChaosNamespaceAll](#chaosnamespaceall)
 
@@ -685,14 +685,14 @@ _**Writes:**_
 
 
 ---
-## ChaosHistoryKey
+## ChaosHistory
 
 ### `GET /chaos/history/:namespace/:key`
 
-_Returns the history of changes to a value of a single chaos chain value._
+_Returns the history of changes to a value of a single chaos chain variable._
 
-The history includes the timestamp, new value, and transaction ID of each change to value.
-The result is reverse sorted chronologically from the current time, and supports paging by time.
+The history includes the block height and the value of each change to the variable.
+The result is sorted chronologically from the current time.
 
 
 _**Parameters:**_
@@ -700,9 +700,7 @@ _**Parameters:**_
 Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
- key | Path | Name of the system variable. | string
- limit | Query | Maximum number of values to return; default=10. | string
- before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
+ key | Path | Name of the variable. | string
 
 
 
@@ -722,7 +720,7 @@ _**Writes:**_
 ---
 ## ChaosNamespaceAll
 
-### `GET /chaos/:namespace/all`
+### `GET /chaos/value/:namespace/all`
 
 _Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain._
 
@@ -753,7 +751,7 @@ _**Writes:**_
 ---
 ## ChaosNamespaceKey
 
-### `GET /chaos/:namespace/:key`
+### `GET /chaos/value/:namespace/:key`
 
 _Returns the current value of a single namespaced variable from the chaos chain._
 
