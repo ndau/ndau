@@ -27,17 +27,17 @@ func TestKeyHistory(t *testing.T) {
 	}
 	mux := svc.New(cf).Mux()
 
-	namespace, key, value := createChaosBlock(t)
+	namespaceBase64, key, value := createChaosBlock(t)
 	invalidNamespace := "invalidnamespace"
 	invalidKey := "invalidkey"
 
 	// Namespaces are base64, but keys aren't.  Both must be path escaped to pass on the URL.
-	namespaceBase64 := base64.StdEncoding.EncodeToString([]byte(namespace))
 	namespaceBase64Esc := url.PathEscape(namespaceBase64)
 	invalidNamespaceBase64 := base64.StdEncoding.EncodeToString([]byte(invalidNamespace))
 	invalidNamespaceBase64Esc := url.PathEscape(invalidNamespaceBase64)
 	keyEsc := url.PathEscape(key)
 	invalidKeyEsc := url.PathEscape(invalidKey)
+	valueBase64 := base64.StdEncoding.EncodeToString([]byte(value))
 
 	// set up tests
 	tests := []struct {
@@ -66,7 +66,7 @@ func TestKeyHistory(t *testing.T) {
 			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", namespaceBase64Esc, keyEsc), nil),
 			status:   http.StatusOK,
 			// The key isn't part of the response, just make sure a non-empty history is returned.
-			wantbody: value,
+			wantbody: fmt.Sprintf("\"Value\":\"%s\"", valueBase64),
 		},
 	}
 
