@@ -58,7 +58,7 @@ func TestTxHash(t *testing.T) {
 			wantbody: "null", // The response is empty, so "null" is produced.
 		}, {
 			name:     "valid hash",
-			req:      httptest.NewRequest("GET", "/transaction/" + url.PathEscape(txHash), nil),
+			req:      httptest.NewRequest("GET", "/transaction/" + url.QueryEscape(txHash), nil),
 			status:   http.StatusOK,
 			// The tx hash isn't part of the response, just make sure a valid tx is returned.
 			wantbody: "Nonce",

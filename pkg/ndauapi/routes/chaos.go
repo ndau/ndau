@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/go-zoo/bone"
 	cns "github.com/oneiro-ndev/chaos/pkg/chaos/ns"
@@ -111,14 +110,10 @@ func HandleChaosNamespaceAll(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		nskey64, err := url.PathUnescape(bone.GetValue(r, "namespace"))
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error unescaping namespace", err, http.StatusBadRequest))
-			return
-		}
+		nskey64 := bone.GetValue(r, "namespace")
 		nskey, err := base64.StdEncoding.DecodeString(nskey64)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error decoding namespace", err, http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding namespace '%s'", nskey64), err, http.StatusBadRequest))
 			return
 		}
 
@@ -142,33 +137,21 @@ func HandleChaosNamespaceKey(cf cfg.Cfg) http.HandlerFunc {
 // HandleChaosHistory retrieves the history of a single value in the chaos chain.
 func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		namespaceBase64Esc := bone.GetValue(r, "namespace")
-		if namespaceBase64Esc == "" {
+		namespaceBase64 := bone.GetValue(r, "namespace")
+		if namespaceBase64 == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("namespace parameter required", http.StatusBadRequest))
 			return
 		}
 
-		keyEsc := bone.GetValue(r, "key")
-		if keyEsc == "" {
+		key := bone.GetValue(r, "key")
+		if key == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
-			return
-		}
-
-		namespaceBase64, err := url.PathUnescape(namespaceBase64Esc)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error unescaping namespace", err, http.StatusInternalServerError))
-			return
-		}
-
-		key, err := url.PathUnescape(keyEsc)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error unescaping key", err, http.StatusInternalServerError))
 			return
 		}
 
 		namespaceBytes, err := base64.StdEncoding.DecodeString(namespaceBase64)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error decoding namespace", err, http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding namespace '%s'", namespaceBase64), err, http.StatusBadRequest))
 			return
 		}
 

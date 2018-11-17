@@ -31,12 +31,12 @@ func TestKeyHistory(t *testing.T) {
 	invalidNamespace := "invalidnamespace"
 	invalidKey := "invalidkey"
 
-	// Namespaces are base64, but keys aren't.  Both must be path escaped to pass on the URL.
-	namespaceBase64Esc := url.PathEscape(namespaceBase64)
+	// Namespaces are base64, but keys aren't.  Both must be query escaped to pass on the URL.
+	namespaceBase64Esc := url.QueryEscape(namespaceBase64)
 	invalidNamespaceBase64 := base64.StdEncoding.EncodeToString([]byte(invalidNamespace))
-	invalidNamespaceBase64Esc := url.PathEscape(invalidNamespaceBase64)
-	keyEsc := url.PathEscape(key)
-	invalidKeyEsc := url.PathEscape(invalidKey)
+	invalidNamespaceBase64Esc := url.QueryEscape(invalidNamespaceBase64)
+	keyEsc := url.QueryEscape(key)
+	invalidKeyEsc := url.QueryEscape(invalidKey)
 	valueBase64 := base64.StdEncoding.EncodeToString([]byte(value))
 
 	// set up tests
