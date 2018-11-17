@@ -169,25 +169,23 @@ func New(cf cfg.Cfg) *boneful.Service {
 		}))
 
 	svc.Route(svc.GET("/chaos/history/:namespace/:key").To(routes.HandleChaosHistory(cf)).
-		Operation("ChaosHistoryKey").
-		Doc("Returns the history of changes to a value of a single chaos chain value.").
-		Notes(`The history includes the timestamp, new value, and transaction ID of each change to value.
-		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		Operation("ChaosHistory").
+		Doc("Returns the history of changes to a value of a single chaos chain variable.").
+		Notes(`The history includes the block height and the value of each change to the variable.
+		The result is sorted chronologically from the current time.`).
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{}))
 
-	svc.Route(svc.GET("/chaos/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
+	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
 		Operation("ChaosNamespaceAll").
 		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 
-	svc.Route(svc.GET("/chaos/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
+	svc.Route(svc.GET("/chaos/value/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
 		Operation("ChaosNamespaceKey").
 		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).

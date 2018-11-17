@@ -76,7 +76,7 @@ func TestBlockRange(t *testing.T) {
 	// If a reset has occurred recently, the blockchain height can sometimes be as low as 2.
 	// The tests below require a height of at least 3.  Assume the height is zero, worst case.
 	for i := 0; i < 3; i++ {
-		createBlock(t)
+		createNdauBlock(t)
 	}
 
 	// set up tests
@@ -153,10 +153,10 @@ func TestBlockHash(t *testing.T) {
 	mux := svc.New(cf).Mux()
 
 	// Add to the blockchain and index.
-	createBlock(t)
+	createNdauBlock(t)
 
 	// Grab the block hash for use in later tests.
-	blockData := getCurrentBlock(t, mux)
+	blockData := getCurrentNdauBlock(t, mux)
 	blockHash := fmt.Sprintf("%x", blockData.BlockMeta.BlockID.Hash)
 
 	// set up tests

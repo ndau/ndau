@@ -28,10 +28,10 @@ func TestTxHash(t *testing.T) {
 	mux := svc.New(cf).Mux()
 
 	// Add to the blockchain and index.
-	createBlock(t)
+	createNdauBlock(t)
 
 	// Grab the block hash for use in later tests.
-	blockData := getCurrentBlock(t, mux)
+	blockData := getCurrentNdauBlock(t, mux)
 	txBytes := blockData.Block.Data.Txs[0] // Expecting one transaction, get the first.
 	txAble, err := metatx.Unmarshal(txBytes, ndau.TxIDs)
 	if err != nil {

@@ -37,16 +37,22 @@ func init() {
 	}
 }
 
-// Invoke the ndau tool to create an account, claim it, and rfe to it.
-func createBlock(t *testing.T) {
-	goOutput, err := exec.Command("go", "env", "GOPATH").Output()
+// Return the system's go directory.
+func getGoDir(t *testing.T) string {
+	output, err := exec.Command("go", "env", "GOPATH").Output()
 	if err != nil {
 		t.Errorf("Error getting go dir: %s", err)
 	}
 
-	goDir := bytes.TrimRight(goOutput, "\n")
+	return string(bytes.TrimRight(output, "\n"))
+}
+
+// Invoke the ndau tool to create an account, claim it, and rfe to it.
+func createNdauBlock(t *testing.T) {
+	acctName := "integrationtestacct"
+
+	goDir := getGoDir(t)
 	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/ndau/ndau", goDir)
-	acctName := "integrationtest"
 
 	acctCmd := exec.Command(ndauTool, "account", "new", acctName)
 	acctStderr, err := acctCmd.StderrPipe()
@@ -70,12 +76,12 @@ func createBlock(t *testing.T) {
 
 	err = exec.Command(ndauTool, "-v", "rfe", "10", acctName).Run()
 	if err != nil {
-		t.Errorf("Error claiming account: %s", err)
+		t.Errorf("Error issuing ndau: %s", err)
 	}
 }
 
 // Use the /block/current endpoint to grab the head block.
-func getCurrentBlock(t *testing.T, mux http.Handler) (blockData rpctypes.ResultBlock) {
+func getCurrentNdauBlock(t *testing.T, mux http.Handler) (blockData rpctypes.ResultBlock) {
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/block/current", nil)
 	mux.ServeHTTP(w, req)
@@ -84,6 +90,39 @@ func getCurrentBlock(t *testing.T, mux http.Handler) (blockData rpctypes.ResultB
 	err := json.NewDecoder(res.Body).Decode(&blockData)
 	if err != nil {
 		t.Errorf("Error decoding result: %s", err)
+	}
+
+	return
+}
+
+// Invoke the chaos tool to create a key value pair in the chaos chain.
+// Return the namespace, key and value that were set.
+func createChaosBlock(t *testing.T) (namespace, key, value string) {
+	namespace = "integrationtestnamespace"
+	key = "integrationtestkey"
+	value = "integrationtestvalue"
+
+	goDir := getGoDir(t)
+	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/chaos/chaos", goDir)
+
+	namespaceCmd := exec.Command(chaosTool, "id", "new", namespace)
+	namespaceStderr, err := namespaceCmd.StderrPipe()
+	if err != nil {
+		t.Errorf("Error creating namespace command: %s", err)
+	}
+	err = namespaceCmd.Start(); 
+	if err != nil {
+		t.Errorf("Error starting namespace command: %s", err)
+	}
+	namespaceErr, _ := ioutil.ReadAll(namespaceStderr)
+	err = namespaceCmd.Wait()
+	if err != nil && !strings.Contains(string(namespaceErr), "already present") {
+		t.Errorf("Error creating namespace: %s", err)
+	}
+
+	err = exec.Command(chaosTool, "set", namespace, "-k=" + key, "-v=" + value).Run()
+	if err != nil {
+		t.Errorf("Error setting key: %s", err)
 	}
 
 	return
