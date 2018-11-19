@@ -3,6 +3,7 @@ package routes_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -97,10 +98,11 @@ func TestSubmitTxNoServer(t *testing.T) {
 
 	// run tests
 	for _, tt := range tests {
-		if tt.skip {
-			continue
-		}
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.skip {
+				t.Skip(fmt.Sprintf("isIntegration is %v", isIntegration))
+			}
+
 			w := httptest.NewRecorder()
 			var req *http.Request
 			if tt.body != nil {
