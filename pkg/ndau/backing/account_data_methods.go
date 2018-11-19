@@ -2,8 +2,8 @@ package backing
 
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -82,14 +82,22 @@ func (ad *AccountData) AvailableBalance() (math.Ndau, error) {
 // ValidateSignatures returns `true` if signature quantity makes sense and
 // every signature provided is valid given the provided data.
 //
-// It returns the validity of the signature set and a bitset. This bitset
-// is a map: `1` elements are keys from `ad.ValidationKeys` which validated a
-// signature.
+// It returns the validity of the signature set and a bitset.
+//
+// The bitset is a map whose semantics differ according to whether or not
+// validation succeeded.
+//
+// If validation was successful, `1` elements are keys from `ad.ValidationKeys`
+// which validated a signature.
+//
+// If validation was not successful, `1` elements are elements from `signatures`
+// which failed to validate.
 func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Signature) (bool, *bitset256.Bitset256) {
 	if len(signatures) < 1 || len(signatures) > MaxKeysInAccount {
 		return false, nil
 	}
 	signatureSet := bitset256.New()
+	invalidSignatures := bitset256.New()
 
 	// we could get fancy, making a map from each transfer key to its index,
 	// using that to update the bitset, so that we could minimize the number
@@ -100,7 +108,7 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 	// dumb solution: just check every signature against every key that has
 	// not already been used.
 	allKeysValidate := true
-	for _, signature := range signatures {
+	for sidx, signature := range signatures {
 		foundValidatingKey := false
 		for idx, key := range ad.ValidationKeys {
 			// don't attempt to verify keys we've already verified
@@ -112,9 +120,16 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 				}
 			}
 		}
+		if !foundValidatingKey {
+			invalidSignatures.Set(byte(sidx))
+		}
 		allKeysValidate = allKeysValidate && foundValidatingKey
 	}
 	// If everything validated but the signatureSet doesn't have as many bits set as
 	// there were signatures, then we must have had duplicates, which is bad.
-	return allKeysValidate && signatureSet.Count() == len(signatures), signatureSet
+	valid := allKeysValidate && signatureSet.Count() == len(signatures)
+	if valid {
+		return valid, signatureSet
+	}
+	return valid, invalidSignatures
 }

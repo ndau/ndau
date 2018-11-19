@@ -30,7 +30,11 @@ func TestDumpConsensusState(t *testing.T) {
 	}
 
 	// set up apparatus
-	cf, _, _ := cfg.New()
+	cf, _, err := cfg.New()
+	if err != nil {
+		t.Errorf("Error creating cfg: %s", err)
+		return
+	}
 	handler := baseHandler(cf)
 
 	// run tests

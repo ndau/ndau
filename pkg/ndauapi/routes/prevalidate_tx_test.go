@@ -1,4 +1,4 @@
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -21,7 +21,7 @@ import (
 )
 
 func TestPrevalidateTxNoServer(t *testing.T) {
-	baseHandler := HandlePrevalidateTx
+	baseHandler := routes.HandlePrevalidateTx
 
 	keypub, keypvt, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
@@ -34,50 +34,50 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		body    *TxJSON
+		body    *routes.TxJSON
 		status  int
-		want    SubmitResult
+		want    routes.SubmitResult
 		wanterr string
 	}{
 		{
 			name:    "no body",
 			body:    nil,
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "unable to decode",
 		},
 		{
 			name:    "blank request",
-			body:    &TxJSON{},
+			body:    &routes.TxJSON{},
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not unmarshal",
 		},
 		{
 			name: "not base64",
-			body: &TxJSON{
+			body: &routes.TxJSON{
 				Data: "not base64 tx data",
 			},
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded as base64",
 		},
 		{
 			name: "not a tx",
-			body: &TxJSON{
+			body: &routes.TxJSON{
 				Data: b64str("not a tx"),
 			},
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "deserialization failed",
 		},
 		{
 			name: "valid tx but no node",
-			body: &TxJSON{
+			body: &routes.TxJSON{
 				Data: testLockData,
 			},
 			status:  http.StatusInternalServerError,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
 		},
 	}
@@ -106,7 +106,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				return
 			}
 
-			var got SubmitResult
+			var got routes.SubmitResult
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
@@ -122,5 +122,4 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			}
 		})
 	}
-
 }

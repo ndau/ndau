@@ -7,7 +7,7 @@
 # This file is substantially derived from their 0.16 file, located at
 # https://github.com/tendermint/tendermint/blob/v0.16.0/DOCKER/Dockerfile
 
-FROM golang:1.10-alpine3.8 AS build
+FROM golang:1.11-alpine3.8 AS build
 
 # This is the release of tendermint to pull in.
 ENV TM_VERSION_TAG v0.25.0

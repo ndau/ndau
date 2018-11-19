@@ -330,7 +330,7 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 			"1 invalid",
 			kpPublic(1),
 			kpSignature(2),
-			false, bitset256.New(),
+			false, bitset256.New(0),
 		},
 		{
 			"2 valid out of order",
@@ -342,7 +342,7 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 			"any invalid sig invalidates all",
 			kpPublic(5, 6, 7),
 			kpSignature(7, 3, 6),
-			false, bitset256.New(1, 2),
+			false, bitset256.New(1),
 		},
 		{
 			"valid subset is valid",

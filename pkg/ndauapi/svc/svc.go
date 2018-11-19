@@ -145,7 +145,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/block/hash/:blockhash").To(routes.HandleBlockHash(cf)).
 		Operation("BlockHash").
 		Doc("Returns the block in the chain with the given hash.").
-		Param(boneful.QueryParameter("blockhash", "Hex hash of the block in chain to return.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("blockhash", "Hex hash of the block in chain to return.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(dummyResultBlock))
 
@@ -168,24 +168,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
-	svc.Route(svc.GET("/chaos/system/all").To(routes.HandleChaosSystemAll(cf)).
-		Operation("ChaosSystemAll").
-		Doc("Returns the names and current values of all currently-defined system variables on the chaos chain.").
-		Produces(JSON).
-		Writes(""))
-
-	svc.Route(svc.GET("/chaos/system/:key").To(routes.HandleChaosSystemKey(cf)).
-		Operation("ChaosSystemKey").
-		Doc("Returns the current value of a single system variable from the chaos chain.").
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(""))
-
-	svc.Route(svc.GET("/chaos/history/:key").To(routes.HandleChaosHistory(cf)).
+	svc.Route(svc.GET("/chaos/history/:namespace/:key").To(routes.HandleChaosHistory(cf)).
 		Operation("ChaosHistoryKey").
-		Doc("Returns the history of changes to a value of a chaos chain system variable.").
-		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the account's balance.
+		Doc("Returns the history of changes to a value of a single chaos chain value.").
+		Notes(`The history includes the timestamp, new value, and transaction ID of each change to value.
 		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
@@ -195,13 +183,14 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/chaos/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
 		Operation("ChaosNamespaceAll").
 		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
+		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 
 	svc.Route(svc.GET("/chaos/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
 		Operation("ChaosNamespaceKey").
 		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
-		Param(boneful.PathParameter("namespace", "Key for the namespace.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
@@ -214,9 +203,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/node/health").To(routes.GetHealth(cf)).
 		Operation("NodeHealth").
-		Doc("Returns the health of the current node.").
+		Doc("Returns the health of the current ndau node and chaos node.").
 		Produces(JSON).
-		Writes(rpctypes.ResultHealth{}))
+		Writes(routes.HealthResponse{}))
 
 	svc.Route(svc.GET("/node/net").To(routes.GetNetInfo(cf)).
 		Operation("NodeNetInfo").
@@ -299,8 +288,33 @@ func New(cf cfg.Cfg) *boneful.Service {
 			PriceUnits:    "USD",
 		}))
 
+	svc.Route(svc.GET("/system/all").To(routes.HandleSystemAll(cf)).
+		Operation("SystemAll").
+		Doc("Returns the names and current values of all currently-defined system variables.").
+		Produces(JSON).
+		Writes(""))
+
+	svc.Route(svc.GET("/system/:key").To(routes.HandleSystemKey(cf)).
+		Operation("SystemKey").
+		Doc("Returns the current value of a single system variable.").
+		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(""))
+
+	svc.Route(svc.GET("/system/history/:key").To(routes.HandleSystemHistory(cf)).
+		Operation("SystemHistoryKey").
+		Doc("Returns the history of changes to a value of a system variable.").
+		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the value.
+		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(routes.SystemHistoryResponse{}))
+
 	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetch(cf)).
 		Doc("Returns a transaction from the blockchain given its tx hash.").
+		Notes("Transaction hash must be URL path-escaped").
 		Operation("TransactionByHash").
 		Produces(JSON).
 		Writes(routes.TransactionData{}))

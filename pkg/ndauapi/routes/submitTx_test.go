@@ -1,4 +1,4 @@
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -19,7 +20,11 @@ import (
 )
 
 func TestSubmitTxNoServer(t *testing.T) {
-	baseHandler := HandleSubmitTx
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
+
+	baseHandler := routes.HandleSubmitTx
 
 	keypub, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
@@ -31,56 +36,60 @@ func TestSubmitTxNoServer(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		body    *TxJSON
+		body    *routes.TxJSON
 		status  int
-		want    SubmitResult
+		want    routes.SubmitResult
 		wanterr string
 	}{
 		{
 			name:    "no body",
 			body:    nil,
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "unable to decode",
 		},
 		{
 			name:    "blank request",
-			body:    &TxJSON{},
+			body:    &routes.TxJSON{},
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded",
 		},
 		{
 			name: "not base64",
-			body: &TxJSON{
+			body: &routes.TxJSON{
 				Data: "not base64 tx data",
 			},
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded as base64",
 		},
 		{
 			name: "not a tx",
-			body: &TxJSON{
+			body: &routes.TxJSON{
 				Data: b64str("not a tx"),
 			},
 			status:  http.StatusBadRequest,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded into a transaction",
 		},
 		{
 			name: "valid tx but no node",
-			body: &TxJSON{
+			body: &routes.TxJSON{
 				Data: testLockData,
 			},
 			status:  http.StatusInternalServerError,
-			want:    SubmitResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
 		},
 	}
 
 	// set up apparatus
-	cf, _, _ := cfg.New()
+	cf, _, err := cfg.New()
+	if err != nil {
+		t.Errorf("Error creating cfg: %s", err)
+		return
+	}
 	handler := baseHandler(cf)
 
 	// run tests
@@ -103,7 +112,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 				return
 			}
 
-			var got SubmitResult
+			var got routes.SubmitResult
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
@@ -119,5 +128,4 @@ func TestSubmitTxNoServer(t *testing.T) {
 			}
 		})
 	}
-
 }

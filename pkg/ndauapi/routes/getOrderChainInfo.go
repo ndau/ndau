@@ -17,7 +17,7 @@ type OrderChainInfo struct {
 	FloorPrice    float64 `json:"floorPrice"`
 	EndowmentSold int64   `json:"endowmentSold"`
 	TotalNdau     int64   `json:"totalNdau"`
-	PriceUnits    string  `json:"USD"`
+	PriceUnits    string  `json:"priceUnit"`
 }
 
 func getTotalNdau(cf cfg.Cfg) (int64, error) {

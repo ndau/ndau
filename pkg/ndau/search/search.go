@@ -1,42 +1,50 @@
 package search
 
+// The public API for searching the index.
+
 import (
-	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"strconv"
 )
 
-// Client is a search Client that implements IncrementalIndexer.
-type Client struct {
-	*metasearch.Client
+// SearchBlockHash returns the height of the given block hash.
+// Returns 0 and no error if the given block hash was not found in the index.
+func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
+	searchKey := formatBlockHashToHeightSearchKey(blockHash)
 
-	maxHeight uint64
-}
-
-// NewClient is a factory method for Client.
-func NewClient(address string, version int) (search *Client, err error) {
-	search = &Client{}
-	search.Client, err = metasearch.NewClient(address, version)
+	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	search.maxHeight = 0
-	return search, nil
+
+	if searchValue == "" {
+		// Empty search results.  No error.
+		return 0, nil
+	}
+
+	return strconv.ParseUint(searchValue, 10, 64)
 }
 
-// OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
-func (search *Client) OnBeginBlock(height uint64) error {
-	search.maxHeight = height // Only one block to consider for incremental indexing.
-	return nil
-}
+// SearchTxHash returns the height of block containing the given tx hash.
+// It also returns the transaction offset within the block.
+// Returns 0, 0 and no error if the given tx hash was not found in the index.
+func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
+	searchKey := formatTxHashToHeightSearchKey(txHash)
 
-// OnDeliverTx grabs the fields out of this transaction to index when the block is committed.
-func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
-	// TODO: Implement.
-	return nil
-}
+	searchValue, err := search.Client.Get(searchKey)
+	if err != nil {
+		return 0, 0, err
+	}
 
-// OnCommit indexes all the transaction data we collected since the last BeginBlock().
-func (search *Client) OnCommit() error {
-	// TODO: Implement.
-	return nil
+	if searchValue == "" {
+		// Empty search results.  No error.
+		return 0, 0, nil
+	}
+
+	valueData := TxValueData{}
+	err = valueData.Unmarshal(searchValue)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return valueData.BlockHeight, valueData.TxOffset, nil
 }

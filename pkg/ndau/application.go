@@ -81,17 +81,20 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 
 		// Log initial indexing in case it takes a long time, people can see why.
 		metaapp.GetLogger().WithFields(log.Fields{
-			"valIndexVersion": indexVersion,
+			"search.indexVersion": indexVersion,
 		}).Info("ndau waiting for initial indexing to complete")
 
-		// TODO: Perform initial indexing here.
-		updateCount := 0
-		insertCount := 0
+		// Perform initial indexing.
+		updateCount, insertCount, err := search.IndexBlockchain(
+			metaapp.GetDB(), metaapp.GetDS())
+		if err != nil {
+			return nil, errors.Wrap(err, "NewApp unable to perform initial indexing")
+		}
 
 		// It might be useful to see what kind of results came from the initial indexing.
 		metaapp.GetLogger().WithFields(log.Fields{
-			"valUpdateCount": updateCount,
-			"valInsertCount": insertCount,
+			"search.updateCount": updateCount,
+			"search.insertCount": insertCount,
 		}).Info("ndau initial indexing complete")
 
 		metaapp.SetSearch(search)
@@ -164,6 +167,16 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 //
 // This uses a freshly-generated chaos config and an in-memory noms.
 func InitMockApp() (app *App, assc generator.Associated, err error) {
+	return InitMockAppWithIndex("", -1)
+}
+
+// InitMockAppWithIndex creates an empty test application with indexing and search capability,
+// which is mainly useful for testing.
+//
+// This uses a freshly-generated chaos config and an in-memory noms.
+func InitMockAppWithIndex(indexAddr string, indexVersion int) (
+	app *App, assc generator.Associated, err error,
+) {
 	var bpc []byte
 	var gfilepath, asscpath string
 
@@ -206,7 +219,7 @@ func InitMockApp() (app *App, assc generator.Associated, err error) {
 		return
 	}
 
-	app, err = NewAppSilent("", "", -1, *conf)
+	app, err = NewAppSilent("", indexAddr, indexVersion, *conf)
 	if err != nil {
 		return
 	}

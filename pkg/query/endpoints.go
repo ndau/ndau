@@ -4,6 +4,8 @@ package query
 const (
 	AccountEndpoint     = "/account"
 	PrevalidateEndpoint = "/prevalidate"
+	SearchEndpoint      = "/search"
 	SummaryEndpoint     = "/summary"
+	SysvarsEndpoint     = "/sysvars"
 	VersionEndpoint     = "/version"
 )

@@ -48,7 +48,11 @@ func TestHandleAccounts(t *testing.T) {
 	}
 
 	// set up apparatus
-	cf, _, _ := cfg.New()
+	cf, _, err := cfg.New()
+	if err != nil {
+		t.Errorf("Error creating cfg: %s", err)
+		return
+	}
 	handler := baseHandler(cf)
 
 	// run tests
@@ -65,16 +69,4 @@ func TestHandleAccounts(t *testing.T) {
 			}
 		})
 	}
-
-	badHandler := baseHandler(cfg.Cfg{})
-	t.Run("empty config", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte("{}")))
-		req.Header.Add("content-type", "application/json")
-		badHandler(w, req)
-		res := w.Result()
-		if res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("got status code %v, want %v", res.StatusCode, http.StatusInternalServerError)
-		}
-	})
 }

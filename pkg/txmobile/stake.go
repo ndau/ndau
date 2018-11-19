@@ -1,6 +1,6 @@
-package mobile
+package txmobile
 
-// generated with github.com/oneiro-ndev/ndau/pkg/transactions.mobile/generator
+// generated with github.com/oneiro-ndev/ndau/pkg/txmobile/generator
 // DO NOT EDIT
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// This file provides an interface to the Ndau ClaimNodeReward transaction
+// This file provides an interface to the Ndau Stake transaction
 // for use in React and in particular react-native.
 //
 // It is meant to be built using the gomobile tool, so the API is constrained
@@ -34,16 +34,25 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// ClaimNodeReward is a mobile compatible wrapper for a ClaimNodeReward transaction
-type ClaimNodeReward struct {
-	tx ndau.ClaimNodeReward
+// Stake is a mobile compatible wrapper for a Stake transaction
+type Stake struct {
+	tx ndau.Stake
 }
 
-// NewClaimNodeReward constructs a new unsigned ClaimNodeReward transaction
-func NewClaimNodeReward(
+// NewStake constructs a new unsigned Stake transaction
+func NewStake(
+	target *keyaddr.Address,
 	node *keyaddr.Address,
 	sequence int64,
-) (*ClaimNodeReward, error) {
+) (*Stake, error) {
+	if target == nil {
+		return nil, errors.New("target must not be nil")
+	}
+	targetN, err := address.Validate(target.Address)
+	if err != nil {
+		return nil, errors.Wrap(err, "target")
+	}
+
 	if node == nil {
 		return nil, errors.New("node must not be nil")
 	}
@@ -52,49 +61,63 @@ func NewClaimNodeReward(
 		return nil, errors.Wrap(err, "node")
 	}
 
-	return &ClaimNodeReward{
-		tx: ndau.ClaimNodeReward{
+	return &Stake{
+		tx: ndau.Stake{
+			Target:   targetN,
 			Node:     nodeN,
 			Sequence: uint64(sequence),
 		},
 	}, nil
 }
 
-// ParseClaimNodeReward parses a string into a ClaimNodeReward, if possible
-func ParseClaimNodeReward(s string) (*ClaimNodeReward, error) {
+// ParseStake parses a string into a Stake, if possible
+func ParseStake(s string) (*Stake, error) {
 	bytes, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseClaimNodeReward: b64-decode")
+		return nil, errors.Wrap(err, "ParseStake: b64-decode")
 	}
 	tx, err := metatx.Unmarshal(bytes, ndau.TxIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseClaimNodeReward: unmarshal")
+		return nil, errors.Wrap(err, "ParseStake: unmarshal")
 	}
-	trp, isTr := tx.(*ndau.ClaimNodeReward)
+	trp, isTr := tx.(*ndau.Stake)
 	if !isTr {
-		return nil, errors.New("ParseClaimNodeReward: transactable was not ClaimNodeReward")
+		return nil, errors.New("ParseStake: transactable was not Stake")
 	}
 
-	return &ClaimNodeReward{tx: *trp}, nil
+	return &Stake{tx: *trp}, nil
 }
 
-// ToString produces the b64 encoding of the bytes of the transaction
-func (tx *ClaimNodeReward) ToString() (string, error) {
+// ToB64String produces the b64 encoding of the bytes of the transaction
+func (tx *Stake) ToB64String() (string, error) {
 	if tx == nil {
-		return "", errors.New("nil claimnodereward")
+		return "", errors.New("nil stake")
 	}
 	bytes, err := metatx.Marshal(&tx.tx, ndau.TxIDs)
 	if err != nil {
-		return "", errors.Wrap(err, "claimnodereward: marshalling bytes")
+		return "", errors.Wrap(err, "stake: marshalling bytes")
 	}
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-// GetNode gets the node of the ClaimNodeReward
+// GetTarget gets the target of the Stake
 //
-// Returns `nil` if ClaimNodeReward is `nil` or if native conversion is fallible and
+// Returns `nil` if Stake is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimNodeReward) GetNode() *keyaddr.Address {
+func (tx *Stake) GetTarget() *keyaddr.Address {
+	if tx == nil {
+		return nil
+	}
+	target := keyaddr.Address{Address: tx.tx.Target.String()}
+
+	return &target
+}
+
+// GetNode gets the node of the Stake
+//
+// Returns `nil` if Stake is `nil` or if native conversion is fallible and
+// conversion failed.
+func (tx *Stake) GetNode() *keyaddr.Address {
 	if tx == nil {
 		return nil
 	}
@@ -103,11 +126,11 @@ func (tx *ClaimNodeReward) GetNode() *keyaddr.Address {
 	return &node
 }
 
-// GetSequence gets the sequence of the ClaimNodeReward
+// GetSequence gets the sequence of the Stake
 //
-// Returns `nil` if ClaimNodeReward is `nil` or if native conversion is fallible and
+// Returns `nil` if Stake is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimNodeReward) GetSequence() *int64 {
+func (tx *Stake) GetSequence() *int64 {
 	if tx == nil {
 		return nil
 	}
@@ -116,20 +139,20 @@ func (tx *ClaimNodeReward) GetSequence() *int64 {
 	return &sequence
 }
 
-// GetNumSignatures gets the number of signatures of the ClaimNodeReward
+// GetNumSignatures gets the number of signatures of the Stake
 //
 // If tx == nil, returns -1
-func (tx *ClaimNodeReward) GetNumSignatures() int {
+func (tx *Stake) GetNumSignatures() int {
 	if tx == nil {
 		return -1
 	}
 	return len(tx.tx.Signatures)
 }
 
-// GetSignature gets a particular signature from this ClaimNodeReward
-func (tx *ClaimNodeReward) GetSignature(idx int) (*keyaddr.Signature, error) {
+// GetSignature gets a particular signature from this Stake
+func (tx *Stake) GetSignature(idx int) (*keyaddr.Signature, error) {
 	if tx == nil {
-		return nil, errors.New("nil claimnodereward")
+		return nil, errors.New("nil stake")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
 		return nil, errors.New("invalid index")
@@ -142,16 +165,16 @@ func (tx *ClaimNodeReward) GetSignature(idx int) (*keyaddr.Signature, error) {
 	return signature, nil
 }
 
-// SignableBytes returns the b64 encoding of the signable bytes of this claimnodereward
-func (tx *ClaimNodeReward) SignableBytes() (string, error) {
+// SignableBytes returns the b64 encoding of the signable bytes of this stake
+func (tx *Stake) SignableBytes() (string, error) {
 	if tx == nil {
-		return "", errors.New("nil claimnodereward")
+		return "", errors.New("nil stake")
 	}
 	return base64.StdEncoding.EncodeToString(tx.tx.SignableBytes()), nil
 }
 
-// AppendSignature appends a signature to this claimnodereward
-func (tx *ClaimNodeReward) AppendSignature(sig *keyaddr.Signature) error {
+// AppendSignature appends a signature to this stake
+func (tx *Stake) AppendSignature(sig *keyaddr.Signature) error {
 	if sig == nil {
 		return errors.New("sig must not be nil")
 	}
@@ -163,8 +186,8 @@ func (tx *ClaimNodeReward) AppendSignature(sig *keyaddr.Signature) error {
 	return nil
 }
 
-// Hash computes the hash of this claimnodereward
-func (tx *ClaimNodeReward) Hash() string {
+// Hash computes the hash of this stake
+func (tx *Stake) Hash() string {
 	if tx == nil {
 		return ""
 	}
@@ -172,17 +195,17 @@ func (tx *ClaimNodeReward) Hash() string {
 }
 
 // Name returns the name of this transactable
-func (tx *ClaimNodeReward) Name() string {
+func (tx *Stake) Name() string {
 	if tx == nil {
 		return ""
 	}
-	return "ClaimNodeReward"
+	return "Stake"
 }
 
 // TxID returns the transaction id of this transactable
 //
 // Returns -2 if the transactable is nil, or -1 if the transactable is unknown.
-func (tx *ClaimNodeReward) TxID() int {
+func (tx *Stake) TxID() int {
 	if tx == nil {
 		return -2
 	}

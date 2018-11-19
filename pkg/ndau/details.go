@@ -6,12 +6,12 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -95,7 +95,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 
 	acct, exists := state.GetAccount(address, app.blockTime)
 	if tx.GetSequence() <= acct.Sequence {
-		return acct, exists, nil, errors.New("Sequence too low")
+		return acct, exists, nil, errors.New("sequence too low")
 	}
 
 	var sigset *bitset256.Bitset256
@@ -106,7 +106,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 			signed.GetSignatures(),
 		)
 		if !validates {
-			return acct, exists, sigset, errors.New("Invalid signature(s)")
+			return acct, exists, sigset, fmt.Errorf("invalid signature(s): %d", sigset.Indices())
 		}
 	}
 

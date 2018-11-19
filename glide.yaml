@@ -13,14 +13,14 @@ import:
   version: ~0.10
   repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
-  version: ~v0.10
+  version: v0.10.16
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/chaos_genesis
   version: ~v0.1
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: v0.11.5
+  version: v0.11.6
 - package: github.com/oneiro-ndev/msgp-well-known-types
   version: ~0.1.0
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
