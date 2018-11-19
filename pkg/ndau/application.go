@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/oneiro-ndev/system_vars/pkg/svi"
-
 	"github.com/BurntSushi/toml"
 	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
@@ -21,6 +19,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/types"
