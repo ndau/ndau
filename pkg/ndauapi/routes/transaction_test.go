@@ -39,6 +39,9 @@ func TestTxHash(t *testing.T) {
 	}
 	txHash := metatx.Hash(txAble)
 
+	// Invalid in that it's not valid base64, and it's not in the index.
+	invalidTxHash := "invalidhash_"
+
 	// set up tests
 	tests := []struct {
 		name   	 string
@@ -53,7 +56,7 @@ func TestTxHash(t *testing.T) {
 			wantbody: "txhash parameter required",
 		}, {
 			name:     "invalid hash",
-			req:      httptest.NewRequest("GET", "/transaction/invalidhash", nil),
+			req:      httptest.NewRequest("GET", "/transaction/" + invalidTxHash, nil),
 			status:   http.StatusOK,
 			wantbody: "null", // The response is empty, so "null" is produced.
 		}, {

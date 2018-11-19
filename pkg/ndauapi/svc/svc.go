@@ -172,9 +172,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("ChaosHistory").
 		Doc("Returns the history of changes to a value of a single chaos chain variable.").
 		Notes(`The history includes the block height and the value of each change to the variable.
-		The result is sorted chronologically from the current time.`).
+		The result is sorted chronologically.`).
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
-		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{}))
 
@@ -189,7 +189,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("ChaosNamespaceKey").
 		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
-		Param(boneful.PathParameter("key", "Name of the variable.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 

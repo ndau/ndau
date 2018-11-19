@@ -53,7 +53,7 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		network, err := getSystemValue(cf, "NetworkName")
+		network, err := getSystemValue(cf, []byte("NetworkName"))
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving network info", err, http.StatusInternalServerError))
 			return

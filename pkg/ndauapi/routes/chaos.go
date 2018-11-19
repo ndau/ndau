@@ -64,7 +64,7 @@ func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 	}
 }
 
-func getSystemValue(cf cfg.Cfg, key string) (string, error) {
+func getSystemValue(cf cfg.Cfg, key []byte) (string, error) {
 	// find the chaos node
 	chnode, err := ws.Node(cf.ChaosAddress)
 	if err != nil {
@@ -72,7 +72,7 @@ func getSystemValue(cf cfg.Cfg, key string) (string, error) {
 	}
 
 	systemns := cns.System
-	resp, _, err := chtool.GetNamespacedAt(chnode, systemns, []byte(key), 0)
+	resp, _, err := chtool.GetNamespacedAt(chnode, systemns, key, 0)
 	if err != nil {
 		return "", err
 	}
@@ -82,17 +82,28 @@ func getSystemValue(cf cfg.Cfg, key string) (string, error) {
 // HandleSystemKey retrieves a single system key at the current block height
 func HandleSystemKey(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		key := bone.GetValue(r, "key")
-		value, err := getSystemValue(cf, key)
+		keyBase64 := bone.GetValue(r, "key")
+		if keyBase64 == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
+			return
+		}
+
+		keyBytes, err := base64.StdEncoding.DecodeString(keyBase64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding key '%s'", keyBase64), err, http.StatusBadRequest))
+			return
+		}
+
+		value, err := getSystemValue(cf, keyBytes)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
 			return
 		}
 
 		result := ChaosAllResult{
-			Namespace: "system",
+			Namespace: string(cns.System),
 			Data: []ChaosItem{ChaosItem{
-				Key:   key,
+				Key:   keyBase64,
 				Value: value,
 			}},
 		}
@@ -143,8 +154,8 @@ func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		key := bone.GetValue(r, "key")
-		if key == "" {
+		keyBase64 := bone.GetValue(r, "key")
+		if keyBase64 == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
 			return
 		}
@@ -155,13 +166,19 @@ func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		keyBytes, err := base64.StdEncoding.DecodeString(keyBase64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding key '%s'", keyBase64), err, http.StatusBadRequest))
+			return
+		}
+
 		node, err := ws.Node(cf.ChaosAddress)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos node", err, http.StatusInternalServerError))
 			return
 		}
 
-		hkr, _, err := chtool.HistoryNamespaced(node, namespaceBytes, []byte(key))
+		hkr, _, err := chtool.HistoryNamespaced(node, namespaceBytes, keyBytes)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
 			return

@@ -28,15 +28,19 @@ func TestKeyHistory(t *testing.T) {
 	mux := svc.New(cf).Mux()
 
 	namespaceBase64, key, value := createChaosBlock(t)
-	invalidNamespace := "invalidnamespace"
-	invalidKey := "invalidkey"
 
-	// Namespaces are base64, but keys aren't.  Both must be query escaped to pass on the URL.
+	// Use underscores so they're not valid base64, in addition to not being indexed.
+	invalidNamespace := "invalidnamespace_"
+	invalidKey := "invalidkey_"
+
+	// Namespaces and keys are base64.  Both must be query escaped to pass on the URL.
 	namespaceBase64Esc := url.QueryEscape(namespaceBase64)
 	invalidNamespaceBase64 := base64.StdEncoding.EncodeToString([]byte(invalidNamespace))
 	invalidNamespaceBase64Esc := url.QueryEscape(invalidNamespaceBase64)
-	keyEsc := url.QueryEscape(key)
-	invalidKeyEsc := url.QueryEscape(invalidKey)
+	keyBase64 := base64.StdEncoding.EncodeToString([]byte(key))
+	keyBase64Esc := url.QueryEscape(keyBase64)
+	invalidKeyBase64 := base64.StdEncoding.EncodeToString([]byte(invalidKey))
+	invalidKeyBase64Esc := url.QueryEscape(invalidKeyBase64)
 	valueBase64 := base64.StdEncoding.EncodeToString([]byte(value))
 
 	// set up tests
@@ -57,13 +61,28 @@ func TestKeyHistory(t *testing.T) {
 			status:   http.StatusNotFound,
 			wantbody: "page not found", // Need namespace and key or it won't find the handler.
 		}, {
+			name:     "invalid base64 namespace and base64 key",
+			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", invalidNamespace, invalidKey), nil),
+			status:   http.StatusBadRequest,
+			wantbody: "error decoding namespace",
+		}, {
+			name:     "invalid base64 namespace and key",
+			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", invalidNamespace, invalidKeyBase64Esc), nil),
+			status:   http.StatusBadRequest,
+			wantbody: "error decoding namespace",
+		}, {
+			name:     "invalid namespace and base64 key",
+			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", invalidNamespaceBase64Esc, invalidKey), nil),
+			status:   http.StatusBadRequest,
+			wantbody: "error decoding key",
+		}, {
 			name:     "invalid namespace and key",
-			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", invalidNamespaceBase64Esc, invalidKeyEsc), nil),
+			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", invalidNamespaceBase64Esc, invalidKeyBase64Esc), nil),
 			status:   http.StatusOK,
 			wantbody: "{\"History\":null}", // Successful but empty response.
 		}, {
 			name:     "valid namespace and key",
-			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", namespaceBase64Esc, keyEsc), nil),
+			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", namespaceBase64Esc, keyBase64Esc), nil),
 			status:   http.StatusOK,
 			// The key isn't part of the response, but we can look for the expected value.
 			wantbody: fmt.Sprintf("\"Value\":\"%s\"", valueBase64),
