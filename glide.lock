@@ -1,5 +1,5 @@
-hash: 29af5a62b738ef1ea3037ca8f02b986823b9ab7ef18d8eb0818ad8cc85fb0bab
-updated: 2018-11-16T10:20:50.252879-08:00
+hash: f8a0ec84925ccfca896d4b17899278a1ff9739cd467b3dfb0bb1f8e2ce564a82
+updated: 2018-11-19T16:07:13.577367+01:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -216,7 +216,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: b36f1c9643c5fc5bec9945c9119eab1955970a9f
+  version: 0f2d4cde37dfa1849a64e989391c57be82f21ba1
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app

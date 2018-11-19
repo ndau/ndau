@@ -117,10 +117,10 @@ func (app *App) updateSystemVariableCache() {
 		app.GetLogger().WithError(err).Error(
 			"failed update of system variable cache",
 		)
-		// given that the system hasn't properly come up yet, I feel no shame
-		// simply aborting here
-		panic(err)
 	}
+	// if err == nil, then the state is valid. Otherwise, this blocks us from
+	// returning potentially invalid information to callers.
+	app.SetStateValidity(err)
 }
 
 // InitChain performs necessary chain initialization.
