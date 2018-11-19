@@ -20,7 +20,13 @@ import (
 const rfeKeys = "rfe private keys"
 
 func initAppRFE(t *testing.T) (*App, generator.Associated) {
-	app, assc := initApp(t)
+	return initAppRFEWithIndex(t, "", -1)
+}
+
+func initAppRFEWithIndex(t *testing.T, indexAddr string, indexVersion int) (
+	*App, generator.Associated,
+) {
+	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
 	app.InitChain(abci.RequestInitChain{})
 
 	// fetch the RFE address system variable

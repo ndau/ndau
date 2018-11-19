@@ -72,8 +72,14 @@ func init() {
 }
 
 func initApp(t *testing.T) (app *App, assc generator.Associated) {
+	return initAppWithIndex(t, "", -1)
+}
+
+func initAppWithIndex(t *testing.T, indexAddr string, indexVersion int) (
+	app *App, assc generator.Associated,
+) {
 	var err error
-	app, assc, err = InitMockApp()
+	app, assc, err = InitMockAppWithIndex(indexAddr, indexVersion)
 	require.NoError(t, err)
 
 	// send log output to the test logger

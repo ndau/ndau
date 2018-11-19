@@ -1,15 +1,19 @@
 package routes
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-zoo/bone"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
+	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -17,8 +21,8 @@ import (
 
 // BlockchainRequest represents a blockchain request.
 type BlockchainRequest struct {
-	end     int64
-	start   int64
+	first   int64
+	last    int64
 	noempty bool
 }
 
@@ -45,22 +49,22 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 		}
 		vals[i] = v
 	}
-	start := vals[0]
-	end := vals[1]
+	first := vals[0]
+	last := vals[1]
 
-	if start > end {
+	if first > last {
 		return req, fmt.Errorf("%s must be higher than %s", keys[0], keys[1])
 	}
 
-	if end-start > MaximumRange {
-		return req, fmt.Errorf("%v range is larger than %v", end-start, MaximumRange)
+	if last-first > MaximumRange {
+		return req, fmt.Errorf("%v range is larger than %v", last-first, MaximumRange)
 	}
 
 	noempty := (r.URL.Query().Get("noempty") != "")
 
 	return BlockchainRequest{
-		start:   start,
-		end:     end,
+		first:   first,
+		last:    last,
 		noempty: noempty,
 	}, nil
 }
@@ -105,8 +109,8 @@ func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
 	return block.Block.Height, nil
 }
 
-func getBlocksMatching(node *client.HTTP, start, end int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
-	blocks, err := node.BlockchainInfo(start, end)
+func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
+	blocks, err := node.BlockchainInfo(first, last)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +137,7 @@ func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
 		if reqdata.noempty {
 			f = nonemptyFilter
 		}
-		blocks, err := getBlocksMatching(node, reqdata.start, reqdata.end, f)
+		blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, f)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 			return
@@ -185,36 +189,45 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		top, err := getCurrentBlockHeight(cf)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("getting block height", err, http.StatusBadRequest))
-			return
-		}
-
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
 			return
 		}
 
-		var blocks *rpctypes.ResultBlockchainInfo
-		const stepsize = 100
-
-		for top > 0 {
-			bottom := top - stepsize
-			if bottom <= 0 {
-				bottom = 1
-			}
-			blocks, err = getBlocksMatching(node, bottom, top, hasHashOf(blockhash))
-			if len(blocks.BlockMetas) > 0 {
-				break
-			}
-			top = bottom - 1
+		// Prepare search params.
+		params := search.QueryParams{
+			Command: search.HeightByBlockHashCommand,
+			Hash:    blockhash, // Hex digits are path-escaped by default.
 		}
-		if blocks == nil || len(blocks.BlockMetas) == 0 {
-			reqres.RespondJSON(w, reqres.NewAPIError("no matching blocks found", http.StatusBadRequest))
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+		paramsString := paramsBuf.String()
+
+		searchValue, err := tool.GetSearchResults(node, paramsString)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
 			return
 		}
-		reqres.RespondJSON(w, reqres.OKResponse(blocks))
+
+		blockheight, err := strconv.ParseInt(searchValue, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		if blockheight <= 0 {
+			// The search was valid, but there were no results.
+			reqres.RespondJSON(w, reqres.OKResponse(nil))
+			return
+		}
+
+		block, err := node.Block(&blockheight)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		reqres.RespondJSON(w, reqres.OKResponse(block))
 	}
 }

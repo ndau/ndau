@@ -3,11 +3,14 @@ package ndau
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -18,6 +21,7 @@ import (
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
+	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
@@ -71,6 +75,48 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 	}
 
 	return
+}
+
+func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	search := app.GetSearch()
+	if search == nil {
+		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		return
+	}
+	metasearch := search.(*srch.Client)
+
+	paramsString := string(request.GetData())
+	var params srch.QueryParams
+	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	if err != nil {
+		app.QueryError(
+			errors.New("Cannot decode search params json"), response, "invalid search query")
+		return
+	}
+
+	switch params.Command {
+	case srch.HeightByBlockHashCommand:
+		height, err := metasearch.SearchBlockHash(params.Hash)
+		if err != nil {
+			app.QueryError(err, response, "height by block hash search fail")
+			return
+		}
+		value := fmt.Sprintf("%d", height)
+		response.Value = []byte(value)
+	case srch.HeightByTxHashCommand:
+		height, offset, err := metasearch.SearchTxHash(params.Hash)
+		if err != nil {
+			app.QueryError(err, response, "height by tx hash search fail")
+			return
+		}
+		valueData := srch.TxValueData{height, offset}
+		value := valueData.Marshal()
+		response.Value = []byte(value)
+	default:
+		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
+	}
 }
 
 var lastSummary query.Summary

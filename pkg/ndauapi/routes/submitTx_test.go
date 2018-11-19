@@ -1,4 +1,4 @@
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -14,12 +14,17 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 func TestSubmitTxNoServer(t *testing.T) {
-	baseHandler := HandleSubmitTx
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
+
+	baseHandler := routes.HandleSubmitTx
 
 	keypub, keypvt, _ := signature.Generate(signature.Ed25519, nil)
 	addr, _ := address.Generate(address.KindUser, keypub.KeyBytes())
@@ -30,62 +35,66 @@ func TestSubmitTxNoServer(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		body    *PreparedTx
+		body    *routes.PreparedTx
 		status  int
-		want    TxResult
+		want    routes.TxResult
 		wanterr string
 	}{
 		{
 			name:    "no body",
 			body:    nil,
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    routes.TxResult{},
 			wanterr: "unable to decode",
 		},
 		{
 			name:    "blank request",
-			body:    &PreparedTx{},
+			body:    &routes.PreparedTx{},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    routes.TxResult{},
 			wanterr: "could not be decoded",
 		},
 		{
 			name: "not base64",
-			body: &PreparedTx{
+			body: &routes.PreparedTx{
 				TxData:        "not base64 tx data",
 				SignableBytes: "not base64 bytes to be signed",
 				Signatures:    []string{"base64 signature of SignableBytes"},
 			},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    routes.TxResult{},
 			wanterr: "could not be decoded as base64",
 		},
 		{
 			name: "not a tx",
-			body: &PreparedTx{
+			body: &routes.PreparedTx{
 				TxData:        b64str("not a tx"),
 				SignableBytes: b64str("not signable"),
 				Signatures:    []string{b64str("not a signature of SignableBytes")},
 			},
 			status:  http.StatusBadRequest,
-			want:    TxResult{},
+			want:    routes.TxResult{},
 			wanterr: "could not be decoded into a transaction",
 		},
 		{
 			name: "invalid tx but no node",
-			body: &PreparedTx{
+			body: &routes.PreparedTx{
 				TxData:        testLockData,
 				SignableBytes: b64(testLockTx.SignableBytes()),
 				Signatures:    []string{b64(sigbytes)},
 			},
 			status:  http.StatusInternalServerError,
-			want:    TxResult{},
-			wanterr: "error",
+			want:    routes.TxResult{},
+			wanterr: "error from commit",
 		},
 	}
 
 	// set up apparatus
-	cf, _, _ := cfg.New()
+	cf, _, err := cfg.New()
+	if err != nil {
+		t.Errorf("Error creating cfg: %s", err)
+		return
+	}
 	handler := baseHandler(cf)
 
 	// run tests
@@ -108,7 +117,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 				return
 			}
 
-			var got TxResult
+			var got routes.TxResult
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
@@ -124,5 +133,4 @@ func TestSubmitTxNoServer(t *testing.T) {
 			}
 		})
 	}
-
 }
