@@ -20,10 +20,6 @@ import (
 )
 
 func TestSubmitTxNoServer(t *testing.T) {
-	if !isIntegration {
-		t.Skip("integration tests are opt-in")
-	}
-
 	baseHandler := routes.HandleSubmitTx
 
 	keypub, _, err := signature.Generate(signature.Ed25519, nil)
@@ -40,6 +36,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 		status  int
 		want    routes.SubmitResult
 		wanterr string
+		skip    bool
 	}{
 		{
 			name:    "no body",
@@ -47,6 +44,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "unable to decode",
+			skip:    !isIntegration,
 		},
 		{
 			name:    "blank request",
@@ -54,6 +52,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded",
+			skip:    !isIntegration,
 		},
 		{
 			name: "not base64",
@@ -63,6 +62,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded as base64",
+			skip:    !isIntegration,
 		},
 		{
 			name: "not a tx",
@@ -72,6 +72,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded into a transaction",
+			skip:    !isIntegration,
 		},
 		{
 			name: "valid tx but no node",
@@ -81,12 +82,14 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusInternalServerError,
 			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
+			skip:    isIntegration,
 		},
 	}
 
 	// set up apparatus
 	cf, _, err := cfg.New()
-	if err != nil {
+	// Integration tests must have a valid config, non-integration tests expect an invalid one.
+	if err != nil && isIntegration {
 		t.Errorf("Error creating cfg: %s", err)
 		return
 	}
@@ -94,6 +97,9 @@ func TestSubmitTxNoServer(t *testing.T) {
 
 	// run tests
 	for _, tt := range tests {
+		if tt.skip {
+			continue
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			var req *http.Request
