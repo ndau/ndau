@@ -90,8 +90,8 @@ func TestSubmitTxNoServer(t *testing.T) {
 	// set up apparatus
 	cf, _, err := cfg.New()
 	// Integration tests must have a valid config, non-integration tests expect an invalid one.
-	if err != nil && isIntegration {
-		t.Errorf("Error creating cfg: %s", err)
+	if isIntegration == (err != nil) {
+		t.Errorf("Unexpected config error: %s", err)
 		return
 	}
 	handler := baseHandler(cf)
