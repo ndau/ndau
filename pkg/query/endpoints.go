@@ -2,14 +2,10 @@ package query
 
 // These constants define the endpoints at which the Tm RPC will forward requests
 const (
-	AccountEndpoint = "/account"
-	SearchEndpoint = "/search"
-	SummaryEndpoint = "/summary"
-	VersionEndpoint = "/version"
-	SysvarsEndpoint = "/sysvars"
+	AccountEndpoint     = "/account"
+	PrevalidateEndpoint = "/prevalidate"
+	SearchEndpoint      = "/search"
+	SummaryEndpoint     = "/summary"
+	SysvarsEndpoint     = "/sysvars"
+	VersionEndpoint     = "/version"
 )
-
-// AccountInfoFmt is used to set the format used by the Account endpoint in the
-// Info field for whether the account exists. It is used with Sprintf on send
-// and with Sscanf on receive.
-const AccountInfoFmt = "acct exists: %t"

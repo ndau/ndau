@@ -61,6 +61,14 @@ var dummyTxResult = routes.TxResult{
 	TxHash: "123abc34099f",
 }
 
+var dummyTxJSON = routes.TxJSON{
+	Data: "base64 tx data",
+}
+var dummyPrevalidateResult = routes.PrevalidateResult{
+	FeeNapu: 10,
+	Err:     "only set if an error occurred",
+}
+
 // New returns a new boneful Service with routes.
 func New(cf cfg.Cfg) *boneful.Service {
 	svc := new(boneful.Service).
@@ -315,6 +323,14 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("TransactionByHash").
 		Produces(JSON).
 		Writes(routes.TransactionData{}))
+
+	svc.Route(svc.POST("/tx/prevalidate").To(routes.HandlePrevalidateTx(cf)).
+		Doc("Prevalidates a transaction.").
+		Operation("TxPrevalidate").
+		Consumes(JSON).
+		Reads(dummyTxJSON).
+		Produces(JSON).
+		Writes(dummyPrevalidateResult))
 
 	svc.Route(svc.POST("/tx/submit").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a prepared transaction.").
