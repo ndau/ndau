@@ -52,17 +52,12 @@ var dummyResultBlock = rpctypes.ResultBlock{
 	BlockMeta: &dummyBlockMeta,
 	Block:     &tmtypes.Block{},
 }
-var dummyPreparedTx = routes.PreparedTx{
-	TxData:        "base64 tx data",
-	SignableBytes: "base64 bytes to be signed",
-	Signatures:    []string{"base64 signature of SignableBytes"},
-}
-var dummyTxResult = routes.TxResult{
-	TxHash: "123abc34099f",
-}
 
 var dummyTxJSON = routes.TxJSON{
 	Data: "base64 tx data",
+}
+var dummySubmitResult = routes.SubmitResult{
+	TxHash: "123abc34099f",
 }
 var dummyPrevalidateResult = routes.PrevalidateResult{
 	FeeNapu: 10,
@@ -333,12 +328,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(dummyPrevalidateResult))
 
 	svc.Route(svc.POST("/tx/submit").To(routes.HandleSubmitTx(cf)).
-		Doc("Submits a prepared transaction.").
+		Doc("Submits a transaction.").
 		Operation("TxSubmit").
 		Consumes(JSON).
-		Reads(dummyPreparedTx).
+		Reads(dummyTxJSON).
 		Produces(JSON).
-		Writes(dummyTxResult))
+		Writes(dummySubmitResult))
 
 	svc.Route(svc.GET("/version").To(routes.HandleVersion(cf)).
 		Doc("Delivers version information").

@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -37,21 +36,21 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 		name    string
 		body    *routes.TxJSON
 		status  int
-		want    routes.TxResult
+		want    routes.SubmitResult
 		wanterr string
 	}{
 		{
 			name:    "no body",
 			body:    nil,
 			status:  http.StatusBadRequest,
-			want:    routes.TxResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "unable to decode",
 		},
 		{
 			name:    "blank request",
 			body:    &routes.TxJSON{},
 			status:  http.StatusBadRequest,
-			want:    routes.TxResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not unmarshal",
 		},
 		{
@@ -60,7 +59,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				Data: "not base64 tx data",
 			},
 			status:  http.StatusBadRequest,
-			want:    routes.TxResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded as base64",
 		},
 		{
@@ -69,7 +68,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				Data: b64str("not a tx"),
 			},
 			status:  http.StatusBadRequest,
-			want:    routes.TxResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "deserialization failed",
 		},
 		{
@@ -78,7 +77,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				Data: testLockData,
 			},
 			status:  http.StatusInternalServerError,
-			want:    routes.TxResult{},
+			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
 		},
 	}
@@ -107,7 +106,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 				return
 			}
 
-			var got routes.TxResult
+			var got routes.SubmitResult
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
@@ -123,5 +122,4 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			}
 		})
 	}
-
 }
