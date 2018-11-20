@@ -111,7 +111,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 			app.QueryError(err, response, "height by tx hash search fail")
 			return
 		}
-		valueData := srch.TxValueData{height, offset}
+		valueData := srch.TxValueData{BlockHeight: height, TxOffset: offset}
 		value := valueData.Marshal()
 		response.Value = []byte(value)
 	default:

@@ -1,10 +1,10 @@
-hash: 9be661aa426a86cb33e484b5dc9dd7276abf7e56eefee6d2624d2dce3fae6ea8
-updated: 2018-11-19T09:49:14.373228-08:00
+hash: 0154fb0649e1e216a5e451fe06edafe6e10181f308ff40547e54c9602d377259
+updated: 2018-11-20T10:21:42.993451+01:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
 - name: github.com/alexflint/go-scalar
-  version: e80c3b7ed292b052c7083b6fd7154a8422c33f65
+  version: 6ab8ad5e1c5b25ca2783fe83f493c3ab471407e2
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
   subpackages:
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 50e2f0627dec4e2508ea825884a551ecd393425c
+  version: 51ea1dae1fd01c1827b3ac927a987082d36b378d
   subpackages:
   - aws
   - aws/awserr
@@ -146,7 +146,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: 52132540909e117f2b98b0694383dc0ab1e1deca
+  version: 882cf97a83ad205fd22af574246a3bc647d7a7d2
   subpackages:
   - proto
   - ptypes
@@ -216,7 +216,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: f49f9e1c17a815f0be628831d79abc182009d9f2
+  version: 7b51ccbf4b8538dab62badb25b77e4fc48446b8d
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -296,7 +296,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 1f2c4f3cd6db5fd6f68f36af6b6d5d936fd93c4e
+  version: b36ad289a3eaecdc52470a19591146a2c0ffb532
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -435,7 +435,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 93218def8b18e66adbdab3eca8ec334700329f1f
+  version: ec83556a53fe16b65c452a104ea9d1e86a671852
   subpackages:
   - cpu
   - unix
@@ -448,7 +448,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: 139d099f662071f73eab0df7b7fdf9682c8f9e91
+  version: fc4f04983f629377122b333bebb16bfd5a5dcfed
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
