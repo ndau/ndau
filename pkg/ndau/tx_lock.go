@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *Lock) GetAccountAddresses() []string {
+	return []string{tx.Target.String()}
+}
+
 // NewLock creates a new Lock transaction
 func NewLock(account address.Address, period math.Duration, sequence uint64, keys []signature.PrivateKey) *Lock {
 	tx := &Lock{Target: account, Period: period, Sequence: sequence}

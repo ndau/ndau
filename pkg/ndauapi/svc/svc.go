@@ -120,21 +120,13 @@ func New(cf cfg.Cfg) *boneful.Service {
 			EAIRate: 6000000,
 		}}))
 
-	svc.Route(svc.GET("/account/history/:accountid").To(routes.HandleAccount(cf)).
+	svc.Route(svc.GET("/account/history/:address").To(routes.HandleAccountHistory(cf)).
 		Doc("Returns the balance history of an account given its address.").
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
-		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		The result is sorted chronologically.`).
 		Operation("AccountHistory").
-		Param(boneful.QueryParameter("limit", "Maximum number of transactions to return; default=10.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
 		Produces(JSON).
-		Writes([]routes.BalanceHistoryItem{
-			routes.BalanceHistoryItem{
-				Balance:   123000000,
-				Timestamp: dummyTimestamp,
-				TxHash:    "abc123def456",
-			},
-		}))
+		Writes(routes.AccountHistoryItems{}))
 
 	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockCurrent").

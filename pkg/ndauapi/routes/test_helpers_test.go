@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -48,7 +49,8 @@ func getGoDir(t *testing.T) string {
 }
 
 // Invoke the ndau tool to create an account, claim it, and rfe to it.
-func createNdauBlock(t *testing.T) {
+// Return the address of the account created.
+func createNdauBlock(t *testing.T) string {
 	acctName := "integrationtestacct"
 
 	goDir := getGoDir(t)
@@ -78,6 +80,24 @@ func createNdauBlock(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error issuing ndau: %s", err)
 	}
+
+	c, err := config.LoadDefault(config.GetConfigPath())
+	if err != nil {
+		t.Errorf("Error getting config: %s", err)
+	}
+
+	addr := ""
+	for _, acct := range c.GetAccounts() {
+		if acct.Name == acctName {
+			addr = acct.Address.String()
+			break
+		}
+	}
+	if addr == "" {
+		t.Error("Unable to get account address")
+	}
+
+	return addr
 }
 
 // Use the /block/current endpoint to grab the head block.
