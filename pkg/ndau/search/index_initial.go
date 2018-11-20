@@ -3,6 +3,8 @@ package search
 // The public API for initial indexing of the blockchain.
 
 import (
+	"fmt"
+
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -20,44 +22,46 @@ func (search *Client) IndexBlockchain(
 	search.txHashes = nil
 	search.blockHash = ""
 	search.blockHeight = 0
-	search.maxHeight = 0
+	search.nextHeight = 0
 
 	// The height encountered on the previous iteration of the loop below.
-	lastHeight := search.maxHeight
+	lastHeight := search.nextHeight
 
-	// The max height we indexed to the last time we indexed the blockchain.
-	maxIndexedHeight := search.Client.GetHeight()
+	// One more than the height we indexed to the last time we indexed the blockchain.
+	// In other words, it's the height we want to index to this time.
+	minHeightToIndex := search.Client.GetNextHeight()
 
 	example := backing.State{}
 	err = state.IterHistory(db, ds, &example, func(stI state.State, height uint64) error {
 		// Save off the max height that we'll index up to by the end of the iteration.
-		if search.maxHeight == 0 {
+		if search.nextHeight == 0 {
 			// This assumes we're iterating blocks in order from the head to genesis.
-			search.maxHeight = height
-			lastHeight = height + 1
+			search.nextHeight = height + 1
+			lastHeight = search.nextHeight
 		}
 
 		// If we've reached the last height we indexed to, we can stop here.
-		if height <= maxIndexedHeight {
+		if height < minHeightToIndex {
 			// This assumes we're iterating blocks in order from the head to genesis.
 			return state.StopIteration()
 		}
 
 		// Make sure we're iterating from the head block to genesis.
-		if height >= lastHeight {
+		// However, we support multiple height-0 entries for parallelism with chaos noms data.
+		if height > lastHeight || height == lastHeight && height != 0 {
 			// Indexing logic relies on this, but more importantly, this indicates
 			// a serious problem in the blockchain if the height increases as we
 			// crawl the blockchain from the head to the genesis block.
-			panic("Invalid height found in ndau chain")
+			panic(fmt.Sprintf("Invalid height found in noms: %d >= %d", height, lastHeight))
 		}
 		lastHeight = height
+
+		search.blockHeight = height
 
 		// Here's where we index data out of noms.
 		// We will get block and tx hashes to index from our external indexer application.
 		// TODO: Add something here to index.  If we don't need to index anything out of noms,
 		// then remove this entire function.
-
-		search.blockHeight = height
 
 		updCount, insCount, err := search.index()
 		updateCount += updCount

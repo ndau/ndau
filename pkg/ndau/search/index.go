@@ -22,7 +22,7 @@ type Client struct {
 	txHashes []string
 	blockHash string
 	blockHeight uint64
-	maxHeight uint64
+	nextHeight uint64
 }
 
 // NewClient is a factory method for Client.
@@ -36,7 +36,7 @@ func NewClient(address string, version int) (search *Client, err error) {
 	search.txHashes = nil
 	search.blockHash = ""
 	search.blockHeight = 0
-	search.maxHeight = 0
+	search.nextHeight = 0
 
 	return search, nil
 }
@@ -50,8 +50,13 @@ func formatTxHashToHeightSearchKey(hash string) string {
 }
 
 func (search *Client) onIndexingComplete() {
+	// No need to keep this data around any longer.
+	search.txHashes = nil
+	search.blockHash = ""
+	search.blockHeight = 0
+
 	// Save this off so the next initial scan will only go this far.
-	search.Client.SetHeight(search.maxHeight)
+	search.Client.SetNextHeight(search.nextHeight)
 }
 
 // Index a single key-value pair.
@@ -109,11 +114,6 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 			return updateCount, insertCount, err
 		}
 	}
-
-	// No need to keep this data around any longer.
-	search.txHashes = nil
-	search.blockHash = ""
-	search.blockHeight = 0
 
 	return updateCount, insertCount, nil
 }

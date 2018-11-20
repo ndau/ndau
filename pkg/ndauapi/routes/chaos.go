@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/go-zoo/bone"
 	cns "github.com/oneiro-ndev/chaos/pkg/chaos/ns"
+	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	chtool "github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
@@ -31,6 +31,11 @@ type ChaosAllResult struct {
 
 // SystemHistoryResponse represents the result of querying system history
 type SystemHistoryResponse struct {
+}
+
+// ChaosHistoryResponse contains the value history of a given key
+type ChaosHistoryResponse struct {
+	*chquery.KeyHistoryResponse
 }
 
 // HandleSystemAll retrieves all the system keys at the current block height.
@@ -56,36 +61,10 @@ func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(values))
-
-		// ------ REMOVEME -------
-		// leaving this here temporarily in case eric wants it
-		// find the chaos node
-		// chnode, err := ws.Node(cf.ChaosAddress)
-		// if err != nil {
-		// 	reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos node", err, http.StatusInternalServerError))
-		// 	return
-		// }
-
-		// 	fmt.Println(values)
-
-		// 	systemns := cns.System
-		// 	resp, _, err := chtool.DumpNamespacedAt(chnode, systemns, 0)
-		// 	if err != nil {
-		// 		reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
-		// 		return
-		// 	}
-
-		// 	result := ChaosAllResult{Namespace: "system"}
-		// 	for _, r := range (*resp).Data {
-		// 		// TODO: Handle Values other than strings?
-		// 		result.Data = append(result.Data, ChaosItem{Key: string(r.Key), Value: string(r.Value)})
-		// 	}
-		// 	reqres.RespondJSON(w, reqres.OKResponse(result))
-		// -------------------------
 	}
 }
 
-func getSystemValue(cf cfg.Cfg, key string) (string, error) {
+func getSystemValue(cf cfg.Cfg, key []byte) (string, error) {
 	// find the chaos node
 	chnode, err := ws.Node(cf.ChaosAddress)
 	if err != nil {
@@ -93,7 +72,7 @@ func getSystemValue(cf cfg.Cfg, key string) (string, error) {
 	}
 
 	systemns := cns.System
-	resp, _, err := chtool.GetNamespacedAt(chnode, systemns, []byte(key), 0)
+	resp, _, err := chtool.GetNamespacedAt(chnode, systemns, key, 0)
 	if err != nil {
 		return "", err
 	}
@@ -103,17 +82,28 @@ func getSystemValue(cf cfg.Cfg, key string) (string, error) {
 // HandleSystemKey retrieves a single system key at the current block height
 func HandleSystemKey(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		key := bone.GetValue(r, "key")
-		value, err := getSystemValue(cf, key)
+		keyBase64 := bone.GetValue(r, "key")
+		if keyBase64 == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
+			return
+		}
+
+		keyBytes, err := base64.StdEncoding.DecodeString(keyBase64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding key '%s'", keyBase64), err, http.StatusBadRequest))
+			return
+		}
+
+		value, err := getSystemValue(cf, keyBytes)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
 			return
 		}
 
 		result := ChaosAllResult{
-			Namespace: "system",
+			Namespace: string(cns.System),
 			Data: []ChaosItem{ChaosItem{
-				Key:   key,
+				Key:   keyBase64,
 				Value: value,
 			}},
 		}
@@ -131,14 +121,10 @@ func HandleChaosNamespaceAll(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		nskey64, err := url.PathUnescape(bone.GetValue(r, "namespace"))
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error unescaping namespace", err, http.StatusBadRequest))
-			return
-		}
+		nskey64 := bone.GetValue(r, "namespace")
 		nskey, err := base64.StdEncoding.DecodeString(nskey64)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error decoding namespace", err, http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding namespace '%s'", nskey64), err, http.StatusBadRequest))
 			return
 		}
 
@@ -162,6 +148,44 @@ func HandleChaosNamespaceKey(cf cfg.Cfg) http.HandlerFunc {
 // HandleChaosHistory retrieves the history of a single value in the chaos chain.
 func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		namespaceBase64 := bone.GetValue(r, "namespace")
+		if namespaceBase64 == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("namespace parameter required", http.StatusBadRequest))
+			return
+		}
+
+		keyBase64 := bone.GetValue(r, "key")
+		if keyBase64 == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
+			return
+		}
+
+		namespaceBytes, err := base64.StdEncoding.DecodeString(namespaceBase64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding namespace '%s'", namespaceBase64), err, http.StatusBadRequest))
+			return
+		}
+
+		keyBytes, err := base64.StdEncoding.DecodeString(keyBase64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding key '%s'", keyBase64), err, http.StatusBadRequest))
+			return
+		}
+
+		node, err := ws.Node(cf.ChaosAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos node", err, http.StatusInternalServerError))
+			return
+		}
+
+		hkr, _, err := chtool.HistoryNamespaced(node, namespaceBytes, keyBytes)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
+			return
+		}
+
+		result := ChaosHistoryResponse{hkr}
+		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }
 

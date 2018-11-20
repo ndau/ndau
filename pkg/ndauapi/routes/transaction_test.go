@@ -28,16 +28,19 @@ func TestTxHash(t *testing.T) {
 	mux := svc.New(cf).Mux()
 
 	// Add to the blockchain and index.
-	createBlock(t)
+	createNdauBlock(t)
 
 	// Grab the block hash for use in later tests.
-	blockData := getCurrentBlock(t, mux)
+	blockData := getCurrentNdauBlock(t, mux)
 	txBytes := blockData.Block.Data.Txs[0] // Expecting one transaction, get the first.
 	txAble, err := metatx.Unmarshal(txBytes, ndau.TxIDs)
 	if err != nil {
 		t.Errorf("Error unmarshaling tx: %s", err)
 	}
 	txHash := metatx.Hash(txAble)
+
+	// Invalid in that it's not valid base64, and it's not in the index.
+	invalidTxHash := "invalidhash_"
 
 	// set up tests
 	tests := []struct {
@@ -53,12 +56,12 @@ func TestTxHash(t *testing.T) {
 			wantbody: "txhash parameter required",
 		}, {
 			name:     "invalid hash",
-			req:      httptest.NewRequest("GET", "/transaction/invalidhash", nil),
+			req:      httptest.NewRequest("GET", "/transaction/" + invalidTxHash, nil),
 			status:   http.StatusOK,
 			wantbody: "null", // The response is empty, so "null" is produced.
 		}, {
 			name:     "valid hash",
-			req:      httptest.NewRequest("GET", "/transaction/" + url.PathEscape(txHash), nil),
+			req:      httptest.NewRequest("GET", "/transaction/" + url.QueryEscape(txHash), nil),
 			status:   http.StatusOK,
 			// The tx hash isn't part of the response, just make sure a valid tx is returned.
 			wantbody: "Nonce",

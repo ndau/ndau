@@ -15,10 +15,6 @@ type BalanceHistoryItem struct {
 	TxHash    string
 }
 
-// ChaosHistoryResponse struct
-type ChaosHistoryResponse struct {
-}
-
 // OrderHistoryRecord struct
 type OrderHistoryRecord struct {
 	Timestamp math.Timestamp

@@ -85,7 +85,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
 	}
-	metasearch := search.(*srch.Client)
+	client := search.(*srch.Client)
 
 	paramsString := string(request.GetData())
 	var params srch.QueryParams
@@ -98,7 +98,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 
 	switch params.Command {
 	case srch.HeightByBlockHashCommand:
-		height, err := metasearch.SearchBlockHash(params.Hash)
+		height, err := client.SearchBlockHash(params.Hash)
 		if err != nil {
 			app.QueryError(err, response, "height by block hash search fail")
 			return
@@ -106,7 +106,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 		value := fmt.Sprintf("%d", height)
 		response.Value = []byte(value)
 	case srch.HeightByTxHashCommand:
-		height, offset, err := metasearch.SearchTxHash(params.Hash)
+		height, offset, err := client.SearchTxHash(params.Hash)
 		if err != nil {
 			app.QueryError(err, response, "height by tx hash search fail")
 			return
