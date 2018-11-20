@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -34,13 +33,6 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-			return
-		}
-
-		// Base 64 characters need path-escaping.
-		txhash, err = url.PathUnescape(txhash)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not unescape tx hash", http.StatusInternalServerError))
 			return
 		}
 

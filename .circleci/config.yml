@@ -16,10 +16,10 @@ jobs:
       ELB_SUBDOMAIN: api.ndau.tech # nodes will be accessible from mario.api.ndau.tech
       # These node names are removed first before new ones are installed.
       # If these names change, the old names will have to be removed manually.
-      NODE_NAMES: "devnet-0 devnet-1"
+      NODE_NAMES: "devnet-0 devnet-1 devnet-2 devnet-3 devnet-4"
       RELEASE_NAME: "devnet"
       # Number of nodes to deploy
-      NODE_NUM: "2"
+      NODE_NUM: "5"
       KUBECONFIG: /root/kubeconfig
     steps:
       - add_ssh_keys:

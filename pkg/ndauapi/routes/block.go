@@ -198,7 +198,7 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 		// Prepare search params.
 		params := search.QueryParams{
 			Command: search.HeightByBlockHashCommand,
-			Hash:    blockhash, // Hex digits are path-escaped by default.
+			Hash:    blockhash, // Hex digits are query-escaped by default.
 		}
 		paramsBuf := &bytes.Buffer{}
 		json.NewEncoder(paramsBuf).Encode(params)
