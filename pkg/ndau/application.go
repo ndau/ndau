@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/oneiro-ndev/system_vars/pkg/svi"
-
 	"github.com/BurntSushi/toml"
 	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
@@ -21,6 +19,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/types"
@@ -117,10 +116,10 @@ func (app *App) updateSystemVariableCache() {
 		app.GetLogger().WithError(err).Error(
 			"failed update of system variable cache",
 		)
-		// given that the system hasn't properly come up yet, I feel no shame
-		// simply aborting here
-		panic(err)
 	}
+	// if err == nil, then the state is valid. Otherwise, this blocks us from
+	// returning potentially invalid information to callers.
+	app.SetStateValidity(err)
 }
 
 // InitChain performs necessary chain initialization.

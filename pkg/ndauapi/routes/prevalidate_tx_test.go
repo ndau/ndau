@@ -3,6 +3,7 @@ package routes_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -38,6 +39,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 		status  int
 		want    routes.SubmitResult
 		wanterr string
+		skip    bool
 	}{
 		{
 			name:    "no body",
@@ -45,6 +47,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "unable to decode",
+			skip:    !isIntegration,
 		},
 		{
 			name:    "blank request",
@@ -52,6 +55,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "could not unmarshal",
+			skip:    !isIntegration,
 		},
 		{
 			name: "not base64",
@@ -61,6 +65,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "could not be decoded as base64",
+			skip:    !isIntegration,
 		},
 		{
 			name: "not a tx",
@@ -70,6 +75,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "deserialization failed",
+			skip:    !isIntegration,
 		},
 		{
 			name: "valid tx but no node",
@@ -79,16 +85,26 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			status:  http.StatusInternalServerError,
 			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
+			skip:    isIntegration,
 		},
 	}
 
 	// set up apparatus
-	cf, _, _ := cfg.New()
+	cf, _, err := cfg.New()
+	// Integration tests must have a valid config, non-integration tests expect an invalid one.
+	if isIntegration == (err != nil) {
+		t.Errorf("Unexpected config error: %s", err)
+		return
+	}
 	handler := baseHandler(cf)
 
 	// run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.skip {
+				t.Skip(fmt.Sprintf("isIntegration is %v", isIntegration))
+			}
+
 			w := httptest.NewRecorder()
 			var req *http.Request
 			if tt.body != nil {
