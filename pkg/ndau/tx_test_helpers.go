@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
+
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -159,8 +161,7 @@ func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.Res
 		// set the cached tx fee script to unconditionally return 1
 		systemCache.Set(
 			sv.TxFeeScriptName,
-			// script: oAAaiA==
-			wkt.Bytes([]byte{0xa0, 0x00, 0x1a, 0x88}),
+			wkt.Bytes(vm.MiniAsm("handler 0 one enddef").Bytes()),
 		)
 	}))
 	return resp

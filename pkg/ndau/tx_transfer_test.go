@@ -1,10 +1,10 @@
 package ndau
 
 import (
-	"encoding/base64"
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -297,7 +297,7 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSignatureMustValidate(t *testing.T) {
+func TestTransferSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
 	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	// I'm almost completely certain that this will be an invalid signature
@@ -349,7 +349,7 @@ func TestTransfersOfMoreThanSourceBalanceAreInvalid(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSequenceMustIncrease(t *testing.T) {
+func TestTransferSequenceMustIncrease(t *testing.T) {
 	app, private := initAppTx(t)
 	invalidZero := generateTransfer(t, 1, 0, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, invalidZero)
@@ -418,14 +418,12 @@ func TestValidationScriptValidatesTransfers(t *testing.T) {
 	public2, private2, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// this script should be pretty stable for future versions of chaincode:
-	// it means `one and not`, which just ensures that the first transfer key
+	// this script just ensures that the first transfer key
 	// is used, no matter how many keys are included
-	script, err := base64.StdEncoding.DecodeString("oAAasUiI")
-	require.NoError(t, err)
+	script := vm.MiniAsm("handler 0 one and not enddef")
 
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.ValidationScript = script
+		ad.ValidationScript = script.Bytes()
 		ad.ValidationKeys = append(ad.ValidationKeys, public2)
 	})
 
