@@ -34,9 +34,13 @@ func NewField(name, nativeType string) Field {
 }
 
 // AssignmentErrHandler is the err handler for fallible conversions as appropriate
-func (f Field) AssignmentErrHandler() string {
+func (f Field) AssignmentErrHandler(mtype string) string {
 	if f.FallibleNativeConversion {
-		return fmt.Sprintf("if err != nil { return nil, errors.Wrap(err, \"%s\") }\n", strings.ToLower(f.Name))
+		return fmt.Sprintf(
+			"if err != nil { return %s, errors.Wrap(err, \"%s\") }\n",
+			mtype,
+			strings.ToLower(f.Name),
+		)
 	}
 	return ""
 }
