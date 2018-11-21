@@ -30,6 +30,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(14): &ClaimNodeReward{},
 	metatx.TxID(15): &TransferAndLock{},
 	metatx.TxID(16): &CommandValidatorChange{},
+	metatx.TxID(17): &SidechainTx{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -253,3 +254,17 @@ type CommandValidatorChange struct {
 }
 
 var _ NTransactable = (*CommandValidatorChange)(nil)
+
+// A SidechainTx is used to validate and pay for transactions on side chains.
+type SidechainTx struct {
+	Source              address.Address       `msg:"src" chain:"1,Tx_Source"`
+	SidechainID         byte                  `msg:"sch" chain:"42,Tx_SidechainID"`
+	TxID                metatx.TxID           `msg:"tid" chain:"43,Tx_SidechainTxID"`
+	TxSize              uint32                `msg:"sze" chain:"44,Tx_SidechainTxSize"`
+	TxHash              string                `msg:"hsh" chain:"45,Tx_SidechainTxHash"`
+	SidechainSignatures []signature.Signature `msg:"csg" chain:"46,Tx_SidechainSignatures"`
+	Sequence            uint64                `msg:"seq"`
+	Signatures          []signature.Signature `msg:"sig"`
+}
+
+var _ NTransactable = (*SidechainTx)(nil)
