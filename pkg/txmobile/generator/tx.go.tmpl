@@ -61,10 +61,10 @@ func New{{.Name}}({{range .Fields}}{{if not .ConstructorExcluded}}
 		err := {{.NameSlice}}[idx].{{call .ConvertToNative (printf "%s[idx]" (.Name | Lower))}}
 		{{- else -}}
 		{{.NameNative}}{{.AssignmentStmt .FallibleNativeConversion .PreCreateNative }}{{call .ConvertToNative (printf "%s[idx]" (.Name | Lower))}}
-		{{.NameSlice}}[idx] = {{.NameNative}}
 		{{- end}}
 		{{.AssignmentErrHandler}}
 		{{- end}}
+		{{- .NameSlice}}[idx] = {{if .PointerNativeConversion}}*{{end}}{{.NameNative}}
 	}
 	{{else}}
 	{{- if .FallibleNativeConversion -}}
@@ -82,7 +82,7 @@ func New{{.Name}}({{range .Fields}}{{if not .ConstructorExcluded}}
 	return &{{.Name}}{
 		tx: ndau.{{.Name}}{
 			{{- range .Fields}}{{if not .ConstructorExcluded}}
-			{{.Name}}: {{ if .Type | IsSlice }}{{.NameSlice}}{{else if .FallibleNativeConversion}}{{.NameNative}}{{else}}{{call .ConvertToNative (.Name | Lower)}}{{end}},
+			{{.Name}}: {{ if .Type | IsSlice }}{{.NameSlice}}{{else}}{{if .PointerNativeConversion}}*{{end}}{{if .FallibleNativeConversion}}{{.NameNative}}{{else}}{{call .ConvertToNative (.Name | Lower)}}{{end}}{{end}},
 			{{- end}}{{end}}
 		},
 	}, nil

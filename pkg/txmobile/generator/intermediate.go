@@ -12,6 +12,7 @@ type Field struct {
 	MobileType               string
 	ConvertToNative          func(string) string
 	FallibleNativeConversion bool
+	PointerNativeConversion  bool
 	PreCreateNative          bool
 	ConvertToMobile          func(string) string
 	FallibleMobileConversion bool

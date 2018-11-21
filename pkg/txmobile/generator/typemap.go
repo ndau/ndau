@@ -44,48 +44,52 @@ func (f *Field) fillFieldFromType() error {
 		f.FallibleNativeConversion = true
 
 	case "address.Address":
-		f.MobileType = "*keyaddr.Address"
+		f.MobileType = "string"
 		f.ConvertToMobile = func(s string) string {
 			return fmt.Sprintf(
-				"keyaddr.Address{Address: %s.String()}",
+				"%s.String()",
 				s,
 			)
 		}
 		f.ConvertToNative = func(s string) string {
 			return fmt.Sprintf(
-				"address.Validate(%s.Address)",
+				"address.Validate(%s)",
 				s,
 			)
 		}
 		f.FallibleNativeConversion = true
 
 	case "signature.PublicKey", "[]signature.PublicKey":
-		f.MobileType = "*keyaddr.Key"
+		f.MobileType = "string"
 		f.ConvertToMobile = func(s string) string {
 			return fmt.Sprintf(
-				"keyaddr.KeyFromPublic(%s)",
+				"%s.MarshalString()",
 				s,
 			)
 		}
 		f.FallibleMobileConversion = true
-		f.PointerMobileConversion = true
 
-		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s.ToPublicKey()", s) }
+		f.ConvertToNative = func(s string) string {
+			return fmt.Sprintf("signature.ParsePublicKey(%s)", s)
+		}
 		f.FallibleNativeConversion = true
+		f.PointerNativeConversion = true
 
 	case "signature.Signature", "[]signature.Signature":
-		f.MobileType = "*keyaddr.Signature"
+		f.MobileType = "string"
 		f.ConvertToMobile = func(s string) string {
 			return fmt.Sprintf(
-				"keyaddr.SignatureFrom(%s)",
+				"%s.MarshalString()",
 				s,
 			)
 		}
 		f.FallibleMobileConversion = true
-		f.PointerMobileConversion = true
 
-		f.ConvertToNative = func(s string) string { return fmt.Sprintf("%s.ToSignature()", s) }
+		f.ConvertToNative = func(s string) string {
+			return fmt.Sprintf("signature.ParseSignature(%s)", s)
+		}
 		f.FallibleNativeConversion = true
+		f.PointerNativeConversion = true
 
 	default:
 		return fmt.Errorf("unknown type: %s", f.Type)
