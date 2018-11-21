@@ -318,7 +318,13 @@ _**Produces:**_ `[application/json]`
 _**Writes:**_
 ```json
         {
-          "Items": null
+          "Items": [
+            {
+              "Balance": 123000000,
+              "Timestamp": "2018-07-18 20:01:02.784856 +0000 UTC",
+              "TxHash": "abc123def456"
+            }
+          ]
         }
 ```
 
@@ -702,7 +708,14 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "History": [
+            {
+              "Height": 12345,
+              "Value": "dmFsdWU="
+            }
+          ]
+        }
 ```
 
 

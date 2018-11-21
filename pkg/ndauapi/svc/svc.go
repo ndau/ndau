@@ -10,6 +10,7 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
+	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -46,7 +47,7 @@ var dummyAccount = backing.AccountData{
 	ValidationKeys:     []signature.PublicKey{dummyPublic},
 	WeightedAverageAge: 30 * types.Day,
 }
-var dummyTimestamp = "2018-07-18T20:01:02Z"
+var dummyTimestamp = "2018-07-18 20:01:02.784856 +0000 UTC"
 var dummyBlockMeta = tmtypes.BlockMeta{}
 var dummyResultBlock = rpctypes.ResultBlock{
 	BlockMeta: &dummyBlockMeta,
@@ -126,7 +127,11 @@ func New(cf cfg.Cfg) *boneful.Service {
 		The result is sorted chronologically.`).
 		Operation("AccountHistory").
 		Produces(JSON).
-		Writes(routes.AccountHistoryItems{}))
+		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
+			Balance:   123000000,
+			Timestamp: dummyTimestamp,
+			TxHash:    "abc123def456",
+		}}}))
 
 	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockCurrent").
@@ -168,7 +173,10 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
-		Writes(routes.ChaosHistoryResponse{}))
+		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
+			Height: 12345,
+			Value: []byte("value"),
+		}}}}))
 
 	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
 		Operation("ChaosNamespaceAll").
