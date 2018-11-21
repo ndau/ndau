@@ -207,7 +207,7 @@ func (c *Config) RecoverAccount(name string, phrase []string, lang string) error
 	}
 	ekey, err := key.NewMaster(seed)
 	if err != nil {
-		return errors.Wrap(err, "recovering master key")
+		return errors.Wrap(err, "recovering root key")
 	}
 	private, err := ekey.SPrivKey()
 	if err != nil {
@@ -215,7 +215,7 @@ func (c *Config) RecoverAccount(name string, phrase []string, lang string) error
 	}
 	publice, err := ekey.Public()
 	if err != nil {
-		return errors.Wrap(err, "recovering master public key")
+		return errors.Wrap(err, "recovering root public key")
 	}
 	public, err := publice.SPubKey()
 	if err != nil {
