@@ -17,6 +17,7 @@ type Account struct {
 	Address          address.Address `toml:"address"`
 	Ownership        Keypair         `toml:"ownership"`
 	Transfer         []Keypair       `toml:"transfer"`
+	Root             Keypair         `toml:"root"`
 	ValidationScript chaincode       `toml:"validation_script"`
 }
 
@@ -80,8 +81,8 @@ func FilterK(keys []signature.PrivateKey, k *int) []signature.PrivateKey {
 
 const (
 	transferPathFmt = "/44'/20036'/%d/%d"
-	defaultField3   = 100
-	initialField4   = 0
+	defaultField3   = TransferKeyOffset
+	initialField4   = 1
 )
 
 func (a *Account) highestTransferPath() (uint64, uint64) {
