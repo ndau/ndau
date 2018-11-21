@@ -9,7 +9,6 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
@@ -42,30 +41,23 @@ type ChangeValidation struct {
 
 // NewChangeValidation constructs a new unsigned ChangeValidation transaction
 func NewChangeValidation(
-	target *keyaddr.Address,
-	newkeys []*keyaddr.Key,
+	target string,
+	newkeys []string,
 	validationscript string,
 	sequence int64,
 ) (*ChangeValidation, error) {
-	if target == nil {
-		return nil, errors.New("target must not be nil")
-	}
-	targetN, err := address.Validate(target.Address)
+	targetN, err := address.Validate(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "target")
 	}
 
-	if newkeys == nil {
-		return nil, errors.New("newkeys must not be nil")
-	}
 	newkeysS := make([]signature.PublicKey, len(newkeys))
 	for idx := range newkeys {
-		newkeysN, err := newkeys[idx].ToPublicKey()
-		newkeysS[idx] = newkeysN
+		newkeysN, err := signature.ParsePublicKey(newkeys[idx])
 		if err != nil {
 			return nil, errors.Wrap(err, "newkeys")
 		}
-
+		newkeysS[idx] = *newkeysN
 	}
 	validationscriptN, err := base64.StdEncoding.DecodeString(validationscript)
 	if err != nil {
@@ -114,15 +106,15 @@ func (tx *ChangeValidation) ToB64String() (string, error) {
 
 // GetTarget gets the target of the ChangeValidation
 //
-// Returns `nil` if ChangeValidation is `nil` or if native conversion is fallible and
+// Returns a zero value if ChangeValidation is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ChangeValidation) GetTarget() *keyaddr.Address {
+func (tx *ChangeValidation) GetTarget() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
-	target := keyaddr.Address{Address: tx.tx.Target.String()}
+	target := tx.tx.Target.String()
 
-	return &target
+	return target
 }
 
 // GetNumNewKeys gets the number of newkeys of the ChangeValidation
@@ -136,16 +128,16 @@ func (tx *ChangeValidation) GetNumNewKeys() int {
 }
 
 // GetNewKey gets a particular newkey from this ChangeValidation
-func (tx *ChangeValidation) GetNewKey(idx int) (*keyaddr.Key, error) {
+func (tx *ChangeValidation) GetNewKey(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil changevalidation")
+		return *new(string), errors.New("nil changevalidation")
 	}
 	if idx < 0 || idx >= len(tx.tx.NewKeys) {
-		return nil, errors.New("invalid index")
+		return *new(string), errors.New("invalid index")
 	}
-	newkey, err := keyaddr.KeyFromPublic(tx.tx.NewKeys[idx])
+	newkey, err := tx.tx.NewKeys[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "newkeys")
+		return *new(string), errors.Wrap(err, "newkeys")
 	}
 
 	return newkey, nil
@@ -153,28 +145,28 @@ func (tx *ChangeValidation) GetNewKey(idx int) (*keyaddr.Key, error) {
 
 // GetValidationScript gets the validationscript of the ChangeValidation
 //
-// Returns `nil` if ChangeValidation is `nil` or if native conversion is fallible and
+// Returns a zero value if ChangeValidation is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ChangeValidation) GetValidationScript() *string {
+func (tx *ChangeValidation) GetValidationScript() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
 	validationscript := base64.StdEncoding.EncodeToString(tx.tx.ValidationScript)
 
-	return &validationscript
+	return validationscript
 }
 
 // GetSequence gets the sequence of the ChangeValidation
 //
-// Returns `nil` if ChangeValidation is `nil` or if native conversion is fallible and
+// Returns a zero value if ChangeValidation is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ChangeValidation) GetSequence() *int64 {
+func (tx *ChangeValidation) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return *new(int64)
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetNumSignatures gets the number of signatures of the ChangeValidation
@@ -188,16 +180,16 @@ func (tx *ChangeValidation) GetNumSignatures() int {
 }
 
 // GetSignature gets a particular signature from this ChangeValidation
-func (tx *ChangeValidation) GetSignature(idx int) (*keyaddr.Signature, error) {
+func (tx *ChangeValidation) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil changevalidation")
+		return *new(string), errors.New("nil changevalidation")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return nil, errors.New("invalid index")
+		return *new(string), errors.New("invalid index")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
+	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signatures")
+		return *new(string), errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
@@ -212,15 +204,15 @@ func (tx *ChangeValidation) SignableBytes() (string, error) {
 }
 
 // AppendSignature appends a signature to this changevalidation
-func (tx *ChangeValidation) AppendSignature(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *ChangeValidation) AppendSignature(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
 

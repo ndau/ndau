@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -41,13 +41,10 @@ type Notify struct {
 
 // NewNotify constructs a new unsigned Notify transaction
 func NewNotify(
-	target *keyaddr.Address,
+	target string,
 	sequence int64,
 ) (*Notify, error) {
-	if target == nil {
-		return nil, errors.New("target must not be nil")
-	}
-	targetN, err := address.Validate(target.Address)
+	targetN, err := address.Validate(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "target")
 	}
@@ -92,28 +89,28 @@ func (tx *Notify) ToB64String() (string, error) {
 
 // GetTarget gets the target of the Notify
 //
-// Returns `nil` if Notify is `nil` or if native conversion is fallible and
+// Returns a zero value if Notify is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Notify) GetTarget() *keyaddr.Address {
+func (tx *Notify) GetTarget() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
-	target := keyaddr.Address{Address: tx.tx.Target.String()}
+	target := tx.tx.Target.String()
 
-	return &target
+	return target
 }
 
 // GetSequence gets the sequence of the Notify
 //
-// Returns `nil` if Notify is `nil` or if native conversion is fallible and
+// Returns a zero value if Notify is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Notify) GetSequence() *int64 {
+func (tx *Notify) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return *new(int64)
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetNumSignatures gets the number of signatures of the Notify
@@ -127,16 +124,16 @@ func (tx *Notify) GetNumSignatures() int {
 }
 
 // GetSignature gets a particular signature from this Notify
-func (tx *Notify) GetSignature(idx int) (*keyaddr.Signature, error) {
+func (tx *Notify) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil notify")
+		return *new(string), errors.New("nil notify")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return nil, errors.New("invalid index")
+		return *new(string), errors.New("invalid index")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
+	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signatures")
+		return *new(string), errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
@@ -151,15 +148,15 @@ func (tx *Notify) SignableBytes() (string, error) {
 }
 
 // AppendSignature appends a signature to this notify
-func (tx *Notify) AppendSignature(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *Notify) AppendSignature(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
 

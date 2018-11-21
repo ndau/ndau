@@ -9,7 +9,6 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
@@ -42,39 +41,29 @@ type ClaimAccount struct {
 
 // NewClaimAccount constructs a new unsigned ClaimAccount transaction
 func NewClaimAccount(
-	target *keyaddr.Address,
-	ownership *keyaddr.Key,
-	validationkeys []*keyaddr.Key,
+	target string,
+	ownership string,
+	validationkeys []string,
 	validationscript string,
 	sequence int64,
 ) (*ClaimAccount, error) {
-	if target == nil {
-		return nil, errors.New("target must not be nil")
-	}
-	targetN, err := address.Validate(target.Address)
+	targetN, err := address.Validate(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "target")
 	}
 
-	if ownership == nil {
-		return nil, errors.New("ownership must not be nil")
-	}
-	ownershipN, err := ownership.ToPublicKey()
+	ownershipN, err := signature.ParsePublicKey(ownership)
 	if err != nil {
 		return nil, errors.Wrap(err, "ownership")
 	}
 
-	if validationkeys == nil {
-		return nil, errors.New("validationkeys must not be nil")
-	}
 	validationkeysS := make([]signature.PublicKey, len(validationkeys))
 	for idx := range validationkeys {
-		validationkeysN, err := validationkeys[idx].ToPublicKey()
-		validationkeysS[idx] = validationkeysN
+		validationkeysN, err := signature.ParsePublicKey(validationkeys[idx])
 		if err != nil {
 			return nil, errors.Wrap(err, "validationkeys")
 		}
-
+		validationkeysS[idx] = *validationkeysN
 	}
 	validationscriptN, err := base64.StdEncoding.DecodeString(validationscript)
 	if err != nil {
@@ -84,7 +73,7 @@ func NewClaimAccount(
 	return &ClaimAccount{
 		tx: ndau.ClaimAccount{
 			Target:           targetN,
-			Ownership:        ownershipN,
+			Ownership:        *ownershipN,
 			ValidationKeys:   validationkeysS,
 			ValidationScript: validationscriptN,
 			Sequence:         uint64(sequence),
@@ -124,28 +113,28 @@ func (tx *ClaimAccount) ToB64String() (string, error) {
 
 // GetTarget gets the target of the ClaimAccount
 //
-// Returns `nil` if ClaimAccount is `nil` or if native conversion is fallible and
+// Returns a zero value if ClaimAccount is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimAccount) GetTarget() *keyaddr.Address {
+func (tx *ClaimAccount) GetTarget() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
-	target := keyaddr.Address{Address: tx.tx.Target.String()}
+	target := tx.tx.Target.String()
 
-	return &target
+	return target
 }
 
 // GetOwnership gets the ownership of the ClaimAccount
 //
-// Returns `nil` if ClaimAccount is `nil` or if native conversion is fallible and
+// Returns a zero value if ClaimAccount is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimAccount) GetOwnership() (*keyaddr.Key, error) {
+func (tx *ClaimAccount) GetOwnership() (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil ClaimAccount")
+		return *new(string), errors.New("nil ClaimAccount")
 	}
-	ownership, err := keyaddr.KeyFromPublic(tx.tx.Ownership)
+	ownership, err := tx.tx.Ownership.MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "ownership")
+		return *new(string), errors.Wrap(err, "ownership")
 	}
 
 	return ownership, nil
@@ -162,16 +151,16 @@ func (tx *ClaimAccount) GetNumValidationKeys() int {
 }
 
 // GetValidationKey gets a particular validationkey from this ClaimAccount
-func (tx *ClaimAccount) GetValidationKey(idx int) (*keyaddr.Key, error) {
+func (tx *ClaimAccount) GetValidationKey(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil claimaccount")
+		return *new(string), errors.New("nil claimaccount")
 	}
 	if idx < 0 || idx >= len(tx.tx.ValidationKeys) {
-		return nil, errors.New("invalid index")
+		return *new(string), errors.New("invalid index")
 	}
-	validationkey, err := keyaddr.KeyFromPublic(tx.tx.ValidationKeys[idx])
+	validationkey, err := tx.tx.ValidationKeys[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "validationkeys")
+		return *new(string), errors.Wrap(err, "validationkeys")
 	}
 
 	return validationkey, nil
@@ -179,41 +168,41 @@ func (tx *ClaimAccount) GetValidationKey(idx int) (*keyaddr.Key, error) {
 
 // GetValidationScript gets the validationscript of the ClaimAccount
 //
-// Returns `nil` if ClaimAccount is `nil` or if native conversion is fallible and
+// Returns a zero value if ClaimAccount is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimAccount) GetValidationScript() *string {
+func (tx *ClaimAccount) GetValidationScript() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
 	validationscript := base64.StdEncoding.EncodeToString(tx.tx.ValidationScript)
 
-	return &validationscript
+	return validationscript
 }
 
 // GetSequence gets the sequence of the ClaimAccount
 //
-// Returns `nil` if ClaimAccount is `nil` or if native conversion is fallible and
+// Returns a zero value if ClaimAccount is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimAccount) GetSequence() *int64 {
+func (tx *ClaimAccount) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return *new(int64)
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetSignature gets the signature of the ClaimAccount
 //
-// Returns `nil` if ClaimAccount is `nil` or if native conversion is fallible and
+// Returns a zero value if ClaimAccount is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ClaimAccount) GetSignature() (*keyaddr.Signature, error) {
+func (tx *ClaimAccount) GetSignature() (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil ClaimAccount")
+		return *new(string), errors.New("nil ClaimAccount")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signature)
+	signature, err := tx.tx.Signature.MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signature")
+		return *new(string), errors.Wrap(err, "signature")
 	}
 
 	return signature, nil
@@ -228,15 +217,15 @@ func (tx *ClaimAccount) SignableBytes() (string, error) {
 }
 
 // Sign signs this claimaccount
-func (tx *ClaimAccount) Sign(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *ClaimAccount) Sign(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signature = sigS
+	tx.tx.Signature = *sigS
 	return nil
 }
 

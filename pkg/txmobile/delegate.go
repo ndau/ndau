@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -41,22 +41,16 @@ type Delegate struct {
 
 // NewDelegate constructs a new unsigned Delegate transaction
 func NewDelegate(
-	target *keyaddr.Address,
-	node *keyaddr.Address,
+	target string,
+	node string,
 	sequence int64,
 ) (*Delegate, error) {
-	if target == nil {
-		return nil, errors.New("target must not be nil")
-	}
-	targetN, err := address.Validate(target.Address)
+	targetN, err := address.Validate(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "target")
 	}
 
-	if node == nil {
-		return nil, errors.New("node must not be nil")
-	}
-	nodeN, err := address.Validate(node.Address)
+	nodeN, err := address.Validate(node)
 	if err != nil {
 		return nil, errors.Wrap(err, "node")
 	}
@@ -102,41 +96,41 @@ func (tx *Delegate) ToB64String() (string, error) {
 
 // GetTarget gets the target of the Delegate
 //
-// Returns `nil` if Delegate is `nil` or if native conversion is fallible and
+// Returns a zero value if Delegate is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Delegate) GetTarget() *keyaddr.Address {
+func (tx *Delegate) GetTarget() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
-	target := keyaddr.Address{Address: tx.tx.Target.String()}
+	target := tx.tx.Target.String()
 
-	return &target
+	return target
 }
 
 // GetNode gets the node of the Delegate
 //
-// Returns `nil` if Delegate is `nil` or if native conversion is fallible and
+// Returns a zero value if Delegate is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Delegate) GetNode() *keyaddr.Address {
+func (tx *Delegate) GetNode() string {
 	if tx == nil {
-		return nil
+		return *new(string)
 	}
-	node := keyaddr.Address{Address: tx.tx.Node.String()}
+	node := tx.tx.Node.String()
 
-	return &node
+	return node
 }
 
 // GetSequence gets the sequence of the Delegate
 //
-// Returns `nil` if Delegate is `nil` or if native conversion is fallible and
+// Returns a zero value if Delegate is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Delegate) GetSequence() *int64 {
+func (tx *Delegate) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return *new(int64)
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetNumSignatures gets the number of signatures of the Delegate
@@ -150,16 +144,16 @@ func (tx *Delegate) GetNumSignatures() int {
 }
 
 // GetSignature gets a particular signature from this Delegate
-func (tx *Delegate) GetSignature(idx int) (*keyaddr.Signature, error) {
+func (tx *Delegate) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil delegate")
+		return *new(string), errors.New("nil delegate")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return nil, errors.New("invalid index")
+		return *new(string), errors.New("invalid index")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
+	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signatures")
+		return *new(string), errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
@@ -174,15 +168,15 @@ func (tx *Delegate) SignableBytes() (string, error) {
 }
 
 // AppendSignature appends a signature to this delegate
-func (tx *Delegate) AppendSignature(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *Delegate) AppendSignature(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
 
