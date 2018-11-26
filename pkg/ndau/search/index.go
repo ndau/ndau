@@ -123,6 +123,11 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 	updateCount = 0
 	insertCount = 0
 
+	// If we have no block hash, we have nothing to index.
+	if search.blockHash == "" {
+		return updateCount, insertCount, nil
+	}
+
 	heightValue := fmt.Sprintf("%d", search.blockHeight)
 
 	blockHashKey := formatBlockHashToHeightSearchKey(search.blockHash)

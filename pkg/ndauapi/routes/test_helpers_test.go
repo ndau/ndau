@@ -76,7 +76,7 @@ func createNdauBlock(t *testing.T) string {
 		t.Errorf("Error creating account: %s", err)
 	}
 
-	err = exec.Command(ndauTool, "-v", "rfe", "10", acctName).Run()
+	err = exec.Command(ndauTool, "rfe", "10", acctName).Run()
 	if err != nil {
 		t.Errorf("Error issuing ndau: %s", err)
 	}
