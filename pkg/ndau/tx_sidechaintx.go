@@ -1,7 +1,11 @@
 package ndau
 
 import (
+	"fmt"
+
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -60,10 +64,28 @@ func (tx *SidechainTx) Validate(appInt interface{}) error {
 	return err
 }
 
+func sidechainPayment(sidechainID byte, stxHash string) string {
+	return fmt.Sprintf("%d: %s", sidechainID, stxHash)
+}
+
 // Apply satisfies metatx.Transactable
 func (tx *SidechainTx) Apply(appInt interface{}) error {
 	app := appInt.(*App)
-	return app.applyTxDetails(tx)
+	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
+	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		acct := state.Accounts[tx.Source.String()]
+		if acct.SidechainPayments == nil {
+			acct.SidechainPayments = make(map[string]struct{})
+		}
+		acct.SidechainPayments[sidechainPayment(tx.SidechainID, tx.TxHash)] = struct{}{}
+		state.Accounts[tx.Source.String()] = acct
+		return state, nil
+	})
 }
 
 // GetSource implements sourcer
