@@ -42,7 +42,6 @@ type ChangeValidation struct {
 // NewChangeValidation constructs a new unsigned ChangeValidation transaction
 func NewChangeValidation(
 	target string,
-	newkeys []string,
 	validationscript string,
 	sequence int64,
 ) (*ChangeValidation, error) {
@@ -51,14 +50,6 @@ func NewChangeValidation(
 		return nil, errors.Wrap(err, "target")
 	}
 
-	newkeysS := make([]signature.PublicKey, len(newkeys))
-	for idx := range newkeys {
-		newkeysN, err := signature.ParsePublicKey(newkeys[idx])
-		if err != nil {
-			return nil, errors.Wrap(err, "newkeys")
-		}
-		newkeysS[idx] = *newkeysN
-	}
 	validationscriptN, err := base64.StdEncoding.DecodeString(validationscript)
 	if err != nil {
 		return nil, errors.Wrap(err, "validationscript")
@@ -67,7 +58,6 @@ func NewChangeValidation(
 	return &ChangeValidation{
 		tx: ndau.ChangeValidation{
 			Target:           targetN,
-			NewKeys:          newkeysS,
 			ValidationScript: validationscriptN,
 			Sequence:         uint64(sequence),
 		},
@@ -141,6 +131,23 @@ func (tx *ChangeValidation) GetNewKey(idx int) (string, error) {
 	}
 
 	return newkey, nil
+}
+
+// AppendNewKey adds a newkey to the ChangeValidation
+func (tx *ChangeValidation) AppendNewKey(newkey string) error {
+	newkeysN, err := signature.ParsePublicKey(newkey)
+	if err != nil {
+		return errors.Wrap(err, "newkeys")
+	}
+
+	tx.tx.NewKeys = append(tx.tx.NewKeys, *newkeysN)
+
+	return nil
+}
+
+// ClearNewKeys removes all newkeys from the ChangeValidation
+func (tx *ChangeValidation) ClearNewKeys() {
+	tx.tx.NewKeys = []signature.PublicKey{}
 }
 
 // GetValidationScript gets the validationscript of the ChangeValidation

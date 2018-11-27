@@ -43,7 +43,6 @@ type ClaimAccount struct {
 func NewClaimAccount(
 	target string,
 	ownership string,
-	validationkeys []string,
 	validationscript string,
 	sequence int64,
 ) (*ClaimAccount, error) {
@@ -57,14 +56,6 @@ func NewClaimAccount(
 		return nil, errors.Wrap(err, "ownership")
 	}
 
-	validationkeysS := make([]signature.PublicKey, len(validationkeys))
-	for idx := range validationkeys {
-		validationkeysN, err := signature.ParsePublicKey(validationkeys[idx])
-		if err != nil {
-			return nil, errors.Wrap(err, "validationkeys")
-		}
-		validationkeysS[idx] = *validationkeysN
-	}
 	validationscriptN, err := base64.StdEncoding.DecodeString(validationscript)
 	if err != nil {
 		return nil, errors.Wrap(err, "validationscript")
@@ -74,7 +65,6 @@ func NewClaimAccount(
 		tx: ndau.ClaimAccount{
 			Target:           targetN,
 			Ownership:        *ownershipN,
-			ValidationKeys:   validationkeysS,
 			ValidationScript: validationscriptN,
 			Sequence:         uint64(sequence),
 		},
@@ -164,6 +154,23 @@ func (tx *ClaimAccount) GetValidationKey(idx int) (string, error) {
 	}
 
 	return validationkey, nil
+}
+
+// AppendValidationKey adds a validationkey to the ClaimAccount
+func (tx *ClaimAccount) AppendValidationKey(validationkey string) error {
+	validationkeysN, err := signature.ParsePublicKey(validationkey)
+	if err != nil {
+		return errors.Wrap(err, "validationkeys")
+	}
+
+	tx.tx.ValidationKeys = append(tx.tx.ValidationKeys, *validationkeysN)
+
+	return nil
+}
+
+// ClearValidationKeys removes all validationkeys from the ClaimAccount
+func (tx *ClaimAccount) ClearValidationKeys() {
+	tx.tx.ValidationKeys = []signature.PublicKey{}
 }
 
 // GetValidationScript gets the validationscript of the ClaimAccount
