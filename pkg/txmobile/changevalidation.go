@@ -100,7 +100,7 @@ func (tx *ChangeValidation) ToB64String() (string, error) {
 // conversion failed.
 func (tx *ChangeValidation) GetTarget() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	target := tx.tx.Target.String()
 
@@ -120,14 +120,14 @@ func (tx *ChangeValidation) GetNumNewKeys() int {
 // GetNewKey gets a particular newkey from this ChangeValidation
 func (tx *ChangeValidation) GetNewKey(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil changevalidation")
+		return "", errors.New("nil changevalidation")
 	}
 	if idx < 0 || idx >= len(tx.tx.NewKeys) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	newkey, err := tx.tx.NewKeys[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "newkeys")
+		return "", errors.Wrap(err, "newkeys")
 	}
 
 	return newkey, nil
@@ -156,7 +156,7 @@ func (tx *ChangeValidation) ClearNewKeys() {
 // conversion failed.
 func (tx *ChangeValidation) GetValidationScript() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	validationscript := base64.StdEncoding.EncodeToString(tx.tx.ValidationScript)
 
@@ -169,7 +169,7 @@ func (tx *ChangeValidation) GetValidationScript() string {
 // conversion failed.
 func (tx *ChangeValidation) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -189,14 +189,14 @@ func (tx *ChangeValidation) GetNumSignatures() int {
 // GetSignature gets a particular signature from this ChangeValidation
 func (tx *ChangeValidation) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil changevalidation")
+		return "", errors.New("nil changevalidation")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil

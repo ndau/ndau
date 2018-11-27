@@ -100,7 +100,7 @@ func (tx *Delegate) ToB64String() (string, error) {
 // conversion failed.
 func (tx *Delegate) GetTarget() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	target := tx.tx.Target.String()
 
@@ -113,7 +113,7 @@ func (tx *Delegate) GetTarget() string {
 // conversion failed.
 func (tx *Delegate) GetNode() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	node := tx.tx.Node.String()
 
@@ -126,7 +126,7 @@ func (tx *Delegate) GetNode() string {
 // conversion failed.
 func (tx *Delegate) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -146,14 +146,14 @@ func (tx *Delegate) GetNumSignatures() int {
 // GetSignature gets a particular signature from this Delegate
 func (tx *Delegate) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil delegate")
+		return "", errors.New("nil delegate")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil

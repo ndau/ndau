@@ -107,7 +107,7 @@ func (tx *ClaimAccount) ToB64String() (string, error) {
 // conversion failed.
 func (tx *ClaimAccount) GetTarget() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	target := tx.tx.Target.String()
 
@@ -120,11 +120,11 @@ func (tx *ClaimAccount) GetTarget() string {
 // conversion failed.
 func (tx *ClaimAccount) GetOwnership() (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil ClaimAccount")
+		return "", errors.New("nil ClaimAccount")
 	}
 	ownership, err := tx.tx.Ownership.MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "ownership")
+		return "", errors.Wrap(err, "ownership")
 	}
 
 	return ownership, nil
@@ -143,14 +143,14 @@ func (tx *ClaimAccount) GetNumValidationKeys() int {
 // GetValidationKey gets a particular validationkey from this ClaimAccount
 func (tx *ClaimAccount) GetValidationKey(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil claimaccount")
+		return "", errors.New("nil claimaccount")
 	}
 	if idx < 0 || idx >= len(tx.tx.ValidationKeys) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	validationkey, err := tx.tx.ValidationKeys[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "validationkeys")
+		return "", errors.Wrap(err, "validationkeys")
 	}
 
 	return validationkey, nil
@@ -179,7 +179,7 @@ func (tx *ClaimAccount) ClearValidationKeys() {
 // conversion failed.
 func (tx *ClaimAccount) GetValidationScript() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	validationscript := base64.StdEncoding.EncodeToString(tx.tx.ValidationScript)
 
@@ -192,7 +192,7 @@ func (tx *ClaimAccount) GetValidationScript() string {
 // conversion failed.
 func (tx *ClaimAccount) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -205,11 +205,11 @@ func (tx *ClaimAccount) GetSequence() int64 {
 // conversion failed.
 func (tx *ClaimAccount) GetSignature() (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil ClaimAccount")
+		return "", errors.New("nil ClaimAccount")
 	}
 	signature, err := tx.tx.Signature.MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signature")
+		return "", errors.Wrap(err, "signature")
 	}
 
 	return signature, nil

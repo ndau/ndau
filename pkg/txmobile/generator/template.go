@@ -46,7 +46,14 @@ func unslice(s string) string {
 }
 
 func zero(s string) string {
-	return fmt.Sprintf("*new(%s)", s)
+	switch {
+	case s == "string":
+		return `""`
+	case strings.HasPrefix(s, "int"), strings.HasPrefix(s, "uint"):
+		return "0"
+	default:
+		return fmt.Sprintf("*new(%s)", s)
+	}
 }
 
 // ParseTemplate parses the template definition

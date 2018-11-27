@@ -100,7 +100,7 @@ func (tx *Stake) ToB64String() (string, error) {
 // conversion failed.
 func (tx *Stake) GetTarget() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	target := tx.tx.Target.String()
 
@@ -113,7 +113,7 @@ func (tx *Stake) GetTarget() string {
 // conversion failed.
 func (tx *Stake) GetNode() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	node := tx.tx.Node.String()
 
@@ -126,7 +126,7 @@ func (tx *Stake) GetNode() string {
 // conversion failed.
 func (tx *Stake) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -146,14 +146,14 @@ func (tx *Stake) GetNumSignatures() int {
 // GetSignature gets a particular signature from this Stake
 func (tx *Stake) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil stake")
+		return "", errors.New("nil stake")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil

@@ -105,7 +105,7 @@ func (tx *TransferAndLock) ToB64String() (string, error) {
 // conversion failed.
 func (tx *TransferAndLock) GetSource() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	source := tx.tx.Source.String()
 
@@ -118,7 +118,7 @@ func (tx *TransferAndLock) GetSource() string {
 // conversion failed.
 func (tx *TransferAndLock) GetDestination() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	destination := tx.tx.Destination.String()
 
@@ -131,7 +131,7 @@ func (tx *TransferAndLock) GetDestination() string {
 // conversion failed.
 func (tx *TransferAndLock) GetQty() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	qty := int64(tx.tx.Qty)
 
@@ -144,7 +144,7 @@ func (tx *TransferAndLock) GetQty() int64 {
 // conversion failed.
 func (tx *TransferAndLock) GetPeriod() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	period := int64(tx.tx.Period)
 
@@ -157,7 +157,7 @@ func (tx *TransferAndLock) GetPeriod() int64 {
 // conversion failed.
 func (tx *TransferAndLock) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -177,14 +177,14 @@ func (tx *TransferAndLock) GetNumSignatures() int {
 // GetSignature gets a particular signature from this TransferAndLock
 func (tx *TransferAndLock) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil transferandlock")
+		return "", errors.New("nil transferandlock")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil

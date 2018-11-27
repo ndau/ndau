@@ -96,7 +96,7 @@ func (tx *ChangeSettlementPeriod) ToB64String() (string, error) {
 // conversion failed.
 func (tx *ChangeSettlementPeriod) GetTarget() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	target := tx.tx.Target.String()
 
@@ -109,7 +109,7 @@ func (tx *ChangeSettlementPeriod) GetTarget() string {
 // conversion failed.
 func (tx *ChangeSettlementPeriod) GetPeriod() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	period := int64(tx.tx.Period)
 
@@ -122,7 +122,7 @@ func (tx *ChangeSettlementPeriod) GetPeriod() int64 {
 // conversion failed.
 func (tx *ChangeSettlementPeriod) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -142,14 +142,14 @@ func (tx *ChangeSettlementPeriod) GetNumSignatures() int {
 // GetSignature gets a particular signature from this ChangeSettlementPeriod
 func (tx *ChangeSettlementPeriod) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil changesettlementperiod")
+		return "", errors.New("nil changesettlementperiod")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil

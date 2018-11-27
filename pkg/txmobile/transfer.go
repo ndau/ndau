@@ -103,7 +103,7 @@ func (tx *Transfer) ToB64String() (string, error) {
 // conversion failed.
 func (tx *Transfer) GetSource() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	source := tx.tx.Source.String()
 
@@ -116,7 +116,7 @@ func (tx *Transfer) GetSource() string {
 // conversion failed.
 func (tx *Transfer) GetDestination() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	destination := tx.tx.Destination.String()
 
@@ -129,7 +129,7 @@ func (tx *Transfer) GetDestination() string {
 // conversion failed.
 func (tx *Transfer) GetQty() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	qty := int64(tx.tx.Qty)
 
@@ -142,7 +142,7 @@ func (tx *Transfer) GetQty() int64 {
 // conversion failed.
 func (tx *Transfer) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -162,14 +162,14 @@ func (tx *Transfer) GetNumSignatures() int {
 // GetSignature gets a particular signature from this Transfer
 func (tx *Transfer) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil transfer")
+		return "", errors.New("nil transfer")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil

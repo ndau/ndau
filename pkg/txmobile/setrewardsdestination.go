@@ -100,7 +100,7 @@ func (tx *SetRewardsDestination) ToB64String() (string, error) {
 // conversion failed.
 func (tx *SetRewardsDestination) GetSource() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	source := tx.tx.Source.String()
 
@@ -113,7 +113,7 @@ func (tx *SetRewardsDestination) GetSource() string {
 // conversion failed.
 func (tx *SetRewardsDestination) GetDestination() string {
 	if tx == nil {
-		return *new(string)
+		return ""
 	}
 	destination := tx.tx.Destination.String()
 
@@ -126,7 +126,7 @@ func (tx *SetRewardsDestination) GetDestination() string {
 // conversion failed.
 func (tx *SetRewardsDestination) GetSequence() int64 {
 	if tx == nil {
-		return *new(int64)
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
@@ -146,14 +146,14 @@ func (tx *SetRewardsDestination) GetNumSignatures() int {
 // GetSignature gets a particular signature from this SetRewardsDestination
 func (tx *SetRewardsDestination) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return *new(string), errors.New("nil setrewardsdestination")
+		return "", errors.New("nil setrewardsdestination")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return *new(string), errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
 	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return *new(string), errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
