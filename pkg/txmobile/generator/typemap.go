@@ -94,5 +94,19 @@ func (f *Field) fillFieldFromType() error {
 	default:
 		return fmt.Errorf("unknown type: %s", f.Type)
 	}
+
+	if f.Name == "Signatures" || f.Name == "Signature" {
+		f.ConstructorExcluded = true
+		// signatures get special setters, so we don't want the generic kind
+	} else if f.Type == "[]signature.PublicKey" || f.Type == "[]signature.Signature" {
+		// can't just do `if strings.HasPrefix(f.Type, "[]")``, because that would
+		// erroneously hit `[]byte`
+		//
+		// this must be an "else if" instead of an isolated "if" or "switch" so that
+		// we don't end up with redundant "appendsignature" methods
+		f.ConstructorExcluded = true
+		f.MakeSetter = true
+	}
+
 	return nil
 }

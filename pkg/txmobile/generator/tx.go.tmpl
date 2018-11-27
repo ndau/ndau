@@ -155,6 +155,59 @@ func (tx *{{$.Name}}) Get{{$field.Name}}() {{if .FallibleMobileConversion}}({{en
 	{{if .FallibleMobileConversion}}{{.AssignmentErrHandler (.MobileType | Zero)}}{{end}}
 	return {{if .PointerMobileConversion}}*{{end}}{{.Name | Lower}}{{if .FallibleMobileConversion}}, nil{{end}}
 }
+{{- end}}{{if .MakeSetter}}
+{{if .Type | IsSlice}}
+// Append{{$field.Name | Singular}} adds a {{$field.Name | Singular | Lower}} to the {{$.Name}}
+func (tx *{{$.Name}}) Append{{$field.Name | Singular}}({{$field.Name | Singular | Lower}} {{.MobileType}})  {{if .FallibleNativeConversion}}error{{end}} {
+	{{- if .MobileType | IsPointer }}
+	if {{.Name | Lower}} == nil {
+		return {{if .FallibleNativeConversion}}errors.New("nil {{$field.Name | Singular | Lower}}"){{end}}
+	}
+	{{end -}}
+	{{- if .FallibleNativeConversion -}}
+	{{- if .PreCreateNative -}}
+	{{.NameNative}} := new({{.Type | Dereferenced}})
+	err := {{.NameNative}}.{{call .ConvertToNative (.Name | Singular | Lower)}}
+	{{- else -}}
+	{{.NameNative}}{{.AssignmentStmt .FallibleNativeConversion .PreCreateNative }}{{call .ConvertToNative (.Name | Singular | Lower)}}
+	{{- end}}
+	{{.AssignmentErrHandler ""}}
+	{{end}}
+	tx.tx.{{$field.Name}} = append(tx.tx.{{$field.Name}}, {{if .PointerNativeConversion}}*{{end}}{{.NameNative}})
+	{{- if .FallibleNativeConversion }}
+
+	return nil
+	{{- end }}
+}
+
+// Clear{{$field.Name}} removes all {{$field.Name | Lower}} from the {{$.Name}}
+func (tx *{{$.Name}}) Clear{{$field.Name}}() {
+	tx.tx.{{$field.Name}} = {{$field.Type}}{}
+}
+{{else}}
+// Set{{$field.Name}} sets the {{$field.Name | Lower}} of the {{$.Name}}
+func (tx *{{$.Name}}) Set{{$field.Name}}({{$field.Name | Lower}} {{.MobileType}}) {{if .FallibleNativeConversion}}error{{end}} {
+{{- if .MobileType | IsPointer }}
+	if {{.Name | Lower}} == nil {
+		return {{if .FallibleNativeConversion}}errors.New("nil {{$field.Name | Singular | Lower}}"){{end}}
+	}
+	{{end -}}
+	{{- if .FallibleNativeConversion -}}
+	{{- if .PreCreateNative -}}
+	{{.NameNative}} := new({{.Type | Dereferenced}})
+	err := {{.NameNative}}.{{call .ConvertToNative (.Name | Singular | Lower)}}
+	{{- else -}}
+	{{.NameNative}}{{.AssignmentStmt .FallibleNativeConversion .PreCreateNative }}{{call .ConvertToNative (.Name | Singular | Lower)}}
+	{{- end}}
+	{{.AssignmentErrHandler ""}}
+	{{end}}
+	tx.tx.{{$field.Name}} = append(tx.tx.{{$field.Name}}, {{if .PointerNativeConversion}}*{{end}}{{.NameNative}})
+	{{- if .FallibleNativeConversion }}
+
+	return nil
+	{{- end }}
+}
+{{- end}}
 {{- end}}
 {{- end}}
 
