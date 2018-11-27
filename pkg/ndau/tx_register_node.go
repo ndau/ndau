@@ -10,6 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *RegisterNode) GetAccountAddresses() []string {
+	return []string{tx.Node.String()}
+}
+
 // NewRegisterNode creates a new RegisterNode transaction
 func NewRegisterNode(
 	node address.Address,

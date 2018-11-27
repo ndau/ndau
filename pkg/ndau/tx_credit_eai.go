@@ -16,6 +16,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *CreditEAI) GetAccountAddresses() []string {
+	return []string{tx.Node.String()}
+}
+
 // NewCreditEAI creates a new CreditEAI transaction
 //
 // Most users will never need this.

@@ -8,13 +8,6 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-// BalanceHistoryItem struct
-type BalanceHistoryItem struct {
-	Timestamp string
-	Balance   math.Ndau
-	TxHash    string
-}
-
 // OrderHistoryRecord struct
 type OrderHistoryRecord struct {
 	Timestamp math.Timestamp
