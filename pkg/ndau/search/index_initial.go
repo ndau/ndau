@@ -48,7 +48,8 @@ func (search *Client) IndexBlockchain(
 
 		// Make sure we're iterating from the head block to genesis.
 		// However, we support multiple height-0 entries for parallelism with chaos noms data.
-		if height > lastHeight || height == lastHeight && height != 0 {
+		// And also at height 1 for unit tests.
+		if height > lastHeight || height == lastHeight && height > 1 {
 			// Indexing logic relies on this, but more importantly, this indicates
 			// a serious problem in the blockchain if the height increases as we
 			// crawl the blockchain from the head to the genesis block.

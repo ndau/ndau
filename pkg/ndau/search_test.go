@@ -47,6 +47,18 @@ func TestHashIndex(t *testing.T) {
 	blockHash := fmt.Sprintf("%x", tmBlockHash) // 40 characters
 	var txHash string
 
+	search := app.GetSearch().(*search.Client)
+
+	// Test initial indexing.
+	t.Run("TestHashInitialIndexing", func(t *testing.T) {
+		updateCount, insertCount, err := search.IndexBlockchain(app.GetDB(), app.GetDS())
+		require.NoError(t, err)
+
+		// There should be nothing indexed.
+		require.Equal(t, 0, updateCount)
+		require.Equal(t, 0, insertCount)
+	})
+
 	// Test incremental indexing.
 	t.Run("TestHashIncrementalIndexing", func(t *testing.T) {
 		// Begin a new block.
@@ -96,14 +108,13 @@ func TestHashIndex(t *testing.T) {
 	// Test searching.
 	t.Run("TestHashSearching", func(t *testing.T) {
 		t.Run("TestBlockHashSearching", func(t *testing.T) {
-			heightResult, err := app.GetSearch().(*search.Client).SearchBlockHash(blockHash)
+			heightResult, err := search.SearchBlockHash(blockHash)
 			require.NoError(t, err)
 			require.Equal(t, height, heightResult)
 		})
 
 		t.Run("TestTxHashSearching", func(t *testing.T) {
-			heightResult, txOffsetResult, err :=
-				app.GetSearch().(*search.Client).SearchTxHash(txHash)
+			heightResult, txOffsetResult, err := search.SearchTxHash(txHash)
 			require.NoError(t, err)
 			require.Equal(t, height, heightResult)
 			require.Equal(t, txOffset, txOffsetResult)
