@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -42,24 +42,18 @@ type TransferAndLock struct {
 
 // NewTransferAndLock constructs a new unsigned TransferAndLock transaction
 func NewTransferAndLock(
-	source *keyaddr.Address,
-	destination *keyaddr.Address,
+	source string,
+	destination string,
 	qty int64,
 	period int64,
 	sequence int64,
 ) (*TransferAndLock, error) {
-	if source == nil {
-		return nil, errors.New("source must not be nil")
-	}
-	sourceN, err := address.Validate(source.Address)
+	sourceN, err := address.Validate(source)
 	if err != nil {
 		return nil, errors.Wrap(err, "source")
 	}
 
-	if destination == nil {
-		return nil, errors.New("destination must not be nil")
-	}
-	destinationN, err := address.Validate(destination.Address)
+	destinationN, err := address.Validate(destination)
 	if err != nil {
 		return nil, errors.Wrap(err, "destination")
 	}
@@ -107,67 +101,67 @@ func (tx *TransferAndLock) ToB64String() (string, error) {
 
 // GetSource gets the source of the TransferAndLock
 //
-// Returns `nil` if TransferAndLock is `nil` or if native conversion is fallible and
+// Returns a zero value if TransferAndLock is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *TransferAndLock) GetSource() *keyaddr.Address {
+func (tx *TransferAndLock) GetSource() string {
 	if tx == nil {
-		return nil
+		return ""
 	}
-	source := keyaddr.Address{Address: tx.tx.Source.String()}
+	source := tx.tx.Source.String()
 
-	return &source
+	return source
 }
 
 // GetDestination gets the destination of the TransferAndLock
 //
-// Returns `nil` if TransferAndLock is `nil` or if native conversion is fallible and
+// Returns a zero value if TransferAndLock is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *TransferAndLock) GetDestination() *keyaddr.Address {
+func (tx *TransferAndLock) GetDestination() string {
 	if tx == nil {
-		return nil
+		return ""
 	}
-	destination := keyaddr.Address{Address: tx.tx.Destination.String()}
+	destination := tx.tx.Destination.String()
 
-	return &destination
+	return destination
 }
 
 // GetQty gets the qty of the TransferAndLock
 //
-// Returns `nil` if TransferAndLock is `nil` or if native conversion is fallible and
+// Returns a zero value if TransferAndLock is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *TransferAndLock) GetQty() *int64 {
+func (tx *TransferAndLock) GetQty() int64 {
 	if tx == nil {
-		return nil
+		return 0
 	}
 	qty := int64(tx.tx.Qty)
 
-	return &qty
+	return qty
 }
 
 // GetPeriod gets the period of the TransferAndLock
 //
-// Returns `nil` if TransferAndLock is `nil` or if native conversion is fallible and
+// Returns a zero value if TransferAndLock is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *TransferAndLock) GetPeriod() *int64 {
+func (tx *TransferAndLock) GetPeriod() int64 {
 	if tx == nil {
-		return nil
+		return 0
 	}
 	period := int64(tx.tx.Period)
 
-	return &period
+	return period
 }
 
 // GetSequence gets the sequence of the TransferAndLock
 //
-// Returns `nil` if TransferAndLock is `nil` or if native conversion is fallible and
+// Returns a zero value if TransferAndLock is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *TransferAndLock) GetSequence() *int64 {
+func (tx *TransferAndLock) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetNumSignatures gets the number of signatures of the TransferAndLock
@@ -181,16 +175,16 @@ func (tx *TransferAndLock) GetNumSignatures() int {
 }
 
 // GetSignature gets a particular signature from this TransferAndLock
-func (tx *TransferAndLock) GetSignature(idx int) (*keyaddr.Signature, error) {
+func (tx *TransferAndLock) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil transferandlock")
+		return "", errors.New("nil transferandlock")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return nil, errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
+	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
@@ -205,15 +199,15 @@ func (tx *TransferAndLock) SignableBytes() (string, error) {
 }
 
 // AppendSignature appends a signature to this transferandlock
-func (tx *TransferAndLock) AppendSignature(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *TransferAndLock) AppendSignature(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
 
