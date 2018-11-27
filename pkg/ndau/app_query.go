@@ -22,6 +22,7 @@ func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
+	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
@@ -117,6 +118,24 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	default:
 		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 	}
+}
+
+func sidechainTxExistsQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	stxq := new(query.SidechainTxExistsQuery)
+	_, err := stxq.UnmarshalMsg(request.GetData())
+	if err != nil {
+		app.QueryError(err, response, "unmarshalling SidechainTxExistsQuery")
+		return
+	}
+
+	acct, _ := app.GetState().(*backing.State).GetAccount(stxq.Source, app.blockTime)
+	key := sidechainPayment(stxq.SidechainID, stxq.TxHash)
+
+	_, exists := acct.SidechainPayments[key]
+
+	response.Info = fmt.Sprintf(query.SidechainTxExistsInfoFmt, exists)
 }
 
 var lastSummary query.Summary

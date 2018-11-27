@@ -78,7 +78,7 @@ func (tx *SidechainTx) Apply(appInt interface{}) error {
 
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		state := stI.(*backing.State)
-		acct := state.Accounts[tx.Source.String()]
+		acct, _ := state.GetAccount(tx.Source, app.blockTime)
 		if acct.SidechainPayments == nil {
 			acct.SidechainPayments = make(map[string]struct{})
 		}
