@@ -1,5 +1,5 @@
-hash: 43017e5b130b5dd8347c62b129aeaa95bfacd5a0cc6d222653de0654e38de8be
-updated: 2018-11-20T17:11:17.244952+01:00
+hash: 0154fb0649e1e216a5e451fe06edafe6e10181f308ff40547e54c9602d377259
+updated: 2018-11-27T17:12:33.096604+01:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 51ea1dae1fd01c1827b3ac927a987082d36b378d
+  version: 50e2f0627dec4e2508ea825884a551ecd393425c
   subpackages:
   - aws
   - aws/awserr
@@ -146,7 +146,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: 882cf97a83ad205fd22af574246a3bc647d7a7d2
+  version: 52132540909e117f2b98b0694383dc0ab1e1deca
   subpackages:
   - proto
   - ptypes
@@ -232,7 +232,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndaumath
-  version: 081bcc23a1c748f76ded8198fa0aad8b994d2b35
+  version: 58395c362977c7a796a811e92fcc5cd60cdfd7c4
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/address
@@ -286,7 +286,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 8d9c21f0cf5f73718ee86bb3a8e6432b88e9291d
+  version: 3fb53dff765f8a3e0f9d8b1d5b86d4f8c4eb3a09
   subpackages:
   - prometheus
   - prometheus/internal
@@ -296,7 +296,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: aeab699e26f4d4089dba5e522e5d9babd2adbaf7
+  version: 1f2c4f3cd6db5fd6f68f36af6b6d5d936fd93c4e
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -435,7 +435,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: ec83556a53fe16b65c452a104ea9d1e86a671852
+  version: 93218def8b18e66adbdab3eca8ec334700329f1f
   subpackages:
   - cpu
   - unix
