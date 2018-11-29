@@ -26,3 +26,12 @@ func GetAccount(node client.ABCIClient, addr address.Address) (
 	_, err = ad.UnmarshalMsg(res.Response.GetValue())
 	return ad, res, err
 }
+
+// GetSequence gets the current sequence number of a particular account
+func GetSequence(node client.ABCIClient, addr address.Address) (uint64, error) {
+	acct, _, err := GetAccount(node, addr)
+	if err != nil {
+		return 0, err
+	}
+	return acct.Sequence, nil
+}
