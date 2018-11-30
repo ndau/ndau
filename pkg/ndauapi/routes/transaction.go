@@ -90,6 +90,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		reqres.RespondJSON(w, reqres.OKResponse(tx))
+		result := TransactionData{tx}
+		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }

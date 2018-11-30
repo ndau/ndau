@@ -8,6 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *Delegate) GetAccountAddresses() []string {
+	return []string{tx.Target.String(), tx.Node.String()}
+}
+
 // NewDelegate creates a new signed Delegate transaction
 func NewDelegate(
 	account, delegate address.Address,

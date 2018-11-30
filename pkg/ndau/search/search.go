@@ -3,7 +3,10 @@ package search
 // The public API for searching the index.
 
 import (
+	"sort"
 	"strconv"
+
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
 
 // SearchBlockHash returns the height of the given block hash.
@@ -47,4 +50,38 @@ func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
 	}
 
 	return valueData.BlockHeight, valueData.TxOffset, nil
+}
+
+// SearchAccountHistory returns an array of block height and txoffset pairs associated with the
+// given account address.
+func (search *Client) SearchAccountHistory(
+	addr address.Address,
+) (ahr *AccountHistoryResponse, err error) {
+	ahr = new(AccountHistoryResponse)
+
+	searchKey := formatAccountAddressToHeightSearchKey(addr.String())
+
+	err = search.Client.SScan(searchKey, func(searchValue string) error {
+		valueData := TxValueData{}
+		err := valueData.Unmarshal(searchValue)
+		if err != nil {
+			return err
+		}
+
+		ahr.Txs = append(ahr.Txs, valueData)
+
+		return nil
+	})
+
+	// Sort by ascending height, with ascending tx offset as the secondary sort order.
+	// Even if we had used ZAdd() with ZScan(), we'd still have to sort because of the way it
+	// returns pages of results under the hood that we'd have to merge.
+	sort.Slice(ahr.Txs, func(i, j int) bool {
+		txi := &ahr.Txs[i]
+		txj := &ahr.Txs[j]
+		return txi.BlockHeight < txj.BlockHeight ||
+			txi.BlockHeight == txj.BlockHeight && txi.TxOffset < txj.TxOffset
+	})
+
+	return ahr, err
 }

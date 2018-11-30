@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
@@ -41,22 +41,16 @@ type Stake struct {
 
 // NewStake constructs a new unsigned Stake transaction
 func NewStake(
-	target *keyaddr.Address,
-	node *keyaddr.Address,
+	target string,
+	node string,
 	sequence int64,
 ) (*Stake, error) {
-	if target == nil {
-		return nil, errors.New("target must not be nil")
-	}
-	targetN, err := address.Validate(target.Address)
+	targetN, err := address.Validate(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "target")
 	}
 
-	if node == nil {
-		return nil, errors.New("node must not be nil")
-	}
-	nodeN, err := address.Validate(node.Address)
+	nodeN, err := address.Validate(node)
 	if err != nil {
 		return nil, errors.Wrap(err, "node")
 	}
@@ -102,41 +96,41 @@ func (tx *Stake) ToB64String() (string, error) {
 
 // GetTarget gets the target of the Stake
 //
-// Returns `nil` if Stake is `nil` or if native conversion is fallible and
+// Returns a zero value if Stake is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetTarget() *keyaddr.Address {
+func (tx *Stake) GetTarget() string {
 	if tx == nil {
-		return nil
+		return ""
 	}
-	target := keyaddr.Address{Address: tx.tx.Target.String()}
+	target := tx.tx.Target.String()
 
-	return &target
+	return target
 }
 
 // GetNode gets the node of the Stake
 //
-// Returns `nil` if Stake is `nil` or if native conversion is fallible and
+// Returns a zero value if Stake is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetNode() *keyaddr.Address {
+func (tx *Stake) GetNode() string {
 	if tx == nil {
-		return nil
+		return ""
 	}
-	node := keyaddr.Address{Address: tx.tx.Node.String()}
+	node := tx.tx.Node.String()
 
-	return &node
+	return node
 }
 
 // GetSequence gets the sequence of the Stake
 //
-// Returns `nil` if Stake is `nil` or if native conversion is fallible and
+// Returns a zero value if Stake is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetSequence() *int64 {
+func (tx *Stake) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetNumSignatures gets the number of signatures of the Stake
@@ -150,16 +144,16 @@ func (tx *Stake) GetNumSignatures() int {
 }
 
 // GetSignature gets a particular signature from this Stake
-func (tx *Stake) GetSignature(idx int) (*keyaddr.Signature, error) {
+func (tx *Stake) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil stake")
+		return "", errors.New("nil stake")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return nil, errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
+	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
@@ -174,15 +168,15 @@ func (tx *Stake) SignableBytes() (string, error) {
 }
 
 // AppendSignature appends a signature to this stake
-func (tx *Stake) AppendSignature(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *Stake) AppendSignature(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
 

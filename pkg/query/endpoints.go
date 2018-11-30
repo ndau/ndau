@@ -2,10 +2,11 @@ package query
 
 // These constants define the endpoints at which the Tm RPC will forward requests
 const (
-	AccountEndpoint     = "/account"
-	PrevalidateEndpoint = "/prevalidate"
-	SearchEndpoint      = "/search"
-	SummaryEndpoint     = "/summary"
-	SysvarsEndpoint     = "/sysvars"
-	VersionEndpoint     = "/version"
+	AccountEndpoint        = "/account"
+	AccountHistoryEndpoint = "/accounthistory"
+	PrevalidateEndpoint    = "/prevalidate"
+	SearchEndpoint         = "/search"
+	SummaryEndpoint        = "/summary"
+	SysvarsEndpoint        = "/sysvars"
+	VersionEndpoint        = "/version"
 )

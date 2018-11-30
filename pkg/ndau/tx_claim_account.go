@@ -10,6 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *ClaimAccount) GetAccountAddresses() []string {
+	return []string{tx.Target.String()}
+}
+
 // NewClaimAccount creates a ClaimAccount transaction
 func NewClaimAccount(
 	account address.Address,

@@ -20,6 +20,7 @@ import (
 
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
+	meta.RegisterQueryHandler(query.AccountHistoryEndpoint, accountHistoryQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
@@ -49,6 +50,33 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	}
 
 	response.Value = adBytes
+}
+
+func accountHistoryQuery(
+	appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery,
+) {
+	app := appI.(*App)
+
+	address, err := address.Validate(string(request.GetData()))
+	if err != nil {
+		app.QueryError(err, response, "deserializing address")
+		return
+	}
+
+	search := app.GetSearch()
+	if search == nil {
+		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		return
+	}
+
+	ahr, err := search.(*srch.Client).SearchAccountHistory(address)
+	if err != nil {
+		app.QueryError(err, response, "account history search fail")
+		return
+	}
+
+	ahBytes := []byte(ahr.Marshal())
+	response.Value = ahBytes
 }
 
 func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
