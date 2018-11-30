@@ -37,7 +37,7 @@ config_backup=${config}.bak
 cp "$config" "$config_backup"
 $sed -E \
     -e '/^proxy_app/s|://[^:]*:|://ndaunode:|' \
-    -e '/^create_empty_blocks_interval/s/[[:digit:]]+/10/' \
+    -e '/^create_empty_blocks_interval/s/[[:digit:]]+/300/' \
     -e '/^create_empty_blocks\b/{
             s/true/false/
             s/(.*)/# \1/
