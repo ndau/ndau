@@ -15,18 +15,11 @@ upload_to_s3() {
         --grant-read uri=http://acs.amazonaws.com/groups/global/AllUsers
 }
 
-copy1() {
-    name=$1
-    prefix=$2
-    #hash=$(git rev-parse HEAD)
-    upload_to_s3 ${name} ${prefix}
-}
-
 if [ "$1" ]; then
     version=$1
-    copy1 txmobile-sources.jar $version
-    copy1 txmobile.aar $version
-    copy1 txmobile.zip $version
+    upload_to_s3 txmobile-sources.jar $version
+    upload_to_s3 txmobile.aar $version
+    upload_to_s3 txmobile.zip $version
 else
     echo "Version is required."
     echo "Usage: upload_to_s3 vX.Y.Z"
