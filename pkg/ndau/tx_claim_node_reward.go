@@ -14,6 +14,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *ClaimNodeReward) GetAccountAddresses() []string {
+	return []string{tx.Node.String()}
+}
+
 // NewClaimNodeReward creates a new ClaimNodeReward transaction
 func NewClaimNodeReward(node address.Address, sequence uint64, keys []signature.PrivateKey) *ClaimNodeReward {
 	tx := &ClaimNodeReward{Node: node, Sequence: sequence}

@@ -12,11 +12,13 @@ type Field struct {
 	MobileType               string
 	ConvertToNative          func(string) string
 	FallibleNativeConversion bool
+	PointerNativeConversion  bool
 	PreCreateNative          bool
 	ConvertToMobile          func(string) string
 	FallibleMobileConversion bool
 	PointerMobileConversion  bool
 	ConstructorExcluded      bool
+	MakeSetter               bool
 }
 
 // NewField creates a new Field struct
@@ -26,16 +28,23 @@ func NewField(name, nativeType string) Field {
 		Type: nativeType,
 	}
 	f.fillFieldFromType()
-	if name == "Signatures" || name == "Signature" {
-		f.ConstructorExcluded = true
-	}
 	return f
 }
 
 // AssignmentErrHandler is the err handler for fallible conversions as appropriate
-func (f Field) AssignmentErrHandler() string {
+func (f Field) AssignmentErrHandler(mtype string) string {
 	if f.FallibleNativeConversion {
-		return fmt.Sprintf("if err != nil { return nil, errors.Wrap(err, \"%s\") }\n", strings.ToLower(f.Name))
+		var returnstmt string
+		if len(mtype) > 0 {
+			returnstmt = fmt.Sprintf("return %s, errors.Wrap(err, \"%s\")", mtype, strings.ToLower(f.Name))
+		} else {
+			returnstmt = fmt.Sprintf("return errors.Wrap(err, \"%s\")", strings.ToLower(f.Name))
+		}
+
+		return fmt.Sprintf(
+			"if err != nil { %s }\n",
+			returnstmt,
+		)
 	}
 	return ""
 }

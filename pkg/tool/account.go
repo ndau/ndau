@@ -5,6 +5,7 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
@@ -25,4 +26,22 @@ func GetAccount(node client.ABCIClient, addr address.Address) (
 	ad := new(backing.AccountData)
 	_, err = ad.UnmarshalMsg(res.Response.GetValue())
 	return ad, res, err
+}
+
+// GetAccountHistory gets account data history associated with a given address
+func GetAccountHistory(node client.ABCIClient, addr address.Address) (
+	*search.AccountHistoryResponse, *rpctypes.ResultABCIQuery, error,
+) {
+	addrB := []byte(addr.String())
+
+	// perform the query
+	res, err := node.ABCIQuery(query.AccountHistoryEndpoint, addrB)
+	if err != nil {
+		return nil, res, err
+	}
+
+	// parse the response
+	ahr := new(search.AccountHistoryResponse)
+	err = ahr.Unmarshal(string(res.Response.GetValue()))
+	return ahr, res, err
 }

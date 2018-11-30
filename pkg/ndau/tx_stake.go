@@ -12,6 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *Stake) GetAccountAddresses() []string {
+	return []string{tx.Target.String(), tx.Node.String()}
+}
+
 // NewStake creates a new signed Stake transaction
 func NewStake(
 	target, node address.Address,

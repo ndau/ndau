@@ -9,7 +9,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/keyaddr"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -42,14 +42,11 @@ type ChangeSettlementPeriod struct {
 
 // NewChangeSettlementPeriod constructs a new unsigned ChangeSettlementPeriod transaction
 func NewChangeSettlementPeriod(
-	target *keyaddr.Address,
+	target string,
 	period int64,
 	sequence int64,
 ) (*ChangeSettlementPeriod, error) {
-	if target == nil {
-		return nil, errors.New("target must not be nil")
-	}
-	targetN, err := address.Validate(target.Address)
+	targetN, err := address.Validate(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "target")
 	}
@@ -95,41 +92,41 @@ func (tx *ChangeSettlementPeriod) ToB64String() (string, error) {
 
 // GetTarget gets the target of the ChangeSettlementPeriod
 //
-// Returns `nil` if ChangeSettlementPeriod is `nil` or if native conversion is fallible and
+// Returns a zero value if ChangeSettlementPeriod is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ChangeSettlementPeriod) GetTarget() *keyaddr.Address {
+func (tx *ChangeSettlementPeriod) GetTarget() string {
 	if tx == nil {
-		return nil
+		return ""
 	}
-	target := keyaddr.Address{Address: tx.tx.Target.String()}
+	target := tx.tx.Target.String()
 
-	return &target
+	return target
 }
 
 // GetPeriod gets the period of the ChangeSettlementPeriod
 //
-// Returns `nil` if ChangeSettlementPeriod is `nil` or if native conversion is fallible and
+// Returns a zero value if ChangeSettlementPeriod is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ChangeSettlementPeriod) GetPeriod() *int64 {
+func (tx *ChangeSettlementPeriod) GetPeriod() int64 {
 	if tx == nil {
-		return nil
+		return 0
 	}
 	period := int64(tx.tx.Period)
 
-	return &period
+	return period
 }
 
 // GetSequence gets the sequence of the ChangeSettlementPeriod
 //
-// Returns `nil` if ChangeSettlementPeriod is `nil` or if native conversion is fallible and
+// Returns a zero value if ChangeSettlementPeriod is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *ChangeSettlementPeriod) GetSequence() *int64 {
+func (tx *ChangeSettlementPeriod) GetSequence() int64 {
 	if tx == nil {
-		return nil
+		return 0
 	}
 	sequence := int64(tx.tx.Sequence)
 
-	return &sequence
+	return sequence
 }
 
 // GetNumSignatures gets the number of signatures of the ChangeSettlementPeriod
@@ -143,16 +140,16 @@ func (tx *ChangeSettlementPeriod) GetNumSignatures() int {
 }
 
 // GetSignature gets a particular signature from this ChangeSettlementPeriod
-func (tx *ChangeSettlementPeriod) GetSignature(idx int) (*keyaddr.Signature, error) {
+func (tx *ChangeSettlementPeriod) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return nil, errors.New("nil changesettlementperiod")
+		return "", errors.New("nil changesettlementperiod")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
-		return nil, errors.New("invalid index")
+		return "", errors.New("invalid index")
 	}
-	signature, err := keyaddr.SignatureFrom(tx.tx.Signatures[idx])
+	signature, err := tx.tx.Signatures[idx].MarshalString()
 	if err != nil {
-		return nil, errors.Wrap(err, "signatures")
+		return "", errors.Wrap(err, "signatures")
 	}
 
 	return signature, nil
@@ -167,15 +164,15 @@ func (tx *ChangeSettlementPeriod) SignableBytes() (string, error) {
 }
 
 // AppendSignature appends a signature to this changesettlementperiod
-func (tx *ChangeSettlementPeriod) AppendSignature(sig *keyaddr.Signature) error {
-	if sig == nil {
-		return errors.New("sig must not be nil")
+func (tx *ChangeSettlementPeriod) AppendSignature(sig string) error {
+	if sig == "" {
+		return errors.New("sig must not be blank")
 	}
-	sigS, err := sig.ToSignature()
+	sigS, err := signature.ParseSignature(sig)
 	if err != nil {
 		return errors.Wrap(err, "converting signature")
 	}
-	tx.tx.Signatures = append(tx.tx.Signatures, sigS)
+	tx.tx.Signatures = append(tx.tx.Signatures, *sigS)
 	return nil
 }
 

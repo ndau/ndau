@@ -300,20 +300,12 @@ _**Writes:**_
 ---
 ## AccountHistory
 
-### `GET /account/history/:accountid`
+### `GET /account/history/:address`
 
 _Returns the balance history of an account given its address._
 
 The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
-The result is reverse sorted chronologically from the current time, and supports paging by time.
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- limit | Query | Maximum number of transactions to return; default=10. | string
- before | Query | Timestamp (ISO 8601) to start looking backwards; default=now. | string
+The result is sorted chronologically.
 
 
 
@@ -325,13 +317,15 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        [
-          {
-            "Timestamp": "2018-07-18T20:01:02Z",
-            "Balance": 123000000,
-            "TxHash": "abc123def456"
-          }
-        ]
+        {
+          "Items": [
+            {
+              "Balance": 123000000,
+              "Timestamp": "2018-07-18 20:01:02.784856 +0000 UTC",
+              "TxHash": "abc123def456"
+            }
+          ]
+        }
 ```
 
 
@@ -714,7 +708,14 @@ _**Produces:**_ `[application/json]`
 
 _**Writes:**_
 ```json
-        {}
+        {
+          "History": [
+            {
+              "Height": 12345,
+              "Value": "dmFsdWU="
+            }
+          ]
+        }
 ```
 
 
