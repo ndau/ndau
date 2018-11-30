@@ -64,7 +64,7 @@ func TestTxHash(t *testing.T) {
 			req:      httptest.NewRequest("GET", "/transaction/" + url.QueryEscape(txHash), nil),
 			status:   http.StatusOK,
 			// The tx hash isn't part of the response, just make sure a valid tx is returned.
-			wantbody: "Nonce",
+			wantbody: "{\"Tx\":{\"Nonce\":",
 		},
 	}
 

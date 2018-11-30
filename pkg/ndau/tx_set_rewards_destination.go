@@ -10,6 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *SetRewardsDestination) GetAccountAddresses() []string {
+	return []string{tx.Source.String(), tx.Destination.String()}
+}
+
 // NewSetRewardsDestination creates a new SetRewardsDestination transaction
 func NewSetRewardsDestination(account, destination address.Address, sequence uint64, keys []signature.PrivateKey) *SetRewardsDestination {
 	tx := &SetRewardsDestination{

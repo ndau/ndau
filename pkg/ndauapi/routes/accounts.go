@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/go-zoo/bone"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
@@ -13,7 +15,20 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
+
+// AccountHistoryItem is used by the account history endpoint to return balance historical data.
+type AccountHistoryItem struct {
+	Balance   types.Ndau
+	Timestamp string
+	TxHash    string
+}
+
+// AccountHistoryItems is used by the account history endpoint to return balance historical data.
+type AccountHistoryItems struct {
+	Items []AccountHistoryItem
+}
 
 // HandleAccount returns a HandlerFunc that returns information about a single account
 // specified in the URL.
@@ -83,4 +98,70 @@ func processAccounts(w http.ResponseWriter, nodeAddr string, addresses []string)
 		}
 	}
 	reqres.RespondJSON(w, reqres.OKResponse(resp))
+}
+
+// HandleAccountHistory returns a HandlerFunc that returns balance history about a single account
+// specified in the URL.
+func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		addressString := bone.GetValue(r, "address")
+		if addressString == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("address parameter required", http.StatusBadRequest))
+			return
+		}
+
+		addr, err := address.Validate(addressString)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not validate address: %s", err), http.StatusBadRequest))
+			return
+		}
+
+		node, err := ws.Node(cf.NodeAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
+			return
+		}
+
+		ahr, _, err := tool.GetAccountHistory(node, addr)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
+			return
+		}
+
+		result := AccountHistoryItems{}
+
+		for _, valueData := range ahr.Txs {
+			blockheight := int64(valueData.BlockHeight)
+			txoffset := valueData.TxOffset
+
+			block, err := node.Block(&blockheight)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+				return
+			}
+
+			if txoffset >= len(block.Block.Data.Txs) {
+				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("tx offset out of range: %d >= %d", txoffset, len(block.Block.Data.Txs)), http.StatusInternalServerError))
+				return
+			}
+
+			txBytes := block.Block.Data.Txs[txoffset]
+
+			txab, err := metatx.Unmarshal(txBytes, ndau.TxIDs)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not decode tx: %v", err), http.StatusInternalServerError))
+				return
+			}
+
+			txhash := metatx.Hash(txab)
+			item := AccountHistoryItem{
+				Balance:   0, // ndau-179: Compute the new balance as of this transaction.
+				Timestamp: block.Block.Header.Time.String(),
+				TxHash:    txhash,
+			}
+			result.Items = append(result.Items, item)
+		}
+
+		reqres.RespondJSON(w, reqres.OKResponse(result))
+	}
 }
