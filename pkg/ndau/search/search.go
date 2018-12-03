@@ -62,7 +62,7 @@ func (search *Client) SearchAccountHistory(
 	searchKey := formatAccountAddressToHeightSearchKey(addr.String())
 
 	err = search.Client.SScan(searchKey, func(searchValue string) error {
-		valueData := TxValueData{}
+		valueData := AccountTxValueData{}
 		err := valueData.Unmarshal(searchValue)
 		if err != nil {
 			return err

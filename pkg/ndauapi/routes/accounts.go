@@ -133,6 +133,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 		for _, valueData := range ahr.Txs {
 			blockheight := int64(valueData.BlockHeight)
 			txoffset := valueData.TxOffset
+			balance := valueData.Balance
 
 			block, err := node.Block(&blockheight)
 			if err != nil {
@@ -155,7 +156,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 
 			txhash := metatx.Hash(txab)
 			item := AccountHistoryItem{
-				Balance:   0, // ndau-179: Compute the new balance as of this transaction.
+				Balance:   balance,
 				Timestamp: block.Block.Header.Time.String(),
 				TxHash:    txhash,
 			}

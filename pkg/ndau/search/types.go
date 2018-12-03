@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // HeightByBlockHashCommand is a QueryParams command for searching block height by block hash.
@@ -29,9 +31,17 @@ type TxValueData struct {
 	TxOffset int
 }
 
+// AccountTxValueData is like TxValueData that stores account balance at the associated block.
+// We could index a Ref target hash, but that would use more space than just storing the balance.
+type AccountTxValueData struct {
+	BlockHeight uint64
+	TxOffset int
+	Balance types.Ndau
+}
+
 // AccountHistoryResponse is the return value from the account history endpoint.
 type AccountHistoryResponse struct {
-	Txs []TxValueData
+	Txs []AccountTxValueData
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
@@ -59,6 +69,38 @@ func (valueData *TxValueData) Unmarshal(searchValue string) error {
 	return nil
 }
 
+// Marshal the value data into a search value string to index it with its search key string.
+func (valueData *AccountTxValueData) Marshal() string {
+	return fmt.Sprintf("%d %d %d", valueData.BlockHeight, valueData.TxOffset, valueData.Balance)
+}
+
+// Unmarshal the given search value string that was indexed with its search key string.
+func (valueData *AccountTxValueData) Unmarshal(searchValue string) error {
+	separator1 := strings.Index(searchValue, " ")
+	separator2 := strings.LastIndex(searchValue, " ")
+
+	height, err := strconv.ParseUint(searchValue[:separator1], 10, 64)
+	if err != nil {
+		return err
+	}
+
+	offset, err := strconv.ParseInt(searchValue[separator1+1:separator2], 10, 32)
+	if err != nil {
+		return err
+	}
+
+	balance, err := strconv.ParseUint(searchValue[separator2+1:], 10, 64)
+	if err != nil {
+		return err
+	}
+
+	valueData.BlockHeight = height
+	valueData.TxOffset = int(offset)
+	valueData.Balance = types.Ndau(balance)
+
+	return nil
+}
+
 // Marshal the account history response into something we can pass over RPC.
 func (response *AccountHistoryResponse) Marshal() string {
 	var sb strings.Builder
@@ -76,7 +118,7 @@ func (response *AccountHistoryResponse) Unmarshal(searchValue string) error {
 	items := strings.Split(searchValue, ":")
 	for _, item := range items {
 		if item != "" {
-			valueData := TxValueData{}
+			valueData := AccountTxValueData{}
 			valueData.Unmarshal(item)
 			response.Txs = append(response.Txs, valueData)
 		}

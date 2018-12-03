@@ -1,5 +1,5 @@
-hash: c98ee9777426435abb692bf7b44719633ca5370ef8f1b93709ab776c04b2f79f
-updated: 2018-12-04T16:04:46.495348+01:00
+hash: 24d9d635c475a9ded2ddae3e5d1721d6cc47101774fbbdfc123be67ce6044b42
+updated: 2018-12-04T07:38:43.642941-08:00
 imports:
 - name: github.com/alexflint/go-arg
   version: fb7d95b61ba8d5860c76afb69243586dff37ae85
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 4ea06c7022cc6ad23d2a62361a1935f49f5168b3
+  version: 88388f1dcec6c6c6548dab2149b22d36ef2f5e08
   subpackages:
   - aws
   - aws/awserr
@@ -200,7 +200,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 36f6943add53820b215dd12d6a1065b85d48e6c3
+  version: b0b30cb3150846ac0c1a7bb1bd0027e27cbb2f9d
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -211,12 +211,12 @@ imports:
   - pkg/genesisfile
   - pkg/tool
 - name: github.com/oneiro-ndev/chaos_genesis
-  version: c426e1acbbb2bdf814607c6bfcf715e5f3800d73
+  version: 1b8ea444d9166cc4f17957e2c1598dba6b455b07
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 7b51ccbf4b8538dab62badb25b77e4fc48446b8d
+  version: f3f81763cb10e7d4cef873bfa967c1f7d6963819
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -241,6 +241,8 @@ imports:
   - pkg/bitset256
   - pkg/constants
   - pkg/eai
+  - pkg/key
+  - pkg/keyaddr
   - pkg/ndauerr
   - pkg/signature
   - pkg/signature/algorithms/ed25519
@@ -249,6 +251,7 @@ imports:
   - pkg/signed
   - pkg/types
   - pkg/unsigned
+  - pkg/words
 - name: github.com/oneiro-ndev/noms-util
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
