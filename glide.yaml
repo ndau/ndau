@@ -10,10 +10,10 @@ import:
 - package: github.com/go-redis/redis
   version: v6.14.2
 - package: github.com/oneiro-ndev/chaincode
-  version: prgn-update-builder
+  version: ~v0.11
   repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
-  version: v0.10.17
+  version: ~v0.10
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/chaos_genesis
   version: ~v0.1
