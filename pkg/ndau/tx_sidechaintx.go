@@ -1,10 +1,11 @@
 package ndau
 
 import (
+	"crypto/md5"
+	"encoding/base64"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -15,21 +16,17 @@ import (
 func NewSidechainTx(
 	source address.Address,
 	sidechain byte,
-	txid metatx.TxID,
-	txsize uint32,
-	txhash string,
+	signableBytes []byte,
 	sidechainSignatures []signature.Signature,
 	seq uint64,
 	keys []signature.PrivateKey,
 ) (*SidechainTx, error) {
 	tx := &SidechainTx{
-		Source:              source,
-		SidechainID:         sidechain,
-		TxID:                txid,
-		TxSize:              txsize,
-		TxHash:              txhash,
-		SidechainSignatures: sidechainSignatures,
-		Sequence:            seq,
+		Source:                 source,
+		SidechainID:            sidechain,
+		SidechainSignableBytes: signableBytes,
+		SidechainSignatures:    sidechainSignatures,
+		Sequence:               seq,
 	}
 	bytes := tx.SignableBytes()
 	for _, key := range keys {
@@ -43,14 +40,22 @@ func NewSidechainTx(
 func (tx *SidechainTx) SignableBytes() []byte {
 	bytes := make([]byte, 0, tx.Msgsize())
 	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.SidechainID, byte(tx.TxID))
-	bytes = appendUint64(bytes, uint64(tx.TxSize))
-	bytes = append(bytes, tx.TxHash...)
+	bytes = append(bytes, tx.SidechainSignableBytes...)
 	for _, sig := range tx.SidechainSignatures {
 		bytes = append(bytes, sig.Bytes()...)
 	}
 	bytes = appendUint64(bytes, tx.Sequence)
 	return bytes
+}
+
+// SidechainTxHash produces the hash of the sidechain tx
+//
+// This is intentionally meant to produce the same output as metatx.Hash,
+// but we have to reimplement it because the ndau chain doesn't know how
+// to unmarshal the tx.
+func (tx *SidechainTx) SidechainTxHash() string {
+	sum := md5.Sum(tx.SidechainSignableBytes)
+	return base64.RawStdEncoding.EncodeToString(sum[:])
 }
 
 // Validate satisfies metatx.Transactable
@@ -82,7 +87,7 @@ func (tx *SidechainTx) Apply(appInt interface{}) error {
 		if acct.SidechainPayments == nil {
 			acct.SidechainPayments = make(map[string]struct{})
 		}
-		acct.SidechainPayments[sidechainPayment(tx.SidechainID, tx.TxHash)] = struct{}{}
+		acct.SidechainPayments[sidechainPayment(tx.SidechainID, tx.SidechainTxHash())] = struct{}{}
 		state.Accounts[tx.Source.String()] = acct
 		return state, nil
 	})

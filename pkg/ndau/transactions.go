@@ -257,14 +257,12 @@ var _ NTransactable = (*CommandValidatorChange)(nil)
 
 // A SidechainTx is used to validate and pay for transactions on side chains.
 type SidechainTx struct {
-	Source              address.Address       `msg:"src" chain:"1,Tx_Source"`
-	SidechainID         byte                  `msg:"sch" chain:"42,Tx_SidechainID"`
-	TxID                metatx.TxID           `msg:"tid" chain:"43,Tx_SidechainTxID"`
-	TxSize              uint32                `msg:"sze" chain:"44,Tx_SidechainTxSize"`
-	TxHash              string                `msg:"hsh" chain:"45,Tx_SidechainTxHash"`
-	SidechainSignatures []signature.Signature `msg:"csg" chain:"46,Tx_SidechainSignatures"`
-	Sequence            uint64                `msg:"seq"`
-	Signatures          []signature.Signature `msg:"sig"`
+	Source                 address.Address       `msg:"src" chain:"1,Tx_Source"`
+	SidechainID            byte                  `msg:"sch" chain:"42,Tx_SidechainID"`
+	SidechainSignableBytes []byte                `msg:"ssb" chain:"43,Tx_SidechainSignableBytes"`
+	SidechainSignatures    []signature.Signature `msg:"ssg" chain:"44,Tx_SidechainSignatures"`
+	Sequence               uint64                `msg:"seq"`
+	Signatures             []signature.Signature `msg:"sig"`
 }
 
 var _ NTransactable = (*SidechainTx)(nil)

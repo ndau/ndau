@@ -85,9 +85,7 @@ func TestSidechainTxDeductsTxFee(t *testing.T) {
 		tx, err := NewSidechainTx(
 			sA,                      // address
 			0,                       // sidechain id
-			1,                       // tx id
-			0x7f,                    // tx size
-			"abcd1234",              // tx hash
+			[]byte{0, 1, 2, 3, 4},   // tx signable bytes
 			[]signature.Signature{}, // sidechain sigs
 			1,                       // sequence
 			[]signature.PrivateKey{private},

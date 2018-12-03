@@ -175,7 +175,6 @@ func TestPrevalidateInvalidTx(t *testing.T) {
 
 func TestCanQuerySidechainTxExists(t *testing.T) {
 	sidechainID := byte(0)
-	sidechainTxHash := "definitely a real hash"
 
 	// set up initial state with this sidechain tx paid for
 	app, private := initAppTx(t)
@@ -183,13 +182,11 @@ func TestCanQuerySidechainTxExists(t *testing.T) {
 	require.NoError(t, err)
 
 	stx := SidechainTx{
-		Source:              srcA,
-		SidechainID:         sidechainID,
-		TxID:                metatx.TxID(1),
-		TxSize:              123,
-		TxHash:              sidechainTxHash,
-		SidechainSignatures: nil,
-		Sequence:            1,
+		Source:                 srcA,
+		SidechainID:            sidechainID,
+		SidechainSignableBytes: []byte{0, 1, 2, 3, 4},
+		SidechainSignatures:    nil,
+		Sequence:               1,
 	}
 	stx.Signatures = append(stx.Signatures, metatx.Sign(&stx, private))
 	dresp := deliverTx(t, app, &stx)
@@ -202,7 +199,7 @@ func TestCanQuerySidechainTxExists(t *testing.T) {
 		wantexist bool
 	}
 	cases := []tcase{
-		{"should exist", sidechainTxHash, true},
+		{"should exist", stx.SidechainTxHash(), true},
 		{"should not exist", "not a real tx hash", false},
 	}
 
