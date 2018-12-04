@@ -53,7 +53,13 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// PRGN: I don't know what `network` is supposed to be, so I'm just removing this entirely instead of fixing it.
+		// This system variable is intended to be set to something like "ndau MainNet"
+		// once the mainnet is live. It's expected to be used to identify the network
+		// that the API is talking to, as a way to differentiate the ndau mainnet from
+		// test networks.
+		//
+		// However, we haven't yet defined what exactly this value will be or where it
+		// will come from, so we leave it unimplemented for now.
 		//
 		// network, err := getSystemValue(cf, []byte("NetworkName"))
 		// if err != nil {
