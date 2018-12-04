@@ -1,14 +1,17 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
@@ -122,7 +125,43 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		ahr, _, err := tool.GetAccountHistory(node, addr)
+		// Paging is optional.  Default to returning all history in a single page.
+		pageIndex := 0
+		pageSize := 0
+		pageIndexString := r.URL.Query().Get("pageindex")
+		pageSizeString := r.URL.Query().Get("pagesize")
+		if pageIndexString != "" {
+			pageIndex64, err := strconv.ParseInt(pageIndexString, 10, 32)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("pageindex must be a valid number", err, http.StatusBadRequest))
+				return
+			}
+			pageIndex = int(pageIndex64)
+		}
+		if pageSizeString != "" {
+			pageSize64, err := strconv.ParseInt(pageSizeString, 10, 32)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("pagesize must be a valid number", err, http.StatusBadRequest))
+				return
+			}
+			if pageSize64 < 0 {
+				reqres.RespondJSON(w, reqres.NewAPIError("pagesize must be non-negative", http.StatusBadRequest))
+				return
+			}
+			pageSize = int(pageSize64)
+		}
+
+		// Prepare search params.
+		params := search.AccountHistoryParams{
+			Address:   addr.String(),
+			PageIndex: pageIndex,
+			PageSize:  pageSize,
+		}
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+		paramsString := paramsBuf.String()
+
+		ahr, _, err := tool.GetAccountHistory(node, paramsString)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
 			return

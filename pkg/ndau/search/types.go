@@ -25,6 +25,13 @@ type QueryParams struct {
 	Hash string `json:"hash"`
 }
 
+// AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
+type AccountHistoryParams struct {
+	Address string `json:"addr"`
+	PageIndex int `json:"index"`
+	PageSize int `json:"size"`
+}
+
 // TxValueData is used for storing the block height and transaction offset within the block.
 type TxValueData struct {
 	BlockHeight uint64

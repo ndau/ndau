@@ -28,14 +28,13 @@ func GetAccount(node client.ABCIClient, addr address.Address) (
 	return ad, res, err
 }
 
-// GetAccountHistory gets account data history associated with a given address
-func GetAccountHistory(node client.ABCIClient, addr address.Address) (
+// GetAccountHistory gets account data history associated with a given address.
+// Pass params as a json-encoded search.AccountHistoryParams object.
+func GetAccountHistory(node client.ABCIClient, params string) (
 	*search.AccountHistoryResponse, *rpctypes.ResultABCIQuery, error,
 ) {
-	addrB := []byte(addr.String())
-
 	// perform the query
-	res, err := node.ABCIQuery(query.AccountHistoryEndpoint, addrB)
+	res, err := node.ABCIQuery(query.AccountHistoryEndpoint, []byte(params))
 	if err != nil {
 		return nil, res, err
 	}

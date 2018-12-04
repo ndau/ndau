@@ -126,6 +126,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
 		The result is sorted chronologically.`).
 		Operation("AccountHistory").
+		Param(boneful.PathParameter("address", "The address of the account for which to return history").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
 			Balance:   123000000,

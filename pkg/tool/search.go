@@ -6,7 +6,7 @@ import (
 )
 
 // GetSearchResults returns search results for a given search query.
-// Pass params in the format "a=b&c=d&...&y=z"
+// Pass params as a json-encoded search.QueryParams object.
 func GetSearchResults(node client.ABCIClient, params string) (
 	string, error,
 ) {

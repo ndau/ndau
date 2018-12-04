@@ -5,8 +5,6 @@ package search
 import (
 	"sort"
 	"strconv"
-
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
 
 // SearchBlockHash returns the height of the given block hash.
@@ -55,11 +53,11 @@ func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
 // SearchAccountHistory returns an array of block height and txoffset pairs associated with the
 // given account address.
 func (search *Client) SearchAccountHistory(
-	addr address.Address,
+	addr string, pageIndex int, pageSize int,
 ) (ahr *AccountHistoryResponse, err error) {
 	ahr = new(AccountHistoryResponse)
 
-	searchKey := formatAccountAddressToHeightSearchKey(addr.String())
+	searchKey := formatAccountAddressToHeightSearchKey(addr)
 
 	err = search.Client.SScan(searchKey, func(searchValue string) error {
 		valueData := AccountTxValueData{}
@@ -83,5 +81,17 @@ func (search *Client) SearchAccountHistory(
 			txi.BlockHeight == txj.BlockHeight && txi.TxOffset < txj.TxOffset
 	})
 
-	return ahr, err
+	// Reduce the full results list down to the requested page.  There is some wasted effort with
+	// this approach, but we support the worst case, which is to return all results.  In practice,
+	// getting the full list from the underlying index is fast, with tolerable sorting speed.
+	// A page size of 0 means "return all results"..
+	if pageSize > 0 {
+		offset := pageIndex * pageSize
+		if offset < 0 {
+			offset = len(ahr.Txs) + offset
+		}
+		ahr.Txs = ahr.Txs[offset:offset+pageSize]
+	}
+
+ 	return ahr, err
 }
