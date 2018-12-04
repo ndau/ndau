@@ -116,8 +116,6 @@ Each of these, in turn, has several endpoints within it.
 
 * [SystemAll](#systemall)
 
-* [SystemKey](#systemkey)
-
 * [SystemHistoryKey](#systemhistorykey)
 
 * [TransactionByHash](#transactionbyhash)
@@ -306,6 +304,15 @@ _Returns the balance history of an account given its address._
 
 The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
 The result is sorted chronologically.
+
+
+_**Parameters:**_
+
+Name | Kind | Description | DataType
+---- | ---- | ----------- | --------
+ address | Path | The address of the account for which to return history | string
+ pageindex | Query | The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0 | int
+ pagesize | Query | The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0 | int
 
 
 
@@ -1202,37 +1209,6 @@ _**Writes:**_
 _Returns the names and current values of all currently-defined system variables._
 
 
-
-
-
-
-
-
-_**Produces:**_ `[application/json]`
-
-
-_**Writes:**_
-```json
-        ""
-```
-
-
-
----
-## SystemKey
-
-### `GET /system/:key`
-
-_Returns the current value of a single system variable._
-
-
-
-
-_**Parameters:**_
-
-Name | Kind | Description | DataType
----- | ---- | ----------- | --------
- key | Path | Name of the system variable. | string
 
 
 
