@@ -54,7 +54,7 @@ func createNdauBlock(t *testing.T) string {
 	acctName := "integrationtestacct"
 
 	goDir := getGoDir(t)
-	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/ndau/ndau", goDir)
+	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/ndau", goDir)
 
 	acctCmd := exec.Command(ndauTool, "account", "new", acctName)
 	acctStderr, err := acctCmd.StderrPipe()
@@ -123,7 +123,7 @@ func createChaosBlock(t *testing.T) (namespaceBase64, key, value string) {
 	value = "integrationtestvalue"
 
 	goDir := getGoDir(t)
-	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/chaos/chaos", goDir)
+	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/chaos", goDir)
 
 	// Create a test namespace.
 	namespaceCmd := exec.Command(chaosTool, "id", "new", namespace)
