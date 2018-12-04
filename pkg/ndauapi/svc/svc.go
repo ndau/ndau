@@ -175,7 +175,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
 			Height: 12345,
-			Value: []byte("value"),
+			Value:  []byte("value"),
 		}}}}))
 
 	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
@@ -289,13 +289,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/system/all").To(routes.HandleSystemAll(cf)).
 		Operation("SystemAll").
 		Doc("Returns the names and current values of all currently-defined system variables.").
-		Produces(JSON).
-		Writes(""))
-
-	svc.Route(svc.GET("/system/:key").To(routes.HandleSystemKey(cf)).
-		Operation("SystemKey").
-		Doc("Returns the current value of a single system variable.").
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 

@@ -3,7 +3,6 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/chaos/pkg/chaos/ns"
 	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -14,6 +13,7 @@ import (
 
 var (
 	bpcvalone signature.PublicKey
+	ns_system = []byte("system")
 )
 
 func init() {
@@ -48,7 +48,7 @@ func initAppSystem(t *testing.T, height uint64) *App {
 		require.NoError(t, err)
 	}
 
-	sets(ns.System, "one", &bpcvalone)
+	sets(ns_system, "one", &bpcvalone)
 
 	// dump the genesisfile
 	err = gfile.Dump(*app.config.UseMock)
