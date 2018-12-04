@@ -13,7 +13,7 @@ import:
   version: ~0.11
   repo: git@github.com:oneiro-ndev/chaincode.git
 - package: github.com/oneiro-ndev/chaos
-  version: ~0.10
+  version: eas-ndau-177
   repo: git@github.com:oneiro-ndev/chaos.git
 - package: github.com/oneiro-ndev/chaos_genesis
   version: ~v0.1

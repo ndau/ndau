@@ -175,6 +175,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		The result is sorted chronologically.`).
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
 			Height: 12345,

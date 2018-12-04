@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -125,30 +124,10 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// Paging is optional.  Default to returning all history in a single page.
-		pageIndex := 0
-		pageSize := 0
-		pageIndexString := r.URL.Query().Get("pageindex")
-		pageSizeString := r.URL.Query().Get("pagesize")
-		if pageIndexString != "" {
-			pageIndex64, err := strconv.ParseInt(pageIndexString, 10, 32)
-			if err != nil {
-				reqres.RespondJSON(w, reqres.NewFromErr("pageindex must be a valid number", err, http.StatusBadRequest))
-				return
-			}
-			pageIndex = int(pageIndex64)
-		}
-		if pageSizeString != "" {
-			pageSize64, err := strconv.ParseInt(pageSizeString, 10, 32)
-			if err != nil {
-				reqres.RespondJSON(w, reqres.NewFromErr("pagesize must be a valid number", err, http.StatusBadRequest))
-				return
-			}
-			if pageSize64 < 0 {
-				reqres.RespondJSON(w, reqres.NewAPIError("pagesize must be non-negative", http.StatusBadRequest))
-				return
-			}
-			pageSize = int(pageSize64)
+		pageIndex, pageSize, errMsg, err := getPagingParams(r)
+		if errMsg != "" {
+			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+			return
 		}
 
 		// Prepare search params.

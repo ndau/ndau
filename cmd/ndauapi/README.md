@@ -704,6 +704,8 @@ Name | Kind | Description | DataType
 ---- | ---- | ----------- | --------
  namespace | Path | Base-64 (std) text of the namespace, url-encoded. | string
  key | Path | Base-64 (std) name of the variable. | string
+ pageindex | Query | The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0 | int
+ pagesize | Query | The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0 | int
 
 
 

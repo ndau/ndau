@@ -1,10 +1,10 @@
-hash: 7706e4703231174f968c2f797fb577bc2d549a1d29bd6a6668610e182af9a220
-updated: 2018-12-04T09:05:58.77001-08:00
+hash: adda8194afe2eecda09b7f4c5e46f795062f51f53c750742020ea904e394dca4
+updated: 2018-12-04T13:20:09.194236-08:00
 imports:
 - name: github.com/alexflint/go-arg
   version: fb7d95b61ba8d5860c76afb69243586dff37ae85
 - name: github.com/alexflint/go-scalar
-  version: 6ab8ad5e1c5b25ca2783fe83f493c3ab471407e2
+  version: 6638fbbc28f9ad0136ef5fd84a15c995e08e161f
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
   subpackages:
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 88388f1dcec6c6c6548dab2149b22d36ef2f5e08
+  version: c0e045125a22fd103f37958ec424db21fff4068f
   subpackages:
   - aws
   - aws/awserr
@@ -162,7 +162,7 @@ imports:
 - name: github.com/honeycombio/libhoney-go
   version: a6839afb6be6f3ec9de43b3a2c08f89b338e8534
 - name: github.com/jawher/mow.cli
-  version: 2f22195f169da29d54624afd9eb83ada5c9e4ee9
+  version: be8a14f11c9d056881a23b1492b7995778fae6d0
   subpackages:
   - internal/container
   - internal/flow
@@ -200,7 +200,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: 5a5695498504486551d51699b98d87dccdda0c01
+  version: 59b74d11dd3103ae6ac6ff5b8dcb39d86121b114
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -281,7 +281,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 32b1bb4674c4db541df5b547bb1a325337522022
+  version: 2df5ba38effb22ad83b864fe465be6329c128e23
   subpackages:
   - prometheus
   - prometheus/internal
@@ -297,7 +297,7 @@ imports:
   - internal/bitbucket.org/ww/goautoneg
   - model
 - name: github.com/prometheus/procfs
-  version: aa55a523dc0a8297edf51bb75e8eec13eb3be45d
+  version: 1dc9a6cbc91aacc3e8b2d63db4d2e957a5394ac4
   subpackages:
   - internal/util
   - nfs
@@ -443,7 +443,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: e5f3ab76ea4b26ebea349e4994ee72d38250c9b0
+  version: 3832e276fb482db22223edf38dc9166e795131e0
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
