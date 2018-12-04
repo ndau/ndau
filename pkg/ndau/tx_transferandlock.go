@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *TransferAndLock) GetAccountAddresses() []string {
+	return []string{tx.Source.String(), tx.Destination.String()}
+}
+
 // NewTransferAndLock creates a new signed transferAndLock transactable
 func NewTransferAndLock(
 	s address.Address,

@@ -10,6 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *ReleaseFromEndowment) GetAccountAddresses() []string {
+	return []string{tx.Destination.String()}
+}
+
 // SignableBytes implements Transactable
 func (tx *ReleaseFromEndowment) SignableBytes() []byte {
 	bytes := make([]byte, 0, tx.Destination.Msgsize()+tx.Qty.Msgsize()+8+8)

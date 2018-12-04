@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/go-zoo/bone"
-	cns "github.com/oneiro-ndev/chaos/pkg/chaos/ns"
 	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	chtool "github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -61,53 +60,6 @@ func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(values))
-	}
-}
-
-func getSystemValue(cf cfg.Cfg, key []byte) (string, error) {
-	// find the chaos node
-	chnode, err := ws.Node(cf.ChaosAddress)
-	if err != nil {
-		return "", err
-	}
-
-	systemns := cns.System
-	resp, _, err := chtool.GetNamespacedAt(chnode, systemns, key, 0)
-	if err != nil {
-		return "", err
-	}
-	return string(resp), nil
-}
-
-// HandleSystemKey retrieves a single system key at the current block height
-func HandleSystemKey(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		keyBase64 := bone.GetValue(r, "key")
-		if keyBase64 == "" {
-			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
-			return
-		}
-
-		keyBytes, err := base64.StdEncoding.DecodeString(keyBase64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding key '%s'", keyBase64), err, http.StatusBadRequest))
-			return
-		}
-
-		value, err := getSystemValue(cf, keyBytes)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
-			return
-		}
-
-		result := ChaosAllResult{
-			Namespace: string(cns.System),
-			Data: []ChaosItem{ChaosItem{
-				Key:   keyBase64,
-				Value: value,
-			}},
-		}
-		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }
 

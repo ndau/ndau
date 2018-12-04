@@ -9,7 +9,7 @@ import (
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
 func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
-	search.txHashes = nil
+	search.txs = nil
 	search.blockHash = tmHash
 	search.blockHeight = height
 	search.nextHeight = height + 1
@@ -18,7 +18,7 @@ func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 
 // OnDeliverTx grabs the fields out of this transaction to index when the block is committed.
 func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
-	search.txHashes = append(search.txHashes, metatx.Hash(tx))
+	search.txs = append(search.txs, tx)
 	return nil
 }
 

@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *Transfer) GetAccountAddresses() []string {
+	return []string{tx.Source.String(), tx.Destination.String()}
+}
+
 // NewTransfer creates a new signed transfer transactable
 func NewTransfer(
 	s address.Address, d address.Address,

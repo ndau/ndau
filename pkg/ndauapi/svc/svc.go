@@ -10,6 +10,7 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
+	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -46,7 +47,7 @@ var dummyAccount = backing.AccountData{
 	ValidationKeys:     []signature.PublicKey{dummyPublic},
 	WeightedAverageAge: 30 * types.Day,
 }
-var dummyTimestamp = "2018-07-18T20:01:02Z"
+var dummyTimestamp = "2018-07-18 20:01:02.784856 +0000 UTC"
 var dummyBlockMeta = tmtypes.BlockMeta{}
 var dummyResultBlock = rpctypes.ResultBlock{
 	BlockMeta: &dummyBlockMeta,
@@ -120,21 +121,17 @@ func New(cf cfg.Cfg) *boneful.Service {
 			EAIRate: 6000000,
 		}}))
 
-	svc.Route(svc.GET("/account/history/:accountid").To(routes.HandleAccount(cf)).
+	svc.Route(svc.GET("/account/history/:address").To(routes.HandleAccountHistory(cf)).
 		Doc("Returns the balance history of an account given its address.").
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
-		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		The result is sorted chronologically.`).
 		Operation("AccountHistory").
-		Param(boneful.QueryParameter("limit", "Maximum number of transactions to return; default=10.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
 		Produces(JSON).
-		Writes([]routes.BalanceHistoryItem{
-			routes.BalanceHistoryItem{
-				Balance:   123000000,
-				Timestamp: dummyTimestamp,
-				TxHash:    "abc123def456",
-			},
-		}))
+		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
+			Balance:   123000000,
+			Timestamp: dummyTimestamp,
+			TxHash:    "abc123def456",
+		}}}))
 
 	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockCurrent").
@@ -176,7 +173,10 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
-		Writes(routes.ChaosHistoryResponse{}))
+		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
+			Height: 12345,
+			Value:  []byte("value"),
+		}}}}))
 
 	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
 		Operation("ChaosNamespaceAll").
@@ -289,13 +289,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/system/all").To(routes.HandleSystemAll(cf)).
 		Operation("SystemAll").
 		Doc("Returns the names and current values of all currently-defined system variables.").
-		Produces(JSON).
-		Writes(""))
-
-	svc.Route(svc.GET("/system/:key").To(routes.HandleSystemKey(cf)).
-		Operation("SystemKey").
-		Doc("Returns the current value of a single system variable.").
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
 

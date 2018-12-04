@@ -162,7 +162,7 @@ jobs:
               CHAOS_CONTAINER_VERSION=$(git rev-parse --short `git ls-remote git@github.com:oneiro-ndev/chaos.git master | cut -f1`)
 
               # Clone the automation repo master branch
-              git clone git@github.com:oneiro-ndev/automation.git -b jsg-pre-s3 /root/automation
+              git clone git@github.com:oneiro-ndev/automation.git /root/automation
 
               # Remove old test net
               KUBECONFIG=/root/kubeconfig \

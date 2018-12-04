@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *ChangeValidation) GetAccountAddresses() []string {
+	return []string{tx.Target.String()}
+}
+
 // SignableBytes implements Transactable
 func (tx *ChangeValidation) SignableBytes() []byte {
 	blen := 0
