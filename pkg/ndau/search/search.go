@@ -5,6 +5,8 @@ package search
 import (
 	"sort"
 	"strconv"
+
+	srch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 )
 
 // SearchBlockHash returns the height of the given block hash.
@@ -84,14 +86,8 @@ func (search *Client) SearchAccountHistory(
 	// Reduce the full results list down to the requested page.  There is some wasted effort with
 	// this approach, but we support the worst case, which is to return all results.  In practice,
 	// getting the full list from the underlying index is fast, with tolerable sorting speed.
-	// A page size of 0 means "return all results"..
-	if pageSize > 0 {
-		offset := pageIndex * pageSize
-		if offset < 0 {
-			offset = len(ahr.Txs) + offset
-		}
-		ahr.Txs = ahr.Txs[offset:offset+pageSize]
-	}
+	offsetStart, offsetEnd := srch.GetPageOffsets(pageIndex, pageSize, len(ahr.Txs))
+	ahr.Txs = ahr.Txs[offsetStart:offsetEnd]
 
  	return ahr, err
 }

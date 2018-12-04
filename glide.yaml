@@ -20,7 +20,7 @@ import:
   repo: git@github.com:oneiro-ndev/chaos_genesis.git
 - package: github.com/oneiro-ndev/metanode
   repo: git@github.com:oneiro-ndev/metanode.git
-  version: ~0.11
+  version: eas-ndau-177
 - package: github.com/oneiro-ndev/msgp-well-known-types
   version: ~0.1.0
   repo: git@github.com:oneiro-ndev/msgp-well-known-types.git
