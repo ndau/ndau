@@ -53,6 +53,8 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		// PRGN: I don't know what `network` is supposed to be, so I'm just removing this entirely instead of fixing it.
+		//
 		// network, err := getSystemValue(cf, []byte("NetworkName"))
 		// if err != nil {
 		// 	reqres.RespondJSON(w, reqres.NewFromErr("error retrieving network info", err, http.StatusInternalServerError))
