@@ -53,7 +53,7 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 			return req, fmt.Errorf("%s is not a valid number: %v", k, err)
 		}
 		if v < 1 {
-			return req, fmt.Errorf("%s must be higher than 1", k)
+			return req, fmt.Errorf("%s must be at least 1", k)
 		}
 		vals[i] = v
 	}
@@ -71,35 +71,6 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 	noempty := (r.URL.Query().Get("noempty") != "")
 
 	return BlockchainRequest{
-		first:   first,
-		last:    last,
-		noempty: noempty,
-	}, nil
-}
-
-func processBlockchainDateRequest(r *http.Request) (BlockchainDateRequest, error) {
-
-	var req BlockchainDateRequest
-
-	keys := []string{"first", "last"}
-	vals := [2]time.Time{}
-	for i, k := range keys {
-		p := bone.GetValue(r, k)
-		if p == "" {
-			return req, fmt.Errorf("%s parameter required", k)
-		}
-		v, err := time.Parse(time.RFC3339, p)
-		if err != nil {
-			return req, fmt.Errorf("%s is not a valid timestamp: %v", k, err)
-		}
-		vals[i] = v
-	}
-	first := vals[0]
-	last := vals[1]
-
-	noempty := (r.URL.Query().Get("noempty") != "")
-
-	return BlockchainDateRequest{
 		first:   first,
 		last:    last,
 		noempty: noempty,
@@ -182,33 +153,72 @@ func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string
 }
 
 func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
-	reqdata, err := processBlockchainDateRequest(r)
-	if err != nil {
-		// Anything that errors from here is going to be a bad request.
-		reqres.RespondJSON(w, reqres.NewAPIError(err.Error(), http.StatusBadRequest))
+	first := bone.GetValue(r, "first")
+	last := bone.GetValue(r, "last")
+	noempty := r.URL.Query().Get("noempty") != ""
+
+	if first == "" {
+		reqres.RespondJSON(w, reqres.NewAPIError("first parameter required.", http.StatusBadRequest))
 		return
 	}
+	if last == "" {
+		reqres.RespondJSON(w, reqres.NewAPIError("last parameter required.", http.StatusBadRequest))
+		return
+	}
+
+	var err error
+	_, err = time.Parse(time.RFC3339, first)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError("first is not a valid timestamp", http.StatusBadRequest))
+		return
+	}
+	_, err = time.Parse(time.RFC3339, last)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError("last is not a valid timestamp", http.StatusBadRequest))
+		return
+	}
+
 	node, err := ws.Node(nodeAddress)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 		return
 	}
 
-	// FIXME: Get from index.
-	first := int64(1)
-	last := int64(1)
+	firstHeight, lastHeight, err := tool.SearchDateRange(node, first, last)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
+		return
+	}
 
-	if first > last {
+	// If the search returned zero for the last height, it means the results are empty.
+	if lastHeight == 0 {
+		// Successful (empty) results.
+		reqres.RespondJSON(w, reqres.OKResponse(nil))
+		return
+	}
+
+	// The last height is exclusive.  Otherwise the result would include the first block of the
+	// next day.  The user code uses the returned range to do an inclusive block height lookup.
+	// This converts it to inclusive, which is what getBlocksMatching() expects.
+	lastHeight--
+
+	// Tendermint doesn't use block height 0.
+	if firstHeight == 0 {
+		firstHeight = 1
+	}
+
+	// Test for degenerate results.
+	if firstHeight > lastHeight {
 		// Successful (empty) results.
 		reqres.RespondJSON(w, reqres.OKResponse(nil))
 		return
 	}
 
 	f := noFilter
-	if reqdata.noempty {
+	if noempty {
 		f = nonemptyFilter
 	}
-	blocks, err := getBlocksMatching(node, first, last, f)
+	blocks, err := getBlocksMatching(node, int64(firstHeight), int64(lastHeight), f)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return

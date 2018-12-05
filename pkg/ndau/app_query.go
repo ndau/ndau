@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
+	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
@@ -21,6 +22,7 @@ import (
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
 	meta.RegisterQueryHandler(query.AccountHistoryEndpoint, accountHistoryQuery)
+	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
@@ -82,6 +84,32 @@ func accountHistoryQuery(
 	}
 
 	ahBytes := []byte(ahr.Marshal())
+	response.Value = ahBytes
+}
+
+func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	search := app.GetSearch()
+	if search == nil {
+		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		return
+	}
+	client := search.(*srch.Client)
+
+	paramsString := string(request.GetData())
+	var req metasrch.DateRangeRequest
+	req.Unmarshal(paramsString)
+
+	firstHeight, lastHeight, err :=
+		client.Client.SearchDateRange(req.FirstTimestamp, req.LastTimestamp)
+	if err != nil {
+		app.QueryError(err, response, "date range search fail")
+		return
+	}
+
+	result := metasrch.DateRangeResult{firstHeight, lastHeight}
+	ahBytes := []byte(result.Marshal())
 	response.Value = ahBytes
 }
 

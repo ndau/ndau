@@ -4,6 +4,7 @@ package query
 const (
 	AccountEndpoint           = "/account"
 	AccountHistoryEndpoint    = "/accounthistory"
+	DateRangeEndpoint         = "/daterange"
 	PrevalidateEndpoint       = "/prevalidate"
 	SearchEndpoint            = "/search"
 	SidechainTxExistsEndpoint = "/stx"
