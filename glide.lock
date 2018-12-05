@@ -1,10 +1,10 @@
-hash: ad1b04a802829e6bca9378d8681c0338a30cc8da61d88b51449caa39004b8cab
-updated: 2018-12-04T14:44:21.495604-08:00
+hash: c98ee9777426435abb692bf7b44719633ca5370ef8f1b93709ab776c04b2f79f
+updated: 2018-12-05T08:09:01.941256-08:00
 imports:
 - name: github.com/alexflint/go-arg
   version: fb7d95b61ba8d5860c76afb69243586dff37ae85
 - name: github.com/alexflint/go-scalar
-  version: 6ab8ad5e1c5b25ca2783fe83f493c3ab471407e2
+  version: 6638fbbc28f9ad0136ef5fd84a15c995e08e161f
 - name: github.com/attic-labs/graphql
   version: 917f92ca24a759a0e3bfd1b135850f9b0c04682e
   subpackages:
@@ -43,7 +43,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 1cc07f137ddb859b1267d67a2eda31f5635054a8
+  version: 6c07f02fedfad07fe77b21209dbc90142f7ce5ef
   subpackages:
   - aws
   - aws/awserr
@@ -201,7 +201,7 @@ imports:
   - pkg/chain
   - pkg/vm
 - name: github.com/oneiro-ndev/chaos
-  version: b7689f80ab76fa2df0555104a709ed3ae29344dd
+  version: deac77d8654f9885c2bb3f16c0ecef111174b46a
   repo: git@github.com:oneiro-ndev/chaos.git
   subpackages:
   - pkg/chaos
@@ -217,7 +217,7 @@ imports:
   subpackages:
   - pkg/genesis.generator
 - name: github.com/oneiro-ndev/metanode
-  version: 5ad7b6547c9db5b5161d84c7da7cbc4e1ae31c8a
+  version: b58604d44679cdccaad3f0609c170a1fdf7007b9
   repo: git@github.com:oneiro-ndev/metanode.git
   subpackages:
   - pkg/meta/app
@@ -431,7 +431,7 @@ imports:
   - netutil
   - trace
 - name: golang.org/x/sys
-  version: 4ed8d59d0b35e1e29334a206d1b3f38b1e5dfb31
+  version: a5c9d58dba9a56f97aaa86f55e638b718c5a6c42
   subpackages:
   - cpu
   - unix
@@ -444,7 +444,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: golang.org/x/tools
-  version: 3832e276fb482db22223edf38dc9166e795131e0
+  version: 22934f0fdb6201c132a3dc6120150dcb1646d74c
   subpackages:
   - go/ast/astutil
 - name: google.golang.org/genproto
@@ -452,7 +452,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: ca62c6b92c334f52c7e48b7cbf624f3b877fb092
+  version: 272e9d4fbde8a0a44d24291bac0182ea4e33d403
   subpackages:
   - balancer
   - balancer/base
