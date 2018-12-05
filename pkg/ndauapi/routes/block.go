@@ -121,30 +121,41 @@ func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtype
 // HandleBlockRange handles requests for a range of blocks
 func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reqdata, err := processBlockchainRequest(r)
-		if err != nil {
-			// Anything that errors from here is going to be a bad request.
-			reqres.RespondJSON(w, reqres.NewAPIError(err.Error(), http.StatusBadRequest))
-			return
-		}
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
-			return
-		}
-
-		f := noFilter
-		if reqdata.noempty {
-			f = nonemptyFilter
-		}
-		blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, f)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
-			return
-		}
-
-		reqres.RespondJSON(w, reqres.OKResponse(blocks))
+		handleBlockRange(w, r, cf.NodeAddress)
 	}
+}
+
+// HandleChaosBlockRange handles requests for a range of blocks
+func HandleChaosBlockRange(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handleBlockRange(w, r, cf.ChaosAddress)
+	}
+}
+
+func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
+	reqdata, err := processBlockchainRequest(r)
+	if err != nil {
+		// Anything that errors from here is going to be a bad request.
+		reqres.RespondJSON(w, reqres.NewAPIError(err.Error(), http.StatusBadRequest))
+		return
+	}
+	node, err := ws.Node(nodeAddress)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
+		return
+	}
+
+	f := noFilter
+	if reqdata.noempty {
+		f = nonemptyFilter
+	}
+	blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, f)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
+		return
+	}
+
+	reqres.RespondJSON(w, reqres.OKResponse(blocks))
 }
 
 // HandleBlockHeight returns data for a single block; if height is 0, it's the current block

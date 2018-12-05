@@ -168,6 +168,18 @@ func New(cf cfg.Cfg) *boneful.Service {
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
+	svc.Route(svc.GET("/chaos/range/:first/:last").To(routes.HandleChaosBlockRange(cf)).
+		Operation("ChaosBlockRange").
+		Doc("Returns a sequence of block metadata starting at first and ending at last").
+		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
+		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
+			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
+		}))
+
 	svc.Route(svc.GET("/chaos/history/:namespace/:key").To(routes.HandleChaosHistory(cf)).
 		Operation("ChaosHistory").
 		Doc("Returns the history of changes to a value of a single chaos chain variable.").
