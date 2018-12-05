@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -175,7 +176,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			txhash := metatx.Hash(txab)
 			item := AccountHistoryItem{
 				Balance:   balance,
-				Timestamp: block.Block.Header.Time.String(),
+				Timestamp: block.Block.Header.Time.Format(time.RFC3339),
 				TxHash:    txhash,
 			}
 			result.Items = append(result.Items, item)

@@ -27,7 +27,7 @@ func TestKeyHistory(t *testing.T) {
 	}
 	mux := svc.New(cf).Mux()
 
-	namespaceBase64, key, value := createChaosBlock(t)
+	namespaceBase64, key, value := createChaosBlock(t, 0)
 
 	// Use underscores so they're not valid base64, in addition to not being indexed.
 	invalidNamespace := "invalidnamespace_"

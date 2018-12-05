@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-zoo/bone"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
@@ -23,6 +24,13 @@ import (
 type BlockchainRequest struct {
 	first   int64
 	last    int64
+	noempty bool
+}
+
+// BlockchainDateRequest represents a blockchain date request.
+type BlockchainDateRequest struct {
+	first   time.Time
+	last    time.Time
 	noempty bool
 }
 
@@ -53,7 +61,7 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 	last := vals[1]
 
 	if first > last {
-		return req, fmt.Errorf("%s must be higher than %s", keys[0], keys[1])
+		return req, fmt.Errorf("%s cannot be higher than %s", keys[0], keys[1])
 	}
 
 	if last-first > MaximumRange {
@@ -63,6 +71,35 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 	noempty := (r.URL.Query().Get("noempty") != "")
 
 	return BlockchainRequest{
+		first:   first,
+		last:    last,
+		noempty: noempty,
+	}, nil
+}
+
+func processBlockchainDateRequest(r *http.Request) (BlockchainDateRequest, error) {
+
+	var req BlockchainDateRequest
+
+	keys := []string{"first", "last"}
+	vals := [2]time.Time{}
+	for i, k := range keys {
+		p := bone.GetValue(r, k)
+		if p == "" {
+			return req, fmt.Errorf("%s parameter required", k)
+		}
+		v, err := time.Parse(time.RFC3339, p)
+		if err != nil {
+			return req, fmt.Errorf("%s is not a valid timestamp: %v", k, err)
+		}
+		vals[i] = v
+	}
+	first := vals[0]
+	last := vals[1]
+
+	noempty := (r.URL.Query().Get("noempty") != "")
+
+	return BlockchainDateRequest{
 		first:   first,
 		last:    last,
 		noempty: noempty,
@@ -118,20 +155,6 @@ func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtype
 	return filterBlockchainInfo(blocks, filter), nil
 }
 
-// HandleBlockRange handles requests for a range of blocks
-func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockRange(w, r, cf.NodeAddress)
-	}
-}
-
-// HandleChaosBlockRange handles requests for a range of blocks
-func HandleChaosBlockRange(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockRange(w, r, cf.ChaosAddress)
-	}
-}
-
 func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
 	reqdata, err := processBlockchainRequest(r)
 	if err != nil {
@@ -156,6 +179,70 @@ func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string
 	}
 
 	reqres.RespondJSON(w, reqres.OKResponse(blocks))
+}
+
+func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
+	reqdata, err := processBlockchainDateRequest(r)
+	if err != nil {
+		// Anything that errors from here is going to be a bad request.
+		reqres.RespondJSON(w, reqres.NewAPIError(err.Error(), http.StatusBadRequest))
+		return
+	}
+	node, err := ws.Node(nodeAddress)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
+		return
+	}
+
+	// FIXME: Get from index.
+	first := int64(1)
+	last := int64(1)
+
+	if first > last {
+		// Successful (empty) results.
+		reqres.RespondJSON(w, reqres.OKResponse(nil))
+		return
+	}
+
+	f := noFilter
+	if reqdata.noempty {
+		f = nonemptyFilter
+	}
+	blocks, err := getBlocksMatching(node, first, last, f)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
+		return
+	}
+
+	reqres.RespondJSON(w, reqres.OKResponse(blocks))
+}
+
+// HandleBlockRange handles requests for a range of blocks
+func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handleBlockRange(w, r, cf.NodeAddress)
+	}
+}
+
+// HandleChaosBlockRange handles requests for a range of blocks
+func HandleChaosBlockRange(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handleBlockRange(w, r, cf.ChaosAddress)
+	}
+}
+
+// HandleBlockDateRange handles requests for a range of blocks
+func HandleBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handleBlockDateRange(w, r, cf.NodeAddress)
+	}
+}
+
+// HandleChaosBlockDateRange handles requests for a range of blocks
+func HandleChaosBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handleBlockDateRange(w, r, cf.ChaosAddress)
+	}
 }
 
 // HandleBlockHeight returns data for a single block; if height is 0, it's the current block

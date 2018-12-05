@@ -47,7 +47,7 @@ var dummyAccount = backing.AccountData{
 	ValidationKeys:     []signature.PublicKey{dummyPublic},
 	WeightedAverageAge: 30 * types.Day,
 }
-var dummyTimestamp = "2018-07-18 20:01:02.784856 +0000 UTC"
+var dummyTimestamp = "2018-07-10T20:01:02Z"
 var dummyBlockMeta = tmtypes.BlockMeta{}
 var dummyResultBlock = rpctypes.ResultBlock{
 	BlockMeta: &dummyBlockMeta,
@@ -168,11 +168,35 @@ func New(cf cfg.Cfg) *boneful.Service {
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
+	svc.Route(svc.GET("/block/daterange/:first/:last").To(routes.HandleBlockDateRange(cf)).
+		Operation("BlockDateRange").
+		Doc("Returns a sequence of block metadata starting at first date and ending at last date").
+		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
+			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
+		}))
+
 	svc.Route(svc.GET("/chaos/range/:first/:last").To(routes.HandleChaosBlockRange(cf)).
 		Operation("ChaosBlockRange").
 		Doc("Returns a sequence of block metadata starting at first and ending at last").
 		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
 		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
+			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
+		}))
+
+	svc.Route(svc.GET("/chaos/daterange/:first/:last").To(routes.HandleChaosBlockDateRange(cf)).
+		Operation("ChaosBlockDateRange").
+		Doc("Returns a sequence of block metadata starting at first date and ending at last date").
+		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{

@@ -117,10 +117,10 @@ func getCurrentNdauBlock(t *testing.T, mux http.Handler) (blockData rpctypes.Res
 
 // Invoke the chaos tool to create a key value pair in the chaos chain.
 // Return the namespace, key and value that were set.
-func createChaosBlock(t *testing.T) (namespaceBase64, key, value string) {
+func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value string) {
 	namespace := "integrationtestnamespace"
 	key = "integrationtestkey"
-	value = "integrationtestvalue"
+	value = fmt.Sprintf("integrationtestvalue%d", valnum)
 
 	goDir := getGoDir(t)
 	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/chaos", goDir)
