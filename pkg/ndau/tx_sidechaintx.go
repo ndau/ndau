@@ -112,3 +112,8 @@ func (tx *SidechainTx) GetSignatures() []signature.Signature {
 func (tx *SidechainTx) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *SidechainTx) GetAccountAddresses() []string {
+	return []string{tx.Source.String()}
+}
