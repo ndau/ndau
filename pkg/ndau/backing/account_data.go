@@ -194,7 +194,7 @@ type AccountData struct {
 	Settlements         []Settlement          `json:"settlements" chain:"70,Acct_Settlements"`
 	SettlementSettings  SettlementSettings    `json:"settlementSettings" chain:"."`
 	ValidationScript    []byte                `json:"validationScript" chain:"69,Acct_ValidationScript"`
-	SidechainPayments   map[string]struct{}   `json:"sidechain_payments"`
+	SidechainPayments   map[string]struct{}   `json:"-" msg:"-"` // not useful for consumers; they should use an ABCI query instead
 	UncreditedEAI       math.Ndau             `json:"-" msg:"-"` // exclude from serialization
 }
 
