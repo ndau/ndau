@@ -2,6 +2,7 @@ package routes_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -114,6 +115,38 @@ func TestAccountHistory(t *testing.T) {
 			req:      httptest.NewRequest("GET", "/account/history/" + addr, nil),
 			status:   http.StatusOK,
 			// The addr isn't part of the response, just make sure the response is non-empty.
+			wantbody: "{\"Items\":[{\"Balance\":",
+		}, {
+			name:     "invalid page index",
+			req:      httptest.NewRequest("GET",
+				fmt.Sprintf("/account/history/%s?pageindex=not_a_number", addr), nil),
+			status:   http.StatusBadRequest,
+			wantbody: "pageindex must be a valid number",
+		}, {
+			name:     "invalid page size",
+			req:      httptest.NewRequest("GET",
+				fmt.Sprintf("/account/history/%s?pagesize=not_a_number", addr), nil),
+			status:   http.StatusBadRequest,
+			wantbody: "pagesize must be a valid number",
+		}, {
+			name:     "invalid page size number",
+			req:      httptest.NewRequest("GET",
+				fmt.Sprintf("/account/history/%s?pagesize=%d", addr, -3), nil),
+			status:   http.StatusBadRequest,
+			wantbody: "pagesize must be non-negative",
+		}, {
+			name:     "valid page",
+			req:      httptest.NewRequest("GET",
+				fmt.Sprintf("/account/history/%s?pageindex=%d&pagesize=%d", addr, 0, 1), nil),
+			status:   http.StatusOK,
+			// We know the first transaction will have zero balance since it's an account claim.
+			wantbody: "{\"Items\":[{\"Balance\":0,\"Timestamp\":",
+		}, {
+			name:     "valid end page",
+			req:      httptest.NewRequest("GET",
+				fmt.Sprintf("/account/history/%s?pageindex=%d&pagesize=%d", addr, -1, 1), nil),
+			status:   http.StatusOK,
+			// We don't know what the end balance will be, so we just check the response start.
 			wantbody: "{\"Items\":[{\"Balance\":",
 		},
 	}

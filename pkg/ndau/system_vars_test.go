@@ -13,7 +13,7 @@ import (
 
 var (
 	bpcvalone signature.PublicKey
-	ns_system = []byte("system")
+	nsSystem  = []byte("system")
 )
 
 func init() {
@@ -48,7 +48,7 @@ func initAppSystem(t *testing.T, height uint64) *App {
 		require.NoError(t, err)
 	}
 
-	sets(ns_system, "one", &bpcvalone)
+	sets(nsSystem, "one", &bpcvalone)
 
 	// dump the genesisfile
 	err = gfile.Dump(*app.config.UseMock)

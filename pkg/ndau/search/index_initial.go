@@ -19,6 +19,7 @@ func (search *Client) IndexBlockchain(
 	insertCount = 0
 
 	// Start fresh.  It should already be zero'd out upon entry.
+	search.state = nil
 	search.txs = nil
 	search.blockHash = ""
 	search.blockHeight = 0

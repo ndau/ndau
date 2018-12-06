@@ -58,19 +58,24 @@ func accountHistoryQuery(
 ) {
 	app := appI.(*App)
 
-	address, err := address.Validate(string(request.GetData()))
-	if err != nil {
-		app.QueryError(err, response, "deserializing address")
-		return
-	}
-
 	search := app.GetSearch()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
 	}
+	client := search.(*srch.Client)
 
-	ahr, err := search.(*srch.Client).SearchAccountHistory(address)
+	paramsString := string(request.GetData())
+	var params srch.AccountHistoryParams
+	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	if err != nil {
+		app.QueryError(
+			errors.New("Cannot decode search params json"), response, "invalid search query")
+		return
+	}
+
+	// The address was already validated by the caller.
+	ahr, err := client.SearchAccountHistory(params.Address, params.PageIndex, params.PageSize)
 	if err != nil {
 		app.QueryError(err, response, "account history search fail")
 		return

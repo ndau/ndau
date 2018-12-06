@@ -130,7 +130,14 @@ func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		hkr, _, err := chtool.HistoryNamespaced(node, namespaceBytes, keyBytes)
+		pageIndex, pageSize, errMsg, err := getPagingParams(r)
+		if errMsg != "" {
+			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+			return
+		}
+
+		hkr, _, err := chtool.HistoryNamespaced(
+			node, namespaceBytes, keyBytes, pageIndex, pageSize)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
 			return

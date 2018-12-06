@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
@@ -122,7 +124,23 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		ahr, _, err := tool.GetAccountHistory(node, addr)
+		pageIndex, pageSize, errMsg, err := getPagingParams(r)
+		if errMsg != "" {
+			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+			return
+		}
+
+		// Prepare search params.
+		params := search.AccountHistoryParams{
+			Address:   addr.String(),
+			PageIndex: pageIndex,
+			PageSize:  pageSize,
+		}
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+		paramsString := paramsBuf.String()
+
+		ahr, _, err := tool.GetAccountHistory(node, paramsString)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
 			return
@@ -133,6 +151,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 		for _, valueData := range ahr.Txs {
 			blockheight := int64(valueData.BlockHeight)
 			txoffset := valueData.TxOffset
+			balance := valueData.Balance
 
 			block, err := node.Block(&blockheight)
 			if err != nil {
@@ -155,7 +174,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 
 			txhash := metatx.Hash(txab)
 			item := AccountHistoryItem{
-				Balance:   0, // ndau-179: Compute the new balance as of this transaction.
+				Balance:   balance,
 				Timestamp: block.Block.Header.Time.String(),
 				TxHash:    txhash,
 			}

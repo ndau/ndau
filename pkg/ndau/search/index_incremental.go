@@ -3,12 +3,14 @@ package search
 // Methods used for incremental indexing.
 
 import (
+	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
 func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
+	search.state = nil
 	search.txs = nil
 	search.blockHash = tmHash
 	search.blockHeight = height
@@ -23,7 +25,8 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 }
 
 // OnCommit indexes all the transaction data we collected since the last BeginBlock().
-func (search *Client) OnCommit(appHash string) error {
+func (search *Client) OnCommit(app *meta.App) error {
+	search.state = app.GetState()
 	search.index()
 	search.onIndexingComplete()
 	return nil
