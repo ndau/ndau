@@ -191,5 +191,10 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		}
 	}
 
-	return updateCount, insertCount, nil
+	// Index date to height as needed.
+	updCount, insCount, err =
+		search.Client.IndexDateToHeight(search.blockTime, search.blockHeight)
+	updateCount += updCount
+	insertCount += insCount
+	return updateCount, insertCount, err
 }
