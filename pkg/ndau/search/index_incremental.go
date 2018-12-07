@@ -3,15 +3,18 @@ package search
 // Methods used for incremental indexing.
 
 import (
+	"time"
+
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
-func (search *Client) OnBeginBlock(height uint64, tmHash string) error {
+func (search *Client) OnBeginBlock(height uint64, blockTime time.Time, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
 	search.state = nil
 	search.txs = nil
+	search.blockTime = blockTime
 	search.blockHash = tmHash
 	search.blockHeight = height
 	search.nextHeight = height + 1

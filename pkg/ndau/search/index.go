@@ -5,6 +5,7 @@ package search
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -34,6 +35,7 @@ type Client struct {
 
 	state metastate.State
 	txs []metatx.Transactable
+	blockTime time.Time
 	blockHash string
 	blockHeight uint64
 	nextHeight uint64
@@ -49,6 +51,7 @@ func NewClient(address string, version int) (search *Client, err error) {
 
 	search.state = nil
 	search.txs = nil
+	search.blockTime = time.Time{}
 	search.blockHash = ""
 	search.blockHeight = 0
 	search.nextHeight = 0
@@ -72,6 +75,7 @@ func (search *Client) onIndexingComplete() {
 	// No need to keep this data around any longer.
 	search.state = nil
 	search.txs = nil
+	search.blockTime = time.Time{}
 	search.blockHash = ""
 	search.blockHeight = 0
 
