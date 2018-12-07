@@ -15,6 +15,7 @@ import (
 // We use these prefixes to help us group keys in the index.  They could prove useful if we ever
 // want to do things like "wipe all hash-to-height keys" without affecting any other keys.  The
 // prefixes also give us some sanity, so that we completely avoid inter-index key conflicts.
+// NOTE: These must not conflict with dateRangeToHeightSearchKeyPrefix defined in metanode.
 const blockHashToHeightSearchKeyPrefix = "b:"
 const txHashToHeightSearchKeyPrefix = "t:"
 const accountAddressToHeightSearchKeyPrefix = "a:"

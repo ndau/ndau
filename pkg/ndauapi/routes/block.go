@@ -118,9 +118,29 @@ func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
 }
 
 func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
-	blocks, err := node.BlockchainInfo(first, last)
-	if err != nil {
-		return nil, err
+	// See tendermint/rpc/core/blocks.go:BlockchainInfo() for where this constant comes from.
+	const pageSize int64 = 20
+
+	// We'll build up the result, one page of blocks at a time.
+	var blocks *rpctypes.ResultBlockchainInfo
+
+	for lastIndex := last; lastIndex >= first; lastIndex -= pageSize {
+		// The indexes are inclusive, hence the +1.
+		firstIndex := lastIndex - pageSize + 1
+		if firstIndex < first {
+			firstIndex = first
+		}
+
+		blocksPage, err := node.BlockchainInfo(firstIndex, lastIndex)
+		if err != nil {
+			return nil, err
+		}
+
+		if blocks == nil {
+			blocks = blocksPage
+		} else {
+			blocks.BlockMetas = append(blocks.BlockMetas, blocksPage.BlockMetas...)
+		}
 	}
 
 	return filterBlockchainInfo(blocks, filter), nil
@@ -166,13 +186,12 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
-	var err error
-	_, err = time.Parse(time.RFC3339, first)
+	firstTime, err := time.Parse(time.RFC3339, first)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("first is not a valid timestamp", http.StatusBadRequest))
 		return
 	}
-	_, err = time.Parse(time.RFC3339, last)
+	lastTime, err := time.Parse(time.RFC3339, last)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("last is not a valid timestamp", http.StatusBadRequest))
 		return
@@ -184,30 +203,77 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
+	firstBlockHeight := int64(1)
+	firstBlock, err := node.Block(&firstBlockHeight)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get first block: %v", err), http.StatusBadRequest))
+		return
+	}
+
+	lastBlock, err := node.Block(nil)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get last block: %v", err), http.StatusBadRequest))
+		return
+	}
+
+	// Make sure the range is within the existing block range or the dates won't be indexed.
+	firstBlockTime := firstBlock.Block.Header.Time
+	lastBlockTime := lastBlock.Block.Header.Time
+
+	if firstTime.Before(firstBlockTime) {
+		// We don't index anything before the first block, clip the first time to its time.
+		firstTime = firstBlockTime
+		first = firstTime.Format(time.RFC3339)
+	}
+
+	if firstTime.After(lastBlockTime) {
+		// Nothing is after the last block, return zero results.
+		reqres.RespondJSON(w, reqres.OKResponse(nil))
+		return
+	}
+
+	// Last block time is an exclusive timestamp param, so we check for equality as well.
+	if lastTime.Equal(firstTime) || lastTime.Before(firstTime) {
+		// Degenerate range means empty search results.
+		reqres.RespondJSON(w, reqres.OKResponse(nil))
+		return
+	}
+
+	// We don't check for equality here, since if the time were equal to the last block time, we'd
+	// want to skip inclusion of the last block in the results.  However, since we don't index
+	// every timestamp (we use a fraction of a day granularity), this is "overly correct".  But
+	// there is value in this code not knowing about the underlying granularity constraints.
+	if lastTime.After(lastBlockTime) {
+		// Use the empty string to mean "return everything up to the newest block".
+		last = ""
+	}
+
 	firstHeight, lastHeight, err := tool.SearchDateRange(node, first, last)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
 		return
 	}
 
-	// If the search returned zero for the last height, it means the results are empty.
+	// getBlocksMatching() requires heights of at least 1, even if we know there to be a block at
+	// height 0 (e.g. genesis system variables in the chaos chain.)
+	if firstHeight == 0 {
+		firstHeight = 1
+	}
+
+	// If the search returned zero for the last height, there is no chance of non-empty results.
+	// We need this check so that we can decrement it safely below, as it is unsigned.
 	if lastHeight == 0 {
 		// Successful (empty) results.
 		reqres.RespondJSON(w, reqres.OKResponse(nil))
 		return
 	}
 
-	// The last height is exclusive.  Otherwise the result would include the first block of the
-	// next day.  The user code uses the returned range to do an inclusive block height lookup.
-	// This converts it to inclusive, which is what getBlocksMatching() expects.
+	// The last height param is exclusive.  Otherwise the result could include the first block of
+	// the next day (assuming 1-day granularity under the hood).  This converts the last height to
+	// inclusive, which is what getBlocksMatching() expects.
 	lastHeight--
 
-	// Tendermint doesn't use block height 0.
-	if firstHeight == 0 {
-		firstHeight = 1
-	}
-
-	// Test for degenerate results.
+	// Test for degenerate results, both heights are inclusive at this point.
 	if firstHeight > lastHeight {
 		// Successful (empty) results.
 		reqres.RespondJSON(w, reqres.OKResponse(nil))
