@@ -232,8 +232,8 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
-	// Last block time is an exclusive timestamp param, so we check for equality as well.
-	if lastTime.Equal(firstTime) || lastTime.Before(firstTime) {
+	// Last block time is an exclusive timestamp param, so we check on-or-before the first time.
+	if !lastTime.After(firstTime) {
 		// Degenerate range means empty search results.
 		reqres.RespondJSON(w, reqres.OKResponse(nil))
 		return
