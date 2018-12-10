@@ -172,3 +172,62 @@ func TestPrevalidateInvalidTx(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, n)
 }
+
+func TestCanQuerySidechainTxExists(t *testing.T) {
+	sidechainID := byte(0)
+
+	// set up initial state with this sidechain tx paid for
+	app, private := initAppTx(t)
+	srcA, err := address.Validate(source)
+	require.NoError(t, err)
+
+	stx := SidechainTx{
+		Source:                 srcA,
+		SidechainID:            sidechainID,
+		SidechainSignableBytes: []byte{0, 1, 2, 3, 4},
+		SidechainSignatures:    nil,
+		Sequence:               1,
+	}
+	stx.Signatures = append(stx.Signatures, metatx.Sign(&stx, private))
+	dresp := deliverTx(t, app, &stx)
+	require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
+
+	// now set up and run two test cases
+	type tcase struct {
+		name      string
+		hash      string
+		wantexist bool
+	}
+	cases := []tcase{
+		{"should exist", stx.SidechainTxHash(), true},
+		{"should not exist", "not a real tx hash", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			stxq := query.SidechainTxExistsQuery{
+				SidechainID: sidechainID,
+				Source:      srcA,
+				TxHash:      tc.hash,
+			}
+			qbytes, err := stxq.MarshalMsg(nil)
+			require.NoError(t, err)
+
+			resp := app.Query(abci.RequestQuery{
+				Path: query.SidechainTxExistsEndpoint,
+				Data: qbytes,
+			})
+
+			t.Log(code.ReturnCode(resp.Code))
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+			require.NotEmpty(t, resp.Info)
+
+			var exists bool
+			n, err := fmt.Sscanf(resp.Info, query.SidechainTxExistsInfoFmt, &exists)
+			require.NoError(t, err)
+			require.Equal(t, 1, n)
+
+			require.Equal(t, tc.wantexist, exists)
+		})
+	}
+}
