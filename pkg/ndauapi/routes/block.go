@@ -197,6 +197,20 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
+	pageIndex, pageSize, errMsg, err := getPagingParams(r)
+	if errMsg != "" {
+		reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+		return
+	}
+
+	// We sometimes support negative page index to mean "page backwards", but not here.
+	// Also, the page size has already been asserted to be positive and not exceeding the max.
+	if pageIndex < 0 {
+		errMsg = "pagesize must be non-negative"
+		reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+		return
+	}
+
 	node, err := ws.Node(nodeAddress)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
@@ -267,6 +281,19 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		reqres.RespondJSON(w, reqres.OKResponse(nil))
 		return
 	}
+
+	// Limit the results to the requested page.
+	pagedFirstHeight := firstHeight + uint64(pageIndex * pageSize)
+	if pagedFirstHeight > lastHeight {
+		pagedFirstHeight = lastHeight
+	}
+	pagedLastHeight := pagedFirstHeight + uint64(pageSize)
+	if pagedLastHeight > lastHeight {
+		pagedLastHeight = lastHeight
+	}
+	// Replace the first and last heights with the paged subset.
+	firstHeight = pagedFirstHeight
+	lastHeight = pagedLastHeight
 
 	// The last height param is exclusive.  Otherwise the result could include the first block of
 	// the next day (assuming 1-day granularity under the hood).  This converts the last height to

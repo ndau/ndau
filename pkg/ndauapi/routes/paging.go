@@ -38,6 +38,19 @@ func getPagingParams(r *http.Request) (pageIndex int, pageSize int, errMsg strin
 			return
 		}
 		pageSize = int(pageSize64)
+
+		// Don't let the user set a page size larger than the max we allow.
+		if pageSize > MaximumRange {
+			pageSize = MaximumRange
+		}
+	}
+
+	// Underlying search implementation handles pageSize == 0 to mean "get all results", but we
+	// don't know how large that list could be.  Instead, when page size isn't specified, use the
+	// max allowed and start at page 0 as a special behavior (documented in the README.md file).
+	if pageSize == 0 {
+		pageIndex = 0
+		pageSize = MaximumRange
 	}
 
 	return
