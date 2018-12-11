@@ -128,7 +128,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("AccountHistory").
 		Param(boneful.PathParameter("address", "The address of the account for which to return history").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
 			Balance:   123000000,
@@ -162,6 +162,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
 		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
 		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -174,6 +176,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -186,6 +190,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
 		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
 		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -198,6 +204,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -212,7 +220,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting all results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
 			Height: 12345,
