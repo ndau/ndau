@@ -46,6 +46,7 @@ func TestIndex(t *testing.T) {
 	tmBlockHash := []byte("abcdefghijklmnopqrst") // 20 bytes
 	blockHash := fmt.Sprintf("%x", tmBlockHash) // 40 characters
 	var txHash string
+	blockTime := time.Now()
 
 	search := app.GetSearch().(*search.Client)
 
@@ -65,7 +66,7 @@ func TestIndex(t *testing.T) {
 		begin := abci.RequestBeginBlock{
 			Hash: tmBlockHash,
 			Header: abci.Header{
-				Time:   time.Now(),
+				Time:   blockTime,
 				Height: int64(height),
 			},
 		}
@@ -128,6 +129,16 @@ func TestIndex(t *testing.T) {
 			require.Equal(t, height, valueData.BlockHeight)
 			require.Equal(t, txOffset, valueData.TxOffset)
 			require.Equal(t, math.Ndau(1), valueData.Balance)
+		})
+
+		t.Run("TestDateRangeSearching", func(t *testing.T) {
+			timeString := blockTime.Format(time.RFC3339)
+			firstHeight, lastHeight, err := search.SearchDateRange(timeString, timeString)
+			require.NoError(t, err)
+			// Expecting the block before the one we indexed since it's flooring to current day.
+			require.Equal(t, height - 1, firstHeight)
+			// Expecting the block after the one we indexed since it's an exclusive upper bound.
+			require.Equal(t, height + 1, lastHeight)
 		})
 	})
 }
