@@ -16,7 +16,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func TestHashIndex(t *testing.T) {
+func TestIndex(t *testing.T) {
 	// Start redis server on a non-default (test) port.  Using a non-standard port means we
 	// probably won't conflict with any other redis server currently running.  It also means we
 	// disable persistence by not loading the default redis.conf file.  That way we don't have to
@@ -118,6 +118,16 @@ func TestHashIndex(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, height, heightResult)
 			require.Equal(t, txOffset, txOffsetResult)
+		})
+
+		t.Run("TestAccountSearching", func(t *testing.T) {
+			ahr, err := search.SearchAccountHistory(targetAddress.String(), 0, 0)
+			require.NoError(t, err)
+			require.Equal(t, 1, len(ahr.Txs))
+			valueData := ahr.Txs[0]
+			require.Equal(t, height, valueData.BlockHeight)
+			require.Equal(t, txOffset, valueData.TxOffset)
+			require.Equal(t, math.Ndau(1), valueData.Balance)
 		})
 	})
 }
