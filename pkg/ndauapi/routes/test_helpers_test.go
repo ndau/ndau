@@ -21,6 +21,9 @@ var isIntegration bool
 var ndauRPC string
 var chaosRPC string
 
+// This is used as an ndau account name as well as a chaos namespace in our tests.
+const accountAndNamespaceString = "integrationtest"
+
 func init() {
 	flag.BoolVar(&isIntegration, "integration", false, "opt into integration tests")
 	flag.StringVar(&ndauRPC, "ndaurpc", "", "ndau rpc url")
@@ -51,7 +54,7 @@ func getGoDir(t *testing.T) string {
 // Invoke the ndau tool to create an account, claim it, and rfe to it.
 // Return the address of the account created.
 func createNdauBlock(t *testing.T) string {
-	acctName := "integrationtestacct"
+	acctName := accountAndNamespaceString
 
 	goDir := getGoDir(t)
 	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/ndau", goDir)
@@ -118,7 +121,7 @@ func getCurrentNdauBlock(t *testing.T, mux http.Handler) (blockData rpctypes.Res
 // Invoke the chaos tool to create a key value pair in the chaos chain.
 // Return the namespace, key and value that were set.
 func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value string) {
-	namespace := "integrationtestnamespace"
+	namespace := accountAndNamespaceString
 	key = "integrationtestkey"
 	value = fmt.Sprintf("integrationtestvalue%d", valnum)
 
@@ -139,6 +142,15 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	err = namespaceCmd.Wait()
 	if err != nil && !strings.Contains(string(namespaceErr), "already present") {
 		t.Errorf("Error creating namespace: %s", err)
+	}
+
+	// This creates the account from which our chaos transactions will pull ndau from for tx fees.
+	createNdauBlock(t)
+
+	// Associate the namespace with the account.
+	err = exec.Command(chaosTool, "id", "copy-keys-from", namespace).Run()
+	if err != nil {
+		t.Errorf("Error setting key: %s", err)
 	}
 
 	// Set a k-v pair.
