@@ -28,7 +28,6 @@ vendor/
 # Docker keyfile
 # This is a keyfile with which docker can read ndau repositories.
 docker_keyfile_rsa
-github_chaos_deploy
 
 # Editor customization
 .vscode/

@@ -12,6 +12,7 @@ This is the implementation of the Ndau chain. See the Ndau design whitepaper for
 - CreditEAI
 - GTValidatorChange
 
+#### See the [commands](https://github.com/oneiro-ndev/commands) README for how to build and run locally.  Some of the steps below may no longer applicable since we moved all `/cmd` source to the new repo.
 
 ## Install
 
@@ -22,7 +23,7 @@ This is the implementation of the Ndau chain. See the Ndau design whitepaper for
         - If you don't have an account, you can use one from [here](http://bugmenot.com/view/store.docker.com)
         - Run it from `/Applications`
     1. Clone this repo in `~/go/src/github.com/oneiro-ndev/` (required for Go)
-    1. Download github_chaos_deploy from your Oneiro 1password account, put it at the root of your cloned copy of this repo
+    1. Download machine_user_key from your Oneiro 1password account, put it at the root of your cloned copy of this repo
 
 - install [glide](https://github.com/Masterminds/glide):
 
