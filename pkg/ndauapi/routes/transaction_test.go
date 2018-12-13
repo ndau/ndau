@@ -38,9 +38,11 @@ func TestTxHash(t *testing.T) {
 		t.Errorf("Error unmarshaling tx: %s", err)
 	}
 	txHash := metatx.Hash(txAble)
+	txHashEsc := url.QueryEscape(txHash)
 
 	// Invalid in that it's not valid base64, and it's not in the index.
-	invalidTxHash := "invalidhash_"
+	invalidTxHash := "invalid=hash_"
+	invalidTxHashEsc := url.QueryEscape(invalidTxHash)
 
 	// set up tests
 	tests := []struct {
@@ -56,12 +58,12 @@ func TestTxHash(t *testing.T) {
 			wantbody: "txhash parameter required",
 		}, {
 			name:     "invalid hash",
-			req:      httptest.NewRequest("GET", "/transaction/" + invalidTxHash, nil),
+			req:      httptest.NewRequest("GET", "/transaction/" + invalidTxHashEsc, nil),
 			status:   http.StatusOK,
 			wantbody: "null", // The response is empty, so "null" is produced.
 		}, {
 			name:     "valid hash",
-			req:      httptest.NewRequest("GET", "/transaction/" + url.QueryEscape(txHash), nil),
+			req:      httptest.NewRequest("GET", "/transaction/" + txHashEsc, nil),
 			status:   http.StatusOK,
 			// The tx hash isn't part of the response, just make sure a valid tx is returned.
 			wantbody: "{\"Tx\":{\"Nonce\":",

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -24,8 +25,8 @@ type TransactionData struct {
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.
 func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		txhash := bone.GetValue(r, "txhash")
-		if txhash == "" {
+		txhashEsc := bone.GetValue(r, "txhash")
+		if txhashEsc == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("txhash parameter required", http.StatusBadRequest))
 			return
 		}
@@ -33,6 +34,12 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
+			return
+		}
+
+		txhash, err := url.QueryUnescape(txhashEsc)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error unescaping txhash '%s'", txhashEsc), err, http.StatusBadRequest))
 			return
 		}
 
