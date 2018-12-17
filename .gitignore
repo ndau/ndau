@@ -56,3 +56,6 @@ tx.mobile
 
 # Mac debris
 **/.DS_Store
+
+# tarballs
+*.tar.bz2
