@@ -1,0 +1,52 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+)
+
+func check(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+const examplesPath = "{{.ExamplesPath}}"
+
+func main() {
+	{{- range .Transactions}}
+	{{- range .Fields}}
+	{{- if .FallibleLiteral}}
+	{{.LiteralName}}, err := {{.Literal}}
+	check(err)
+	{{- end}}{{end}}{{end}}
+
+	transactions := []metatx.Transactable{
+	{{- range .Transactions}}
+		&ndau.{{.Name}}{
+			{{- range .Fields}}
+			{{.Name}}: {{if .FallibleLiteral}}{{if .IsSlice}}{{.Type}}{{"{"}}{{end}}{{if .PointerLiteral}}*{{end}}{{.LiteralName}}{{if .IsSlice}}{{"}"}}{{end}}{{else}}{{if .PointerLiteral}}*{{end}}{{.Literal}}{{end}},
+			{{- end}}
+		},
+	{{- end}}
+	}
+
+	for _, tx := range transactions {
+		out, err := os.Create(filepath.Join(examplesPath, metatx.NameOf(tx)+".json"))
+		check(err)
+		defer out.Close()
+
+		js, err := json.MarshalIndent(tx, "", "  ")
+		check(err)
+		out.Write(js)
+	}
+}
