@@ -8,21 +8,13 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-
-// SignableBytes implements Transactable
-func (tx *NominateNodeReward) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+8)
-	bytes = appendUint64(bytes, uint64(tx.Random))
-	bytes = appendUint64(bytes, tx.Sequence)
-	return bytes
-}
 
 // NewNominateNodeReward constructs a NominateNodeReward transactable.
 //

@@ -36,18 +36,6 @@ func NewSidechainTx(
 	return tx, nil
 }
 
-// SignableBytes implements Transactable
-func (tx *SidechainTx) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Msgsize())
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.SidechainSignableBytes...)
-	for _, sig := range tx.SidechainSignatures {
-		bytes = append(bytes, sig.Bytes()...)
-	}
-	bytes = appendUint64(bytes, tx.Sequence)
-	return bytes
-}
-
 // SidechainTxHash produces the hash of the sidechain tx
 //
 // This is intentionally meant to produce the same output as metatx.Hash,

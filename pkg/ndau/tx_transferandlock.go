@@ -3,11 +3,11 @@ package ndau
 import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -41,17 +41,6 @@ func NewTransferAndLock(
 	}
 
 	return tx, nil
-}
-
-// SignableBytes implements Transactable
-func (tx *TransferAndLock) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Msgsize())
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.Destination.String()...)
-	bytes = appendUint64(bytes, uint64(tx.Qty))
-	bytes = appendUint64(bytes, uint64(tx.Period))
-	bytes = appendUint64(bytes, tx.Sequence)
-	return bytes
 }
 
 // Validate satisfies metatx.Transactable

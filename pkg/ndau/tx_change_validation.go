@@ -16,27 +16,6 @@ func (tx *ChangeValidation) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
 }
 
-// SignableBytes implements Transactable
-func (tx *ChangeValidation) SignableBytes() []byte {
-	blen := 0
-	blen += address.AddrLength
-	for _, key := range tx.NewKeys {
-		blen += key.Size()
-	}
-	blen += len(tx.ValidationScript)
-	blen += 8 // sequence
-	bytes := make([]byte, 0, blen)
-
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Target.String()...)
-	for _, key := range tx.NewKeys {
-		bytes = append(bytes, key.KeyBytes()...)
-	}
-	bytes = append(bytes, tx.ValidationScript...)
-
-	return bytes
-}
-
 // NewChangeValidation creates a new signed transfer key from its data and a private key
 func NewChangeValidation(
 	target address.Address,

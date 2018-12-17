@@ -35,16 +35,6 @@ func NewRegisterNode(
 	return tx
 }
 
-// SignableBytes implements Transactable
-func (tx *RegisterNode) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Node.String())+len(tx.DistributionScript)+len(tx.RPCAddress))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Node.String()...)
-	bytes = append(bytes, tx.DistributionScript...)
-	bytes = append(bytes, tx.RPCAddress...)
-	return bytes
-}
-
 // Validate implements metatx.Transactable
 func (tx *RegisterNode) Validate(appI interface{}) error {
 	if !IsChaincode(tx.DistributionScript) {

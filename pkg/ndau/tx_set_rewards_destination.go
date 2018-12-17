@@ -28,15 +28,6 @@ func NewSetRewardsDestination(account, destination address.Address, sequence uin
 	return tx
 }
 
-// SignableBytes implements Transactable
-func (tx *SetRewardsDestination) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Source.String())+len(tx.Destination.String()))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.Destination.String()...)
-	return bytes
-}
-
 // Validate implements metatx.Transactable
 func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)

@@ -30,15 +30,6 @@ func NewDelegate(
 	return tx
 }
 
-// SignableBytes implements Transactable
-func (tx *Delegate) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Target.Msgsize()+tx.Node.Msgsize()+8)
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, []byte(tx.Target.String())...)
-	bytes = append(bytes, []byte(tx.Node.String())...)
-	return bytes
-}
-
 // Validate implements metatx.Transactable
 func (tx *Delegate) Validate(appI interface{}) error {
 	_, err := address.Validate(tx.Target.String())

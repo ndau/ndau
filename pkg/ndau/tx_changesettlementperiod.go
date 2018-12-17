@@ -14,15 +14,6 @@ func (tx *ChangeSettlementPeriod) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
 }
 
-// SignableBytes implements Transactable
-func (tx *ChangeSettlementPeriod) SignableBytes() []byte {
-	bytes := make([]byte, 0, len(tx.Target.String())+8+8)
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = appendUint64(bytes, uint64(tx.Period))
-	bytes = append(bytes, []byte(tx.Target.String())...)
-	return bytes
-}
-
 // NewChangeSettlementPeriod creates a new signed settlement period change
 func NewChangeSettlementPeriod(
 	target address.Address,

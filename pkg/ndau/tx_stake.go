@@ -5,10 +5,10 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -32,15 +32,6 @@ func NewStake(
 		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
 	}
 	return tx
-}
-
-// SignableBytes implements Transactable
-func (tx *Stake) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Target.Msgsize()+tx.Node.Msgsize()+8)
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, []byte(tx.Target.String())...)
-	bytes = append(bytes, []byte(tx.Node.String())...)
-	return bytes
 }
 
 // Validate implements metatx.Transactable

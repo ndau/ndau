@@ -22,14 +22,6 @@ func NewNotify(account address.Address, sequence uint64, keys []signature.Privat
 	return tx
 }
 
-// SignableBytes implements Transactable
-func (tx *Notify) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Target.String()))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Target.String()...)
-	return bytes
-}
-
 // Validate implements metatx.Transactable
 func (tx *Notify) Validate(appI interface{}) error {
 	app := appI.(*App)

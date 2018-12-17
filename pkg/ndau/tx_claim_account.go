@@ -35,30 +35,6 @@ func NewClaimAccount(
 	return ca
 }
 
-// SignableBytes returns the signable bytes of ClaimAccount
-func (tx *ClaimAccount) SignableBytes() []byte {
-	bcnt := 0
-	bcnt += address.AddrLength
-	bcnt += tx.Ownership.Size()
-	for _, key := range tx.ValidationKeys {
-		bcnt += key.Size()
-	}
-	bcnt += len(tx.ValidationScript)
-	bcnt += 8 // sequence
-
-	bytes := make([]byte, 0, bcnt)
-
-	bytes = append(bytes, tx.Target.String()...)
-	bytes = append(bytes, tx.Ownership.KeyBytes()...)
-	for _, key := range tx.ValidationKeys {
-		bytes = append(bytes, key.KeyBytes()...)
-	}
-	bytes = append(bytes, tx.ValidationScript...)
-	bytes = appendUint64(bytes, tx.Sequence)
-
-	return bytes
-}
-
 // Validate returns nil if tx is valid, or an error
 func (tx *ClaimAccount) Validate(appI interface{}) error {
 	// we need to verify that the ownership key submitted actually generates
