@@ -161,7 +161,7 @@ type ClaimAccount struct {
 	ValidationKeys   []signature.PublicKey `msg:"key" json:"validation_keys"`
 	ValidationScript []byte                `msg:"val" json:"validation_script"`
 	Sequence         uint64                `msg:"seq" json:"sequence"`
-	Signature        signature.Signature   `msg:"sig" json:"signatures"`
+	Signature        signature.Signature   `msg:"sig" json:"signature"`
 }
 
 var _ NTransactable = (*ClaimAccount)(nil)
