@@ -27,16 +27,21 @@ func (tx *Transfer) SignableBytes() []byte {
 
 // SignableBytes partially implements metatx.Transactable for ChangeValidation
 func (tx *ChangeValidation) SignableBytes() []byte {
-	blen := 0 + address.AddrLength + tx.NewKeys.MsgSize() + len(tx.ValidationScript) + 8
+	blen := 0 + address.AddrLength + len(tx.ValidationScript) + 8
+	for _, changevalidationNewKeys := range tx.NewKeys {
+		blen += changevalidationNewKeys.Msgsize()
+	}
 	bytes := make([]byte, 0, blen)
 
 	bytes = append(bytes, []byte(tx.Target.String())...)
 	for _, v := range tx.NewKeys {
-		bytes = append(bytes, tx.NewKeys.MarshalMsg(nil)...)
+		vBytes, err := v.MarshalMsg(nil)
+		if err == nil {
+			return nil
+		}
+		bytes = append(bytes, vBytes...)
 	}
-	for _, v := range tx.ValidationScript {
-		bytes = append(bytes, []byte(tx.ValidationScript)...)
-	}
+	bytes = append(bytes, []byte(tx.ValidationScript)...)
 	bytes = append(bytes, intbytes(uint64(tx.Sequence))...)
 
 	return bytes
@@ -126,17 +131,26 @@ func (tx *SetRewardsDestination) SignableBytes() []byte {
 
 // SignableBytes partially implements metatx.Transactable for ClaimAccount
 func (tx *ClaimAccount) SignableBytes() []byte {
-	blen := 0 + address.AddrLength + tx.Ownership.MsgSize() + tx.ValidationKeys.MsgSize() + len(tx.ValidationScript) + 8
+	blen := 0 + address.AddrLength + tx.Ownership.Msgsize() + len(tx.ValidationScript) + 8
+	for _, claimaccountValidationKeys := range tx.ValidationKeys {
+		blen += claimaccountValidationKeys.Msgsize()
+	}
 	bytes := make([]byte, 0, blen)
 
 	bytes = append(bytes, []byte(tx.Target.String())...)
-	bytes = append(bytes, tx.Ownership.MarshalMsg(nil)...)
+	claimaccountOwnershipBytes, err := tx.Ownership.MarshalMsg(nil)
+	if err == nil {
+		return nil
+	}
+	bytes = append(bytes, claimaccountOwnershipBytes...)
 	for _, v := range tx.ValidationKeys {
-		bytes = append(bytes, tx.ValidationKeys.MarshalMsg(nil)...)
+		vBytes, err := v.MarshalMsg(nil)
+		if err == nil {
+			return nil
+		}
+		bytes = append(bytes, vBytes...)
 	}
-	for _, v := range tx.ValidationScript {
-		bytes = append(bytes, []byte(tx.ValidationScript)...)
-	}
+	bytes = append(bytes, []byte(tx.ValidationScript)...)
 	bytes = append(bytes, intbytes(uint64(tx.Sequence))...)
 
 	return bytes
@@ -160,9 +174,7 @@ func (tx *RegisterNode) SignableBytes() []byte {
 	bytes := make([]byte, 0, blen)
 
 	bytes = append(bytes, []byte(tx.Node.String())...)
-	for _, v := range tx.DistributionScript {
-		bytes = append(bytes, []byte(tx.DistributionScript)...)
-	}
+	bytes = append(bytes, []byte(tx.DistributionScript)...)
 	bytes = append(bytes, []byte(tx.RPCAddress)...)
 	bytes = append(bytes, intbytes(uint64(tx.Sequence))...)
 
@@ -210,9 +222,7 @@ func (tx *CommandValidatorChange) SignableBytes() []byte {
 	blen := 0 + len(tx.PublicKey) + 8 + 8
 	bytes := make([]byte, 0, blen)
 
-	for _, v := range tx.PublicKey {
-		bytes = append(bytes, []byte(tx.PublicKey)...)
-	}
+	bytes = append(bytes, []byte(tx.PublicKey)...)
 	bytes = append(bytes, intbytes(uint64(tx.Power))...)
 	bytes = append(bytes, intbytes(uint64(tx.Sequence))...)
 
@@ -221,16 +231,21 @@ func (tx *CommandValidatorChange) SignableBytes() []byte {
 
 // SignableBytes partially implements metatx.Transactable for SidechainTx
 func (tx *SidechainTx) SignableBytes() []byte {
-	blen := 0 + address.AddrLength + 1 + len(tx.SidechainSignableBytes) + tx.SidechainSignatures.MsgSize() + 8
+	blen := 0 + address.AddrLength + 1 + len(tx.SidechainSignableBytes) + 8
+	for _, sidechaintxSidechainSignatures := range tx.SidechainSignatures {
+		blen += sidechaintxSidechainSignatures.Msgsize()
+	}
 	bytes := make([]byte, 0, blen)
 
 	bytes = append(bytes, []byte(tx.Source.String())...)
 	bytes = append(bytes, []byte{tx.SidechainID}...)
-	for _, v := range tx.SidechainSignableBytes {
-		bytes = append(bytes, []byte(tx.SidechainSignableBytes)...)
-	}
+	bytes = append(bytes, []byte(tx.SidechainSignableBytes)...)
 	for _, v := range tx.SidechainSignatures {
-		bytes = append(bytes, tx.SidechainSignatures.MarshalMsg(nil)...)
+		vBytes, err := v.MarshalMsg(nil)
+		if err == nil {
+			return nil
+		}
+		bytes = append(bytes, vBytes...)
 	}
 	bytes = append(bytes, intbytes(uint64(tx.Sequence))...)
 
