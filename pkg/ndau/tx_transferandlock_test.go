@@ -199,24 +199,23 @@ func TestTnLsWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	s, err := address.Validate(source)
 	require.NoError(t, err)
-	_ = NewTransferAndLock(
+	tr := NewTransferAndLock(
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		math.Second,
 		seq, private,
 	)
-	require.Error(t, err)
 
-	// We've just proved that this implementation refuses to generate
-	// a transfer for which source and dest are identical.
+	// We used to require that the constructors refuse to construct an invalid
+	// transaction, but the philosophy has changed: constructors are generated
+	// now, and are just shorthand for constructing an object manually and
+	// optionally signing it. As such, we can't depend on any particular
+	// validation in the constructor; we have to depend on the node to reject
+	// invalid transactions. (This has the side benefit of keeping all validation
+	// logic in exactly one place.)
 	//
-	// However, what if someone builds one from scratch?
 	// We need to ensure that the application
 	// layer rejects deserialized transfers which are invalid.
-	tr := generateTransferAndLock(t, generateRandomAddr(t), qty, 888, seq, []signature.PrivateKey{private})
-	tr.Destination = tr.Source
-	bytes := tr.SignableBytes()
-	tr.Signatures = []signature.Signature{private.Sign(bytes)}
 
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))

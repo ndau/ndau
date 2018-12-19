@@ -27,7 +27,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 	require.NoError(t, err)
 	addr, err := address.Generate(address.KindUser, keypub.KeyBytes())
 	require.NoError(t, err)
-	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234, nil)
+	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234)
 	testLockData, err := b64Tx(testLockTx)
 	require.NoError(t, err)
 
