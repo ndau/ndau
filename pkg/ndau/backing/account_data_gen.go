@@ -12,9 +12,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 15
+	// map header, size 14
 	// string "Balance"
-	o = append(o, 0x8f, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0x8e, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		return
@@ -134,14 +134,6 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "ValidationScript"
 	o = append(o, 0xb0, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74)
 	o = msgp.AppendBytes(o, z.ValidationScript)
-	// string "SidechainPayments"
-	o = append(o, 0xb1, 0x53, 0x69, 0x64, 0x65, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x50, 0x61, 0x79, 0x6d, 0x65, 0x6e, 0x74, 0x73)
-	o = msgp.AppendMapHeader(o, uint32(len(z.SidechainPayments)))
-	for za0004 := range z.SidechainPayments {
-		o = msgp.AppendString(o, za0004)
-		// map header, size 0
-		o = append(o, 0x80)
-	}
 	return
 }
 
@@ -361,50 +353,6 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "SidechainPayments":
-			var zb0007 uint32
-			zb0007, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
-			if z.SidechainPayments == nil {
-				z.SidechainPayments = make(map[string]struct {
-				}, zb0007)
-			} else if len(z.SidechainPayments) > 0 {
-				for key := range z.SidechainPayments {
-					delete(z.SidechainPayments, key)
-				}
-			}
-			for zb0007 > 0 {
-				var za0004 string
-				var za0005 struct {
-				}
-				zb0007--
-				za0004, bts, err = msgp.ReadStringBytes(bts)
-				if err != nil {
-					return
-				}
-				var zb0008 uint32
-				zb0008, bts, err = msgp.ReadMapHeaderBytes(bts)
-				if err != nil {
-					return
-				}
-				for zb0008 > 0 {
-					zb0008--
-					field, bts, err = msgp.ReadMapKeyZC(bts)
-					if err != nil {
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					default:
-						bts, err = msgp.Skip(bts)
-						if err != nil {
-							return
-						}
-					}
-				}
-				z.SidechainPayments[za0004] = za0005
-			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -454,13 +402,7 @@ func (z *AccountData) Msgsize() (s int) {
 	for za0003 := range z.Settlements {
 		s += 1 + 4 + z.Settlements[za0003].Qty.Msgsize() + 7 + z.Settlements[za0003].Expiry.Msgsize()
 	}
-	s += 19 + z.SettlementSettings.Msgsize() + 17 + msgp.BytesPrefixSize + len(z.ValidationScript) + 18 + msgp.MapHeaderSize
-	if z.SidechainPayments != nil {
-		for za0004, za0005 := range z.SidechainPayments {
-			_ = za0005
-			s += msgp.StringPrefixSize + len(za0004) + 1
-		}
-	}
+	s += 19 + z.SettlementSettings.Msgsize() + 17 + msgp.BytesPrefixSize + len(z.ValidationScript)
 	return
 }
 
