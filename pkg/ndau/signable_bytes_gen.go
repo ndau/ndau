@@ -31,11 +31,13 @@ func bytesOf(field interface{}) []byte {
 	case string:
 		return []byte(x)
 	case bool:
+		var b []byte
 		if x {
-			return []byte{0x01}
+			b = []byte{0x01}
 		} else {
-			return []byte{0x00}
+			b = []byte{0x00}
 		}
+		return b
 	}
 	// for lists and maps, we have no choice but to go reflective:
 	// https://stackoverflow.com/a/38748189/504550
