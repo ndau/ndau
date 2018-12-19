@@ -94,7 +94,7 @@ func sbOf(tx metatx.Transactable) []byte {
 
 	jsdec := json.NewDecoder(buffer)
 	jsdec.UseNumber()
-	err = jsdec.Decode(jsmap)
+	err = jsdec.Decode(&jsmap)
 	if err != nil {
 		return nil
 	}
