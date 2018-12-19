@@ -181,15 +181,16 @@ func TestCanQuerySidechainTxExists(t *testing.T) {
 	srcA, err := address.Validate(source)
 	require.NoError(t, err)
 
-	stx := SidechainTx{
-		Source:                 srcA,
-		SidechainID:            sidechainID,
-		SidechainSignableBytes: []byte{0, 1, 2, 3, 4},
-		SidechainSignatures:    nil,
-		Sequence:               1,
-	}
-	stx.Signatures = append(stx.Signatures, metatx.Sign(&stx, private))
-	dresp := deliverTx(t, app, &stx)
+	stx := NewSidechainTx(
+		srcA,
+		sidechainID,
+		[]byte{0, 1, 2, 3, 4},
+		nil,
+		1,
+		private,
+	)
+
+	dresp := deliverTx(t, app, stx)
 	require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
 
 	// now set up and run two test cases

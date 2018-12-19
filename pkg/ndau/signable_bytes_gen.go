@@ -43,6 +43,8 @@ func bytesOf(field interface{}) []byte {
 	// https://stackoverflow.com/a/38748189/504550
 	v := reflect.ValueOf(field)
 	switch v.Kind() {
+	case reflect.Invalid:
+		return []byte{}
 	case reflect.Slice:
 		out := make([]byte, 0)
 		for idx := 0; idx < v.Len(); idx++ {
@@ -76,7 +78,7 @@ func bytesOf(field interface{}) []byte {
 		return out
 	}
 
-	panic("unknown field type")
+	panic("unknown field type: " + v.Kind().String())
 }
 
 // For byte-compatible interoperability with other languages, JSON in particular,
