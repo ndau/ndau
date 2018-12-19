@@ -16,25 +16,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// NewNominateNodeReward constructs a NominateNodeReward transactable.
-//
-// The caller must ensure that `private` corresponds to a public key listed
-// in the `NominateNodeRewardKeys` system variable.
-func NewNominateNodeReward(
-	random int64,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) (tx NominateNodeReward) {
-	tx = NominateNodeReward{
-		Random:   random,
-		Sequence: sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *NominateNodeReward) Validate(appI interface{}) error {
 	app := appI.(*App)

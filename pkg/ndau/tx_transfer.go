@@ -14,30 +14,6 @@ func (tx *Transfer) GetAccountAddresses() []string {
 	return []string{tx.Source.String(), tx.Destination.String()}
 }
 
-// NewTransfer creates a new signed transfer transactable
-func NewTransfer(
-	s address.Address, d address.Address,
-	q math.Ndau,
-	seq uint64,
-	keys []signature.PrivateKey,
-) (*Transfer, error) {
-	if s == d {
-		return nil, errors.New("source may not equal destination")
-	}
-	tx := &Transfer{
-		Source:      s,
-		Destination: d,
-		Qty:         q,
-		Sequence:    seq,
-	}
-	bytes := tx.SignableBytes()
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(bytes))
-	}
-
-	return tx, nil
-}
-
 // Validate satisfies metatx.Transactable
 func (tx *Transfer) Validate(appInt interface{}) error {
 	app := appInt.(*App)

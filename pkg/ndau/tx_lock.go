@@ -6,7 +6,6 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
@@ -14,15 +13,6 @@ import (
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *Lock) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
-}
-
-// NewLock creates a new Lock transaction
-func NewLock(account address.Address, period math.Duration, sequence uint64, keys []signature.PrivateKey) *Lock {
-	tx := &Lock{Target: account, Period: period, Sequence: sequence}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
 }
 
 // Validate implements metatx.Transactable

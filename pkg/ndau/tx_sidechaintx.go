@@ -7,34 +7,9 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 )
-
-// NewSidechainTx creates a new signed sidechaintx transactable
-func NewSidechainTx(
-	source address.Address,
-	sidechain byte,
-	signableBytes []byte,
-	sidechainSignatures []signature.Signature,
-	seq uint64,
-	keys []signature.PrivateKey,
-) (*SidechainTx, error) {
-	tx := &SidechainTx{
-		Source:                 source,
-		SidechainID:            sidechain,
-		SidechainSignableBytes: signableBytes,
-		SidechainSignatures:    sidechainSignatures,
-		Sequence:               seq,
-	}
-	bytes := tx.SignableBytes()
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(bytes))
-	}
-
-	return tx, nil
-}
 
 // SidechainTxHash produces the hash of the sidechain tx
 //

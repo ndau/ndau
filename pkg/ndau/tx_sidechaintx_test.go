@@ -82,15 +82,14 @@ func TestSidechainTxDeductsTxFee(t *testing.T) {
 	})
 
 	for i := 0; i < 2; i++ {
-		tx, err := NewSidechainTx(
+		tx := NewSidechainTx(
 			sA,                      // address
 			0,                       // sidechain id
 			[]byte{0, 1, 2, 3, 4},   // tx signable bytes
 			[]signature.Signature{}, // sidechain sigs
 			1,                       // sequence
-			[]signature.PrivateKey{private},
+			private,
 		)
-		require.NoError(t, err)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

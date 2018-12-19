@@ -19,15 +19,6 @@ func (tx *ClaimNodeReward) GetAccountAddresses() []string {
 	return []string{tx.Node.String()}
 }
 
-// NewClaimNodeReward creates a new ClaimNodeReward transaction
-func NewClaimNodeReward(node address.Address, sequence uint64, keys []signature.PrivateKey) *ClaimNodeReward {
-	tx := &ClaimNodeReward{Node: node, Sequence: sequence}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *ClaimNodeReward) Validate(appI interface{}) error {
 	app := appI.(*App)

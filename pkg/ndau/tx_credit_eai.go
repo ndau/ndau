@@ -21,17 +21,6 @@ func (tx *CreditEAI) GetAccountAddresses() []string {
 	return []string{tx.Node.String()}
 }
 
-// NewCreditEAI creates a new CreditEAI transaction
-//
-// Most users will never need this.
-func NewCreditEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *CreditEAI {
-	tx := &CreditEAI{Node: node, Sequence: sequence}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)

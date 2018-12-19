@@ -41,7 +41,7 @@ func TestValidStakeTxIsValid(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, private)
 
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -59,7 +59,7 @@ func TestStakeAccountValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, private)
 
 	// make the account field invalid
 	d.Target = address.Address{}
@@ -78,7 +78,7 @@ func TestStakeStakeValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, private)
 
 	// make the account field invalid
 	d.Node = address.Address{}
@@ -97,7 +97,7 @@ func TestStakeSequenceValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewStake(sA, nA, 0, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 0, private)
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -112,7 +112,7 @@ func TestStakeSignatureValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := d.Signatures[0].Bytes()
@@ -134,7 +134,7 @@ func TestStakeChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewStake(sA, nA, 1, private)
 
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -167,7 +167,7 @@ func TestStakeDeductsTxFee(t *testing.T) {
 			ad.Stake = nil
 		})
 
-		tx := NewStake(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
+		tx := NewStake(sA, nA, 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

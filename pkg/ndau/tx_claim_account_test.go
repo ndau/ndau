@@ -38,7 +38,7 @@ func TestClaimAccountAddressFieldValidates(t *testing.T) {
 	ca := NewClaimAccount(addr, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
 
 	// However, the resultant transaction must not be valid
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppClaimAccount(t)
@@ -49,7 +49,7 @@ func TestClaimAccountAddressFieldValidates(t *testing.T) {
 	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
 	require.NoError(t, err)
 	ca = NewClaimAccount(fakeTarget, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err = tx.Marshal(&ca, TxIDs)
+	ctkBytes, err = tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 	resp = app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -60,7 +60,7 @@ func TestValidClaimAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppClaimAccount(t)
@@ -73,7 +73,7 @@ func TestClaimAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	app := initAppClaimAccount(t)
 
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{targetPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -86,7 +86,7 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 	require.NoError(t, err)
 
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppClaimAccount(t)
@@ -111,7 +111,7 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 
 func TestClaimAccountNoValidationKeys(t *testing.T) {
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppClaimAccount(t)
@@ -130,7 +130,7 @@ func TestClaimAccountTooManyValidationKeys(t *testing.T) {
 	}
 
 	ca := NewClaimAccount(targetAddress, targetPublic, newKeys, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppClaimAccount(t)
@@ -152,7 +152,7 @@ func TestClaimAccountOverwritesOneTransferKey(t *testing.T) {
 	require.NoError(t, err)
 
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -175,7 +175,7 @@ func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
 	require.NoError(t, err)
 
 	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(&ca, TxIDs)
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -202,7 +202,7 @@ func TestClaimAccountDeductsTxFee(t *testing.T) {
 			targetPrivate,
 		)
 
-		resp := deliverTxWithTxFee(t, app, &tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

@@ -17,23 +17,6 @@ func (tx *Stake) GetAccountAddresses() []string {
 	return []string{tx.Target.String(), tx.Node.String()}
 }
 
-// NewStake creates a new signed Stake transaction
-func NewStake(
-	target, node address.Address,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) *Stake {
-	tx := &Stake{
-		Target:   target,
-		Node:     node,
-		Sequence: sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *Stake) Validate(appI interface{}) error {
 	_, err := address.Validate(tx.Target.String())

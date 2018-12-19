@@ -33,11 +33,11 @@ func generateTransferAndLock(t *testing.T, destaddr string, qty int64, period ma
 	}
 	d, err := address.Validate(destaddr)
 	require.NoError(t, err)
-	tr, err := NewTransferAndLock(
+	tr := NewTransferAndLock(
 		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		period,
-		seq, keys,
+		seq, keys...,
 	)
 	require.NoError(t, err)
 	return tr
@@ -199,10 +199,11 @@ func TestTnLsWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	s, err := address.Validate(source)
 	require.NoError(t, err)
-	_, err = NewTransfer(
+	_ = NewTransferAndLock(
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, []signature.PrivateKey{private},
+		math.Second,
+		seq, private,
 	)
 	require.Error(t, err)
 
@@ -300,10 +301,11 @@ func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransferAndLock(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		math.Second,
+		1, key,
 	)
 	require.NoError(t, err)
 
@@ -325,12 +327,12 @@ func TestTnLWithUnexpiredEscrowsFails(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransferAndLock(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		math.Second,
+		1, key,
 	)
-	require.NoError(t, err)
 
 	// send transfer
 	resp := deliverTxAt(t, app, tr, tn)
@@ -387,7 +389,7 @@ func TestTnLDeductsTxFee(t *testing.T) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx, err := NewTransfer(sA, dA, 1, 1+i, []signature.PrivateKey{private})
+		tx := NewTransferAndLock(sA, dA, 1, math.Second, 1+i, private)
 		require.NoError(t, err)
 
 		resp := deliverTxWithTxFee(t, app, tx)

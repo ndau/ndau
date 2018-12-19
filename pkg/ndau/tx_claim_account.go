@@ -6,33 +6,12 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *ClaimAccount) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
-}
-
-// NewClaimAccount creates a ClaimAccount transaction
-func NewClaimAccount(
-	account address.Address,
-	ownership signature.PublicKey,
-	validationKeys []signature.PublicKey,
-	validationScript []byte,
-	sequence uint64,
-	ownerPrivate signature.PrivateKey,
-) ClaimAccount {
-	ca := ClaimAccount{
-		Target:           account,
-		Ownership:        ownership,
-		ValidationKeys:   validationKeys,
-		ValidationScript: validationScript,
-		Sequence:         sequence,
-	}
-	ca.Signature = ownerPrivate.Sign(ca.SignableBytes())
-	return ca
 }
 
 // Validate returns nil if tx is valid, or an error

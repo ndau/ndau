@@ -16,26 +16,6 @@ func (tx *ChangeValidation) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
 }
 
-// NewChangeValidation creates a new signed transfer key from its data and a private key
-func NewChangeValidation(
-	target address.Address,
-	newKeys []signature.PublicKey,
-	validationScript []byte,
-	sequence uint64,
-	privates []signature.PrivateKey,
-) ChangeValidation {
-	tx := ChangeValidation{
-		Target:           target,
-		NewKeys:          newKeys,
-		ValidationScript: validationScript,
-		Sequence:         sequence,
-	}
-	for _, private := range privates {
-		tx.Signatures = append(tx.Signatures, private.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	tx.Target, err = address.Validate(tx.Target.String())

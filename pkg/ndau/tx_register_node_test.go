@@ -40,7 +40,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	require.Error(t, err)
 
 	// the address is invalid, but NewRegisterNode doesn't validate this
-	rn := NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 
 	// However, the resultant transaction must not be valid
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
@@ -53,7 +53,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	// what about an address which is valid but doesn't already exist?
 	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
 	require.NoError(t, err)
-	rn = NewRegisterNode(fakeTarget, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn = NewRegisterNode(fakeTarget, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err = tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 	resp = app.CheckTx(ctkBytes)
@@ -63,7 +63,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 func TestRegisterNodeInvalidScript(t *testing.T) {
 	app := initAppRegisterNode(t)
 
-	rn := NewRegisterNode(targetAddress, []byte{}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(targetAddress, []byte{}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -75,7 +75,7 @@ func TestRegisterNodeInvalidScript(t *testing.T) {
 func TestRegisterNodeInvalidRPC(t *testing.T) {
 	app := initAppRegisterNode(t)
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "foo bar.baz", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "foo bar.baz", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -87,7 +87,7 @@ func TestRegisterNodeInvalidRPC(t *testing.T) {
 func TestValidRegisterNode(t *testing.T) {
 	app := initAppRegisterNode(t)
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -102,7 +102,7 @@ func TestRegisterNodeMustBeStaked(t *testing.T) {
 		ad.Stake = nil
 	})
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -119,7 +119,7 @@ func TestRegisterNodeMustBeSelfStaked(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func TestRegisterNodeMustBeInactive(t *testing.T) {
 		return st, nil
 	})
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, []signature.PrivateKey{transferPrivate})
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -159,7 +159,7 @@ func TestRegisterNodeDeductsTxFee(t *testing.T) {
 			targetAddress,
 			[]byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789",
 			uint64(i)+1,
-			[]signature.PrivateKey{transferPrivate},
+			transferPrivate,
 		)
 
 		resp := deliverTxWithTxFee(t, app, rn)

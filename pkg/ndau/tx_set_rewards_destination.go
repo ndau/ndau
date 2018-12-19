@@ -15,19 +15,6 @@ func (tx *SetRewardsDestination) GetAccountAddresses() []string {
 	return []string{tx.Source.String(), tx.Destination.String()}
 }
 
-// NewSetRewardsDestination creates a new SetRewardsDestination transaction
-func NewSetRewardsDestination(account, destination address.Address, sequence uint64, keys []signature.PrivateKey) *SetRewardsDestination {
-	tx := &SetRewardsDestination{
-		Source:      account,
-		Destination: destination,
-		Sequence:    sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)

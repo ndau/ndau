@@ -17,7 +17,7 @@ func TestValidDelegateTxIsValid(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -33,7 +33,7 @@ func TestDelegateAccountValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 
 	// make the account field invalid
 	d.Target = address.Address{}
@@ -52,7 +52,7 @@ func TestDelegateDelegateValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 
 	// make the account field invalid
 	d.Node = address.Address{}
@@ -71,7 +71,7 @@ func TestDelegateSequenceValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 0, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 0, private)
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -86,7 +86,7 @@ func TestDelegateSignatureValidates(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := d.Signatures[0].Bytes()
@@ -108,7 +108,7 @@ func TestDelegateChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -128,7 +128,7 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -136,7 +136,7 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 	// now create a new delegation transaction
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	d = NewDelegate(sA, dA, 2, []signature.PrivateKey{private})
+	d = NewDelegate(sA, dA, 2, private)
 	resp = deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -165,7 +165,7 @@ func TestDelegateDeductsTxFee(t *testing.T) {
 	})
 
 	for i := 0; i < 2; i++ {
-		tx := NewDelegate(sA, nA, 1+uint64(i), []signature.PrivateKey{private})
+		tx := NewDelegate(sA, nA, 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

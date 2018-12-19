@@ -13,23 +13,6 @@ func (tx *Delegate) GetAccountAddresses() []string {
 	return []string{tx.Target.String(), tx.Node.String()}
 }
 
-// NewDelegate creates a new signed Delegate transaction
-func NewDelegate(
-	account, delegate address.Address,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) *Delegate {
-	tx := &Delegate{
-		Target:   account,
-		Node:     delegate,
-		Sequence: sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *Delegate) Validate(appI interface{}) error {
 	_, err := address.Validate(tx.Target.String())

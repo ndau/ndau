@@ -16,33 +16,6 @@ func (tx *TransferAndLock) GetAccountAddresses() []string {
 	return []string{tx.Source.String(), tx.Destination.String()}
 }
 
-// NewTransferAndLock creates a new signed transferAndLock transactable
-func NewTransferAndLock(
-	s address.Address,
-	d address.Address,
-	q math.Ndau,
-	p math.Duration,
-	seq uint64,
-	keys []signature.PrivateKey,
-) (*TransferAndLock, error) {
-	if s == d {
-		return nil, errors.New("source may not equal destination")
-	}
-	tx := &TransferAndLock{
-		Source:      s,
-		Destination: d,
-		Qty:         q,
-		Period:      p,
-		Sequence:    seq,
-	}
-	bytes := tx.SignableBytes()
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(bytes))
-	}
-
-	return tx, nil
-}
-
 // Validate satisfies metatx.Transactable
 func (tx *TransferAndLock) Validate(appInt interface{}) error {
 	app := appInt.(*App)

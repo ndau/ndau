@@ -21,7 +21,7 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	require.NoError(t, err)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, []signature.PrivateKey{private})
+	d := NewDelegate(sA, nA, 1, private)
 	resp := deliverTx(t, app, d)
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.LastEAIUpdate = 0
@@ -43,7 +43,7 @@ func TestValidCreditEAITxIsValid(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, private)
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -54,7 +54,7 @@ func TestCreditEAINodeValidates(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 2, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 2, private)
 
 	// make the node field invalid
 	compute.Node = address.Address{}
@@ -71,7 +71,7 @@ func TestCreditEAISequenceValidates(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 0, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 0, private)
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestCreditEAISignatureValidates(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 0, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 0, private)
 
 	// flip a single bit in the signature
 	sigBytes := compute.Signatures[0].Bytes()
@@ -103,7 +103,7 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, private)
 
 	state := app.GetState().(*backing.State)
 	sA, err := address.Validate(source)
@@ -137,7 +137,7 @@ func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, private)
 
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
@@ -179,7 +179,7 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	nA, err := address.Validate(eaiNode)
 	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, []signature.PrivateKey{private})
+	compute := NewCreditEAI(nA, 1, private)
 
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
@@ -230,7 +230,7 @@ func TestCreditEAIDeductsTxFee(t *testing.T) {
 	})
 
 	for i := 0; i < 2; i++ {
-		tx := NewCreditEAI(nA, 1+uint64(i), []signature.PrivateKey{private})
+		tx := NewCreditEAI(nA, 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

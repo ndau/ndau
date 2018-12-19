@@ -13,15 +13,6 @@ func (tx *Notify) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
 }
 
-// NewNotify creates a new Notify transaction
-func NewNotify(account address.Address, sequence uint64, keys []signature.PrivateKey) *Notify {
-	tx := &Notify{Target: account, Sequence: sequence}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *Notify) Validate(appI interface{}) error {
 	app := appI.(*App)

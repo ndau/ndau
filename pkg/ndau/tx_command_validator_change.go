@@ -13,24 +13,6 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
-// NewCommandValidatorChange constructs a CommandValidatorChange transactable.
-func NewCommandValidatorChange(
-	publicKey []byte,
-	power int64,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) (tx CommandValidatorChange) {
-	tx = CommandValidatorChange{
-		PublicKey: publicKey,
-		Power:     power,
-		Sequence:  sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
 // Validate implements metatx.Transactable
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	app := appI.(*App)

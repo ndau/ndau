@@ -42,9 +42,9 @@ func TestIndex(t *testing.T) {
 
 	// Test data.
 	height := uint64(123)
-	txOffset := 0 // One transaction in the block.
+	txOffset := 0                                 // One transaction in the block.
 	tmBlockHash := []byte("abcdefghijklmnopqrst") // 20 bytes
-	blockHash := fmt.Sprintf("%x", tmBlockHash) // 40 characters
+	blockHash := fmt.Sprintf("%x", tmBlockHash)   // 40 characters
 	var txHash string
 	blockTime := time.Now()
 
@@ -76,16 +76,16 @@ func TestIndex(t *testing.T) {
 		t.Run("TestTxHashIndexing", func(t *testing.T) {
 			privateKeys := assc[rfeKeys].([]signature.PrivateKey)
 			rfe := NewReleaseFromEndowment(
-				math.Ndau(1),
 				targetAddress,
+				math.Ndau(1),
 				uint64(1),
-				[]signature.PrivateKey{privateKeys[0]},
+				privateKeys[0],
 			)
 
 			// Get the tx hash so we an search on it later.
-			txHash = metatx.Hash(&rfe)
+			txHash = metatx.Hash(rfe)
 
-			rfeBytes, err := metatx.Marshal(&rfe, TxIDs)
+			rfeBytes, err := metatx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -136,9 +136,9 @@ func TestIndex(t *testing.T) {
 			firstHeight, lastHeight, err := search.SearchDateRange(timeString, timeString)
 			require.NoError(t, err)
 			// Expecting the block before the one we indexed since it's flooring to current day.
-			require.Equal(t, height - 1, firstHeight)
+			require.Equal(t, height-1, firstHeight)
 			// Expecting the block after the one we indexed since it's an exclusive upper bound.
-			require.Equal(t, height + 1, lastHeight)
+			require.Equal(t, height+1, lastHeight)
 		})
 	})
 }
