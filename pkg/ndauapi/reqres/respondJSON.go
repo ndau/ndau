@@ -32,6 +32,7 @@ func RespondJSON(w http.ResponseWriter, res Responder) {
 		resB, _ = json.Marshal(ErrorBody{Message: "Could not encode response."}) // ignores the error, already in an error state.
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)  // doesn't return an error
 	_, err = w.Write(resB) // ignoring bytes written
 	if err != nil {
