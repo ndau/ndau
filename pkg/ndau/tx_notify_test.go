@@ -26,7 +26,7 @@ func TestValidNotifyTxIsValid(t *testing.T) {
 	app, private := initAppNotify(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
+	notify := NewNotify(sA, 1, private)
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -37,7 +37,7 @@ func TestNotifyAccountValidates(t *testing.T) {
 	app, private := initAppNotify(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
+	notify := NewNotify(sA, 1, private)
 
 	// make the account field invalid
 	notify.Target = address.Address{}
@@ -54,7 +54,7 @@ func TestNotifySequenceValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 0, []signature.PrivateKey{private})
+	notify := NewNotify(sA, 0, private)
 
 	// notify must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
@@ -67,7 +67,7 @@ func TestNotifySignatureValidates(t *testing.T) {
 	app, private := initAppTx(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
+	notify := NewNotify(sA, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := notify.Signatures[0].Bytes()
@@ -87,7 +87,7 @@ func TestNotifyChangesAppState(t *testing.T) {
 	app, private := initAppNotify(t)
 	sA, err := address.Validate(source)
 	require.NoError(t, err)
-	notify := NewNotify(sA, 1, []signature.PrivateKey{private})
+	notify := NewNotify(sA, 1, private)
 
 	state := app.GetState().(*backing.State)
 	acct, _ := state.GetAccount(sA, app.blockTime)
@@ -112,7 +112,7 @@ func TestNotifyDeductsTxFee(t *testing.T) {
 	})
 
 	for i := uint64(0); i < 2; i++ {
-		tx := NewNotify(sA, 1+i, []signature.PrivateKey{private})
+		tx := NewNotify(sA, 1+i, private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

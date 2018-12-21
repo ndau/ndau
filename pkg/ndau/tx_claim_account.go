@@ -6,57 +6,12 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *ClaimAccount) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
-}
-
-// NewClaimAccount creates a ClaimAccount transaction
-func NewClaimAccount(
-	account address.Address,
-	ownership signature.PublicKey,
-	validationKeys []signature.PublicKey,
-	validationScript []byte,
-	sequence uint64,
-	ownerPrivate signature.PrivateKey,
-) ClaimAccount {
-	ca := ClaimAccount{
-		Target:           account,
-		Ownership:        ownership,
-		ValidationKeys:   validationKeys,
-		ValidationScript: validationScript,
-		Sequence:         sequence,
-	}
-	ca.Signature = ownerPrivate.Sign(ca.SignableBytes())
-	return ca
-}
-
-// SignableBytes returns the signable bytes of ClaimAccount
-func (tx *ClaimAccount) SignableBytes() []byte {
-	bcnt := 0
-	bcnt += address.AddrLength
-	bcnt += tx.Ownership.Size()
-	for _, key := range tx.ValidationKeys {
-		bcnt += key.Size()
-	}
-	bcnt += len(tx.ValidationScript)
-	bcnt += 8 // sequence
-
-	bytes := make([]byte, 0, bcnt)
-
-	bytes = append(bytes, tx.Target.String()...)
-	bytes = append(bytes, tx.Ownership.KeyBytes()...)
-	for _, key := range tx.ValidationKeys {
-		bytes = append(bytes, key.KeyBytes()...)
-	}
-	bytes = append(bytes, tx.ValidationScript...)
-	bytes = appendUint64(bytes, tx.Sequence)
-
-	return bytes
 }
 
 // Validate returns nil if tx is valid, or an error

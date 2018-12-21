@@ -49,10 +49,10 @@ func TestCVCIsValidWithValidSignature(t *testing.T) {
 				makepub(),
 				1,
 				1,
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			cvcBytes, err := metatx.Marshal(&cvc, TxIDs)
+			cvcBytes, err := metatx.Marshal(cvc, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(cvcBytes)
@@ -81,10 +81,10 @@ func TestCVCPublicKeyMustNotBeEmpty(t *testing.T) {
 				zv.zero,
 				1,
 				1,
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			cvcBytes, err := metatx.Marshal(&cvc, TxIDs)
+			cvcBytes, err := metatx.Marshal(cvc, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(cvcBytes)
@@ -107,10 +107,10 @@ func TestCVCPublicKeyMustBeCorrectSize(t *testing.T) {
 					make([]byte, i),
 					1,
 					1,
-					[]signature.PrivateKey{private},
+					private,
 				)
 
-				cvcBytes, err := metatx.Marshal(&cvc, TxIDs)
+				cvcBytes, err := metatx.Marshal(cvc, TxIDs)
 				require.NoError(t, err)
 
 				resp := app.CheckTx(cvcBytes)
@@ -129,10 +129,10 @@ func TestCVCIsInvalidWithInvalidSignature(t *testing.T) {
 		makepub(),
 		1,
 		1,
-		[]signature.PrivateKey{private},
+		private,
 	)
 
-	cvcBytes, err := metatx.Marshal(&cvc, TxIDs)
+	cvcBytes, err := metatx.Marshal(cvc, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(cvcBytes)
@@ -160,10 +160,10 @@ func TestCVCIsValidOnlyWithSufficientTxFee(t *testing.T) {
 				makepub(),
 				1,
 				uint64(i)+1,
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			resp := deliverTxWithTxFee(t, app, &cvc)
+			resp := deliverTxWithTxFee(t, app, cvc)
 
 			var expect code.ReturnCode
 			if i == 0 {
@@ -236,9 +236,9 @@ func initAppCVCValidators(
 			makepub(),
 			1,
 			uint64(i)+1,
-			ma[cvcKeys].([]signature.PrivateKey),
+			ma[cvcKeys].([]signature.PrivateKey)...,
 		)
-		vcs = append(vcs, cvc)
+		vcs = append(vcs, *cvc)
 		validators = append(validators, cvc.ToValidator())
 	}
 
@@ -274,10 +274,11 @@ func TestCommandValidatorChangeAddValidator(t *testing.T) {
 		makepub(),
 		1,
 		qtyVals+1,
-		ma[cvcKeys].([]signature.PrivateKey),
+		ma[cvcKeys].([]signature.PrivateKey)...,
 	)
-	cvcs = append(cvcs, newCVC)
-	updateValidators(t, app, []CommandValidatorChange{newCVC})
+	require.NotNil(t, newCVC)
+	cvcs = append(cvcs, *newCVC)
+	updateValidators(t, app, []CommandValidatorChange{*newCVC})
 
 	actualValidators, err := app.Validators()
 	require.NoError(t, err)

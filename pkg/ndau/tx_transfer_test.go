@@ -94,12 +94,11 @@ func generateTransfer(t *testing.T, qty int64, seq uint64, keys []signature.Priv
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransfer(
 		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, keys,
+		seq, keys...,
 	)
-	require.NoError(t, err)
 	return tr
 }
 
@@ -275,12 +274,11 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	s, err := address.Validate(source)
 	require.NoError(t, err)
-	_, err = NewTransfer(
+	_ = NewTransfer(
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, []signature.PrivateKey{private},
+		seq, private,
 	)
-	require.Error(t, err)
 
 	// We've just proved that this implementation refuses to generate
 	// a transfer for which source and dest are identical.
@@ -376,10 +374,10 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransfer(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		1, key,
 	)
 	require.NoError(t, err)
 
@@ -401,10 +399,10 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransfer(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		1, key,
 	)
 	require.NoError(t, err)
 
@@ -461,7 +459,7 @@ func TestTransferDeductsTxFee(t *testing.T) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx, err := NewTransfer(sA, dA, 1, 1+i, []signature.PrivateKey{private})
+		tx := NewTransfer(sA, dA, 1, 1+i, private)
 		require.NoError(t, err)
 
 		resp := deliverTxWithTxFee(t, app, tx)

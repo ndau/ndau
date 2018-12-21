@@ -108,7 +108,7 @@ func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.
 		return
 	}
 
-	result := metasrch.DateRangeResult{firstHeight, lastHeight}
+	result := metasrch.DateRangeResult{FirstHeight: firstHeight, LastHeight: lastHeight}
 	ahBytes := []byte(result.Marshal())
 	response.Value = ahBytes
 }

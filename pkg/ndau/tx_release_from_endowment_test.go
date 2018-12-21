@@ -46,13 +46,13 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			rfe := NewReleaseFromEndowment(
-				math.Ndau(1),
 				targetAddress,
+				math.Ndau(1),
 				1,
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
+			rfeBytes, err := tx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -69,13 +69,13 @@ func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 	_, private, err := signature.Generate(signature.Ed25519, nil)
 
 	rfe := NewReleaseFromEndowment(
-		math.Ndau(1),
 		targetAddress,
+		math.Ndau(1),
 		1,
-		[]signature.PrivateKey{private},
+		private,
 	)
 
-	rfeBytes, err := tx.Marshal(&rfe, TxIDs)
+	rfeBytes, err := tx.Marshal(rfe, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(rfeBytes)
@@ -94,13 +94,13 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 			})
 
 			rfe := NewReleaseFromEndowment(
-				math.Ndau(1),
 				targetAddress,
+				math.Ndau(1),
 				uint64(i+1),
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
+			rfeBytes, err := tx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -139,13 +139,13 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			require.NoError(t, err)
 
 			rfe := NewReleaseFromEndowment(
-				math.Ndau(1),
 				targetAddress,
+				math.Ndau(1),
 				uint64(i+1),
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			rfeBytes, err := tx.Marshal(&rfe, TxIDs)
+			rfeBytes, err := tx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -188,13 +188,13 @@ func TestRFEIsValidOnlyWithSufficientTxFee(t *testing.T) {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			rfe := NewReleaseFromEndowment(
-				math.Ndau(1),
 				targetAddress,
+				math.Ndau(1),
 				uint64(i)+1,
-				[]signature.PrivateKey{private},
+				private,
 			)
 
-			resp := deliverTxWithTxFee(t, app, &rfe)
+			resp := deliverTxWithTxFee(t, app, rfe)
 
 			var expect code.ReturnCode
 			if i == 0 {

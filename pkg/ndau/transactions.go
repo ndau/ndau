@@ -35,11 +35,11 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 
 // A Transfer is the fundamental transaction of the Ndau chain.
 type Transfer struct {
-	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Source      address.Address       `msg:"src" chain:"1,Tx_Source" json:"source"`
+	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination" json:"destination"`
+	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Sequence    uint64                `msg:"seq" json:"sequence"`
+	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 // static assert that Transfer is NTransactable
@@ -47,11 +47,11 @@ var _ NTransactable = (*Transfer)(nil)
 
 // A ChangeValidation transaction is used to set transfer keys
 type ChangeValidation struct {
-	Target           address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	NewKeys          []signature.PublicKey `msg:"key" chain:"31,Tx_NewKeys"`
-	ValidationScript []byte                `msg:"val" chain:"32,Tx_ValidationScript"`
-	Sequence         uint64                `msg:"seq"`
-	Signatures       []signature.Signature `msg:"sig"`
+	Target           address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	NewKeys          []signature.PublicKey `msg:"key" chain:"31,Tx_NewKeys" json:"new_keys"`
+	ValidationScript []byte                `msg:"val" chain:"32,Tx_ValidationScript" json:"validation_script"`
+	Sequence         uint64                `msg:"seq" json:"sequence"`
+	Signatures       []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*ChangeValidation)(nil)
@@ -62,10 +62,10 @@ var _ NTransactable = (*ChangeValidation)(nil)
 // It must be signed with the private key corresponding to one of the public
 // keys listed in the system variable `ReleaseFromEndowmentKeys`.
 type ReleaseFromEndowment struct {
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination" json:"destination"`
+	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Sequence    uint64                `msg:"seq" json:"sequence"`
+	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*ReleaseFromEndowment)(nil)
@@ -73,10 +73,10 @@ var _ NTransactable = (*ReleaseFromEndowment)(nil)
 // A ChangeSettlementPeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
 type ChangeSettlementPeriod struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Period     math.Duration         `msg:"per" chain:"21,Tx_Period"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Period     math.Duration         `msg:"per" chain:"21,Tx_Period" json:"period"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*ChangeSettlementPeriod)(nil)
@@ -86,10 +86,10 @@ var _ NTransactable = (*ChangeSettlementPeriod)(nil)
 //
 // The sequence number must be higher than that of the target Account
 type Delegate struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Delegate)(nil)
@@ -108,9 +108,9 @@ var _ NTransactable = (*Delegate)(nil)
 //   2. The originating node can't know ahead of time what the official block
 //      time will be.
 type CreditEAI struct {
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*CreditEAI)(nil)
@@ -119,10 +119,10 @@ var _ NTransactable = (*CreditEAI)(nil)
 //
 // Locked accounts may still receive ndau but may not be the source for transfers.
 type Lock struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Period     math.Duration         `msg:"per" chain:"21,Tx_Period"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Period     math.Duration         `msg:"per" chain:"21,Tx_Period" json:"period"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Lock)(nil)
@@ -132,9 +132,9 @@ var _ NTransactable = (*Lock)(nil)
 //
 // Notified accounts may not receive ndau.
 type Notify struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Notify)(nil)
@@ -144,10 +144,10 @@ var _ NTransactable = (*Notify)(nil)
 // When the rewards target is empty, EAI and other rewards are deposited to the
 // origin account. Otherwise, they are deposited to the specified destination.
 type SetRewardsDestination struct {
-	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Source      address.Address       `msg:"src" chain:"1,Tx_Source" json:"source"`
+	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination" json:"destination"`
+	Sequence    uint64                `msg:"seq" json:"sequence"`
+	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*SetRewardsDestination)(nil)
@@ -156,12 +156,12 @@ var _ NTransactable = (*SetRewardsDestination)(nil)
 //
 // It is the only type of transaction which may be signed with the ownership key.
 type ClaimAccount struct {
-	Target           address.Address       `msg:"tgt"`
-	Ownership        signature.PublicKey   `msg:"own"`
-	ValidationKeys   []signature.PublicKey `msg:"key"`
-	ValidationScript []byte                `msg:"val"`
-	Sequence         uint64                `msg:"seq"`
-	Signature        signature.Signature   `msg:"sig"`
+	Target           address.Address       `msg:"tgt" json:"target"`
+	Ownership        signature.PublicKey   `msg:"own" json:"ownership"`
+	ValidationKeys   []signature.PublicKey `msg:"key" json:"validation_keys"`
+	ValidationScript []byte                `msg:"val" json:"validation_script"`
+	Sequence         uint64                `msg:"seq" json:"sequence"`
+	Signature        signature.Signature   `msg:"sig" json:"signature"`
 }
 
 var _ NTransactable = (*ClaimAccount)(nil)
@@ -170,33 +170,33 @@ var _ NTransactable = (*ClaimAccount)(nil)
 // for a specified period. It can only be sent to accounts that did not
 // previously exist on the blockchain.
 type TransferAndLock struct {
-	Source      address.Address       `msg:"src" chain:"1,Tx_Source"`
-	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination"`
-	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity"`
-	Period      math.Duration         `msg:"per" chain:"21,Tx_Period"`
-	Sequence    uint64                `msg:"seq"`
-	Signatures  []signature.Signature `msg:"sig"`
+	Source      address.Address       `msg:"src" chain:"1,Tx_Source" json:"source"`
+	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination" json:"destination"`
+	Qty         math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Period      math.Duration         `msg:"per" chain:"21,Tx_Period" json:"period"`
+	Sequence    uint64                `msg:"seq" json:"sequence"`
+	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*TransferAndLock)(nil)
 
 // A Stake transaction stakes to a node
 type Stake struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target"`
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Stake)(nil)
 
 // A RegisterNode transaction activates a node
 type RegisterNode struct {
-	Node               address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	DistributionScript []byte                `msg:"dis" chain:"33,Tx_DistributionScript"`
-	RPCAddress         string                `msg:"rpc" chain:"34,Tx_RPCAddress"`
-	Sequence           uint64                `msg:"seq"`
-	Signatures         []signature.Signature `msg:"sig"`
+	Node               address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	DistributionScript []byte                `msg:"dis" chain:"33,Tx_DistributionScript" json:"distribution_script"`
+	RPCAddress         string                `msg:"rpc" chain:"34,Tx_RPCAddress" json:"rpc_address"`
+	Sequence           uint64                `msg:"seq" json:"sequence"`
+	Signatures         []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*RegisterNode)(nil)
@@ -208,9 +208,9 @@ var _ NTransactable = (*RegisterNode)(nil)
 // NominateNodeRewardAddress system variable. That account also specifes
 // the validation script, and pays the transaction fee.
 type NominateNodeReward struct {
-	Random     int64                 `msg:"rnd" chain:"41,Tx_Random"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Random     int64                 `msg:"rnd" chain:"41,Tx_Random" json:"random"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*NominateNodeReward)(nil)
@@ -219,9 +219,9 @@ var _ NTransactable = (*NominateNodeReward)(nil)
 // the blockchain, noticed that it won the nomination, and is up and ready to
 // claim its reward.
 type ClaimNodeReward struct {
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node"`
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*ClaimNodeReward)(nil)
@@ -241,28 +241,28 @@ type CommandValidatorChange struct {
 	// and its Bytes() method.
 	//
 	// See https://godoc.org/github.com/tendermint/tendermint/crypto/ed25519#PubKeyEd25519
-	PublicKey []byte `msg:"tm_pk" chain:"16,Tx_PublicKey"`
+	PublicKey []byte `msg:"tm_pk" chain:"16,Tx_PublicKey" json:"public_key"`
 
 	// Power is an arbitrary integer with no intrinsic
 	// meaning; during the Global Trust period, it
 	// can be literally whatever. Setting it to 0
 	// removes the validator.
-	Power int64 `msg:"pow" chain:"17,Tx_Power"`
+	Power int64 `msg:"pow" chain:"17,Tx_Power" json:"power"`
 
-	Sequence   uint64                `msg:"seq"`
-	Signatures []signature.Signature `msg:"sig"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*CommandValidatorChange)(nil)
 
 // A SidechainTx is used to validate and pay for transactions on side chains.
 type SidechainTx struct {
-	Source                 address.Address       `msg:"src" chain:"1,Tx_Source"`
-	SidechainID            byte                  `msg:"sch" chain:"42,Tx_SidechainID"`
-	SidechainSignableBytes []byte                `msg:"ssb" chain:"43,Tx_SidechainSignableBytes"`
-	SidechainSignatures    []signature.Signature `msg:"ssg" chain:"44,Tx_SidechainSignatures"`
-	Sequence               uint64                `msg:"seq"`
-	Signatures             []signature.Signature `msg:"sig"`
+	Source                 address.Address       `msg:"src" chain:"1,Tx_Source" json:"source"`
+	SidechainID            byte                  `msg:"sch" chain:"42,Tx_SidechainID" json:"sidechain_id"`
+	SidechainSignableBytes []byte                `msg:"ssb" chain:"43,Tx_SidechainSignableBytes" json:"sidechain_signable_bytes"`
+	SidechainSignatures    []signature.Signature `msg:"ssg" chain:"44,Tx_SidechainSignatures" json:"sidechain_signatures"`
+	Sequence               uint64                `msg:"seq" json:"sequence"`
+	Signatures             []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*SidechainTx)(nil)

@@ -15,36 +15,6 @@ func (tx *RegisterNode) GetAccountAddresses() []string {
 	return []string{tx.Node.String()}
 }
 
-// NewRegisterNode creates a new RegisterNode transaction
-func NewRegisterNode(
-	node address.Address,
-	distributionScript []byte,
-	rpcAddress string,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) *RegisterNode {
-	tx := &RegisterNode{
-		Node:               node,
-		DistributionScript: distributionScript,
-		RPCAddress:         rpcAddress,
-		Sequence:           sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
-// SignableBytes implements Transactable
-func (tx *RegisterNode) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Node.String())+len(tx.DistributionScript)+len(tx.RPCAddress))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Node.String()...)
-	bytes = append(bytes, tx.DistributionScript...)
-	bytes = append(bytes, tx.RPCAddress...)
-	return bytes
-}
-
 // Validate implements metatx.Transactable
 func (tx *RegisterNode) Validate(appI interface{}) error {
 	if !IsChaincode(tx.DistributionScript) {

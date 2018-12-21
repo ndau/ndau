@@ -3,46 +3,15 @@ package ndau
 import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *ReleaseFromEndowment) GetAccountAddresses() []string {
 	return []string{tx.Destination.String()}
-}
-
-// SignableBytes implements Transactable
-func (tx *ReleaseFromEndowment) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Destination.Msgsize()+tx.Qty.Msgsize()+8+8)
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = appendUint64(bytes, uint64(tx.Qty))
-	bytes = append(bytes, []byte(tx.Destination.String())...)
-	return bytes
-}
-
-// NewReleaseFromEndowment constructs a ReleaseFromEndowment transactable.
-//
-// The caller must ensure that `private` corresponds to a public key listed
-// in the `ReleaseFromEndowmentKeys` system variable.
-func NewReleaseFromEndowment(
-	qty math.Ndau,
-	destination address.Address,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) (tx ReleaseFromEndowment) {
-	tx = ReleaseFromEndowment{
-		Qty:         qty,
-		Destination: destination,
-		Sequence:    sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
 }
 
 // Validate implements metatx.Transactable

@@ -20,7 +20,7 @@ func TestValidSetRewardsDestinationTxIsValid(t *testing.T) {
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// srt must be valid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -36,7 +36,7 @@ func TestSetRewardsDestinationAccountValidates(t *testing.T) {
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// make the account field invalid
 	srt.Source = address.Address{}
@@ -55,7 +55,7 @@ func TestSetRewardsDestinationDestinationValidates(t *testing.T) {
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// make the account field invalid
 	srt.Destination = address.Address{}
@@ -74,7 +74,7 @@ func TestSetRewardsDestinationSequenceValidates(t *testing.T) {
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 0, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 0, private)
 
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -89,7 +89,7 @@ func TestSetRewardsDestinationSignatureValidates(t *testing.T) {
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := srt.Signatures[0].Bytes()
@@ -111,7 +111,7 @@ func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 	require.NoError(t, err)
 	dA, err := address.Validate(dest)
 	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	resp := deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -123,7 +123,7 @@ func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
 
 	// resetting to source address saves as "nil" dest address
-	srt = NewSetRewardsDestination(sA, sA, 2, []signature.PrivateKey{private})
+	srt = NewSetRewardsDestination(sA, sA, 2, private)
 	resp = deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	state = app.GetState().(*backing.State)
@@ -147,7 +147,7 @@ func TestSetRewardsDestinationInvalidIfDestinationAlsoSends(t *testing.T) {
 		ad.RewardsTarget = &nA
 	})
 
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -170,7 +170,7 @@ func TestSetRewardsDestinationInvalidIfSourceAlsoReceives(t *testing.T) {
 		ad.IncomingRewardsFrom = []address.Address{nA}
 	})
 
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -200,7 +200,7 @@ func TestReSetRewardsDestinationChangesAppState(t *testing.T) {
 	})
 
 	// deliver transaction
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 	resp := deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -231,7 +231,7 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 		ad.Lock.UnlocksOn = &uo
 	})
 
-	srt := NewSetRewardsDestination(sA, dA, 1, []signature.PrivateKey{private})
+	srt := NewSetRewardsDestination(sA, dA, 1, private)
 
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -252,7 +252,7 @@ func TestSetRewardsDestinationDeductsTxFee(t *testing.T) {
 	})
 
 	for i := uint64(0); i < 2; i++ {
-		tx := NewSetRewardsDestination(sA, dA, 1+i, []signature.PrivateKey{private})
+		tx := NewSetRewardsDestination(sA, dA, 1+i, private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 
