@@ -72,7 +72,7 @@ func TestBuildVMForTxValidation(t *testing.T) {
 				t.Errorf("BuildVMForTxValidation() error = %v, wantErrCreate %v", err, tt.wantErrCreate)
 				return
 			}
-			err = vm.Run(false)
+			err = vm.Run(nil)
 			if (err != nil) != tt.wantErrRun {
 				t.Errorf("BuildVMForTxValidation() error = %v, wantErrRun %v", err, tt.wantErrRun)
 				return

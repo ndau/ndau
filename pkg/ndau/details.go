@@ -71,7 +71,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 			if err != nil {
 				return errors.Wrap(err, "couldn't build vm for validation script")
 			}
-			err = vm.Run(false)
+			err = vm.Run(nil)
 			if err != nil {
 				return errors.Wrap(err, "validation script")
 			}
