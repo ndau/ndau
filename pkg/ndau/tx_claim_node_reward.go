@@ -92,7 +92,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		if err != nil {
 			allErrs[errors.Wrap(err, "constructing chaincode vm").Error()] = xx
 		} else {
-			err = avm.Run(false)
+			err = avm.Run(nil)
 			if err != nil {
 				allErrs[errors.Wrap(err, "running chaincode vm").Error()] = xx
 			} else {
