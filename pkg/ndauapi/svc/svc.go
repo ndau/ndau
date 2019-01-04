@@ -11,6 +11,7 @@ import (
 
 	"github.com/kentquirk/boneful"
 	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -54,9 +55,8 @@ var dummyResultBlock = rpctypes.ResultBlock{
 	Block:     &tmtypes.Block{},
 }
 
-var dummyTxJSON = routes.TxJSON{
-	Data: "base64 tx data",
-}
+var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
+
 var dummySubmitResult = routes.SubmitResult{
 	TxHash: "123abc34099f",
 }
@@ -357,17 +357,19 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.POST("/tx/prevalidate/:txtype").To(routes.HandlePrevalidateTx(cf)).
 		Doc("Prevalidates a transaction.").
+		Notes("Transactions consist of JSON for any defined transaction type.").
 		Operation("TxPrevalidate").
 		Consumes(JSON).
-		Reads(dummyTxJSON).
+		Reads(dummyLockTx).
 		Produces(JSON).
 		Writes(dummyPrevalidateResult))
 
 	svc.Route(svc.POST("/tx/submit/:txtype").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a transaction.").
+		Notes("Transactions consist of JSON for any defined transaction type.").
 		Operation("TxSubmit").
 		Consumes(JSON).
-		Reads(dummyTxJSON).
+		Reads(dummyLockTx).
 		Produces(JSON).
 		Writes(dummySubmitResult))
 

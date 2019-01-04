@@ -10,12 +10,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
-// TxJSON is a generic object that contains a completed transaction
-// marshaled into []byte and then base-64 encoded into Data as a string.
-type TxJSON struct {
-	Data string `json:"data"`
-}
-
 // PrevalidateResult returns the prevalidation status of a transaction without
 // attempting to commit it.
 type PrevalidateResult struct {
