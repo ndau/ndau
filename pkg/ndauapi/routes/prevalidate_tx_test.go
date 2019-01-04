@@ -15,6 +15,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/svc"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -22,20 +23,17 @@ import (
 )
 
 func TestPrevalidateTxNoServer(t *testing.T) {
-	baseHandler := routes.HandlePrevalidateTx
-
 	keypub, keypvt, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	addr, err := address.Generate(address.KindUser, keypub.KeyBytes())
 	require.NoError(t, err)
 	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234)
 	testLockTx.Signatures = append(testLockTx.Signatures, metatx.Sign(testLockTx, keypvt))
-	testLockData, err := b64Tx(testLockTx)
 	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
-		body    *routes.TxJSON
+		body    interface{}
 		status  int
 		want    routes.SubmitResult
 		wanterr string
@@ -46,42 +44,12 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			body:    nil,
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
-			wanterr: "unable to decode",
-			skip:    !isIntegration,
+			wanterr: "did not unmarshal",
+			skip:    false,
 		},
 		{
-			name:    "blank request",
-			body:    &routes.TxJSON{},
-			status:  http.StatusBadRequest,
-			want:    routes.SubmitResult{},
-			wanterr: "could not unmarshal",
-			skip:    !isIntegration,
-		},
-		{
-			name: "not base64",
-			body: &routes.TxJSON{
-				Data: "not base64 tx data",
-			},
-			status:  http.StatusBadRequest,
-			want:    routes.SubmitResult{},
-			wanterr: "could not be decoded as base64",
-			skip:    !isIntegration,
-		},
-		{
-			name: "not a tx",
-			body: &routes.TxJSON{
-				Data: b64str("not a tx"),
-			},
-			status:  http.StatusBadRequest,
-			want:    routes.SubmitResult{},
-			wanterr: "deserialization failed",
-			skip:    !isIntegration,
-		},
-		{
-			name: "valid tx but no node",
-			body: &routes.TxJSON{
-				Data: testLockData,
-			},
+			name:    "valid tx but no node",
+			body:    testLockTx,
 			status:  http.StatusInternalServerError,
 			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
@@ -96,7 +64,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 		t.Errorf("Unexpected config error: %s", err)
 		return
 	}
-	handler := baseHandler(cf)
+	mux := svc.New(cf).Mux()
 
 	// run tests
 	for _, tt := range tests {
@@ -110,11 +78,11 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			if tt.body != nil {
 				buf := &bytes.Buffer{}
 				json.NewEncoder(buf).Encode(tt.body)
-				req = httptest.NewRequest("POST", "/", buf)
+				req = httptest.NewRequest("POST", "/tx/prevalidate/lock", buf)
 			} else {
-				req = httptest.NewRequest("POST", "/", nil)
+				req = httptest.NewRequest("POST", "/tx/prevalidate/lock", nil)
 			}
-			handler(w, req)
+			mux.ServeHTTP(w, req)
 			res := w.Result()
 			if res.StatusCode != tt.status {
 				body, _ := ioutil.ReadAll(res.Body)
@@ -126,6 +94,7 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 			err := json.NewDecoder(res.Body).Decode(&got)
 			if err != nil {
 				t.Errorf("Error decoding result: %s", err)
+				return
 			}
 			if tt.wanterr != "" {
 				if !strings.Contains(got.Msg, tt.wanterr) {

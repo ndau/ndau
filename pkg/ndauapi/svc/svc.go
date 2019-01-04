@@ -355,7 +355,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(routes.TransactionData{}))
 
-	svc.Route(svc.POST("/tx/prevalidate").To(routes.HandlePrevalidateTx(cf)).
+	svc.Route(svc.POST("/tx/prevalidate/:txtype").To(routes.HandlePrevalidateTx(cf)).
 		Doc("Prevalidates a transaction.").
 		Operation("TxPrevalidate").
 		Consumes(JSON).
@@ -363,7 +363,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(dummyPrevalidateResult))
 
-	svc.Route(svc.POST("/tx/submit").To(routes.HandleSubmitTx(cf)).
+	svc.Route(svc.POST("/tx/submit/:txtype").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a transaction.").
 		Operation("TxSubmit").
 		Consumes(JSON).

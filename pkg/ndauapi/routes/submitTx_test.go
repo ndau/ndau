@@ -14,6 +14,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/oneiro-ndev/ndau/pkg/ndauapi/svc"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -21,8 +22,6 @@ import (
 )
 
 func TestSubmitTxNoServer(t *testing.T) {
-	baseHandler := routes.HandleSubmitTx
-
 	keypub, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	addr, err := address.Generate(address.KindUser, keypub.KeyBytes())
@@ -44,36 +43,8 @@ func TestSubmitTxNoServer(t *testing.T) {
 			body:    nil,
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
-			wanterr: "unable to decode",
-			skip:    !isIntegration,
-		},
-		{
-			name:    "blank request",
-			body:    &routes.TxJSON{},
-			status:  http.StatusBadRequest,
-			want:    routes.SubmitResult{},
-			wanterr: "could not be decoded",
-			skip:    !isIntegration,
-		},
-		{
-			name: "not base64",
-			body: &routes.TxJSON{
-				Data: "not base64 tx data",
-			},
-			status:  http.StatusBadRequest,
-			want:    routes.SubmitResult{},
-			wanterr: "could not be decoded as base64",
-			skip:    !isIntegration,
-		},
-		{
-			name: "not a tx",
-			body: &routes.TxJSON{
-				Data: b64str("not a tx"),
-			},
-			status:  http.StatusBadRequest,
-			want:    routes.SubmitResult{},
-			wanterr: "could not be decoded into a transaction",
-			skip:    !isIntegration,
+			wanterr: "did not unmarshal",
+			skip:    false,
 		},
 		{
 			name: "valid tx but no node",
@@ -94,7 +65,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 		t.Errorf("Unexpected config error: %s", err)
 		return
 	}
-	handler := baseHandler(cf)
+	mux := svc.New(cf).Mux()
 
 	// run tests
 	for _, tt := range tests {
@@ -108,11 +79,11 @@ func TestSubmitTxNoServer(t *testing.T) {
 			if tt.body != nil {
 				buf := &bytes.Buffer{}
 				json.NewEncoder(buf).Encode(tt.body)
-				req = httptest.NewRequest("POST", "/", buf)
+				req = httptest.NewRequest("POST", "/tx/submit/lock", buf)
 			} else {
-				req = httptest.NewRequest("POST", "/", nil)
+				req = httptest.NewRequest("POST", "/tx/submit/lock", nil)
 			}
-			handler(w, req)
+			mux.ServeHTTP(w, req)
 			res := w.Result()
 			if res.StatusCode != tt.status {
 				body, _ := ioutil.ReadAll(res.Body)

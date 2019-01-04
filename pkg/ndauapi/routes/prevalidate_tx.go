@@ -1,12 +1,9 @@
 package routes
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"net/http"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	"github.com/go-zoo/bone"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
@@ -30,29 +27,10 @@ type PrevalidateResult struct {
 // HandlePrevalidateTx generates a handler that implements the /tx/prevalidate endpoint
 func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// first, get the TxJSON object
-		var TxJSON TxJSON
-
-		if r.Body == nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("request body required", http.StatusBadRequest))
-			return
-		}
-		err := json.NewDecoder(r.Body).Decode(&TxJSON)
+		txtype := bone.GetValue(r, "txtype")
+		tx, err := txUnmarshal(txtype, r.Body)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("unable to decode", err, http.StatusBadRequest))
-			return
-		}
-
-		// now decode the transaction
-		data, err := base64.StdEncoding.DecodeString(TxJSON.Data)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data could not be decoded as base64", err, http.StatusBadRequest))
-			return
-		}
-
-		tx, err := metatx.Unmarshal(data, ndau.TxIDs)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data could not unmarshal into a ndau chain tx", err, http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data did not unmarshal into a tx", err, http.StatusBadRequest))
 			return
 		}
 
@@ -67,11 +45,11 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		// and now run the prevalidation query
 		fee, _, err := tool.Prevalidate(node, tx)
 		result := PrevalidateResult{FeeNapu: int64(fee)}
-		code := http.StatusOK // if we ever do this without synchronous commit, change to StatusAccepted
+		code := http.StatusOK
 		if err != nil {
 			result.Err = err.Error()
 			result.ErrCode = -1
-			code = http.StatusInternalServerError // probably not the request's fault, actually
+			code = http.StatusBadRequest
 		}
 
 		reqres.RespondJSON(w, reqres.Response{Bd: result, Sts: code})

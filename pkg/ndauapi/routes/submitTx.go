@@ -2,10 +2,9 @@ package routes
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"net/http"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/go-zoo/bone"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
@@ -34,29 +33,10 @@ type SubmitResult struct {
 // HandleSubmitTx generates a handler that implements the /tx/submit endpoint
 func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// first, get the PreparedTx object
-		var preparedTx TxJSON
-
-		if r.Body == nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("request body required", http.StatusBadRequest))
-			return
-		}
-		err := json.NewDecoder(r.Body).Decode(&preparedTx)
+		txtype := bone.GetValue(r, "txtype")
+		mtx, err := txUnmarshal(txtype, r.Body)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("unable to decode", err, http.StatusBadRequest))
-			return
-		}
-
-		// now decode the transaction
-		data, err := base64.StdEncoding.DecodeString(preparedTx.Data)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data could not be decoded as base64", err, http.StatusBadRequest))
-			return
-		}
-
-		mtx, err := metatx.Unmarshal(data, ndau.TxIDs)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data could not be decoded into a transaction", err, http.StatusBadRequest))
+			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data did not unmarshal into a tx", err, http.StatusBadRequest))
 			return
 		}
 		tx := mtx.(ndau.NTransactable)
