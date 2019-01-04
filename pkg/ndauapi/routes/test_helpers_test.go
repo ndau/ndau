@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -38,6 +39,15 @@ func init() {
 	}
 	if chaosRPC != "" {
 		os.Setenv("NDAUAPI_CHAOS_RPC_URL", chaosRPC)
+	}
+
+	// The config calls need the NDAUHOME env var set, as well as each chaos/ndau tool invocation.
+	ndauhome := os.ExpandEnv("$NDAUHOME")
+	if ndauhome == "" {
+		userhome := os.ExpandEnv("$HOME")
+		// Every localnet, multi-node or not, has a 0'th node we can use.
+		ndauhome = filepath.Join(userhome, ".localnet/data/ndau-0")
+		os.Setenv("NDAUHOME", ndauhome)
 	}
 }
 
