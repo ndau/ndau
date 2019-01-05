@@ -29,7 +29,6 @@ func TestPrevalidateTxNoServer(t *testing.T) {
 	require.NoError(t, err)
 	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234)
 	testLockTx.Signatures = append(testLockTx.Signatures, metatx.Sign(testLockTx, keypvt))
-	require.NoError(t, err)
 
 	tests := []struct {
 		name    string

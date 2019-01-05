@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -22,17 +23,16 @@ import (
 )
 
 func TestSubmitTxNoServer(t *testing.T) {
-	keypub, _, err := signature.Generate(signature.Ed25519, nil)
+	keypub, keypvt, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	addr, err := address.Generate(address.KindUser, keypub.KeyBytes())
 	require.NoError(t, err)
 	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234)
-	testLockData, err := b64Tx(testLockTx)
-	require.NoError(t, err)
+	testLockTx.Signatures = append(testLockTx.Signatures, metatx.Sign(testLockTx, keypvt))
 
 	tests := []struct {
 		name    string
-		body    *routes.TxJSON
+		body    interface{}
 		status  int
 		want    routes.SubmitResult
 		wanterr string
@@ -47,10 +47,8 @@ func TestSubmitTxNoServer(t *testing.T) {
 			skip:    false,
 		},
 		{
-			name: "valid tx but no node",
-			body: &routes.TxJSON{
-				Data: testLockData,
-			},
+			name:    "valid tx but no node",
+			body:    testLockTx,
 			status:  http.StatusInternalServerError,
 			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
