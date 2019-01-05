@@ -2,6 +2,7 @@ package svc
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -356,8 +357,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(routes.TransactionData{}))
 
 	svc.Route(svc.POST("/tx/prevalidate/:txtype").To(routes.HandlePrevalidateTx(cf)).
-		Doc("Prevalidates a transaction.").
-		Notes("Transactions consist of JSON for any defined transaction type.").
+		Doc("Prevalidates a transaction (tells if it would be accepted and what the transaction fee will be.").
+		Notes("Transactions consist of JSON for any defined transaction type (see submit).").
 		Operation("TxPrevalidate").
 		Consumes(JSON).
 		Reads(dummyLockTx).
@@ -366,7 +367,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.POST("/tx/submit/:txtype").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a transaction.").
-		Notes("Transactions consist of JSON for any defined transaction type.").
+		Notes("Transactions consist of JSON for any defined transaction type. Valid transaction names are: " + strings.Join(routes.TxNames(), ", ")).
 		Operation("TxSubmit").
 		Consumes(JSON).
 		Reads(dummyLockTx).

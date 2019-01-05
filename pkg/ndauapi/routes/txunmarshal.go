@@ -11,6 +11,20 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 )
 
+// TxNames returns a list of all of the valid transaction names.
+func TxNames() []string {
+	names := make([]string, len(ndau.TxIDs))
+	// iterate over all the transaction types
+	i := 0
+	for _, txable := range ndau.TxIDs {
+		// find the name of each transaction type
+		name := metatx.NameOf(txable)
+		names[i] = name
+		i++
+	}
+	return names
+}
+
 // Given the name of a transaction type and a reader containing the JSON for a transaction
 // (usually the request Body from a POST), this constructs a new object containing that
 // transactions's data.
