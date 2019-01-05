@@ -28,7 +28,7 @@ func TxNames() []string {
 // Given the name of a transaction type and a reader containing the JSON for a transaction
 // (usually the request Body from a POST), this constructs a new object containing that
 // transactions's data.
-func txUnmarshal(txtype string, r io.Reader) (metatx.Transactable, error) {
+func TxUnmarshal(txtype string, r io.Reader) (metatx.Transactable, error) {
 	// iterate over all the transaction types
 	for id, txable := range ndau.TxIDs {
 		// find the name of each transaction type

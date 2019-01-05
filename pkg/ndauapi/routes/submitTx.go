@@ -34,7 +34,7 @@ type SubmitResult struct {
 func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		txtype := bone.GetValue(r, "txtype")
-		mtx, err := txUnmarshal(txtype, r.Body)
+		mtx, err := TxUnmarshal(txtype, r.Body)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data did not unmarshal into a tx", err, http.StatusBadRequest))
 			return

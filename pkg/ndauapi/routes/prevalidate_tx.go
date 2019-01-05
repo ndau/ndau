@@ -22,7 +22,7 @@ type PrevalidateResult struct {
 func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		txtype := bone.GetValue(r, "txtype")
-		tx, err := txUnmarshal(txtype, r.Body)
+		tx, err := TxUnmarshal(txtype, r.Body)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data did not unmarshal into a tx", err, http.StatusBadRequest))
 			return
