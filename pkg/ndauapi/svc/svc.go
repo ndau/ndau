@@ -286,7 +286,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns a single node.").
 		Param(boneful.PathParameter("id", "the NodeID as a hex string")).
 		Produces(JSON).
-		Writes(p2p.NodeInfo{}))
+		Writes(p2p.NodeInfo.NetAddress))
 
 	svc.Route(svc.GET("/order/hash/:ndauhash").To(routes.HandleOrderHash(cf)).
 		Operation("OrderHash").

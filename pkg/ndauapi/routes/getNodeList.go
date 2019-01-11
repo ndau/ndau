@@ -47,7 +47,7 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 				resp.Nodes = append(resp.Nodes, nr.Nodes...)
 				if !open { // send response when channel closed
 					sort.Slice(resp.Nodes, func(i, j int) bool {
-						return string(resp.Nodes[i].ID) < string(resp.Nodes[j].ID)
+						return string(resp.Nodes[i].ID()) < string(resp.Nodes[j].ID())
 					})
 					reqres.RespondJSON(w, reqres.OKResponse(resp))
 					return
