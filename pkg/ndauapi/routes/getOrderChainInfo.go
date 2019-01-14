@@ -26,6 +26,9 @@ func getTotalNdau(cf cfg.Cfg) (int64, error) {
 		return 0, err
 	}
 	summ, _, err := tool.GetSummary(node)
+	if err != nil {
+		return 0, err
+	}
 	return int64(summ.TotalNdau), nil
 }
 
