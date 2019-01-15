@@ -50,17 +50,17 @@ func (JSONClient) ABCIQueryWithOptions(path string, data cmn.HexBytes, opts clie
 
 // BroadcastTxCommit implements ABCIClient
 func (j JSONClient) BroadcastTxCommit(tx ttypes.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
-	return nil, j.broadcast(tx)
+	return &ctypes.ResultBroadcastTxCommit{}, j.broadcast(tx)
 }
 
 // BroadcastTxSync implements ABCIClient
 func (j JSONClient) BroadcastTxSync(tx ttypes.Tx) (*ctypes.ResultBroadcastTx, error) {
-	return nil, j.broadcast(tx)
+	return &ctypes.ResultBroadcastTx{}, j.broadcast(tx)
 }
 
 // BroadcastTxAsync implements ABCIClient
 func (j JSONClient) BroadcastTxAsync(tx ttypes.Tx) (*ctypes.ResultBroadcastTx, error) {
-	return nil, j.broadcast(tx)
+	return &ctypes.ResultBroadcastTx{}, j.broadcast(tx)
 }
 
 // don't actually broadcast this tx
