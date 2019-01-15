@@ -1,6 +1,7 @@
 package tool
 
 import (
+	"bufio"
 	"encoding/json"
 	"io"
 	"os"
@@ -79,6 +80,15 @@ func (j JSONClient) broadcast(txb ttypes.Tx) error {
 	if err != nil {
 		return err
 	}
-	_, err = j.Writer.Write(jsonb)
-	return err
+	buffer := bufio.NewWriter(j.Writer)
+	_, err = buffer.Write(jsonb)
+	if err != nil {
+		return err
+	}
+	err = buffer.WriteByte('\n')
+	if err != nil {
+		return err
+	}
+
+	return buffer.Flush()
 }
