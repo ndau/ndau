@@ -26,7 +26,7 @@ func GetSearchResults(node client.ABCIClient, params string) (
 func SearchDateRange(node client.ABCIClient, first, last string) (
 	uint64, uint64, error,
 ) {
-	request := search.DateRangeRequest{first, last}
+	request := search.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
 
 	// perform the query
 	res, err := node.ABCIQuery(query.DateRangeEndpoint, []byte(request.Marshal()))
