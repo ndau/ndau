@@ -33,11 +33,11 @@ func generateTransferAndLock(t *testing.T, destaddr string, qty int64, period ma
 	}
 	d, err := address.Validate(destaddr)
 	require.NoError(t, err)
-	tr, err := NewTransferAndLock(
+	tr := NewTransferAndLock(
 		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		period,
-		seq, keys,
+		seq, keys...,
 	)
 	require.NoError(t, err)
 	return tr
@@ -199,23 +199,23 @@ func TestTnLsWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	s, err := address.Validate(source)
 	require.NoError(t, err)
-	_, err = NewTransfer(
+	tr := NewTransferAndLock(
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, []signature.PrivateKey{private},
+		math.Second,
+		seq, private,
 	)
-	require.Error(t, err)
 
-	// We've just proved that this implementation refuses to generate
-	// a transfer for which source and dest are identical.
+	// We used to require that the constructors refuse to construct an invalid
+	// transaction, but the philosophy has changed: constructors are generated
+	// now, and are just shorthand for constructing an object manually and
+	// optionally signing it. As such, we can't depend on any particular
+	// validation in the constructor; we have to depend on the node to reject
+	// invalid transactions. (This has the side benefit of keeping all validation
+	// logic in exactly one place.)
 	//
-	// However, what if someone builds one from scratch?
 	// We need to ensure that the application
 	// layer rejects deserialized transfers which are invalid.
-	tr := generateTransferAndLock(t, generateRandomAddr(t), qty, 888, seq, []signature.PrivateKey{private})
-	tr.Destination = tr.Source
-	bytes := tr.SignableBytes()
-	tr.Signatures = []signature.Signature{private.Sign(bytes)}
 
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -300,10 +300,11 @@ func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransferAndLock(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		math.Second,
+		1, key,
 	)
 	require.NoError(t, err)
 
@@ -325,12 +326,12 @@ func TestTnLWithUnexpiredEscrowsFails(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransferAndLock(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		math.Second,
+		1, key,
 	)
-	require.NoError(t, err)
 
 	// send transfer
 	resp := deliverTxAt(t, app, tr, tn)
@@ -387,7 +388,7 @@ func TestTnLDeductsTxFee(t *testing.T) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx, err := NewTransfer(sA, dA, 1, 1+i, []signature.PrivateKey{private})
+		tx := NewTransferAndLock(sA, dA, 1, math.Second, 1+i, private)
 		require.NoError(t, err)
 
 		resp := deliverTxWithTxFee(t, app, tx)

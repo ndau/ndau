@@ -7,7 +7,6 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
@@ -22,13 +21,12 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 	addr, err := address.Validate(source)
 	require.NoError(t, err)
 
-	cep, err := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, []signature.PrivateKey{private})
-	require.NoError(t, err)
+	cep := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, private)
 
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
-	resp := deliverTxAt(t, app, &cep, ts)
+	resp := deliverTxAt(t, app, cep, ts)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// the state of UpdateBalance is formally undefined at this point:
@@ -57,15 +55,14 @@ func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {
 	const newDuration = math.Duration(1 * math.Day)
 
 	for i := 0; i < 2; i++ {
-		tx, err := NewChangeSettlementPeriod(
+		tx := NewChangeSettlementPeriod(
 			addr,
 			newDuration,
 			uint64(i)+1,
-			[]signature.PrivateKey{private},
+			private,
 		)
-		require.NoError(t, err)
 
-		resp := deliverTxWithTxFee(t, app, &tx)
+		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode
 		if i == 0 {

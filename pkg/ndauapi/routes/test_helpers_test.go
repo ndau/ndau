@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -20,6 +21,9 @@ import (
 var isIntegration bool
 var ndauRPC string
 var chaosRPC string
+
+// This is used as an ndau account name as well as a chaos namespace in our tests.
+const accountAndNamespaceString = "integrationtest"
 
 func init() {
 	flag.BoolVar(&isIntegration, "integration", false, "opt into integration tests")
@@ -36,6 +40,15 @@ func init() {
 	if chaosRPC != "" {
 		os.Setenv("NDAUAPI_CHAOS_RPC_URL", chaosRPC)
 	}
+
+	// The config calls need the NDAUHOME env var set, as well as each chaos/ndau tool invocation.
+	ndauhome := os.ExpandEnv("$NDAUHOME")
+	if ndauhome == "" {
+		userhome := os.ExpandEnv("$HOME")
+		// Every localnet, multi-node or not, has a 0'th node we can use.
+		ndauhome = filepath.Join(userhome, ".localnet/data/ndau-0")
+		os.Setenv("NDAUHOME", ndauhome)
+	}
 }
 
 // Return the system's go directory.
@@ -51,10 +64,10 @@ func getGoDir(t *testing.T) string {
 // Invoke the ndau tool to create an account, claim it, and rfe to it.
 // Return the address of the account created.
 func createNdauBlock(t *testing.T) string {
-	acctName := "integrationtestacct"
+	acctName := accountAndNamespaceString
 
 	goDir := getGoDir(t)
-	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/ndau/ndau", goDir)
+	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/ndau", goDir)
 
 	acctCmd := exec.Command(ndauTool, "account", "new", acctName)
 	acctStderr, err := acctCmd.StderrPipe()
@@ -117,13 +130,13 @@ func getCurrentNdauBlock(t *testing.T, mux http.Handler) (blockData rpctypes.Res
 
 // Invoke the chaos tool to create a key value pair in the chaos chain.
 // Return the namespace, key and value that were set.
-func createChaosBlock(t *testing.T) (namespaceBase64, key, value string) {
-	namespace := "integrationtestnamespace"
+func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value string) {
+	namespace := accountAndNamespaceString
 	key = "integrationtestkey"
-	value = "integrationtestvalue"
+	value = fmt.Sprintf("integrationtestvalue%d", valnum)
 
 	goDir := getGoDir(t)
-	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/chaos/chaos", goDir)
+	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/chaos", goDir)
 
 	// Create a test namespace.
 	namespaceCmd := exec.Command(chaosTool, "id", "new", namespace)
@@ -139,6 +152,15 @@ func createChaosBlock(t *testing.T) (namespaceBase64, key, value string) {
 	err = namespaceCmd.Wait()
 	if err != nil && !strings.Contains(string(namespaceErr), "already present") {
 		t.Errorf("Error creating namespace: %s", err)
+	}
+
+	// This creates the account from which our chaos transactions will pull ndau from for tx fees.
+	createNdauBlock(t)
+
+	// Associate the namespace with the account.
+	err = exec.Command(chaosTool, "id", "copy-keys-from", namespace).Run()
+	if err != nil {
+		t.Errorf("Error setting key: %s", err)
 	}
 
 	// Set a k-v pair.

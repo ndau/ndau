@@ -2,6 +2,7 @@ package svc
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/kentquirk/boneful"
 	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -47,16 +49,15 @@ var dummyAccount = backing.AccountData{
 	ValidationKeys:     []signature.PublicKey{dummyPublic},
 	WeightedAverageAge: 30 * types.Day,
 }
-var dummyTimestamp = "2018-07-18 20:01:02.784856 +0000 UTC"
+var dummyTimestamp = "2018-07-10T20:01:02Z"
 var dummyBlockMeta = tmtypes.BlockMeta{}
 var dummyResultBlock = rpctypes.ResultBlock{
 	BlockMeta: &dummyBlockMeta,
 	Block:     &tmtypes.Block{},
 }
 
-var dummyTxJSON = routes.TxJSON{
-	Data: "base64 tx data",
-}
+var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
+
 var dummySubmitResult = routes.SubmitResult{
 	TxHash: "123abc34099f",
 }
@@ -126,6 +127,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
 		The result is sorted chronologically.`).
 		Operation("AccountHistory").
+		Param(boneful.PathParameter("address", "The address of the account for which to return history").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
 			Balance:   123000000,
@@ -165,6 +169,46 @@ func New(cf cfg.Cfg) *boneful.Service {
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
+	svc.Route(svc.GET("/block/daterange/:first/:last").To(routes.HandleBlockDateRange(cf)).
+		Operation("BlockDateRange").
+		Doc("Returns a sequence of block metadata starting at first date and ending at last date").
+		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get; default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
+		Produces(JSON).
+		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
+			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
+		}))
+
+	svc.Route(svc.GET("/chaos/range/:first/:last").To(routes.HandleChaosBlockRange(cf)).
+		Operation("ChaosBlockRange").
+		Doc("Returns a sequence of block metadata starting at first and ending at last").
+		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
+		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
+			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
+		}))
+
+	svc.Route(svc.GET("/chaos/daterange/:first/:last").To(routes.HandleChaosBlockDateRange(cf)).
+		Operation("ChaosBlockDateRange").
+		Doc("Returns a sequence of block metadata starting at first date and ending at last date").
+		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get; default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
+		Produces(JSON).
+		Writes(rpctypes.ResultBlockchainInfo{
+			LastHeight: 12345,
+			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
+		}))
+
 	svc.Route(svc.GET("/chaos/history/:namespace/:key").To(routes.HandleChaosHistory(cf)).
 		Operation("ChaosHistory").
 		Doc("Returns the history of changes to a value of a single chaos chain variable.").
@@ -172,10 +216,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 		The result is sorted chronologically.`).
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
 		Produces(JSON).
 		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
 			Height: 12345,
-			Value: []byte("value"),
+			Value:  []byte("value"),
 		}}}}))
 
 	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
@@ -292,13 +338,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(""))
 
-	svc.Route(svc.GET("/system/:key").To(routes.HandleSystemKey(cf)).
-		Operation("SystemKey").
-		Doc("Returns the current value of a single system variable.").
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(""))
-
 	svc.Route(svc.GET("/system/history/:key").To(routes.HandleSystemHistory(cf)).
 		Operation("SystemHistoryKey").
 		Doc("Returns the history of changes to a value of a system variable.").
@@ -317,19 +356,21 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(routes.TransactionData{}))
 
-	svc.Route(svc.POST("/tx/prevalidate").To(routes.HandlePrevalidateTx(cf)).
-		Doc("Prevalidates a transaction.").
+	svc.Route(svc.POST("/tx/prevalidate/:txtype").To(routes.HandlePrevalidateTx(cf)).
+		Doc("Prevalidates a transaction (tells if it would be accepted and what the transaction fee will be.").
+		Notes("Transactions consist of JSON for any defined transaction type (see submit).").
 		Operation("TxPrevalidate").
 		Consumes(JSON).
-		Reads(dummyTxJSON).
+		Reads(dummyLockTx).
 		Produces(JSON).
 		Writes(dummyPrevalidateResult))
 
-	svc.Route(svc.POST("/tx/submit").To(routes.HandleSubmitTx(cf)).
+	svc.Route(svc.POST("/tx/submit/:txtype").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a transaction.").
+		Notes("Transactions consist of JSON for any defined transaction type. Valid transaction names are: " + strings.Join(routes.TxNames(), ", ")).
 		Operation("TxSubmit").
 		Consumes(JSON).
-		Reads(dummyTxJSON).
+		Reads(dummyLockTx).
 		Produces(JSON).
 		Writes(dummySubmitResult))
 

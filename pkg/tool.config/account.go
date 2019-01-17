@@ -52,7 +52,7 @@ func (a *Account) TransferPrivate() []signature.PrivateKey {
 // TransferPrivateK constructs a list of all private transfer keys which have
 // their bits set, treating `keys` as a bitset with the lowest bit corresponding
 // to the 0 index of the list of private keys.
-func (a *Account) TransferPrivateK(keys *int) []signature.PrivateKey {
+func (a *Account) TransferPrivateK(keys int) []signature.PrivateKey {
 	return FilterK(a.TransferPrivate(), keys)
 }
 
@@ -60,17 +60,17 @@ func (a *Account) TransferPrivateK(keys *int) []signature.PrivateKey {
 //
 // Keys appear in the output list if their index in the input list corresponds
 // with a 1 in the bit index of k.
-func FilterK(keys []signature.PrivateKey, k *int) []signature.PrivateKey {
-	if k == nil || *k <= 0 {
+func FilterK(keys []signature.PrivateKey, k int) []signature.PrivateKey {
+	if k < 0 {
 		return keys
 	}
 
 	out := make([]signature.PrivateKey, 0, len(keys))
-	for *k > 0 && len(keys) > 0 {
+	for k > 0 && len(keys) > 0 {
 		pk := keys[0]
 		keys = keys[1:]
-		use := *k&1 > 0
-		*k = *k >> 1
+		use := k&1 > 0
+		k = k >> 1
 
 		if use {
 			out = append(out, pk)

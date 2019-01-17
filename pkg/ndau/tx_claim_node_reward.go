@@ -6,10 +6,10 @@ import (
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,23 +17,6 @@ import (
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *ClaimNodeReward) GetAccountAddresses() []string {
 	return []string{tx.Node.String()}
-}
-
-// NewClaimNodeReward creates a new ClaimNodeReward transaction
-func NewClaimNodeReward(node address.Address, sequence uint64, keys []signature.PrivateKey) *ClaimNodeReward {
-	tx := &ClaimNodeReward{Node: node, Sequence: sequence}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
-// SignableBytes implements Transactable
-func (tx *ClaimNodeReward) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Node.String()))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Node.String()...)
-	return bytes
 }
 
 // Validate implements metatx.Transactable
@@ -109,7 +92,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		if err != nil {
 			allErrs[errors.Wrap(err, "constructing chaincode vm").Error()] = xx
 		} else {
-			err = avm.Run(false)
+			err = avm.Run(nil)
 			if err != nil {
 				allErrs[errors.Wrap(err, "running chaincode vm").Error()] = xx
 			} else {

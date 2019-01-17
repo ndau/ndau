@@ -27,11 +27,11 @@ func TestKeyHistory(t *testing.T) {
 	}
 	mux := svc.New(cf).Mux()
 
-	namespaceBase64, key, value := createChaosBlock(t)
+	namespaceBase64, key, value := createChaosBlock(t, 0)
 
 	// Use underscores so they're not valid base64, in addition to not being indexed.
-	invalidNamespace := "invalidnamespace_"
-	invalidKey := "invalidkey_"
+	invalidNamespace := "invalid=namespace_"
+	invalidKey := "invalid=key_"
 
 	// Namespaces and keys are base64.  Both must be query escaped to pass on the URL.
 	namespaceBase64Esc := url.QueryEscape(namespaceBase64)

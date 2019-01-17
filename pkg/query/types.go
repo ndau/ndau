@@ -1,6 +1,9 @@
 package query
 
-import "github.com/oneiro-ndev/ndaumath/pkg/types"
+import (
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
+)
 
 //go:generate msgp
 
@@ -9,4 +12,11 @@ type Summary struct {
 	BlockHeight uint64
 	TotalNdau   types.Ndau
 	NumAccounts int
+}
+
+// SidechainTxExistsQuery specifies a particular sidechain tx
+type SidechainTxExistsQuery struct {
+	SidechainID byte
+	Source      address.Address
+	TxHash      string
 }

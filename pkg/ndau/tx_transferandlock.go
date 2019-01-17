@@ -3,55 +3,17 @@ package ndau
 import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *TransferAndLock) GetAccountAddresses() []string {
 	return []string{tx.Source.String(), tx.Destination.String()}
-}
-
-// NewTransferAndLock creates a new signed transferAndLock transactable
-func NewTransferAndLock(
-	s address.Address,
-	d address.Address,
-	q math.Ndau,
-	p math.Duration,
-	seq uint64,
-	keys []signature.PrivateKey,
-) (*TransferAndLock, error) {
-	if s == d {
-		return nil, errors.New("source may not equal destination")
-	}
-	tx := &TransferAndLock{
-		Source:      s,
-		Destination: d,
-		Qty:         q,
-		Period:      p,
-		Sequence:    seq,
-	}
-	bytes := tx.SignableBytes()
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(bytes))
-	}
-
-	return tx, nil
-}
-
-// SignableBytes implements Transactable
-func (tx *TransferAndLock) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Msgsize())
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.Destination.String()...)
-	bytes = appendUint64(bytes, uint64(tx.Qty))
-	bytes = appendUint64(bytes, uint64(tx.Period))
-	bytes = appendUint64(bytes, tx.Sequence)
-	return bytes
 }
 
 // Validate satisfies metatx.Transactable

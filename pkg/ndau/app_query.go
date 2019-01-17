@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
+	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
@@ -21,8 +22,10 @@ import (
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
 	meta.RegisterQueryHandler(query.AccountHistoryEndpoint, accountHistoryQuery)
+	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
+	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
@@ -57,25 +60,56 @@ func accountHistoryQuery(
 ) {
 	app := appI.(*App)
 
-	address, err := address.Validate(string(request.GetData()))
-	if err != nil {
-		app.QueryError(err, response, "deserializing address")
-		return
-	}
-
 	search := app.GetSearch()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
 	}
+	client := search.(*srch.Client)
 
-	ahr, err := search.(*srch.Client).SearchAccountHistory(address)
+	paramsString := string(request.GetData())
+	var params srch.AccountHistoryParams
+	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	if err != nil {
+		app.QueryError(
+			errors.New("Cannot decode search params json"), response, "invalid search query")
+		return
+	}
+
+	// The address was already validated by the caller.
+	ahr, err := client.SearchAccountHistory(params.Address, params.PageIndex, params.PageSize)
 	if err != nil {
 		app.QueryError(err, response, "account history search fail")
 		return
 	}
 
 	ahBytes := []byte(ahr.Marshal())
+	response.Value = ahBytes
+}
+
+func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	search := app.GetSearch()
+	if search == nil {
+		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		return
+	}
+	client := search.(*srch.Client)
+
+	paramsString := string(request.GetData())
+	var req metasrch.DateRangeRequest
+	req.Unmarshal(paramsString)
+
+	firstHeight, lastHeight, err :=
+		client.Client.SearchDateRange(req.FirstTimestamp, req.LastTimestamp)
+	if err != nil {
+		app.QueryError(err, response, "date range search fail")
+		return
+	}
+
+	result := metasrch.DateRangeResult{FirstHeight: firstHeight, LastHeight: lastHeight}
+	ahBytes := []byte(result.Marshal())
 	response.Value = ahBytes
 }
 
@@ -145,6 +179,24 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	default:
 		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 	}
+}
+
+func sidechainTxExistsQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	stxq := new(query.SidechainTxExistsQuery)
+	_, err := stxq.UnmarshalMsg(request.GetData())
+	if err != nil {
+		app.QueryError(err, response, "unmarshalling SidechainTxExistsQuery")
+		return
+	}
+
+	acct, _ := app.GetState().(*backing.State).GetAccount(stxq.Source, app.blockTime)
+	key := sidechainPayment(stxq.SidechainID, stxq.TxHash)
+
+	_, exists := acct.SidechainPayments[key]
+
+	response.Info = fmt.Sprintf(query.SidechainTxExistsInfoFmt, exists)
 }
 
 var lastSummary query.Summary

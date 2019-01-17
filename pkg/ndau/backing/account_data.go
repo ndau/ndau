@@ -190,11 +190,12 @@ type AccountData struct {
 	LastEAIUpdate       math.Timestamp        `json:"lastEAIUpdate" chain:"66,Acct_LastEAIUpdate"`
 	LastWAAUpdate       math.Timestamp        `json:"lastWAAUpdate" chain:"67,Acct_LastWAAUpdate"`
 	WeightedAverageAge  math.Duration         `json:"weightedAverageAge" chain:"68,Acct_WeightedAverageAge"`
-	Sequence            uint64
-	Settlements         []Settlement       `json:"settlements" chain:"70,Acct_Settlements"`
-	SettlementSettings  SettlementSettings `json:"settlementSettings" chain:"."`
-	ValidationScript    []byte             `json:"validationScript" chain:"69,Acct_ValidationScript"`
-	UncreditedEAI       math.Ndau          `json:"-" msg:"-"` // exclude from serialization
+	Sequence            uint64                `json:"sequence" chain:"71,Acct_Sequence"`
+	Settlements         []Settlement          `json:"settlements" chain:"70,Acct_Settlements"`
+	SettlementSettings  SettlementSettings    `json:"settlementSettings" chain:"."`
+	ValidationScript    []byte                `json:"validationScript" chain:"69,Acct_ValidationScript"`
+	SidechainPayments   map[string]struct{}   `json:"-" msg:"-"` // not useful for consumers; they should use an ABCI query instead
+	UncreditedEAI       math.Ndau             `json:"-" msg:"-"` // exclude from serialization
 }
 
 var _ marshal.Marshaler = (*AccountData)(nil)
@@ -238,6 +239,7 @@ type nomsAccountData struct {
 	Settlements         []Settlement
 	SettlementSettings  SettlementSettings
 	ValidationScript    nt.Blob
+	SidechainPayments   nt.Set
 	UncreditedEAI       util.Int
 }
 
@@ -255,6 +257,7 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		Settlements:        ad.Settlements,
 		SettlementSettings: ad.SettlementSettings,
 		UncreditedEAI:      util.Int(ad.UncreditedEAI),
+		SidechainPayments:  nt.NewSet(vrw),
 	}
 	for _, tk := range ad.ValidationKeys {
 		tkBytes, err := tk.Marshal()
@@ -279,6 +282,13 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 		nad.Stake = *ad.Stake
 	}
 	nad.ValidationScript = util.Blob(vrw, ad.ValidationScript)
+
+	sed := nad.SidechainPayments.Edit()
+	for k := range ad.SidechainPayments {
+		sed.Insert(nt.String(k))
+	}
+	nad.SidechainPayments = sed.Set()
+
 	return nad, nil
 }
 
@@ -344,5 +354,14 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 	ad.SettlementSettings = n.SettlementSettings
 	ad.ValidationScript, err = util.Unblob(n.ValidationScript)
 	ad.UncreditedEAI = math.Ndau(n.UncreditedEAI)
+	ad.SidechainPayments = make(map[string]struct{})
+	n.SidechainPayments.IterAll(func(v nt.Value) {
+		s, ok := v.(nt.String)
+		if !ok {
+			// whatever, can't be bothered dealing with this
+			return
+		}
+		ad.SidechainPayments[string(s)] = struct{}{}
+	})
 	return err
 }

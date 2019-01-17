@@ -1,10 +1,10 @@
 package ndau
 
 import (
-	"encoding/base64"
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -94,12 +94,11 @@ func generateTransfer(t *testing.T, qty int64, seq uint64, keys []signature.Priv
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransfer(
 		s, d,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, keys,
+		seq, keys...,
 	)
-	require.NoError(t, err)
 	return tr
 }
 
@@ -275,12 +274,11 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	//
 	s, err := address.Validate(source)
 	require.NoError(t, err)
-	_, err = NewTransfer(
+	_ = NewTransfer(
 		s, s,
 		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, []signature.PrivateKey{private},
+		seq, private,
 	)
-	require.Error(t, err)
 
 	// We've just proved that this implementation refuses to generate
 	// a transfer for which source and dest are identical.
@@ -297,7 +295,7 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSignatureMustValidate(t *testing.T) {
+func TestTransferSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
 	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
 	// I'm almost completely certain that this will be an invalid signature
@@ -349,7 +347,7 @@ func TestTransfersOfMoreThanSourceBalanceAreInvalid(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSequenceMustIncrease(t *testing.T) {
+func TestTransferSequenceMustIncrease(t *testing.T) {
 	app, private := initAppTx(t)
 	invalidZero := generateTransfer(t, 1, 0, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, invalidZero)
@@ -376,10 +374,10 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransfer(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		1, key,
 	)
 	require.NoError(t, err)
 
@@ -401,10 +399,10 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	require.NoError(t, err)
 	d, err := address.Validate(dest)
 	require.NoError(t, err)
-	tr, err := NewTransfer(
+	tr := NewTransfer(
 		s, d,
 		math.Ndau(1),
-		1, []signature.PrivateKey{key},
+		1, key,
 	)
 	require.NoError(t, err)
 
@@ -418,14 +416,12 @@ func TestValidationScriptValidatesTransfers(t *testing.T) {
 	public2, private2, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// this script should be pretty stable for future versions of chaincode:
-	// it means `one and not`, which just ensures that the first transfer key
+	// this script just ensures that the first transfer key
 	// is used, no matter how many keys are included
-	script, err := base64.StdEncoding.DecodeString("oAAasUiI")
-	require.NoError(t, err)
+	script := vm.MiniAsm("handler 0 one and not enddef")
 
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.ValidationScript = script
+		ad.ValidationScript = script.Bytes()
 		ad.ValidationKeys = append(ad.ValidationKeys, public2)
 	})
 
@@ -463,7 +459,7 @@ func TestTransferDeductsTxFee(t *testing.T) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx, err := NewTransfer(sA, dA, 1, 1+i, []signature.PrivateKey{private})
+		tx := NewTransfer(sA, dA, 1, 1+i, private)
 		require.NoError(t, err)
 
 		resp := deliverTxWithTxFee(t, app, tx)

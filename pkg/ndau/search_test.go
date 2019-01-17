@@ -16,7 +16,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func TestHashIndex(t *testing.T) {
+func TestIndex(t *testing.T) {
 	// Start redis server on a non-default (test) port.  Using a non-standard port means we
 	// probably won't conflict with any other redis server currently running.  It also means we
 	// disable persistence by not loading the default redis.conf file.  That way we don't have to
@@ -42,10 +42,11 @@ func TestHashIndex(t *testing.T) {
 
 	// Test data.
 	height := uint64(123)
-	txOffset := 0 // One transaction in the block.
+	txOffset := 0                                 // One transaction in the block.
 	tmBlockHash := []byte("abcdefghijklmnopqrst") // 20 bytes
-	blockHash := fmt.Sprintf("%x", tmBlockHash) // 40 characters
+	blockHash := fmt.Sprintf("%x", tmBlockHash)   // 40 characters
 	var txHash string
+	blockTime := time.Now()
 
 	search := app.GetSearch().(*search.Client)
 
@@ -65,7 +66,7 @@ func TestHashIndex(t *testing.T) {
 		begin := abci.RequestBeginBlock{
 			Hash: tmBlockHash,
 			Header: abci.Header{
-				Time:   time.Now(),
+				Time:   blockTime,
 				Height: int64(height),
 			},
 		}
@@ -75,16 +76,16 @@ func TestHashIndex(t *testing.T) {
 		t.Run("TestTxHashIndexing", func(t *testing.T) {
 			privateKeys := assc[rfeKeys].([]signature.PrivateKey)
 			rfe := NewReleaseFromEndowment(
-				math.Ndau(1),
 				targetAddress,
+				math.Ndau(1),
 				uint64(1),
-				[]signature.PrivateKey{privateKeys[0]},
+				privateKeys[0],
 			)
 
 			// Get the tx hash so we an search on it later.
-			txHash = metatx.Hash(&rfe)
+			txHash = metatx.Hash(rfe)
 
-			rfeBytes, err := metatx.Marshal(&rfe, TxIDs)
+			rfeBytes, err := metatx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(rfeBytes)
@@ -118,6 +119,26 @@ func TestHashIndex(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, height, heightResult)
 			require.Equal(t, txOffset, txOffsetResult)
+		})
+
+		t.Run("TestAccountSearching", func(t *testing.T) {
+			ahr, err := search.SearchAccountHistory(targetAddress.String(), 0, 0)
+			require.NoError(t, err)
+			require.Equal(t, 1, len(ahr.Txs))
+			valueData := ahr.Txs[0]
+			require.Equal(t, height, valueData.BlockHeight)
+			require.Equal(t, txOffset, valueData.TxOffset)
+			require.Equal(t, math.Ndau(1), valueData.Balance)
+		})
+
+		t.Run("TestDateRangeSearching", func(t *testing.T) {
+			timeString := blockTime.Format(time.RFC3339)
+			firstHeight, lastHeight, err := search.SearchDateRange(timeString, timeString)
+			require.NoError(t, err)
+			// Expecting the block before the one we indexed since it's flooring to current day.
+			require.Equal(t, height-1, firstHeight)
+			// Expecting the block after the one we indexed since it's an exclusive upper bound.
+			require.Equal(t, height+1, lastHeight)
 		})
 	})
 }

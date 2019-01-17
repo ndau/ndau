@@ -1,8 +1,6 @@
 package ndau
 
 import (
-	"encoding/binary"
-
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -14,46 +12,6 @@ import (
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *Transfer) GetAccountAddresses() []string {
 	return []string{tx.Source.String(), tx.Destination.String()}
-}
-
-// NewTransfer creates a new signed transfer transactable
-func NewTransfer(
-	s address.Address, d address.Address,
-	q math.Ndau,
-	seq uint64,
-	keys []signature.PrivateKey,
-) (*Transfer, error) {
-	if s == d {
-		return nil, errors.New("source may not equal destination")
-	}
-	tx := &Transfer{
-		Source:      s,
-		Destination: d,
-		Qty:         q,
-		Sequence:    seq,
-	}
-	bytes := tx.SignableBytes()
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(bytes))
-	}
-
-	return tx, nil
-}
-
-func appendUint64(b []byte, i uint64) []byte {
-	ib := make([]byte, 8)
-	binary.BigEndian.PutUint64(ib, i)
-	return append(b, ib...)
-}
-
-// SignableBytes implements Transactable
-func (tx *Transfer) SignableBytes() []byte {
-	bytes := make([]byte, 0, tx.Msgsize())
-	bytes = append(bytes, tx.Source.String()...)
-	bytes = append(bytes, tx.Destination.String()...)
-	bytes = appendUint64(bytes, uint64(tx.Qty))
-	bytes = appendUint64(bytes, tx.Sequence)
-	return bytes
 }
 
 // Validate satisfies metatx.Transactable

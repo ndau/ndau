@@ -4,6 +4,7 @@ package search
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -19,7 +20,9 @@ func (search *Client) IndexBlockchain(
 	insertCount = 0
 
 	// Start fresh.  It should already be zero'd out upon entry.
+	search.state = nil
 	search.txs = nil
+	search.blockTime = time.Time{}
 	search.blockHash = ""
 	search.blockHeight = 0
 	search.nextHeight = 0

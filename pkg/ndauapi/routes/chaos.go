@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/go-zoo/bone"
-	cns "github.com/oneiro-ndev/chaos/pkg/chaos/ns"
 	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	chtool "github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -64,53 +64,6 @@ func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 	}
 }
 
-func getSystemValue(cf cfg.Cfg, key []byte) (string, error) {
-	// find the chaos node
-	chnode, err := ws.Node(cf.ChaosAddress)
-	if err != nil {
-		return "", err
-	}
-
-	systemns := cns.System
-	resp, _, err := chtool.GetNamespacedAt(chnode, systemns, key, 0)
-	if err != nil {
-		return "", err
-	}
-	return string(resp), nil
-}
-
-// HandleSystemKey retrieves a single system key at the current block height
-func HandleSystemKey(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		keyBase64 := bone.GetValue(r, "key")
-		if keyBase64 == "" {
-			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
-			return
-		}
-
-		keyBytes, err := base64.StdEncoding.DecodeString(keyBase64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding key '%s'", keyBase64), err, http.StatusBadRequest))
-			return
-		}
-
-		value, err := getSystemValue(cf, keyBytes)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
-			return
-		}
-
-		result := ChaosAllResult{
-			Namespace: string(cns.System),
-			Data: []ChaosItem{ChaosItem{
-				Key:   keyBase64,
-				Value: value,
-			}},
-		}
-		reqres.RespondJSON(w, reqres.OKResponse(result))
-	}
-}
-
 // HandleChaosNamespaceAll retrieves all the values in a given namespace at the current block height
 func HandleChaosNamespaceAll(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -148,21 +101,33 @@ func HandleChaosNamespaceKey(cf cfg.Cfg) http.HandlerFunc {
 // HandleChaosHistory retrieves the history of a single value in the chaos chain.
 func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		namespaceBase64 := bone.GetValue(r, "namespace")
-		if namespaceBase64 == "" {
+		namespaceBase64Esc := bone.GetValue(r, "namespace")
+		if namespaceBase64Esc == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("namespace parameter required", http.StatusBadRequest))
 			return
 		}
 
-		keyBase64 := bone.GetValue(r, "key")
-		if keyBase64 == "" {
+		keyBase64Esc := bone.GetValue(r, "key")
+		if keyBase64Esc == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
+			return
+		}
+
+		namespaceBase64, err := url.QueryUnescape(namespaceBase64Esc)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error unescaping namespace '%s'", namespaceBase64Esc), err, http.StatusBadRequest))
 			return
 		}
 
 		namespaceBytes, err := base64.StdEncoding.DecodeString(namespaceBase64)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding namespace '%s'", namespaceBase64), err, http.StatusBadRequest))
+			return
+		}
+
+		keyBase64, err := url.QueryUnescape(keyBase64Esc)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error unescaping key '%s'", keyBase64Esc), err, http.StatusBadRequest))
 			return
 		}
 
@@ -178,7 +143,14 @@ func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		hkr, _, err := chtool.HistoryNamespaced(node, namespaceBytes, keyBytes)
+		pageIndex, pageSize, errMsg, err := getPagingParams(r)
+		if errMsg != "" {
+			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+			return
+		}
+
+		hkr, _, err := chtool.HistoryNamespaced(
+			node, namespaceBytes, keyBytes, pageIndex, pageSize)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos data", err, http.StatusInternalServerError))
 			return

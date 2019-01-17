@@ -39,10 +39,10 @@ func TestChangeValidationAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	// the address is invalid, but NewChangeValidation doesn't validate this
-	cv := NewChangeValidation(addr, []signature.PublicKey{newPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
+	cv := NewChangeValidation(addr, []signature.PublicKey{newPublic}, []byte{}, 1, transferPrivate)
 
 	// However, the resultant transaction must not be valid
-	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
 	app := initAppChangeValidation(t)
@@ -52,8 +52,8 @@ func TestChangeValidationAddressFieldValidates(t *testing.T) {
 	// what about an address which is valid but doesn't already exist?
 	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
 	require.NoError(t, err)
-	cv = NewChangeValidation(fakeTarget, []signature.PublicKey{newPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	ctkBytes, err = tx.Marshal(&cv, TxIDs)
+	cv = NewChangeValidation(fakeTarget, []signature.PublicKey{newPublic}, []byte{}, 1, transferPrivate)
+	ctkBytes, err = tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 	resp = app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
@@ -66,8 +66,8 @@ func TestValidChangeValidation(t *testing.T) {
 	newPub, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPub}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPub}, []byte{}, 1, transferPrivate)
+	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -78,8 +78,8 @@ func TestValidChangeValidation(t *testing.T) {
 func TestChangeValidationNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	app := initAppChangeValidation(t)
 
-	cv := NewChangeValidation(targetAddress, []signature.PublicKey{targetPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	cv := NewChangeValidation(targetAddress, []signature.PublicKey{targetPublic}, []byte{}, 1, transferPrivate)
+	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -93,8 +93,8 @@ func TestValidChangeValidationUpdatesTransferKey(t *testing.T) {
 
 	app := initAppChangeValidation(t)
 
-	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	resp := deliverTx(t, app, &cv)
+	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 1, transferPrivate)
+	resp := deliverTx(t, app, cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
@@ -107,26 +107,26 @@ func TestChangeValidationChain(t *testing.T) {
 	require.NoError(t, err)
 	app := initAppChangeValidation(t)
 
-	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	resp := deliverTx(t, app, &cv)
+	cv := NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 1, transferPrivate)
+	resp := deliverTx(t, app, cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	cv = NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 2, []signature.PrivateKey{transferPrivate})
-	resp = deliverTx(t, app, &cv)
+	cv = NewChangeValidation(targetAddress, []signature.PublicKey{newPublic}, []byte{}, 2, transferPrivate)
+	resp = deliverTx(t, app, cv)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	newPublic2, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
-	cv = NewChangeValidation(targetAddress, []signature.PublicKey{newPublic2}, []byte{}, 3, []signature.PrivateKey{newPrivate})
-	resp = deliverTx(t, app, &cv)
+	cv = NewChangeValidation(targetAddress, []signature.PublicKey{newPublic2}, []byte{}, 3, newPrivate)
+	resp = deliverTx(t, app, cv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
 func TestChangeValidationNoValidationKeys(t *testing.T) {
 	app := initAppChangeValidation(t)
 
-	cv := NewChangeValidation(targetAddress, []signature.PublicKey{}, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	cv := NewChangeValidation(targetAddress, []signature.PublicKey{}, []byte{}, 1, transferPrivate)
+	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -145,8 +145,8 @@ func TestChangeValidationTooManyValidationKeys(t *testing.T) {
 		newKeys = append(newKeys, key)
 	}
 
-	cv := NewChangeValidation(targetAddress, newKeys, []byte{}, 1, []signature.PrivateKey{transferPrivate})
-	ctkBytes, err := tx.Marshal(&cv, TxIDs)
+	cv := NewChangeValidation(targetAddress, newKeys, []byte{}, 1, transferPrivate)
+	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(ctkBytes)
@@ -170,10 +170,10 @@ func TestChangeValidationDeductsTxFee(t *testing.T) {
 			[]signature.PublicKey{newPub},
 			[]byte{},
 			uint64(i)+1,
-			[]signature.PrivateKey{transferPrivate},
+			transferPrivate,
 		)
 
-		resp := deliverTxWithTxFee(t, app, &cv)
+		resp := deliverTxWithTxFee(t, app, cv)
 
 		var expect code.ReturnCode
 		if i == 0 {

@@ -5,13 +5,13 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,25 +19,6 @@ import (
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *CreditEAI) GetAccountAddresses() []string {
 	return []string{tx.Node.String()}
-}
-
-// NewCreditEAI creates a new CreditEAI transaction
-//
-// Most users will never need this.
-func NewCreditEAI(node address.Address, sequence uint64, keys []signature.PrivateKey) *CreditEAI {
-	tx := &CreditEAI{Node: node, Sequence: sequence}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
-
-// SignableBytes implements Transactable
-func (tx *CreditEAI) SignableBytes() []byte {
-	bytes := make([]byte, 0, 8+len(tx.Node.String()))
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = append(bytes, tx.Node.String()...)
-	return bytes
 }
 
 // Validate implements metatx.Transactable

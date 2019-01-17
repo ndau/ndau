@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	homedir "github.com/mitchellh/go-homedir"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/key"
@@ -43,6 +44,14 @@ func GetConfigPath() string {
 	if len(ndauhome) == 0 {
 		home := os.ExpandEnv("$HOME")
 		ndauhome = path.Join(home, ".ndau")
+	}
+	// if NDAUHOME is set but contains a tilde, we have to
+	// manually expand it. We could use os/user, but that
+	// breaks cross-compilation because it requires cgo.
+	// Instead, we use the homedir package, which just works.
+	ndauhome, err := homedir.Expand(ndauhome)
+	if err != nil {
+		panic(err)
 	}
 	return path.Join(ndauhome, "ndau", "ndautool.toml")
 }

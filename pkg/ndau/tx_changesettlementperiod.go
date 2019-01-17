@@ -5,41 +5,12 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *ChangeSettlementPeriod) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
-}
-
-// SignableBytes implements Transactable
-func (tx *ChangeSettlementPeriod) SignableBytes() []byte {
-	bytes := make([]byte, 0, len(tx.Target.String())+8+8)
-	bytes = appendUint64(bytes, tx.Sequence)
-	bytes = appendUint64(bytes, uint64(tx.Period))
-	bytes = append(bytes, []byte(tx.Target.String())...)
-	return bytes
-}
-
-// NewChangeSettlementPeriod creates a new signed settlement period change
-func NewChangeSettlementPeriod(
-	target address.Address,
-	newPeriod math.Duration,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) (ChangeSettlementPeriod, error) {
-	tx := ChangeSettlementPeriod{
-		Target:   target,
-		Period:   newPeriod,
-		Sequence: sequence,
-	}
-	sb := tx.SignableBytes()
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(sb))
-	}
-	return tx, nil
 }
 
 // Validate implements metatx.Transactable

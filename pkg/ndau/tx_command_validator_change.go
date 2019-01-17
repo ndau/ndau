@@ -4,40 +4,14 @@ import (
 	"fmt"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
-
-// SignableBytes implements Transactable
-func (tx *CommandValidatorChange) SignableBytes() []byte {
-	bytes := make([]byte, len(tx.PublicKey), 8+8+len(tx.PublicKey))
-	bytes = appendUint64(bytes, uint64(tx.Power))
-	bytes = appendUint64(bytes, tx.Sequence)
-	return bytes
-}
-
-// NewCommandValidatorChange constructs a CommandValidatorChange transactable.
-func NewCommandValidatorChange(
-	publicKey []byte,
-	power int64,
-	sequence uint64,
-	keys []signature.PrivateKey,
-) (tx CommandValidatorChange) {
-	tx = CommandValidatorChange{
-		PublicKey: publicKey,
-		Power:     power,
-		Sequence:  sequence,
-	}
-	for _, key := range keys {
-		tx.Signatures = append(tx.Signatures, key.Sign(tx.SignableBytes()))
-	}
-	return tx
-}
 
 // Validate implements metatx.Transactable
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {

@@ -5,14 +5,18 @@ package search
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
+	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 )
 
 // We use these prefixes to help us group keys in the index.  They could prove useful if we ever
 // want to do things like "wipe all hash-to-height keys" without affecting any other keys.  The
 // prefixes also give us some sanity, so that we completely avoid inter-index key conflicts.
+// NOTE: These must not conflict with dateRangeToHeightSearchKeyPrefix defined in metanode.
 const blockHashToHeightSearchKeyPrefix = "b:"
 const txHashToHeightSearchKeyPrefix = "t:"
 const accountAddressToHeightSearchKeyPrefix = "a:"
@@ -29,7 +33,9 @@ type Indexable interface {
 type Client struct {
 	*metasearch.Client
 
+	state metastate.State
 	txs []metatx.Transactable
+	blockTime time.Time
 	blockHash string
 	blockHeight uint64
 	nextHeight uint64
@@ -43,7 +49,9 @@ func NewClient(address string, version int) (search *Client, err error) {
 		return nil, err
 	}
 
+	search.state = nil
 	search.txs = nil
+	search.blockTime = time.Time{}
 	search.blockHash = ""
 	search.blockHeight = 0
 	search.nextHeight = 0
@@ -65,7 +73,9 @@ func formatAccountAddressToHeightSearchKey(addr string) string {
 
 func (search *Client) onIndexingComplete() {
 	// No need to keep this data around any longer.
+	search.state = nil
 	search.txs = nil
+	search.blockTime = time.Time{}
 	search.blockHash = ""
 	search.blockHeight = 0
 
@@ -138,14 +148,16 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		return updateCount, insertCount, err
 	}
 
-	// We'll reuse this for marshaling data into it.
+	// We'll reuse these for marshaling data into it.
 	valueData := TxValueData{search.blockHeight, 0}
+	acctValueData := AccountTxValueData{search.blockHeight, 0, 0}
 
 	for txOffset, tx := range search.txs {
 		// Index transaction hash.
 		txHash := metatx.Hash(tx)
 		searchKey := formatTxHashToHeightSearchKey(txHash)
 		valueData.TxOffset = txOffset
+		acctValueData.TxOffset = txOffset
 		searchValue := valueData.Marshal()
 
 		updCount, insCount, err := search.indexKeyValue(searchKey, searchValue)
@@ -161,17 +173,28 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 			addresses := indexable.GetAccountAddresses()
 
 			for _, addr := range addresses {
-				searchKey := formatAccountAddressToHeightSearchKey(addr)
+				acct, hasAccount := search.state.(*backing.State).Accounts[addr]
+				if hasAccount {
+					searchKey := formatAccountAddressToHeightSearchKey(addr)
+					acctValueData.Balance = acct.Balance
+					searchValue := acctValueData.Marshal()
 
-				updCount, insCount, err := search.indexKeyValueWithHistory(searchKey, searchValue)
-				updateCount += updCount
-				insertCount += insCount
-				if err != nil {
-					return updateCount, insertCount, err
+					updCount, insCount, err :=
+						search.indexKeyValueWithHistory(searchKey, searchValue)
+					updateCount += updCount
+					insertCount += insCount
+					if err != nil {
+						return updateCount, insertCount, err
+					}
 				}
 			}
 		}
 	}
 
-	return updateCount, insertCount, nil
+	// Index date to height as needed.
+	updCount, insCount, err =
+		search.Client.IndexDateToHeight(search.blockTime, search.blockHeight)
+	updateCount += updCount
+	insertCount += insCount
+	return updateCount, insertCount, err
 }
