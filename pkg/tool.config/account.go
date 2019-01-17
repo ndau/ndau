@@ -113,13 +113,6 @@ func (a *Account) nextTransferPath() *string {
 	return &h
 }
 
-func (a *Account) joinTransferPath(path string) string {
-	if *a.Ownership.Path == "/" {
-		return path
-	}
-	return *a.Ownership.Path + path
-}
-
 // MakeTransferKey makes a transfer key for this account
 //
 // It does not actually add it to the keys list--that may be contraindicated
@@ -145,10 +138,9 @@ func (a *Account) MakeTransferKey(path *string) (newKeys *Keypair, err error) {
 			return nil, errors.New("could not compute next transfer path")
 		}
 
-		paths := a.joinTransferPath(*path)
-		newKeys.Path = &paths
+		newKeys.Path = path
 
-		prive, err := ekey.DeriveFrom(*a.Ownership.Path, paths)
+		prive, err := ekey.DeriveFrom(*a.Root.Path, *path)
 		if err != nil {
 			return nil, errors.Wrap(err, "deriving child private key")
 		}
