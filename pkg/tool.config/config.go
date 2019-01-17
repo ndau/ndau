@@ -286,7 +286,7 @@ func (c *Config) RecoverAccount(name string, phrase []string, lang string) error
 		Name:      name,
 		Ownership: Keypair{Path: &ownershipAcctPath, Public: *ownPub, Private: *ownPriv},
 		Address:   addr,
-		Root:      Keypair{Path: &root, Public: *public, Private: *private},
+		Root:      &Keypair{Path: &root, Public: *public, Private: *private},
 	}
 	c.SetAccount(acct)
 	return nil

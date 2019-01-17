@@ -15,7 +15,7 @@ import (
 type Account struct {
 	Name             string          `toml:"name"`
 	Address          address.Address `toml:"address"`
-	Root             Keypair         `toml:"root"`
+	Root             *Keypair        `toml:"root"`
 	Ownership        Keypair         `toml:"ownership"`
 	Transfer         []Keypair       `toml:"transfer"`
 	ValidationScript chaincode       `toml:"validation_script"`
