@@ -15,6 +15,7 @@ import (
 type Account struct {
 	Name             string          `toml:"name"`
 	Address          address.Address `toml:"address"`
+	Root             *Keypair        `toml:"root"`
 	Ownership        Keypair         `toml:"ownership"`
 	Transfer         []Keypair       `toml:"transfer"`
 	ValidationScript chaincode       `toml:"validation_script"`
@@ -51,7 +52,7 @@ func (a *Account) TransferPrivate() []signature.PrivateKey {
 // TransferPrivateK constructs a list of all private transfer keys which have
 // their bits set, treating `keys` as a bitset with the lowest bit corresponding
 // to the 0 index of the list of private keys.
-func (a *Account) TransferPrivateK(keys *int) []signature.PrivateKey {
+func (a *Account) TransferPrivateK(keys int) []signature.PrivateKey {
 	return FilterK(a.TransferPrivate(), keys)
 }
 
@@ -59,17 +60,17 @@ func (a *Account) TransferPrivateK(keys *int) []signature.PrivateKey {
 //
 // Keys appear in the output list if their index in the input list corresponds
 // with a 1 in the bit index of k.
-func FilterK(keys []signature.PrivateKey, k *int) []signature.PrivateKey {
-	if k == nil || *k <= 0 {
+func FilterK(keys []signature.PrivateKey, k int) []signature.PrivateKey {
+	if k < 0 {
 		return keys
 	}
 
 	out := make([]signature.PrivateKey, 0, len(keys))
-	for *k > 0 && len(keys) > 0 {
+	for k > 0 && len(keys) > 0 {
 		pk := keys[0]
 		keys = keys[1:]
-		use := *k&1 > 0
-		*k = *k >> 1
+		use := k&1 > 0
+		k = k >> 1
 
 		if use {
 			out = append(out, pk)
@@ -78,18 +79,12 @@ func FilterK(keys []signature.PrivateKey, k *int) []signature.PrivateKey {
 	return out
 }
 
-const (
-	transferPathFmt = "/44'/20036'/%d/%d"
-	defaultField3   = 100
-	initialField4   = 0
-)
-
 func (a *Account) highestTransferPath() (uint64, uint64) {
 	var high3, high4 uint64
 	for _, tr := range a.Transfer {
 		if tr.Path != nil {
 			var field3, field4 uint64
-			n, err := fmt.Sscanf(*tr.Path, transferPathFmt, &field3, &field4)
+			n, err := fmt.Sscanf(*tr.Path, AccountPathFormat, &field3, &field4)
 			if err != nil {
 				continue
 			}
@@ -110,19 +105,12 @@ func (a *Account) nextTransferPath() *string {
 		return nil
 	}
 	high3, high4 := a.highestTransferPath()
-	if high3 == 0 && high4 == 0 {
-		h := fmt.Sprintf(transferPathFmt, defaultField3, initialField4)
+	if (high3 == 0 || high3 == AccountListOffset) && (high4 == 0 || high4 == AccountStartNumber) {
+		h := fmt.Sprintf(AccountPathFormat, TransferKeyOffset, AccountStartNumber)
 		return &h
 	}
-	h := fmt.Sprintf(transferPathFmt, high3, high4+1)
+	h := fmt.Sprintf(AccountPathFormat, high3, high4+1)
 	return &h
-}
-
-func (a *Account) joinTransferPath(path string) string {
-	if *a.Ownership.Path == "/" {
-		return path
-	}
-	return *a.Ownership.Path + path
 }
 
 // MakeTransferKey makes a transfer key for this account
@@ -150,10 +138,9 @@ func (a *Account) MakeTransferKey(path *string) (newKeys *Keypair, err error) {
 			return nil, errors.New("could not compute next transfer path")
 		}
 
-		paths := a.joinTransferPath(*path)
-		newKeys.Path = &paths
+		newKeys.Path = path
 
-		prive, err := ekey.DeriveFrom(*a.Ownership.Path, paths)
+		prive, err := ekey.DeriveFrom(*a.Root.Path, *path)
 		if err != nil {
 			return nil, errors.Wrap(err, "deriving child private key")
 		}
