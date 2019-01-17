@@ -165,7 +165,9 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 
 		// construct root key from seed
 		root := "/"
-		acct.Root.Path = &root
+		acct.Root = &Keypair{
+			Path: &root,
+		}
 
 		ekey, err := key.NewMaster(seed)
 		if err != nil {
