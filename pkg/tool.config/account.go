@@ -15,9 +15,9 @@ import (
 type Account struct {
 	Name             string          `toml:"name"`
 	Address          address.Address `toml:"address"`
+	Root             Keypair         `toml:"root"`
 	Ownership        Keypair         `toml:"ownership"`
 	Transfer         []Keypair       `toml:"transfer"`
-	Root             Keypair         `toml:"root"`
 	ValidationScript chaincode       `toml:"validation_script"`
 }
 
@@ -79,18 +79,12 @@ func FilterK(keys []signature.PrivateKey, k *int) []signature.PrivateKey {
 	return out
 }
 
-const (
-	transferPathFmt = "/44'/20036'/%d/%d"
-	defaultField3   = TransferKeyOffset
-	initialField4   = 1
-)
-
 func (a *Account) highestTransferPath() (uint64, uint64) {
 	var high3, high4 uint64
 	for _, tr := range a.Transfer {
 		if tr.Path != nil {
 			var field3, field4 uint64
-			n, err := fmt.Sscanf(*tr.Path, transferPathFmt, &field3, &field4)
+			n, err := fmt.Sscanf(*tr.Path, AccountPathFormat, &field3, &field4)
 			if err != nil {
 				continue
 			}
@@ -112,10 +106,10 @@ func (a *Account) nextTransferPath() *string {
 	}
 	high3, high4 := a.highestTransferPath()
 	if high3 == 0 && high4 == 0 {
-		h := fmt.Sprintf(transferPathFmt, defaultField3, initialField4)
+		h := fmt.Sprintf(AccountPathFormat, TransferKeyOffset, AccountStartNumber)
 		return &h
 	}
-	h := fmt.Sprintf(transferPathFmt, high3, high4+1)
+	h := fmt.Sprintf(AccountPathFormat, high3, high4+1)
 	return &h
 }
 
