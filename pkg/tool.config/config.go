@@ -157,12 +157,15 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 		Name: name,
 	}
 	if hd {
+		// generate seec
 		seed, err := key.GenerateSeed(key.RecommendedSeedLen)
 		if err != nil {
 			return errors.Wrap(err, "generating seed")
 		}
+
+		// construct root key from seed
 		root := "/"
-		acct.Ownership.Path = &root
+		acct.Root.Path = &root
 
 		ekey, err := key.NewMaster(seed)
 		if err != nil {
@@ -172,7 +175,7 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 		if err != nil {
 			return errors.Wrap(err, "converting master key to ndau format")
 		}
-		acct.Ownership.Private = *private
+		acct.Root.Private = *private
 
 		publice, err := ekey.Public()
 		if err != nil {
@@ -180,11 +183,35 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 		}
 		public, err := publice.SPubKey()
 		if err != nil {
-			return errors.Wrap(err, "converting public key to ndau format")
+			return errors.Wrap(err, "converting master public key to ndau format")
 		}
-		acct.Ownership.Public = *public
+		acct.Root.Public = *public
 
-		acct.Address, err = address.Generate(address.KindUser, public.KeyBytes())
+		// derive ownership key from root key
+		ownership := fmt.Sprintf(AccountPathFormat, AccountListOffset, AccountStartNumber)
+		acct.Ownership.Path = &ownership
+
+		oprivatee, err := ekey.DeriveFrom(*acct.Root.Path, *acct.Ownership.Path)
+		if err != nil {
+			return errors.Wrap(err, "deriving private ownership key from master key")
+		}
+		oprivate, err := oprivatee.SPrivKey()
+		if err != nil {
+			return errors.Wrap(err, "converting ownership key to ndau format")
+		}
+		acct.Ownership.Private = *oprivate
+
+		opublice, err := oprivatee.Public()
+		if err != nil {
+			return errors.Wrap(err, "generating ownership public key")
+		}
+		opublic, err := opublice.SPubKey()
+		if err != nil {
+			return errors.Wrap(err, "converting ownership public key to ndau format")
+		}
+		acct.Ownership.Public = *opublic
+
+		acct.Address, err = address.Generate(address.KindUser, opublic.KeyBytes())
 		if err != nil {
 			return errors.Wrap(err, "generating address")
 		}
