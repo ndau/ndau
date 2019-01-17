@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 
 	"github.com/BurntSushi/toml"
 	homedir "github.com/mitchellh/go-homedir"
@@ -305,6 +306,7 @@ func (c Config) toToml() (tomlConfig, error) {
 	for _, acct := range c.GetAccounts() {
 		tacs = append(tacs, *acct)
 	}
+	sort.Slice(tacs, func(i, j int) bool { return tacs[i].Name < tacs[j].Name })
 
 	return tomlConfig{
 		Node:     c.Node,
