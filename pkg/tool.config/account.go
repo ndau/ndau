@@ -105,7 +105,7 @@ func (a *Account) nextTransferPath() *string {
 		return nil
 	}
 	high3, high4 := a.highestTransferPath()
-	if high3 == 0 && high4 == 0 {
+	if (high3 == 0 || high3 == AccountListOffset) && (high4 == 0 || high4 == AccountStartNumber) {
 		h := fmt.Sprintf(AccountPathFormat, TransferKeyOffset, AccountStartNumber)
 		return &h
 	}
