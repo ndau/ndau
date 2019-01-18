@@ -59,8 +59,7 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 			}
 
 			// Fill a slice and sort by moniker.
-			var infoSlice []*NodePairInfo
-			infoSlice = nil
+			infoSlice := []*NodePairInfo{}
 			for _, info := range monikerMap {
 				infoSlice = append(infoSlice, info)
 			}
