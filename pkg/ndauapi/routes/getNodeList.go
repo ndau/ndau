@@ -28,96 +28,134 @@ type ResultNodeList struct {
 
 // NodePairInfo is used for sorting node pairs.
 type NodePairInfo struct {
-	Moniker    string
-	ChaosIndex int
-	NdauIndex  int
+	Moniker string
+	Pair    ResultNodePair
+}
+
+// NodeResponse represents a response from the getNodes call.
+type NodeResponse struct {
+	Err  *reqres.APIError
+	Node p2p.NodeInfo
+}
+
+// Handle the given node response.  Return true if it contained an error.
+func (nr NodeResponse) handleNodeResponse(
+	forChaos bool,
+	monikerMap map[string]*NodePairInfo,
+	w http.ResponseWriter,
+) bool {
+	if nr.Err != nil {
+		reqres.RespondJSON(w, *nr.Err)
+		return true
+	}
+
+	var info *NodePairInfo
+	var ok bool
+	moniker := nr.Node.Moniker
+	if info, ok = monikerMap[moniker]; !ok {
+		info = &NodePairInfo{Moniker: moniker, Pair: ResultNodePair{}}
+		monikerMap[moniker] = info
+	}
+	if forChaos {
+		info.Pair.ChaosNode = nr.Node
+	} else {
+		info.Pair.NdauNode = nr.Node
+	}
+
+	return false
 }
 
 // GetNodeList returns a list of nodes, including this one.
 func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		chaosNodes := getNodes(cf.ChaosAddress, w, r)
-		ndauNodes := getNodes(cf.NodeAddress, w, r)
-		if chaosNodes != nil && ndauNodes != nil {
-			// Monikers match between chaos and ndau, so we should be able iterate the two slices
-			// in parallel.  However, for robustness, we create a map from moniker to node pair,
-			// in case there is a mismatch between the chaos and ndau nodes.
-			monikerMap := make(map[string]*NodePairInfo)
+		// We use this to pair up chaos and ndau nodes together.  They each use the same monikers.
+		monikerMap := make(map[string]*NodePairInfo)
 
-			// Loop over both slices, in case one is shorter than the other.
-			for i, node := range chaosNodes {
-				moniker := node.Moniker
-				monikerMap[moniker] = &NodePairInfo{Moniker: moniker, ChaosIndex: i}
-			}
-			for i, node := range ndauNodes {
-				moniker := node.Moniker
-				if info, ok := monikerMap[moniker]; ok {
-					info.NdauIndex = i
-				} else {
-					monikerMap[moniker] = &NodePairInfo{Moniker: moniker, NdauIndex: i}
+		// Fill the moniker map with nodes received through chaos and ndau channels.
+		chaosCh := make(chan NodeResponse)
+		ndauCh := make(chan NodeResponse)
+		go getNodes(cf.ChaosAddress, chaosCh)
+		go getNodes(cf.NodeAddress, ndauCh)
+
+		// Have to use separate for-select constructs for a couple reasons:
+		// 1. If one channel closes before the other, that channel will return zero values.
+		// 2. If we don't close the channel, we need a nr.Done flag and then the monikerMap
+		//    doesn't get filled consistently.  Seemed like a threading issue.
+		var nr NodeResponse
+		for open := true; open; {
+			select {
+			case nr, open = <-chaosCh:
+				if open && nr.handleNodeResponse(true, monikerMap, w) {
+					return
 				}
 			}
-
-			// Fill a slice and sort by moniker.
-			infoSlice := []*NodePairInfo{}
-			for _, info := range monikerMap {
-				infoSlice = append(infoSlice, info)
-			}
-			sort.Slice(infoSlice, func(i, j int) bool {
-				return infoSlice[i].Moniker < infoSlice[j].Moniker
-			})
-
-			// Convert to the desired response type.
-			rnl := ResultNodeList{[]ResultNodePair{}}
-			for _, info := range infoSlice {
-				rnp := ResultNodePair{}
-				if info.ChaosIndex >= 0 {
-					rnp.ChaosNode = chaosNodes[info.ChaosIndex]
-				}
-				if info.NdauIndex >= 0 {
-					rnp.NdauNode = ndauNodes[info.NdauIndex]
-				}
-				rnl.Nodes = append(rnl.Nodes, rnp)
-			}
-
-			reqres.RespondJSON(w, reqres.OKResponse(rnl))
 		}
+		for open := true; open; {
+			select {
+			case nr, open = <-ndauCh:
+				if open && nr.handleNodeResponse(false, monikerMap, w) {
+					return
+				}
+			}
+		}
+
+		// Fill a slice and sort by moniker.
+		var infoSlice []*NodePairInfo
+		for _, info := range monikerMap {
+			infoSlice = append(infoSlice, info)
+		}
+		sort.Slice(infoSlice, func(i, j int) bool {
+			return infoSlice[i].Moniker < infoSlice[j].Moniker
+		})
+
+		// Convert to the desired response type now that the node pairs have been sorted.
+		rnl := ResultNodeList{[]ResultNodePair{}}
+		for _, info := range infoSlice {
+			rnl.Nodes = append(rnl.Nodes, info.Pair)
+		}
+
+		reqres.RespondJSON(w, reqres.OKResponse(rnl))
 	}
 }
 
-func getNodes(
-	nodeAddress string,
-	w http.ResponseWriter,
-	r *http.Request,
-) []p2p.NodeInfo {
+func getNodes(nodeAddress string, ch chan NodeResponse) {
+	// close the channel when we're done
+	defer close(ch)
+
 	// get node
 	node, err := ws.Node(nodeAddress)
 	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
-		return nil
-	}
+		apiErr := reqres.NewAPIError(
+			fmt.Sprintf("error creating node: %v", err),
+			http.StatusInternalServerError)
+		ch <- NodeResponse{Err: &apiErr}
+	} else {
+		nodeCh := tool.Nodes(node)
+		for open := true; open; {
+			var nr tool.NodeResponse
+			select {
+			case nr, open = <-nodeCh:
+				// check error first
+				if nr.Err != nil {
+					apiErr := reqres.NewAPIError(
+						fmt.Sprintf("error fetching node info: %v", nr.Err),
+						http.StatusInternalServerError)
+					ch <- NodeResponse{Err: &apiErr}
+					return
+				}
 
-	nodeCh := tool.Nodes(node)
-	var nodes []p2p.NodeInfo
-
-	for {
-		select {
-		case nr, open := <-nodeCh:
-			// check error first
-			if nr.Err != nil {
-				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
-				return nil
+				// feed the nodes to the given channel
+				for _, node := range nr.Nodes {
+					ch <- NodeResponse{Node: node}
+				}
+			case <-time.After(defaultTendermintTimeout):
+				logrus.Warn("Timed out fetching node list.")
+				apiErr := reqres.NewAPIError(
+					"timed out fetching node list",
+					http.StatusInternalServerError)
+				ch <- NodeResponse{Err: &apiErr}
+				return
 			}
-
-			// add nodes to response
-			nodes = append(nodes, nr.Nodes...)
-			if !open { // send response when channel closed
-				return nodes
-			}
-		case <-time.After(defaultTendermintTimeout):
-			logrus.Warn("Timed out fetching node list.")
-			reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node list", http.StatusInternalServerError))
-			return nil
 		}
 	}
 }
