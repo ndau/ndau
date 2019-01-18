@@ -26,36 +26,57 @@ type ResultNodeList struct {
 	Nodes []ResultNodePair `json:"nodes"`
 }
 
+// NodePairInfo is used for sorting node pairs.
+type NodePairInfo struct {
+	Moniker    string
+	ChaosIndex int
+	NdauIndex  int
+}
+
 // GetNodeList returns a list of nodes, including this one.
 func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		chaosNodes := getNodes(cf.ChaosAddress, w, r)
 		ndauNodes := getNodes(cf.NodeAddress, w, r)
 		if chaosNodes != nil && ndauNodes != nil {
-			rnl := ResultNodeList{[]ResultNodePair{}}
+			// Monikers match between chaos and ndau, so we should be able iterate the two slices
+			// in parallel.  However, for robustness, we create a map from moniker to node pair,
+			// in case there is a mismatch between the chaos and ndau nodes.
+			monikerMap := make(map[string]*NodePairInfo)
 
-			// Since the monikers match between chaos and ndau, we can iterate in parallel.
-			chaosNodeCount := len(chaosNodes)
-			ndauNodeCount := len(ndauNodes)
-			maxLength := chaosNodeCount
-			if ndauNodeCount > maxLength {
-				maxLength = ndauNodeCount
+			// Loop over both slices, in case one is shorter than the other.
+			for i, node := range chaosNodes {
+				moniker := node.Moniker
+				monikerMap[moniker] = &NodePairInfo{Moniker: moniker, ChaosIndex: i}
 			}
-			for i := 0; i < maxLength; i++ {
-				var chaosNode p2p.NodeInfo
-				var ndauNode p2p.NodeInfo
-
-				// Check lengths in case they all didn't come back from the query.
-				if i < chaosNodeCount {
-					chaosNode = chaosNodes[i]
+			for i, node := range ndauNodes {
+				moniker := node.Moniker
+				if info, ok := monikerMap[moniker]; ok {
+					info.NdauIndex = i
+				} else {
+					monikerMap[moniker] = &NodePairInfo{Moniker: moniker, NdauIndex: i}
 				}
-				if i < ndauNodeCount {
-					ndauNode = ndauNodes[i]
-				}
+			}
 
-				rnp := ResultNodePair{
-					ChaosNode: chaosNode,
-					NdauNode:  ndauNode,
+			// Fill a slice and sort by moniker.
+			var infoSlice []*NodePairInfo
+			infoSlice = nil
+			for _, info := range monikerMap {
+				infoSlice = append(infoSlice, info)
+			}
+			sort.Slice(infoSlice, func(i, j int) bool {
+				return infoSlice[i].Moniker < infoSlice[j].Moniker
+			})
+
+			// Convert to the desired response type.
+			rnl := ResultNodeList{[]ResultNodePair{}}
+			for _, info := range infoSlice {
+				rnp := ResultNodePair{}
+				if info.ChaosIndex >= 0 {
+					rnp.ChaosNode = chaosNodes[info.ChaosIndex]
+				}
+				if info.NdauIndex >= 0 {
+					rnp.NdauNode = ndauNodes[info.NdauIndex]
 				}
 				rnl.Nodes = append(rnl.Nodes, rnp)
 			}
@@ -92,9 +113,6 @@ func getNodes(
 			// add nodes to response
 			nodes = append(nodes, nr.Nodes...)
 			if !open { // send response when channel closed
-				sort.Slice(nodes, func(i, j int) bool {
-					return string(nodes[i].Moniker) < string(nodes[j].Moniker)
-				})
 				return nodes
 			}
 		case <-time.After(defaultTendermintTimeout):
