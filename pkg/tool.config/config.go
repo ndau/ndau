@@ -9,8 +9,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 
 	"github.com/BurntSushi/toml"
+	homedir "github.com/mitchellh/go-homedir"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/key"
@@ -23,12 +25,34 @@ import (
 // DefaultAddress of the node to connect to
 const DefaultAddress string = "http://localhost:26657"
 
+// AccountListOffset specifies where account addresses start.
+const AccountListOffset = 100
+
+// TransferKeyOffset specifies where transfer keys begin in the "account" part of the path.
+const TransferKeyOffset = 2000
+
+// AccountStartNumber is for the "change" part of the path.
+//   0 is not used,
+//   1 is the first valid account path for the wallet.
+const AccountStartNumber = 1
+
+// AccountPathFormat is a format string for making paths.
+const AccountPathFormat = "/44'/20036'/%v/%v"
+
 // GetConfigPath returns the location at which configuration is stored
 func GetConfigPath() string {
 	ndauhome := os.ExpandEnv("$NDAUHOME")
 	if len(ndauhome) == 0 {
 		home := os.ExpandEnv("$HOME")
 		ndauhome = path.Join(home, ".ndau")
+	}
+	// if NDAUHOME is set but contains a tilde, we have to
+	// manually expand it. We could use os/user, but that
+	// breaks cross-compilation because it requires cgo.
+	// Instead, we use the homedir package, which just works.
+	ndauhome, err := homedir.Expand(ndauhome)
+	if err != nil {
+		panic(err)
 	}
 	return path.Join(ndauhome, "ndau", "ndautool.toml")
 }
@@ -134,12 +158,17 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 		Name: name,
 	}
 	if hd {
+		// generate seec
 		seed, err := key.GenerateSeed(key.RecommendedSeedLen)
 		if err != nil {
 			return errors.Wrap(err, "generating seed")
 		}
+
+		// construct root key from seed
 		root := "/"
-		acct.Ownership.Path = &root
+		acct.Root = &Keypair{
+			Path: &root,
+		}
 
 		ekey, err := key.NewMaster(seed)
 		if err != nil {
@@ -149,7 +178,7 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 		if err != nil {
 			return errors.Wrap(err, "converting master key to ndau format")
 		}
-		acct.Ownership.Private = *private
+		acct.Root.Private = *private
 
 		publice, err := ekey.Public()
 		if err != nil {
@@ -157,11 +186,35 @@ func (c *Config) CreateAccount(name string, hd bool) error {
 		}
 		public, err := publice.SPubKey()
 		if err != nil {
-			return errors.Wrap(err, "converting public key to ndau format")
+			return errors.Wrap(err, "converting master public key to ndau format")
 		}
-		acct.Ownership.Public = *public
+		acct.Root.Public = *public
 
-		acct.Address, err = address.Generate(address.KindUser, public.KeyBytes())
+		// derive ownership key from root key
+		ownership := fmt.Sprintf(AccountPathFormat, AccountListOffset, AccountStartNumber)
+		acct.Ownership.Path = &ownership
+
+		oprivatee, err := ekey.DeriveFrom(*acct.Root.Path, *acct.Ownership.Path)
+		if err != nil {
+			return errors.Wrap(err, "deriving private ownership key from master key")
+		}
+		oprivate, err := oprivatee.SPrivKey()
+		if err != nil {
+			return errors.Wrap(err, "converting ownership key to ndau format")
+		}
+		acct.Ownership.Private = *oprivate
+
+		opublice, err := oprivatee.Public()
+		if err != nil {
+			return errors.Wrap(err, "generating ownership public key")
+		}
+		opublic, err := opublice.SPubKey()
+		if err != nil {
+			return errors.Wrap(err, "converting ownership public key to ndau format")
+		}
+		acct.Ownership.Public = *opublic
+
+		acct.Address, err = address.Generate(address.KindUser, opublic.KeyBytes())
 		if err != nil {
 			return errors.Wrap(err, "generating address")
 		}
@@ -185,35 +238,58 @@ func (c *Config) RecoverAccount(name string, phrase []string, lang string) error
 	if _, found := c.Accounts[name]; found {
 		return errors.New("account already exists: " + name)
 	}
+
+	// recover root key
 	seed, err := words.ToBytes(lang, phrase)
 	if err != nil {
-		return errors.Wrap(err, "recovering account")
+		return errors.Wrap(err, "recovering root account")
 	}
 	ekey, err := key.NewMaster(seed)
 	if err != nil {
-		return errors.Wrap(err, "recovering master key")
+		return errors.Wrap(err, "recovering root key")
 	}
 	private, err := ekey.SPrivKey()
 	if err != nil {
-		return errors.Wrap(err, "converting private key to ndau format")
+		return errors.Wrap(err, "converting root private key to ndau format")
 	}
 	publice, err := ekey.Public()
 	if err != nil {
-		return errors.Wrap(err, "recovering master public key")
+		return errors.Wrap(err, "recovering root public key")
 	}
 	public, err := publice.SPubKey()
 	if err != nil {
-		return errors.Wrap(err, "converting public key to ndau format")
+		return errors.Wrap(err, "converting root public key to ndau format")
 	}
-	addr, err := address.Generate(address.KindUser, public.KeyBytes())
+
+	// recover ownership account key
+	ownershipAcctPath := fmt.Sprintf(AccountPathFormat, AccountListOffset, AccountStartNumber)
+	ownAcctKey, err := ekey.DeriveFrom("/", ownershipAcctPath)
 	if err != nil {
-		return errors.Wrap(err, "recovering address")
+		return errors.Wrap(err, "could not derive ownership account key")
+	}
+	ownPubExt, err := ownAcctKey.Public()
+	if err != nil {
+		return errors.Wrap(err, "getting extended public from extended private")
+	}
+	ownPub, err := ownPubExt.SPubKey()
+	if err != nil {
+		return errors.Wrap(err, "converting ownership public key to ndau format")
+	}
+	ownPriv, err := ownAcctKey.SPrivKey()
+	if err != nil {
+		return errors.Wrap(err, "converting ownership private key to ndau format")
+	}
+
+	addr, err := address.Generate(address.KindUser, ownPub.KeyBytes())
+	if err != nil {
+		return errors.Wrap(err, "recovering ownership address")
 	}
 	root := "/"
 	acct := Account{
 		Name:      name,
+		Ownership: Keypair{Path: &ownershipAcctPath, Public: *ownPub, Private: *ownPriv},
 		Address:   addr,
-		Ownership: Keypair{Path: &root, Public: *public, Private: *private},
+		Root:      &Keypair{Path: &root, Public: *public, Private: *private},
 	}
 	c.SetAccount(acct)
 	return nil
@@ -230,6 +306,7 @@ func (c Config) toToml() (tomlConfig, error) {
 	for _, acct := range c.GetAccounts() {
 		tacs = append(tacs, *acct)
 	}
+	sort.Slice(tacs, func(i, j int) bool { return tacs[i].Name < tacs[j].Name })
 
 	return tomlConfig{
 		Node:     c.Node,
