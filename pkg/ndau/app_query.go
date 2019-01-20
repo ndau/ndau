@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
@@ -22,6 +23,7 @@ import (
 func init() {
 	meta.RegisterQueryHandler(query.AccountEndpoint, accountQuery)
 	meta.RegisterQueryHandler(query.AccountHistoryEndpoint, accountHistoryQuery)
+	meta.RegisterQueryHandler(query.AccountListEndpoint, accountListQuery)
 	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
@@ -85,6 +87,46 @@ func accountHistoryQuery(
 
 	ahBytes := []byte(ahr.Marshal())
 	response.Value = ahBytes
+}
+
+func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	paramsString := string(request.GetData())
+	var params srch.AccountHistoryParams
+	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	if err != nil {
+		app.QueryError(
+			errors.New("cannot decode search params json"), response, "invalid search query")
+		return
+	}
+
+	state := app.GetState().(*backing.State)
+	// we need to get all the names so we can sort them
+	names := make([]string, len(state.Accounts))
+	ix := 0
+	for k := range state.Accounts {
+		names[ix] = k
+		ix++
+	}
+	sort.Sort(sort.StringSlice(names))
+	start := params.PageIndex * params.PageSize
+	if start > len(names) {
+		start = len(names)
+	}
+	end := (params.PageIndex + 1) * params.PageSize
+	if end > len(names) {
+		end = len(names)
+	}
+
+	retval := names[start:end]
+	rBytes, err := json.Marshal(retval)
+	if err != nil {
+		app.QueryError(err, response, "serializing account data")
+		return
+	}
+
+	response.Value = rBytes
 }
 
 func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {

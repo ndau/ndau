@@ -128,14 +128,25 @@ func New(cf cfg.Cfg) *boneful.Service {
 		The result is sorted chronologically.`).
 		Operation("AccountHistory").
 		Param(boneful.PathParameter("address", "The address of the account for which to return history").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
 			Balance:   123000000,
 			Timestamp: dummyTimestamp,
 			TxHash:    "abc123def456",
 		}}}))
+
+	svc.Route(svc.GET("/account/list").To(routes.HandleAccountList(cf)).
+		Doc("Returns a list of account IDs.").
+		Notes(`This returns a list of every account on the blockchain, sorted
+		alphabetically. A maximum of 10000 accounts can be returned in a single
+		request.`).
+		Operation("AccountList").
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. default=0").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=10000").DataType("int").Required(false)).
+		Produces(JSON).
+		Writes([]string{dummyAddress.String()}))
 
 	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockCurrent").
