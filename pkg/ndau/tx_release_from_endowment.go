@@ -47,6 +47,12 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 
 		acct.UpdateCurrencySeat(app.blockTime)
 
+		// we give up overflow protection here in exchange for error-free
+		// operation; we have external constraints that we will never issue
+		// more than (30 million) * (100 million) napu, or 0.03% of 64-bits,
+		// so this should be fine
+		state.TotalRFE += tx.Qty
+
 		return state, err
 	})
 }
