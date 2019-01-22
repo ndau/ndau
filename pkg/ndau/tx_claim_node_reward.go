@@ -94,7 +94,15 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		} else {
 			err = avm.Run(nil)
 			if err != nil {
-				allErrs[errors.Wrap(err, "running chaincode vm").Error()] = xx
+				stackTop, err2 := avm.Stack().Peek()
+				if err2 != nil {
+					allErrs[fmt.Sprintf(
+						"while logging an error, another occurred\noriginal: %s\nsecondary: %s",
+						err, err2,
+					)] = xx
+				} else {
+					allErrs[errors.Wrap(err, fmt.Sprintf("running chaincode vm (stack top: %s)", stackTop)).Error()] = xx
+				}
 			} else {
 				// expected top of stack on successful chaincode completion:
 				// list of structs, whose field 10 is the amount returned

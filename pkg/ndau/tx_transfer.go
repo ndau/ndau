@@ -76,6 +76,8 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 		})
 	}
 
+	dest.UpdateCurrencySeat(app.blockTime)
+
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 

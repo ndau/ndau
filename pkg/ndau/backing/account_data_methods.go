@@ -2,6 +2,7 @@ package backing
 
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
@@ -132,4 +133,17 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 		return valid, signatureSet
 	}
 	return valid, invalidSignatures
+}
+
+// UpdateCurrencySeat sets the account's currency seat status appropriately given
+// its balance. It is safe to call repeatedly; it's smart enough not to change
+// the state inappropriately.
+func (ad *AccountData) UpdateCurrencySeat(blockTime math.Timestamp) {
+	const currencySeatQty = 1000 * constants.NapuPerNdau
+
+	if ad.CurrencySeatDate != nil && ad.Balance < currencySeatQty {
+		ad.CurrencySeatDate = nil
+	} else if ad.CurrencySeatDate == nil && ad.Balance >= currencySeatQty {
+		ad.CurrencySeatDate = &blockTime
+	}
 }

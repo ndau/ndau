@@ -12,9 +12,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 14
+	// map header, size 15
 	// string "Balance"
-	o = append(o, 0x8e, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0x8f, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		return
@@ -28,6 +28,9 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 			return
 		}
 	}
+	// string "ValidationScript"
+	o = append(o, 0xb0, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74)
+	o = msgp.AppendBytes(o, z.ValidationScript)
 	// string "RewardsTarget"
 	o = append(o, 0xad, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74)
 	if z.RewardsTarget == nil {
@@ -131,9 +134,16 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	if err != nil {
 		return
 	}
-	// string "ValidationScript"
-	o = append(o, 0xb0, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74)
-	o = msgp.AppendBytes(o, z.ValidationScript)
+	// string "CurrencySeatDate"
+	o = append(o, 0xb0, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x79, 0x53, 0x65, 0x61, 0x74, 0x44, 0x61, 0x74, 0x65)
+	if z.CurrencySeatDate == nil {
+		o = msgp.AppendNil(o)
+	} else {
+		o, err = z.CurrencySeatDate.MarshalMsg(o)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -174,6 +184,11 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				if err != nil {
 					return
 				}
+			}
+		case "ValidationScript":
+			z.ValidationScript, bts, err = msgp.ReadBytesBytes(bts, z.ValidationScript)
+			if err != nil {
+				return
 			}
 		case "RewardsTarget":
 			if msgp.IsNil(bts) {
@@ -348,10 +363,21 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "ValidationScript":
-			z.ValidationScript, bts, err = msgp.ReadBytesBytes(bts, z.ValidationScript)
-			if err != nil {
-				return
+		case "CurrencySeatDate":
+			if msgp.IsNil(bts) {
+				bts, err = msgp.ReadNilBytes(bts)
+				if err != nil {
+					return
+				}
+				z.CurrencySeatDate = nil
+			} else {
+				if z.CurrencySeatDate == nil {
+					z.CurrencySeatDate = new(math.Timestamp)
+				}
+				bts, err = z.CurrencySeatDate.UnmarshalMsg(bts)
+				if err != nil {
+					return
+				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
@@ -370,7 +396,7 @@ func (z *AccountData) Msgsize() (s int) {
 	for za0001 := range z.ValidationKeys {
 		s += z.ValidationKeys[za0001].Msgsize()
 	}
-	s += 14
+	s += 17 + msgp.BytesPrefixSize + len(z.ValidationScript) + 14
 	if z.RewardsTarget == nil {
 		s += msgp.NilSize
 	} else {
@@ -402,7 +428,12 @@ func (z *AccountData) Msgsize() (s int) {
 	for za0003 := range z.Settlements {
 		s += 1 + 4 + z.Settlements[za0003].Qty.Msgsize() + 7 + z.Settlements[za0003].Expiry.Msgsize()
 	}
-	s += 19 + z.SettlementSettings.Msgsize() + 17 + msgp.BytesPrefixSize + len(z.ValidationScript)
+	s += 19 + z.SettlementSettings.Msgsize() + 17
+	if z.CurrencySeatDate == nil {
+		s += msgp.NilSize
+	} else {
+		s += z.CurrencySeatDate.Msgsize()
+	}
 	return
 }
 

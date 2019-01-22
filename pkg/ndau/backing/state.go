@@ -309,6 +309,8 @@ func (s *State) PayReward(address address.Address, reward math.Ndau, blockTime m
 	// we always set LastWAAUpdate
 	acct.LastWAAUpdate = blockTime
 
+	acct.UpdateCurrencySeat(blockTime)
+
 	s.Accounts[address.String()] = acct
 	return address, nil
 }
