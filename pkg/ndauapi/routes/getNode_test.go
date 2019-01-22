@@ -39,7 +39,7 @@ func TestGetNode(t *testing.T) {
 		t.Error("Couldn't get node.")
 		return
 	}
-	nodeID := n.NodeInfo.ID
+	nodeID := string(n.NodeInfo.ID())
 
 	// set up tests
 	tests := []struct {
