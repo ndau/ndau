@@ -12,7 +12,7 @@ import (
 // NodeResponse represents a response from the nodes call.
 type NodeResponse struct {
 	Err   error
-	Nodes []p2p.NodeInfo
+	Nodes []p2p.DefaultNodeInfo
 }
 
 // Nodes returns NodeInfo asyncronously.
@@ -31,7 +31,7 @@ func Nodes(node *client.HTTP) chan NodeResponse {
 			respCh <- NodeResponse{Err: fmt.Errorf("could not fetch node info: %v", err)}
 			return
 		}
-		respCh <- NodeResponse{Nodes: []p2p.NodeInfo{status.NodeInfo}}
+		respCh <- NodeResponse{Nodes: []p2p.DefaultNodeInfo{status.NodeInfo}}
 	}()
 
 	// get the peer nodes and add their NodeInfo
@@ -42,7 +42,7 @@ func Nodes(node *client.HTTP) chan NodeResponse {
 			respCh <- NodeResponse{Err: fmt.Errorf("could not fetch net info: %v", err)}
 			return
 		}
-		var res []p2p.NodeInfo
+		var res []p2p.DefaultNodeInfo
 		for _, p := range netInfo.Peers {
 			res = append(res, p.NodeInfo)
 		}

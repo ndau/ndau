@@ -39,7 +39,7 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 
 		// make request and get channels
 		ch := tool.Nodes(node)
-		var nodes []p2p.NodeInfo
+		var nodes []p2p.DefaultNodeInfo
 
 		for {
 			select {
