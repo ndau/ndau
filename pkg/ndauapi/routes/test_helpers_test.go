@@ -164,7 +164,7 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	}
 
 	// Set a k-v pair.
-	err = exec.Command(chaosTool, "set", namespace, "-k=" + key, "-v=" + value).Run()
+	err = exec.Command(chaosTool, "set", namespace, key, value).Run()
 	if err != nil {
 		t.Errorf("Error setting key: %s", err)
 	}
