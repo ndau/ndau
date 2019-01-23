@@ -1,7 +1,5 @@
 # Ndau
 
-[![CircleCI](https://circleci.com/gh/oneiro-ndev/ndau.svg?style=svg&circle-token=56c7554813eba29ec665c9139c2e25445e6cb47c)](https://circleci.com/gh/oneiro-ndev/ndau)
-
 This is the implementation of the Ndau chain. See the Ndau design whitepaper for details.  All Ndau transactions are stored on this chain.  An (incomplete) list of possible transactions on the Ndau chain include:
 
 - Transfer
