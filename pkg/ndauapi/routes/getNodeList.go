@@ -17,8 +17,8 @@ import (
 
 // ResultNodePair represents a chaos-ndau node pair.
 type ResultNodePair struct {
-	ChaosNode p2p.NodeInfo `json:"chaos"`
-	NdauNode  p2p.NodeInfo `json:"ndau"`
+	ChaosNode p2p.DefaultNodeInfo `json:"chaos"`
+	NdauNode  p2p.DefaultNodeInfo `json:"ndau"`
 }
 
 // ResultNodeList represents a list of nodes.
@@ -89,7 +89,7 @@ func getNodes(
 	nodeAddress string,
 	w http.ResponseWriter,
 	r *http.Request,
-) []p2p.NodeInfo {
+) []p2p.DefaultNodeInfo {
 	// get node
 	node, err := ws.Node(nodeAddress)
 	if err != nil {
@@ -98,7 +98,7 @@ func getNodes(
 	}
 
 	nodeCh := tool.Nodes(node)
-	var nodes []p2p.NodeInfo
+	var nodes []p2p.DefaultNodeInfo
 
 	for {
 		select {

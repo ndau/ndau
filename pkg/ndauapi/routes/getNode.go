@@ -39,7 +39,7 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 
 		// make request and get channels
 		ch := tool.Nodes(node)
-		var nodes []p2p.NodeInfo
+		var nodes []p2p.DefaultNodeInfo
 
 		for {
 			select {
@@ -54,7 +54,7 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 				nodes = append(nodes, nr.Nodes...)
 				if !open { // send response when channel closed
 					for i := range nodes {
-						if string(nodes[i].ID) == nodeID {
+						if string(nodes[i].ID()) == nodeID {
 							reqres.RespondJSON(w, reqres.OKResponse(nodes[i]))
 							return
 						}
