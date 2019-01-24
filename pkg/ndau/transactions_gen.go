@@ -15,12 +15,14 @@ func (z *ChangeSettlementPeriod) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x84, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "per"
 	o = append(o, 0xa3, 0x70, 0x65, 0x72)
 	o, err = z.Period.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Period")
 		return
 	}
 	// string "seq"
@@ -32,6 +34,7 @@ func (z *ChangeSettlementPeriod) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -45,34 +48,40 @@ func (z *ChangeSettlementPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) 
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "per":
 			bts, err = z.Period.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Period")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -83,12 +92,14 @@ func (z *ChangeSettlementPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) 
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -114,6 +125,7 @@ func (z *ChangeValidation) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x85, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "key"
@@ -122,6 +134,7 @@ func (z *ChangeValidation) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.NewKeys {
 		o, err = z.NewKeys[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "NewKeys", za0001)
 			return
 		}
 	}
@@ -137,6 +150,7 @@ func (z *ChangeValidation) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0002 := range z.Signatures {
 		o, err = z.Signatures[za0002].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0002)
 			return
 		}
 	}
@@ -150,24 +164,28 @@ func (z *ChangeValidation) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "key":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "NewKeys")
 				return
 			}
 			if cap(z.NewKeys) >= int(zb0002) {
@@ -178,23 +196,27 @@ func (z *ChangeValidation) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.NewKeys {
 				bts, err = z.NewKeys[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "NewKeys", za0001)
 					return
 				}
 			}
 		case "val":
 			z.ValidationScript, bts, err = msgp.ReadBytesBytes(bts, z.ValidationScript)
 			if err != nil {
+				err = msgp.WrapError(err, "ValidationScript")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0003 uint32
 			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0003) {
@@ -205,12 +227,14 @@ func (z *ChangeValidation) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0002 := range z.Signatures {
 				bts, err = z.Signatures[za0002].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0002)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -240,12 +264,14 @@ func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x86, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "own"
 	o = append(o, 0xa3, 0x6f, 0x77, 0x6e)
 	o, err = z.Ownership.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Ownership")
 		return
 	}
 	// string "key"
@@ -254,6 +280,7 @@ func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.ValidationKeys {
 		o, err = z.ValidationKeys[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "ValidationKeys", za0001)
 			return
 		}
 	}
@@ -267,6 +294,7 @@ func (z *ClaimAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0xa3, 0x73, 0x69, 0x67)
 	o, err = z.Signature.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Signature")
 		return
 	}
 	return
@@ -279,29 +307,34 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "own":
 			bts, err = z.Ownership.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Ownership")
 				return
 			}
 		case "key":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "ValidationKeys")
 				return
 			}
 			if cap(z.ValidationKeys) >= int(zb0002) {
@@ -312,27 +345,32 @@ func (z *ClaimAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.ValidationKeys {
 				bts, err = z.ValidationKeys[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "ValidationKeys", za0001)
 					return
 				}
 			}
 		case "val":
 			z.ValidationScript, bts, err = msgp.ReadBytesBytes(bts, z.ValidationScript)
 			if err != nil {
+				err = msgp.WrapError(err, "ValidationScript")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			bts, err = z.Signature.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signature")
 				return
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -359,6 +397,7 @@ func (z *ClaimNodeReward) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x83, 0xa3, 0x6e, 0x6f, 0x64)
 	o, err = z.Node.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Node")
 		return
 	}
 	// string "seq"
@@ -370,6 +409,7 @@ func (z *ClaimNodeReward) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -383,29 +423,34 @@ func (z *ClaimNodeReward) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "nod":
 			bts, err = z.Node.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Node")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -416,12 +461,14 @@ func (z *ClaimNodeReward) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -458,6 +505,7 @@ func (z *CommandValidatorChange) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -471,34 +519,40 @@ func (z *CommandValidatorChange) UnmarshalMsg(bts []byte) (o []byte, err error) 
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tm_pk":
 			z.PublicKey, bts, err = msgp.ReadBytesBytes(bts, z.PublicKey)
 			if err != nil {
+				err = msgp.WrapError(err, "PublicKey")
 				return
 			}
 		case "pow":
 			z.Power, bts, err = msgp.ReadInt64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Power")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -509,12 +563,14 @@ func (z *CommandValidatorChange) UnmarshalMsg(bts []byte) (o []byte, err error) 
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -540,6 +596,7 @@ func (z *CreditEAI) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x83, 0xa3, 0x6e, 0x6f, 0x64)
 	o, err = z.Node.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Node")
 		return
 	}
 	// string "seq"
@@ -551,6 +608,7 @@ func (z *CreditEAI) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -564,29 +622,34 @@ func (z *CreditEAI) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "nod":
 			bts, err = z.Node.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Node")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -597,12 +660,14 @@ func (z *CreditEAI) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -628,12 +693,14 @@ func (z *Delegate) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x84, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "nod"
 	o = append(o, 0xa3, 0x6e, 0x6f, 0x64)
 	o, err = z.Node.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Node")
 		return
 	}
 	// string "seq"
@@ -645,6 +712,7 @@ func (z *Delegate) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -658,34 +726,40 @@ func (z *Delegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "nod":
 			bts, err = z.Node.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Node")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -696,12 +770,14 @@ func (z *Delegate) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -727,12 +803,14 @@ func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x84, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "per"
 	o = append(o, 0xa3, 0x70, 0x65, 0x72)
 	o, err = z.Period.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Period")
 		return
 	}
 	// string "seq"
@@ -744,6 +822,7 @@ func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -757,34 +836,40 @@ func (z *Lock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "per":
 			bts, err = z.Period.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Period")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -795,12 +880,14 @@ func (z *Lock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -834,6 +921,7 @@ func (z *NominateNodeReward) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -847,29 +935,34 @@ func (z *NominateNodeReward) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "rnd":
 			z.Random, bts, err = msgp.ReadInt64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Random")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -880,12 +973,14 @@ func (z *NominateNodeReward) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -911,6 +1006,7 @@ func (z *Notify) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x83, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "seq"
@@ -922,6 +1018,7 @@ func (z *Notify) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -935,29 +1032,34 @@ func (z *Notify) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -968,12 +1070,14 @@ func (z *Notify) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -999,6 +1103,7 @@ func (z *RegisterNode) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x85, 0xa3, 0x6e, 0x6f, 0x64)
 	o, err = z.Node.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Node")
 		return
 	}
 	// string "dis"
@@ -1016,6 +1121,7 @@ func (z *RegisterNode) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -1029,39 +1135,46 @@ func (z *RegisterNode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "nod":
 			bts, err = z.Node.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Node")
 				return
 			}
 		case "dis":
 			z.DistributionScript, bts, err = msgp.ReadBytesBytes(bts, z.DistributionScript)
 			if err != nil {
+				err = msgp.WrapError(err, "DistributionScript")
 				return
 			}
 		case "rpc":
 			z.RPCAddress, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "RPCAddress")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -1072,12 +1185,14 @@ func (z *RegisterNode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -1103,12 +1218,14 @@ func (z *ReleaseFromEndowment) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x84, 0xa3, 0x64, 0x73, 0x74)
 	o, err = z.Destination.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Destination")
 		return
 	}
 	// string "qty"
 	o = append(o, 0xa3, 0x71, 0x74, 0x79)
 	o, err = z.Qty.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Qty")
 		return
 	}
 	// string "seq"
@@ -1120,6 +1237,7 @@ func (z *ReleaseFromEndowment) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -1133,34 +1251,40 @@ func (z *ReleaseFromEndowment) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "dst":
 			bts, err = z.Destination.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Destination")
 				return
 			}
 		case "qty":
 			bts, err = z.Qty.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Qty")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -1171,12 +1295,14 @@ func (z *ReleaseFromEndowment) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -1202,12 +1328,14 @@ func (z *SetRewardsDestination) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x84, 0xa3, 0x73, 0x72, 0x63)
 	o, err = z.Source.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Source")
 		return
 	}
 	// string "dst"
 	o = append(o, 0xa3, 0x64, 0x73, 0x74)
 	o, err = z.Destination.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Destination")
 		return
 	}
 	// string "seq"
@@ -1219,6 +1347,7 @@ func (z *SetRewardsDestination) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -1232,34 +1361,40 @@ func (z *SetRewardsDestination) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "src":
 			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Source")
 				return
 			}
 		case "dst":
 			bts, err = z.Destination.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Destination")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -1270,12 +1405,14 @@ func (z *SetRewardsDestination) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -1301,6 +1438,7 @@ func (z *SidechainTx) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x86, 0xa3, 0x73, 0x72, 0x63)
 	o, err = z.Source.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Source")
 		return
 	}
 	// string "sch"
@@ -1315,6 +1453,7 @@ func (z *SidechainTx) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.SidechainSignatures {
 		o, err = z.SidechainSignatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "SidechainSignatures", za0001)
 			return
 		}
 	}
@@ -1327,6 +1466,7 @@ func (z *SidechainTx) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0002 := range z.Signatures {
 		o, err = z.Signatures[za0002].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0002)
 			return
 		}
 	}
@@ -1340,34 +1480,40 @@ func (z *SidechainTx) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "src":
 			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Source")
 				return
 			}
 		case "sch":
 			z.SidechainID, bts, err = msgp.ReadByteBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "SidechainID")
 				return
 			}
 		case "ssb":
 			z.SidechainSignableBytes, bts, err = msgp.ReadBytesBytes(bts, z.SidechainSignableBytes)
 			if err != nil {
+				err = msgp.WrapError(err, "SidechainSignableBytes")
 				return
 			}
 		case "ssg":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "SidechainSignatures")
 				return
 			}
 			if cap(z.SidechainSignatures) >= int(zb0002) {
@@ -1378,18 +1524,21 @@ func (z *SidechainTx) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.SidechainSignatures {
 				bts, err = z.SidechainSignatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "SidechainSignatures", za0001)
 					return
 				}
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0003 uint32
 			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0003) {
@@ -1400,12 +1549,14 @@ func (z *SidechainTx) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0002 := range z.Signatures {
 				bts, err = z.Signatures[za0002].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0002)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -1435,12 +1586,14 @@ func (z *Stake) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x84, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Target")
 		return
 	}
 	// string "nod"
 	o = append(o, 0xa3, 0x6e, 0x6f, 0x64)
 	o, err = z.Node.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Node")
 		return
 	}
 	// string "seq"
@@ -1452,6 +1605,7 @@ func (z *Stake) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -1465,34 +1619,40 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "tgt":
 			bts, err = z.Target.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Target")
 				return
 			}
 		case "nod":
 			bts, err = z.Node.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Node")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -1503,12 +1663,14 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -1534,18 +1696,21 @@ func (z *Transfer) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x85, 0xa3, 0x73, 0x72, 0x63)
 	o, err = z.Source.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Source")
 		return
 	}
 	// string "dst"
 	o = append(o, 0xa3, 0x64, 0x73, 0x74)
 	o, err = z.Destination.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Destination")
 		return
 	}
 	// string "qty"
 	o = append(o, 0xa3, 0x71, 0x74, 0x79)
 	o, err = z.Qty.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Qty")
 		return
 	}
 	// string "seq"
@@ -1557,6 +1722,7 @@ func (z *Transfer) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -1570,39 +1736,46 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "src":
 			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Source")
 				return
 			}
 		case "dst":
 			bts, err = z.Destination.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Destination")
 				return
 			}
 		case "qty":
 			bts, err = z.Qty.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Qty")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -1613,12 +1786,14 @@ func (z *Transfer) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -1644,24 +1819,28 @@ func (z *TransferAndLock) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x86, 0xa3, 0x73, 0x72, 0x63)
 	o, err = z.Source.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Source")
 		return
 	}
 	// string "dst"
 	o = append(o, 0xa3, 0x64, 0x73, 0x74)
 	o, err = z.Destination.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Destination")
 		return
 	}
 	// string "qty"
 	o = append(o, 0xa3, 0x71, 0x74, 0x79)
 	o, err = z.Qty.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Qty")
 		return
 	}
 	// string "per"
 	o = append(o, 0xa3, 0x70, 0x65, 0x72)
 	o, err = z.Period.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Period")
 		return
 	}
 	// string "seq"
@@ -1673,6 +1852,7 @@ func (z *TransferAndLock) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001 := range z.Signatures {
 		o, err = z.Signatures[za0001].MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
 			return
 		}
 	}
@@ -1686,44 +1866,52 @@ func (z *TransferAndLock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "src":
 			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Source")
 				return
 			}
 		case "dst":
 			bts, err = z.Destination.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Destination")
 				return
 			}
 		case "qty":
 			bts, err = z.Qty.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Qty")
 				return
 			}
 		case "per":
 			bts, err = z.Period.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Period")
 				return
 			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
 				return
 			}
 		case "sig":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
 				return
 			}
 			if cap(z.Signatures) >= int(zb0002) {
@@ -1734,12 +1922,14 @@ func (z *TransferAndLock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			for za0001 := range z.Signatures {
 				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
 					return
 				}
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/oneiro-ndev/ndau/pkg/query"
+
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -146,7 +148,13 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. default=0").DataType("int").Required(false)).
 		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=10000").DataType("int").Required(false)).
 		Produces(JSON).
-		Writes([]string{dummyAddress.String()}))
+		Writes(query.AccountListQueryResponse{
+			NumAccounts: 1,
+			FirstIndex:  1,
+			PageIndex:   0,
+			PageSize:    1000,
+			Accounts:    []string{dummyAddress.String()},
+		}))
 
 	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockCurrent").

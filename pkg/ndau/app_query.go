@@ -119,8 +119,14 @@ func accountListQuery(appI interface{}, request abci.RequestQuery, response *abc
 		end = len(names)
 	}
 
-	retval := names[start:end]
-	rBytes, err := json.Marshal(retval)
+	retval := query.AccountListQueryResponse{
+		NumAccounts: len(names),
+		FirstIndex:  start,
+		PageSize:    params.PageSize,
+		PageIndex:   params.PageIndex,
+		Accounts:    names[start:end],
+	}
+	rBytes, err := retval.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "serializing account data")
 		return

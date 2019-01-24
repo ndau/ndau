@@ -1,8 +1,6 @@
 package tool
 
 import (
-	"encoding/json"
-
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -58,7 +56,7 @@ func GetAccountHistory(node client.ABCIClient, params string) (
 
 // GetAccountList gets a list of account names, paged according to the params
 func GetAccountList(node client.ABCIClient, params []byte) (
-	[]string, *rpctypes.ResultABCIQuery, error,
+	*query.AccountListQueryResponse, *rpctypes.ResultABCIQuery, error,
 ) {
 	// perform the query
 	res, err := node.ABCIQuery(query.AccountListEndpoint, params)
@@ -67,7 +65,7 @@ func GetAccountList(node client.ABCIClient, params []byte) (
 	}
 
 	// parse the response
-	var accts []string
-	err = json.Unmarshal(res.Response.GetValue(), &accts)
-	return accts, res, err
+	var result query.AccountListQueryResponse
+	_, err = result.UnmarshalMsg(res.Response.GetValue())
+	return &result, res, err
 }
