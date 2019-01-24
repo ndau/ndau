@@ -1,6 +1,9 @@
 package tool
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -52,4 +55,29 @@ func GetAccountHistory(node client.ABCIClient, params string) (
 	ahr := new(search.AccountHistoryResponse)
 	err = ahr.Unmarshal(string(res.Response.GetValue()))
 	return ahr, res, err
+}
+
+// GetAccountList gets a list of account names, paged according to the params
+func GetAccountList(node client.ABCIClient, pageIndex int, pageSize int) (
+	*query.AccountListQueryResponse, *rpctypes.ResultABCIQuery, error,
+) {
+	// Prepare search params.
+	params := search.AccountHistoryParams{
+		Address:   "",
+		PageIndex: pageIndex,
+		PageSize:  pageSize,
+	}
+	paramsBuf := &bytes.Buffer{}
+	json.NewEncoder(paramsBuf).Encode(params)
+
+	// perform the query
+	res, err := node.ABCIQuery(query.AccountListEndpoint, paramsBuf.Bytes())
+	if err != nil {
+		return nil, res, err
+	}
+
+	// parse the response
+	var result query.AccountListQueryResponse
+	_, err = result.UnmarshalMsg(res.Response.GetValue())
+	return &result, res, err
 }

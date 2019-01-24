@@ -14,24 +14,28 @@ func (z *Lock) DecodeMsg(dc *msgp.Reader) (err error) {
 	var zb0001 uint32
 	zb0001, err = dc.ReadMapHeader()
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "notice":
 			err = z.NoticePeriod.DecodeMsg(dc)
 			if err != nil {
+				err = msgp.WrapError(err, "NoticePeriod")
 				return
 			}
 		case "unlock":
 			if dc.IsNil() {
 				err = dc.ReadNil()
 				if err != nil {
+					err = msgp.WrapError(err, "UnlocksOn")
 					return
 				}
 				z.UnlocksOn = nil
@@ -41,17 +45,20 @@ func (z *Lock) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 				err = z.UnlocksOn.DecodeMsg(dc)
 				if err != nil {
+					err = msgp.WrapError(err, "UnlocksOn")
 					return
 				}
 			}
 		case "bonus":
 			err = z.Bonus.DecodeMsg(dc)
 			if err != nil {
+				err = msgp.WrapError(err, "Bonus")
 				return
 			}
 		default:
 			err = dc.Skip()
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -69,6 +76,7 @@ func (z *Lock) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = z.NoticePeriod.EncodeMsg(en)
 	if err != nil {
+		err = msgp.WrapError(err, "NoticePeriod")
 		return
 	}
 	// write "unlock"
@@ -84,6 +92,7 @@ func (z *Lock) EncodeMsg(en *msgp.Writer) (err error) {
 	} else {
 		err = z.UnlocksOn.EncodeMsg(en)
 		if err != nil {
+			err = msgp.WrapError(err, "UnlocksOn")
 			return
 		}
 	}
@@ -94,6 +103,7 @@ func (z *Lock) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = z.Bonus.EncodeMsg(en)
 	if err != nil {
+		err = msgp.WrapError(err, "Bonus")
 		return
 	}
 	return
@@ -107,6 +117,7 @@ func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0x83, 0xa6, 0x6e, 0x6f, 0x74, 0x69, 0x63, 0x65)
 	o, err = z.NoticePeriod.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "NoticePeriod")
 		return
 	}
 	// string "unlock"
@@ -116,6 +127,7 @@ func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	} else {
 		o, err = z.UnlocksOn.MarshalMsg(o)
 		if err != nil {
+			err = msgp.WrapError(err, "UnlocksOn")
 			return
 		}
 	}
@@ -123,6 +135,7 @@ func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0xa5, 0x62, 0x6f, 0x6e, 0x75, 0x73)
 	o, err = z.Bonus.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Bonus")
 		return
 	}
 	return
@@ -135,18 +148,21 @@ func (z *Lock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "notice":
 			bts, err = z.NoticePeriod.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "NoticePeriod")
 				return
 			}
 		case "unlock":
@@ -162,17 +178,20 @@ func (z *Lock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 				bts, err = z.UnlocksOn.UnmarshalMsg(bts)
 				if err != nil {
+					err = msgp.WrapError(err, "UnlocksOn")
 					return
 				}
 			}
 		case "bonus":
 			bts, err = z.Bonus.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Bonus")
 				return
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
