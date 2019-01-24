@@ -152,6 +152,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 //  - update uncredited EAI with current balance
 //  - deduct tx fee
 //  - reduce source balance (if applicable)
+//  - if source drops below 1000 ndau, remove currency seat
 //  - update sequence
 //  - resolve completed settlements
 //
@@ -218,6 +219,8 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	if err != nil {
 		return errors.Wrap(err, "calculating new balance")
 	}
+
+	source.UpdateCurrencySeat(app.blockTime)
 
 	source.Sequence = tx.GetSequence()
 

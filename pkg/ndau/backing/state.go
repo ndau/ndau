@@ -16,6 +16,7 @@ const lnrnKey = "lnrn" // last node reward nomination
 const pnrKey = "pnr"   // pending node reward
 const unrKey = "unr"   // uncredited node reward
 const nrwKey = "nrw"   // node reward winner
+const totalRFEKey = "totalRFE"
 
 // State is primarily a set of accounts
 type State struct {
@@ -44,6 +45,10 @@ type State struct {
 	UnclaimedNodeReward math.Ndau
 	// Of course, we have to keep track of which node has acutally won
 	NodeRewardWinner address.Address
+	// TotalRFE is the sum of all RFE transactions.
+	// It is also updated by the genesis program: it's initialized with the
+	// implied RFEs for genesis accounts
+	TotalRFE math.Ndau
 }
 
 // make sure State is a metaapp.State
@@ -66,6 +71,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		pnrKey:      util.Int(s.PendingNodeReward).ToBlob(vrw),
 		unrKey:      util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
 		nrwKey:      nt.String(s.NodeRewardWinner.String()),
+		totalRFEKey: util.Int(s.TotalRFE).ToBlob(vrw),
 	})
 
 	// marshal accounts
@@ -201,6 +207,11 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 			return errors.Wrap(err, "validating node reward winner")
 		}
 	}
+	trfeI, err := util.IntFromBlob(st.Get(totalRFEKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling total RFE")
+	}
+	s.TotalRFE = math.Ndau(trfeI)
 
 	return err
 }
@@ -308,6 +319,8 @@ func (s *State) PayReward(address address.Address, reward math.Ndau, blockTime m
 	}
 	// we always set LastWAAUpdate
 	acct.LastWAAUpdate = blockTime
+
+	acct.UpdateCurrencySeat(blockTime)
 
 	s.Accounts[address.String()] = acct
 	return address, nil

@@ -76,6 +76,8 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 	}
 	dest.Lock = backing.NewLock(tx.Period, lockedBonusRateTable)
 
+	dest.UpdateCurrencySeat(app.blockTime)
+
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 

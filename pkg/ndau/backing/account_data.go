@@ -182,6 +182,7 @@ func NewAccountData(blockTime math.Timestamp) AccountData {
 type AccountData struct {
 	Balance             math.Ndau             `json:"balance" chain:"61,Acct_Balance"`
 	ValidationKeys      []signature.PublicKey `json:"validationKeys" chain:"62,Acct_ValidationKeys"`
+	ValidationScript    []byte                `json:"validationScript" chain:"69,Acct_ValidationScript"`
 	RewardsTarget       *address.Address      `json:"rewardsTarget" chain:"63,Acct_RewardsTarget"`
 	IncomingRewardsFrom []address.Address     `json:"incomingRewardsFrom" chain:"64,Acct_IncomingRewardsFrom"`
 	DelegationNode      *address.Address      `json:"delegationNode" chain:"65,Acct_DelegationNode"`
@@ -193,7 +194,7 @@ type AccountData struct {
 	Sequence            uint64                `json:"sequence" chain:"71,Acct_Sequence"`
 	Settlements         []Settlement          `json:"settlements" chain:"70,Acct_Settlements"`
 	SettlementSettings  SettlementSettings    `json:"settlementSettings" chain:"."`
-	ValidationScript    []byte                `json:"validationScript" chain:"69,Acct_ValidationScript"`
+	CurrencySeatDate    *math.Timestamp       `json:"currency_seat_date" chain:"72,Acct_CurrencySeatDate"`
 	SidechainPayments   map[string]struct{}   `json:"-" msg:"-"` // not useful for consumers; they should use an ABCI query instead
 	UncreditedEAI       math.Ndau             `json:"-" msg:"-"` // exclude from serialization
 }
@@ -241,23 +242,26 @@ type nomsAccountData struct {
 	ValidationScript    nt.Blob
 	SidechainPayments   nt.Set
 	UncreditedEAI       util.Int
+	HasCurrencySeatDate bool
+	CurrencySeatDate    util.Int
 }
 
 func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData, error) {
 	nad := nomsAccountData{
-		Balance:            util.Int(ad.Balance),
-		HasRewardsTarget:   ad.RewardsTarget != nil,
-		HasDelegationNode:  ad.DelegationNode != nil,
-		HasLock:            ad.Lock != nil,
-		HasStake:           ad.Stake != nil,
-		LastEAIUpdate:      util.Int(ad.LastEAIUpdate),
-		LastWAAUpdate:      util.Int(ad.LastWAAUpdate),
-		WeightedAverageAge: util.Int(ad.WeightedAverageAge),
-		Sequence:           util.Int(ad.Sequence),
-		Settlements:        ad.Settlements,
-		SettlementSettings: ad.SettlementSettings,
-		UncreditedEAI:      util.Int(ad.UncreditedEAI),
-		SidechainPayments:  nt.NewSet(vrw),
+		Balance:             util.Int(ad.Balance),
+		HasRewardsTarget:    ad.RewardsTarget != nil,
+		HasDelegationNode:   ad.DelegationNode != nil,
+		HasLock:             ad.Lock != nil,
+		HasStake:            ad.Stake != nil,
+		LastEAIUpdate:       util.Int(ad.LastEAIUpdate),
+		LastWAAUpdate:       util.Int(ad.LastWAAUpdate),
+		WeightedAverageAge:  util.Int(ad.WeightedAverageAge),
+		Sequence:            util.Int(ad.Sequence),
+		Settlements:         ad.Settlements,
+		SettlementSettings:  ad.SettlementSettings,
+		UncreditedEAI:       util.Int(ad.UncreditedEAI),
+		SidechainPayments:   nt.NewSet(vrw),
+		HasCurrencySeatDate: ad.CurrencySeatDate != nil,
 	}
 	for _, tk := range ad.ValidationKeys {
 		tkBytes, err := tk.Marshal()
@@ -280,6 +284,9 @@ func (ad AccountData) toNomsAccountData(vrw nt.ValueReadWriter) (nomsAccountData
 	}
 	if nad.HasStake {
 		nad.Stake = *ad.Stake
+	}
+	if nad.HasCurrencySeatDate {
+		nad.CurrencySeatDate = util.Int(*ad.CurrencySeatDate)
 	}
 	nad.ValidationScript = util.Blob(vrw, ad.ValidationScript)
 
@@ -345,6 +352,12 @@ func (ad *AccountData) fromNomsAccountData(n nomsAccountData) (err error) {
 		ad.Stake = &n.Stake
 	} else {
 		ad.Stake = nil
+	}
+	if n.HasCurrencySeatDate {
+		csd := math.Timestamp(n.CurrencySeatDate)
+		ad.CurrencySeatDate = &csd
+	} else {
+		ad.CurrencySeatDate = nil
 	}
 	ad.LastEAIUpdate = math.Timestamp(n.LastEAIUpdate)
 	ad.LastWAAUpdate = math.Timestamp(n.LastWAAUpdate)
