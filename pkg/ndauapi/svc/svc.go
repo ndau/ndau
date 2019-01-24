@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/oneiro-ndev/ndau/pkg/query"
-
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"

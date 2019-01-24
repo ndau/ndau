@@ -202,16 +202,7 @@ func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// Prepare search params.
-		params := search.AccountHistoryParams{
-			Address:   "",
-			PageIndex: pageIndex,
-			PageSize:  pageSize,
-		}
-		paramsBuf := &bytes.Buffer{}
-		json.NewEncoder(paramsBuf).Encode(params)
-
-		accts, _, err := tool.GetAccountList(node, paramsBuf.Bytes())
+		accts, _, err := tool.GetAccountList(node, pageIndex, pageSize)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address list: %s", err), http.StatusInternalServerError))
 			return
