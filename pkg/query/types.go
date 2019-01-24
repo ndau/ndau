@@ -20,3 +20,12 @@ type SidechainTxExistsQuery struct {
 	Source      address.Address
 	TxHash      string
 }
+
+// AccountListQueryResponse is the return value from the /accountlist endpoint
+type AccountListQueryResponse struct {
+	NumAccounts int
+	FirstIndex  int
+	PageSize    int
+	PageIndex   int
+	Accounts    []string
+}

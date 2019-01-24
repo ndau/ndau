@@ -7,39 +7,287 @@ import (
 )
 
 // DecodeMsg implements msgp.Decodable
-func (z *SidechainTxExistsQuery) DecodeMsg(dc *msgp.Reader) (err error) {
+func (z *AccountListQueryResponse) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
 	zb0001, err = dc.ReadMapHeader()
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "NumAccounts":
+			z.NumAccounts, err = dc.ReadInt()
+			if err != nil {
+				err = msgp.WrapError(err, "NumAccounts")
+				return
+			}
+		case "FirstIndex":
+			z.FirstIndex, err = dc.ReadInt()
+			if err != nil {
+				err = msgp.WrapError(err, "FirstIndex")
+				return
+			}
+		case "PageSize":
+			z.PageSize, err = dc.ReadInt()
+			if err != nil {
+				err = msgp.WrapError(err, "PageSize")
+				return
+			}
+		case "PageIndex":
+			z.PageIndex, err = dc.ReadInt()
+			if err != nil {
+				err = msgp.WrapError(err, "PageIndex")
+				return
+			}
+		case "Accounts":
+			var zb0002 uint32
+			zb0002, err = dc.ReadArrayHeader()
+			if err != nil {
+				err = msgp.WrapError(err, "Accounts")
+				return
+			}
+			if cap(z.Accounts) >= int(zb0002) {
+				z.Accounts = (z.Accounts)[:zb0002]
+			} else {
+				z.Accounts = make([]string, zb0002)
+			}
+			for za0001 := range z.Accounts {
+				z.Accounts[za0001], err = dc.ReadString()
+				if err != nil {
+					err = msgp.WrapError(err, "Accounts", za0001)
+					return
+				}
+			}
+		default:
+			err = dc.Skip()
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z *AccountListQueryResponse) EncodeMsg(en *msgp.Writer) (err error) {
+	// map header, size 5
+	// write "NumAccounts"
+	err = en.Append(0x85, 0xab, 0x4e, 0x75, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.NumAccounts)
+	if err != nil {
+		err = msgp.WrapError(err, "NumAccounts")
+		return
+	}
+	// write "FirstIndex"
+	err = en.Append(0xaa, 0x46, 0x69, 0x72, 0x73, 0x74, 0x49, 0x6e, 0x64, 0x65, 0x78)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.FirstIndex)
+	if err != nil {
+		err = msgp.WrapError(err, "FirstIndex")
+		return
+	}
+	// write "PageSize"
+	err = en.Append(0xa8, 0x50, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.PageSize)
+	if err != nil {
+		err = msgp.WrapError(err, "PageSize")
+		return
+	}
+	// write "PageIndex"
+	err = en.Append(0xa9, 0x50, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x64, 0x65, 0x78)
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.PageIndex)
+	if err != nil {
+		err = msgp.WrapError(err, "PageIndex")
+		return
+	}
+	// write "Accounts"
+	err = en.Append(0xa8, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73)
+	if err != nil {
+		return
+	}
+	err = en.WriteArrayHeader(uint32(len(z.Accounts)))
+	if err != nil {
+		err = msgp.WrapError(err, "Accounts")
+		return
+	}
+	for za0001 := range z.Accounts {
+		err = en.WriteString(z.Accounts[za0001])
+		if err != nil {
+			err = msgp.WrapError(err, "Accounts", za0001)
+			return
+		}
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *AccountListQueryResponse) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 5
+	// string "NumAccounts"
+	o = append(o, 0x85, 0xab, 0x4e, 0x75, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73)
+	o = msgp.AppendInt(o, z.NumAccounts)
+	// string "FirstIndex"
+	o = append(o, 0xaa, 0x46, 0x69, 0x72, 0x73, 0x74, 0x49, 0x6e, 0x64, 0x65, 0x78)
+	o = msgp.AppendInt(o, z.FirstIndex)
+	// string "PageSize"
+	o = append(o, 0xa8, 0x50, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65)
+	o = msgp.AppendInt(o, z.PageSize)
+	// string "PageIndex"
+	o = append(o, 0xa9, 0x50, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x64, 0x65, 0x78)
+	o = msgp.AppendInt(o, z.PageIndex)
+	// string "Accounts"
+	o = append(o, 0xa8, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Accounts)))
+	for za0001 := range z.Accounts {
+		o = msgp.AppendString(o, z.Accounts[za0001])
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *AccountListQueryResponse) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "NumAccounts":
+			z.NumAccounts, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "NumAccounts")
+				return
+			}
+		case "FirstIndex":
+			z.FirstIndex, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "FirstIndex")
+				return
+			}
+		case "PageSize":
+			z.PageSize, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "PageSize")
+				return
+			}
+		case "PageIndex":
+			z.PageIndex, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "PageIndex")
+				return
+			}
+		case "Accounts":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Accounts")
+				return
+			}
+			if cap(z.Accounts) >= int(zb0002) {
+				z.Accounts = (z.Accounts)[:zb0002]
+			} else {
+				z.Accounts = make([]string, zb0002)
+			}
+			for za0001 := range z.Accounts {
+				z.Accounts[za0001], bts, err = msgp.ReadStringBytes(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Accounts", za0001)
+					return
+				}
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *AccountListQueryResponse) Msgsize() (s int) {
+	s = 1 + 12 + msgp.IntSize + 11 + msgp.IntSize + 9 + msgp.IntSize + 10 + msgp.IntSize + 9 + msgp.ArrayHeaderSize
+	for za0001 := range z.Accounts {
+		s += msgp.StringPrefixSize + len(z.Accounts[za0001])
+	}
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
+func (z *SidechainTxExistsQuery) DecodeMsg(dc *msgp.Reader) (err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, err = dc.ReadMapHeader()
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, err = dc.ReadMapKeyPtr()
+		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "SidechainID":
 			z.SidechainID, err = dc.ReadByte()
 			if err != nil {
+				err = msgp.WrapError(err, "SidechainID")
 				return
 			}
 		case "Source":
 			err = z.Source.DecodeMsg(dc)
 			if err != nil {
+				err = msgp.WrapError(err, "Source")
 				return
 			}
 		case "TxHash":
 			z.TxHash, err = dc.ReadString()
 			if err != nil {
+				err = msgp.WrapError(err, "TxHash")
 				return
 			}
 		default:
 			err = dc.Skip()
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -57,6 +305,7 @@ func (z *SidechainTxExistsQuery) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = en.WriteByte(z.SidechainID)
 	if err != nil {
+		err = msgp.WrapError(err, "SidechainID")
 		return
 	}
 	// write "Source"
@@ -66,6 +315,7 @@ func (z *SidechainTxExistsQuery) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = z.Source.EncodeMsg(en)
 	if err != nil {
+		err = msgp.WrapError(err, "Source")
 		return
 	}
 	// write "TxHash"
@@ -75,6 +325,7 @@ func (z *SidechainTxExistsQuery) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = en.WriteString(z.TxHash)
 	if err != nil {
+		err = msgp.WrapError(err, "TxHash")
 		return
 	}
 	return
@@ -91,6 +342,7 @@ func (z *SidechainTxExistsQuery) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0xa6, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65)
 	o, err = z.Source.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "Source")
 		return
 	}
 	// string "TxHash"
@@ -106,33 +358,39 @@ func (z *SidechainTxExistsQuery) UnmarshalMsg(bts []byte) (o []byte, err error) 
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "SidechainID":
 			z.SidechainID, bts, err = msgp.ReadByteBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "SidechainID")
 				return
 			}
 		case "Source":
 			bts, err = z.Source.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "Source")
 				return
 			}
 		case "TxHash":
 			z.TxHash, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "TxHash")
 				return
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -154,33 +412,39 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 	var zb0001 uint32
 	zb0001, err = dc.ReadMapHeader()
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "BlockHeight":
 			z.BlockHeight, err = dc.ReadUint64()
 			if err != nil {
+				err = msgp.WrapError(err, "BlockHeight")
 				return
 			}
 		case "TotalNdau":
 			err = z.TotalNdau.DecodeMsg(dc)
 			if err != nil {
+				err = msgp.WrapError(err, "TotalNdau")
 				return
 			}
 		case "NumAccounts":
 			z.NumAccounts, err = dc.ReadInt()
 			if err != nil {
+				err = msgp.WrapError(err, "NumAccounts")
 				return
 			}
 		default:
 			err = dc.Skip()
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}
@@ -198,6 +462,7 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = en.WriteUint64(z.BlockHeight)
 	if err != nil {
+		err = msgp.WrapError(err, "BlockHeight")
 		return
 	}
 	// write "TotalNdau"
@@ -207,6 +472,7 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = z.TotalNdau.EncodeMsg(en)
 	if err != nil {
+		err = msgp.WrapError(err, "TotalNdau")
 		return
 	}
 	// write "NumAccounts"
@@ -216,6 +482,7 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	err = en.WriteInt(z.NumAccounts)
 	if err != nil {
+		err = msgp.WrapError(err, "NumAccounts")
 		return
 	}
 	return
@@ -232,6 +499,7 @@ func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	o = append(o, 0xa9, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x4e, 0x64, 0x61, 0x75)
 	o, err = z.TotalNdau.MarshalMsg(o)
 	if err != nil {
+		err = msgp.WrapError(err, "TotalNdau")
 		return
 	}
 	// string "NumAccounts"
@@ -247,33 +515,39 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
+		err = msgp.WrapError(err)
 		return
 	}
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
+			err = msgp.WrapError(err)
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "BlockHeight":
 			z.BlockHeight, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "BlockHeight")
 				return
 			}
 		case "TotalNdau":
 			bts, err = z.TotalNdau.UnmarshalMsg(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "TotalNdau")
 				return
 			}
 		case "NumAccounts":
 			z.NumAccounts, bts, err = msgp.ReadIntBytes(bts)
 			if err != nil {
+				err = msgp.WrapError(err, "NumAccounts")
 				return
 			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
+				err = msgp.WrapError(err)
 				return
 			}
 		}

@@ -185,3 +185,38 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }
+
+// HandleAccountList returns a HandlerFunc that returns all the accounts
+// in the system
+func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		node, err := ws.Node(cf.NodeAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
+			return
+		}
+
+		pageIndex, pageSize, errMsg, err := getPagingParams(r)
+		if errMsg != "" {
+			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+			return
+		}
+
+		// Prepare search params.
+		params := search.AccountHistoryParams{
+			Address:   "",
+			PageIndex: pageIndex,
+			PageSize:  pageSize,
+		}
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+
+		accts, _, err := tool.GetAccountList(node, paramsBuf.Bytes())
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address list: %s", err), http.StatusInternalServerError))
+			return
+		}
+
+		reqres.RespondJSON(w, reqres.OKResponse(accts))
+	}
+}

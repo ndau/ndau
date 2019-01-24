@@ -53,3 +53,19 @@ func GetAccountHistory(node client.ABCIClient, params string) (
 	err = ahr.Unmarshal(string(res.Response.GetValue()))
 	return ahr, res, err
 }
+
+// GetAccountList gets a list of account names, paged according to the params
+func GetAccountList(node client.ABCIClient, params []byte) (
+	*query.AccountListQueryResponse, *rpctypes.ResultABCIQuery, error,
+) {
+	// perform the query
+	res, err := node.ABCIQuery(query.AccountListEndpoint, params)
+	if err != nil {
+		return nil, res, err
+	}
+
+	// parse the response
+	var result query.AccountListQueryResponse
+	_, err = result.UnmarshalMsg(res.Response.GetValue())
+	return &result, res, err
+}
