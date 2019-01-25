@@ -46,8 +46,6 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	// we use the Info field in the response to indicate whether the account exists
 	response.Info = fmt.Sprintf(query.AccountInfoFmt, exists)
 	ad.UpdateSettlements(app.blockTime)
-	// update the WAA field to get up-to-the-second values
-	ad.WeightedAverageAge += app.blockTime.Since(ad.LastWAAUpdate)
 	adBytes, err := ad.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "serializing account data")

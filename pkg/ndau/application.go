@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
@@ -17,7 +18,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/pkg/errors"
@@ -66,7 +66,7 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
 	}
 
-	initialBlockTime, err := math.TimestampFrom(constants.Epoch)
+	initialBlockTime, err := math.TimestampFrom(time.Now())
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create initial block time")
 	}

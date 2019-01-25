@@ -228,9 +228,9 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 func (s *State) GetAccount(address address.Address, blockTime math.Timestamp) (AccountData, bool) {
 	data, hasAccount := s.Accounts[address.String()]
 	if !hasAccount {
-		data.LastEAIUpdate = blockTime
-		data.LastWAAUpdate = blockTime
+		data = NewAccountData(blockTime)
 	}
+	data.WeightedAverageAge = blockTime.Since(data.LastWAAUpdate)
 	return data, hasAccount
 }
 

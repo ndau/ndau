@@ -193,7 +193,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	}
 
 	state := app.GetState().(*backing.State)
-	source := state.Accounts[sourceS]
+	source, _ := state.GetAccount(sourceA, app.blockTime)
 
 	eai, err := eai.Calculate(
 		source.Balance, app.blockTime, source.LastEAIUpdate,
