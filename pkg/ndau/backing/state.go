@@ -230,7 +230,6 @@ func (s *State) GetAccount(address address.Address, blockTime math.Timestamp) (A
 	if !hasAccount {
 		data = NewAccountData(blockTime)
 	}
-	data.WeightedAverageAge = blockTime.Since(data.LastWAAUpdate)
 	return data, hasAccount
 }
 
