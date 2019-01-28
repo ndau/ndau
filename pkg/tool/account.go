@@ -14,7 +14,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 )
 
 // GetAccount gets the account data associated with a given address
@@ -154,15 +153,24 @@ func GetCurrencySeats(node client.ABCIClient) ([]address.Address, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "GetCurrencySeats")
 	}
-	seats := make([]address.Address, 0, len(addrs))
+	seats := make(map[address.Address]*backing.AccountData)
 	for _, addr := range addrs {
 		data, _, err := GetAccount(node, addr)
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCurrencySeats")
 		}
-		if data.Balance >= 1000*constants.NapuPerNdau {
-			seats = append(seats, addr)
+		if data.CurrencySeatDate != nil {
+			seats[addr] = data
 		}
 	}
-	return seats, err
+	seatAddrs := make([]address.Address, 0, len(seats))
+	for seat := range seats {
+		seatAddrs = append(seatAddrs, seat)
+	}
+	// sort seats by currency seat date, oldest first
+	// this way, getting the oldest `N` is as simple as slicing: `[:N]`
+	sort.Slice(seatAddrs, func(i, j int) bool {
+		return *seats[seatAddrs[i]].CurrencySeatDate < *seats[seatAddrs[j]].CurrencySeatDate
+	})
+	return seatAddrs, err
 }
