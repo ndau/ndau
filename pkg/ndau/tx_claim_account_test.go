@@ -1,16 +1,17 @@
 package ndau
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
-
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -212,4 +213,35 @@ func TestClaimAccountDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestClaimAccountDoesntResetWAA(t *testing.T) {
+	// inspired by a Real Live Bug!
+	app := initAppClaimAccount(t)
+
+	assertExistsAndNonzeroWAAUpdate := func(expectExists bool) {
+		resp := app.Query(abci.RequestQuery{
+			Path: query.AccountEndpoint,
+			Data: []byte(targetAddress.String()),
+		})
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		require.Equal(t, fmt.Sprintf(query.AccountInfoFmt, expectExists), resp.Info)
+
+		accountData := new(backing.AccountData)
+		_, err := accountData.UnmarshalMsg(resp.Value)
+		require.NoError(t, err)
+
+		require.NotZero(t, accountData.LastWAAUpdate)
+	}
+
+	assertExistsAndNonzeroWAAUpdate(false)
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	ca := NewClaimAccount(targetAddress, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
+	resp := deliverTx(t, app, ca)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	assertExistsAndNonzeroWAAUpdate(true)
 }
