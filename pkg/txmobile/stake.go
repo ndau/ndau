@@ -42,7 +42,7 @@ type Stake struct {
 // NewStake constructs a new unsigned Stake transaction
 func NewStake(
 	target string,
-	node string,
+	stakedaccount string,
 	sequence int64,
 ) (*Stake, error) {
 	targetN, err := address.Validate(target)
@@ -50,16 +50,16 @@ func NewStake(
 		return nil, errors.Wrap(err, "target")
 	}
 
-	nodeN, err := address.Validate(node)
+	stakedaccountN, err := address.Validate(stakedaccount)
 	if err != nil {
-		return nil, errors.Wrap(err, "node")
+		return nil, errors.Wrap(err, "stakedaccount")
 	}
 
 	return &Stake{
 		tx: ndau.Stake{
-			Target:   targetN,
-			Node:     nodeN,
-			Sequence: uint64(sequence),
+			Target:        targetN,
+			StakedAccount: stakedaccountN,
+			Sequence:      uint64(sequence),
 		},
 	}, nil
 }
@@ -107,17 +107,17 @@ func (tx *Stake) GetTarget() string {
 	return target
 }
 
-// GetNode gets the node of the Stake
+// GetStakedAccount gets the stakedaccount of the Stake
 //
 // Returns a zero value if Stake is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetNode() string {
+func (tx *Stake) GetStakedAccount() string {
 	if tx == nil {
 		return ""
 	}
-	node := tx.tx.Node.String()
+	stakedaccount := tx.tx.StakedAccount.String()
 
-	return node
+	return stakedaccount
 }
 
 // GetSequence gets the sequence of the Stake

@@ -14,7 +14,7 @@ import (
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *Stake) GetAccountAddresses() []string {
-	return []string{tx.Target.String(), tx.Node.String()}
+	return []string{tx.Target.String(), tx.StakedAccount.String()}
 }
 
 // Validate implements metatx.Transactable
@@ -23,7 +23,7 @@ func (tx *Stake) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "target")
 	}
-	_, err = address.Validate(tx.Node.String())
+	_, err = address.Validate(tx.StakedAccount.String())
 	if err != nil {
 		return errors.Wrap(err, "node")
 	}
@@ -61,12 +61,12 @@ func (tx *Stake) Validate(appI interface{}) error {
 		return fmt.Errorf("target has insufficient balance: have %s ndau, need %s", target.Balance, minStake)
 	}
 
-	node, hasNode := app.GetState().(*backing.State).GetAccount(tx.Node, app.blockTime)
+	node, hasNode := app.GetState().(*backing.State).GetAccount(tx.StakedAccount, app.blockTime)
 	if !hasNode {
 		return errors.New("Node does not exist")
 	}
-	if tx.Node != tx.Target {
-		if node.Stake == nil || node.Stake.Address != tx.Node {
+	if tx.StakedAccount != tx.Target {
+		if node.Stake == nil || node.Stake.Address != tx.StakedAccount {
 			return errors.New("Node is not self-staked")
 		}
 	}
@@ -94,12 +94,12 @@ func (tx *Stake) Apply(appI interface{}) error {
 		target.Balance -= fee
 
 		target.Stake = &backing.Stake{
-			Address: tx.Node,
+			Address: tx.StakedAccount,
 			Point:   app.blockTime,
 		}
 
 		state.Accounts[tx.Target.String()] = target
-		err = state.Stake(tx.Target, tx.Node)
+		err = state.Stake(tx.Target, tx.StakedAccount)
 
 		return state, nil
 	})

@@ -81,7 +81,7 @@ func TestStakeStakeValidates(t *testing.T) {
 	d := NewStake(sA, nA, 1, private)
 
 	// make the account field invalid
-	d.Node = address.Address{}
+	d.StakedAccount = address.Address{}
 	d.Signatures = []signature.Signature{private.Sign(d.SignableBytes())}
 
 	// d must be invalid

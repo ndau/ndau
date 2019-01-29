@@ -1589,11 +1589,11 @@ func (z *Stake) MarshalMsg(b []byte) (o []byte, err error) {
 		err = msgp.WrapError(err, "Target")
 		return
 	}
-	// string "nod"
-	o = append(o, 0xa3, 0x6e, 0x6f, 0x64)
-	o, err = z.Node.MarshalMsg(o)
+	// string "ska"
+	o = append(o, 0xa3, 0x73, 0x6b, 0x61)
+	o, err = z.StakedAccount.MarshalMsg(o)
 	if err != nil {
-		err = msgp.WrapError(err, "Node")
+		err = msgp.WrapError(err, "StakedAccount")
 		return
 	}
 	// string "seq"
@@ -1636,10 +1636,10 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Target")
 				return
 			}
-		case "nod":
-			bts, err = z.Node.UnmarshalMsg(bts)
+		case "ska":
+			bts, err = z.StakedAccount.UnmarshalMsg(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "Node")
+				err = msgp.WrapError(err, "StakedAccount")
 				return
 			}
 		case "seq":
@@ -1681,7 +1681,7 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Stake) Msgsize() (s int) {
-	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Node.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.StakedAccount.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}
