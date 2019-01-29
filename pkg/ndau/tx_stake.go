@@ -71,10 +71,6 @@ func (tx *Stake) Validate(appI interface{}) error {
 		}
 	}
 
-	if target.Balance.Compare(node.Balance) > 0 {
-		return fmt.Errorf("target balance (%s) may not exceed node balance (%s)", target.Balance, node.Balance)
-	}
-
 	return nil
 }
 
