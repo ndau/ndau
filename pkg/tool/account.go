@@ -3,7 +3,10 @@ package tool
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -80,4 +83,94 @@ func GetAccountList(node client.ABCIClient, pageIndex int, pageSize int) (
 	var result query.AccountListQueryResponse
 	_, err = result.UnmarshalMsg(res.Response.GetValue())
 	return &result, res, err
+}
+
+// GetAccountListBatch abstracts over the process of repeatedly calling
+// GetAccountList in order to get a complete list of all known addresses.
+//
+// This function makes a best-effort attempt to return a complete and current
+// list of accounts known to the node, but true consistency is impossible using
+// a sequential paged API; as we cannot lock the node, there may be updates
+// during paging which cause addresses to appear in pages we have already
+// visited. This is unavoidable.
+func GetAccountListBatch(node client.ABCIClient) ([]address.Address, error) {
+	var (
+		accts    = make([]string, 0)
+		index    = 0
+		pageSize = 100
+
+		qaccts *query.AccountListQueryResponse
+		err    error
+	)
+
+	getPage := func() {
+		qaccts, _, err = GetAccountList(
+			node,
+			index, pageSize,
+		)
+		if err != nil {
+			err = errors.Wrap(err, fmt.Sprintf(
+				"getPage(%d)", index,
+			))
+		}
+		accts = append(accts, qaccts.Accounts...)
+		index++
+	}
+
+	// prime the pump
+	getPage()
+	if err != nil {
+		return nil, err
+	}
+	for len(qaccts.Accounts) == pageSize {
+		getPage()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// eliminate duplicate accts and convert to address type
+	sort.Strings(accts)
+	addrs := make([]address.Address, 0, len(accts))
+	for _, acct := range accts {
+		addr, err := address.Validate(acct)
+		if err != nil {
+			return nil, errors.Wrap(err, "GetAccountListBatch validating acct addr")
+		}
+		if len(addrs) == 0 || addr != addrs[len(addrs)-1] {
+			addrs = append(addrs, addr)
+		}
+	}
+
+	return addrs, nil
+}
+
+// GetCurrencySeats gets a list of ndau currency seats
+//
+// Currency seats are defined as those accounts containing more than 1000 ndau.
+func GetCurrencySeats(node client.ABCIClient) ([]address.Address, error) {
+	addrs, err := GetAccountListBatch(node)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetCurrencySeats")
+	}
+	seats := make(map[address.Address]*backing.AccountData)
+	for _, addr := range addrs {
+		data, _, err := GetAccount(node, addr)
+		if err != nil {
+			return nil, errors.Wrap(err, "GetCurrencySeats")
+		}
+		if data.CurrencySeatDate != nil {
+			seats[addr] = data
+		}
+	}
+	seatAddrs := make([]address.Address, 0, len(seats))
+	for seat := range seats {
+		seatAddrs = append(seatAddrs, seat)
+	}
+	// sort seats by currency seat date, oldest first
+	// this way, getting the oldest `N` is as simple as slicing: `[:N]`
+	sort.Slice(seatAddrs, func(i, j int) bool {
+		return *seats[seatAddrs[i]].CurrencySeatDate < *seats[seatAddrs[j]].CurrencySeatDate
+	})
+	return seatAddrs, err
 }
