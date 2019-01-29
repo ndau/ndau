@@ -74,31 +74,37 @@ func (tx *Stake) Validate(appI interface{}) error {
 	return nil
 }
 
+func stake(app *App, targetA, stakedAccountA address.Address) error {
+	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
+		target, _ := state.GetAccount(targetA, app.blockTime)
+
+		target.Stake = &backing.Stake{
+			Address: stakedAccountA,
+			Point:   app.blockTime,
+		}
+
+		state.Accounts[targetA.String()] = target
+		err := state.Stake(targetA, stakedAccountA)
+
+		return state, err
+	})
+}
+
 // Apply implements metatx.Transactable
 func (tx *Stake) Apply(appI interface{}) error {
 	app := appI.(*App)
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		state := stateI.(*backing.State)
-		target, _ := state.GetAccount(tx.Target, app.blockTime)
-		target.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		target.Balance -= fee
-
-		target.Stake = &backing.Stake{
-			Address: tx.StakedAccount,
-			Point:   app.blockTime,
-		}
-
-		state.Accounts[tx.Target.String()] = target
-		err = state.Stake(tx.Target, tx.StakedAccount)
-
-		return state, nil
-	})
+	var err error
+	err = app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+	err = stake(app, tx.Target, tx.StakedAccount)
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 // GetSource implements sourcer

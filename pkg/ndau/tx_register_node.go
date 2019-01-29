@@ -34,11 +34,8 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 		return err
 	}
 
-	if acct.Stake == nil {
-		return errors.New("node acct Stake is nil; node must be self-staked")
-	}
-	if acct.Stake.Address != tx.Node {
-		return errors.New("node must be self-staked")
+	if acct.Stake != nil {
+		return errors.New("acct is already staked")
 	}
 
 	if state.Nodes[tx.Node.String()].Active {
@@ -52,6 +49,11 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 func (tx *RegisterNode) Apply(appI interface{}) error {
 	app := appI.(*App)
 	err := app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+
+	err = stake(app, tx.Node, tx.Node)
 	if err != nil {
 		return err
 	}
