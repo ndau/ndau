@@ -42,7 +42,7 @@ func (tx *Stake) Validate(appI interface{}) error {
 	}
 
 	var minStake math.Ndau
-	err = app.System(sv.MinStakeName, &minStake)
+	err = app.System(sv.MinNodeRegistrationStakeName, &minStake)
 	if err != nil {
 		return errors.Wrap(err, "fetching MinStake system variable")
 	}
