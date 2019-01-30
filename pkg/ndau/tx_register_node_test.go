@@ -6,11 +6,10 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
-
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -21,9 +20,6 @@ func initAppRegisterNode(t *testing.T) *App {
 	// this ensures the target address exists
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
 		acct.ValidationKeys = []signature.PublicKey{transferPublic}
-		acct.Stake = &backing.Stake{
-			Address: targetAddress,
-		}
 	})
 
 	return app
@@ -96,10 +92,10 @@ func TestValidRegisterNode(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestRegisterNodeMustBeStaked(t *testing.T) {
+func TestRegisterNodeMustNotBeStaked(t *testing.T) {
 	app := initAppRegisterNode(t)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.Stake = nil
+		ad.Stake = &backing.Stake{}
 	})
 
 	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
@@ -111,21 +107,17 @@ func TestRegisterNodeMustBeStaked(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestRegisterNodeMustBeSelfStaked(t *testing.T) {
+func TestRegisterNodeStakesSelf(t *testing.T) {
 	app := initAppRegisterNode(t)
-	var err error
-	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.Stake.Address, err = address.Validate(source)
-		require.NoError(t, err)
-	})
 
 	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
-	ctkBytes, err := tx.Marshal(rn, TxIDs)
-	require.NoError(t, err)
+	resp := deliverTx(t, app, rn)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	resp := app.CheckTx(ctkBytes)
-	t.Log(resp.Log)
-	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+	node, exists := app.GetState().(*backing.State).GetAccount(targetAddress, app.blockTime)
+	require.True(t, exists)
+	require.NotNil(t, node.Stake)
+	require.Equal(t, targetAddress, node.Stake.Address)
 }
 
 func TestRegisterNodeMustBeInactive(t *testing.T) {
