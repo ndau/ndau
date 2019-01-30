@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
-
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -46,6 +45,7 @@ var (
 
 	transferPublic  signature.PublicKey
 	transferPrivate signature.PrivateKey
+	transferAddress address.Address
 )
 
 func init() {
@@ -68,6 +68,11 @@ func init() {
 	}
 
 	transferPublic, transferPrivate, err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	transferAddress, err = address.Generate(address.KindUser, transferPublic.KeyBytes())
 	if err != nil {
 		panic(err)
 	}
