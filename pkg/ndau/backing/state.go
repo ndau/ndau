@@ -259,6 +259,27 @@ func (s *State) Stake(targetA, nodeA address.Address) error {
 	return nil
 }
 
+// Unstake updates the state to handle unstaking an account
+func (s *State) Unstake(targetA address.Address) {
+	target, exists := s.Accounts[targetA.String()]
+	if !exists {
+		return
+	}
+	if target.Stake == nil {
+		return
+	}
+	nodeA := target.Stake.Address
+	target.Stake = nil
+	s.Accounts[targetA.String()] = target
+
+	node, isNode := s.Nodes[nodeA.String()]
+	if isNode {
+		// targetA != nodeA
+		node.Unstake(targetA)
+		s.Nodes[nodeA.String()] = node
+	}
+}
+
 // GetCostakers returns the list of costakers associated with a node
 func (s *State) GetCostakers(nodeA address.Address) []AccountData {
 	node, isNode := s.Nodes[nodeA.String()]

@@ -32,6 +32,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(16): &CommandValidatorChange{},
 	metatx.TxID(17): &SidechainTx{},
 	metatx.TxID(18): &UnregisterNode{},
+	metatx.TxID(19): &Unstake{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -276,3 +277,12 @@ type UnregisterNode struct {
 }
 
 var _ NTransactable = (*UnregisterNode)(nil)
+
+// An Unstake transaction stakes to a node
+type Unstake struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*Unstake)(nil)

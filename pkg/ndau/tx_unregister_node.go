@@ -50,25 +50,14 @@ func (tx *UnregisterNode) Apply(appI interface{}) error {
 				// whatever, don't hang around dealing with this
 				continue
 			}
-			cs, exists := state.GetAccount(csA, app.blockTime)
-			if !exists {
-				// oh well, it must have been removed for no balance or something sometime
-				continue
-			}
-			cs.Stake = nil
-			state.Accounts[costaker] = cs
+			state.Unstake(csA)
 		}
 
 		// don't just deactivate but delete this node
 		delete(state.Nodes, tx.Node.String())
+		state.Unstake(tx.Node)
 
-		nodeAD, exists := state.GetAccount(tx.Node, app.blockTime)
-		if exists {
-			nodeAD.Stake = nil
-			state.Accounts[tx.Node.String()] = nodeAD
-		}
-
-		return state, nil
+		return state, err
 	})
 }
 
