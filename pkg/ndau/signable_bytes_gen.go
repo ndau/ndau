@@ -198,5 +198,3 @@ func (tx *UnregisterNode) SignableBytes() []byte {
 func (tx *Unstake) SignableBytes() []byte {
 	return sbOf(tx)
 }
-
-
