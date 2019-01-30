@@ -31,6 +31,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(15): &TransferAndLock{},
 	metatx.TxID(16): &CommandValidatorChange{},
 	metatx.TxID(17): &SidechainTx{},
+	metatx.TxID(18): &UnregisterNode{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -266,3 +267,12 @@ type SidechainTx struct {
 }
 
 var _ NTransactable = (*SidechainTx)(nil)
+
+// An UnregisterNode transaction deactivates a node
+type UnregisterNode struct {
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*UnregisterNode)(nil)
