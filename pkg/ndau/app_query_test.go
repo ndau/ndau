@@ -178,11 +178,9 @@ func TestCanQuerySidechainTxExists(t *testing.T) {
 
 	// set up initial state with this sidechain tx paid for
 	app, private := initAppTx(t)
-	srcA, err := address.Validate(source)
-	require.NoError(t, err)
 
 	stx := NewSidechainTx(
-		srcA,
+		sourceAddress,
 		sidechainID,
 		[]byte{0, 1, 2, 3, 4},
 		nil,
@@ -208,7 +206,7 @@ func TestCanQuerySidechainTxExists(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			stxq := query.SidechainTxExistsQuery{
 				SidechainID: sidechainID,
-				Source:      srcA,
+				Source:      sourceAddress,
 				TxHash:      tc.hash,
 			}
 			qbytes, err := stxq.MarshalMsg(nil)

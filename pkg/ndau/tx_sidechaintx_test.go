@@ -6,7 +6,6 @@ import (
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
@@ -74,8 +73,6 @@ func TestValidationScriptValidatesSidechainTxs(t *testing.T) {
 
 func TestSidechainTxDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
@@ -83,7 +80,7 @@ func TestSidechainTxDeductsTxFee(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		tx := NewSidechainTx(
-			sA,                      // address
+			sourceAddress,           // address
 			0,                       // sidechain id
 			[]byte{0, 1, 2, 3, 4},   // tx signable bytes
 			[]signature.Signature{}, // sidechain sigs

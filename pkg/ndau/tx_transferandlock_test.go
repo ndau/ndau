@@ -26,15 +26,13 @@ func generateRandomAddr(t *testing.T) string {
 }
 
 func generateTransferAndLock(t *testing.T, destaddr string, qty int64, period math.Duration, seq uint64, keys []signature.PrivateKey) *TransferAndLock {
-	s, err := address.Validate(source)
-	require.NoError(t, err)
 	if destaddr == "" {
 		destaddr = dest
 	}
-	d, err := address.Validate(destaddr)
+	destAddr, err := address.Validate(destaddr)
 	require.NoError(t, err)
 	tr := NewTransferAndLock(
-		s, d,
+		sourceAddress, destAddr,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		period,
 		seq, keys...,
@@ -118,14 +116,14 @@ func TestTnLsDeductBalanceFromSource(t *testing.T) {
 func TestTnLsAddBalanceToDest(t *testing.T) {
 	app, private := initAppTx(t)
 
-	d := generateRandomAddr(t)
+	destAddress := generateRandomAddr(t)
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
-	tr := generateTransferAndLock(t, d, 123, 888, 1, []signature.PrivateKey{private})
+	tr := generateTransferAndLock(t, destAddress, 123, 888, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, d, app, func(dest *backing.AccountData) {
+	modify(t, destAddress, app, func(dest *backing.AccountData) {
 		require.Equal(t, deltaNapu, int64(dest.Balance))
 	})
 }
@@ -133,14 +131,14 @@ func TestTnLsAddBalanceToDest(t *testing.T) {
 func TestTnLsSetLockOnDest(t *testing.T) {
 	app, private := initAppTx(t)
 
-	d := generateRandomAddr(t)
+	destAddress := generateRandomAddr(t)
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
-	tr := generateTransferAndLock(t, d, 123, 90*math.Day, 1, []signature.PrivateKey{private})
+	tr := generateTransferAndLock(t, destAddress, 123, 90*math.Day, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, d, app, func(dest *backing.AccountData) {
+	modify(t, destAddress, app, func(dest *backing.AccountData) {
 		require.Equal(t, math.Duration(90*math.Day), dest.Lock.GetNoticePeriod())
 	})
 }
@@ -148,41 +146,41 @@ func TestTnLsSetLockOnDest(t *testing.T) {
 func TestTnLsSettlementPeriod(t *testing.T) {
 	app, private := initAppTx(t)
 
-	d := generateRandomAddr(t)
+	destAddress := generateRandomAddr(t)
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	modifySource(t, app, func(src *backing.AccountData) {
 		src.SettlementSettings.Period = 2 * math.Day
 	})
 
-	tr := generateTransferAndLock(t, d, 123, 888, 1, []signature.PrivateKey{private})
+	tr := generateTransferAndLock(t, destAddress, 123, 888, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, d, app, func(dest *backing.AccountData) {
-		s := []backing.Settlement{backing.Settlement{
+	modify(t, destAddress, app, func(dest *backing.AccountData) {
+		sourceAddress := []backing.Settlement{backing.Settlement{
 			Qty:    123 * constants.QuantaPerUnit,
 			Expiry: app.blockTime.Add(2 * math.Day),
 		}}
-		require.Equal(t, s, dest.Settlements)
+		require.Equal(t, sourceAddress, dest.Settlements)
 	})
 }
 
 func TestTnLsFailForExistingDest(t *testing.T) {
 	app, private := initAppTx(t)
 
-	d := generateRandomAddr(t)
+	destAddress := generateRandomAddr(t)
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
-	tr := generateTransferAndLock(t, d, 123, 888, 1, []signature.PrivateKey{private})
+	tr := generateTransferAndLock(t, destAddress, 123, 888, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, d, app, func(dest *backing.AccountData) {
+	modify(t, destAddress, app, func(dest *backing.AccountData) {
 		require.Equal(t, deltaNapu, int64(dest.Balance))
 	})
 
-	tr = generateTransferAndLock(t, d, 123, 888, 2, []signature.PrivateKey{private})
+	tr = generateTransferAndLock(t, destAddress, 123, 888, 2, []signature.PrivateKey{private})
 	resp = deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -197,10 +195,8 @@ func TestTnLsWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	// this is almost a straight copy-paste of generateTransferAndLock,
 	// but we use source as dest as well
 	//
-	s, err := address.Validate(source)
-	require.NoError(t, err)
 	tr := NewTransferAndLock(
-		s, s,
+		sourceAddress, sourceAddress,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		math.Second,
 		seq, private,
@@ -296,12 +292,12 @@ func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
 	// generate transfer
 	// because the escrowed funds have cleared,
 	// this should succeed
-	s, err := address.Validate(settled)
+	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
-	d, err := address.Validate(dest)
+	destAddress := destAddress
 	require.NoError(t, err)
 	tr := NewTransferAndLock(
-		s, d,
+		sourceAddress, destAddress,
 		math.Ndau(1),
 		math.Second,
 		1, key,
@@ -322,12 +318,12 @@ func TestTnLWithUnexpiredEscrowsFails(t *testing.T) {
 	// generate transfer
 	// because the escrowed funds have not yet cleared,
 	// this should fail
-	s, err := address.Validate(settled)
+	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
-	d, err := address.Validate(dest)
+	destAddress := destAddress
 	require.NoError(t, err)
 	tr := NewTransferAndLock(
-		s, d,
+		sourceAddress, destAddress,
 		math.Ndau(1),
 		math.Second,
 		1, key,
@@ -378,19 +374,13 @@ func TestValidationScriptValidatesTnLs(t *testing.T) {
 
 func TestTnLDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
 
 	for i := uint64(0); i < 2; i++ {
 		modify(t, source, app, func(ad *backing.AccountData) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx := NewTransferAndLock(sA, dA, 1, math.Second, 1+i, private)
-		require.NoError(t, err)
-
+		tx := NewTransferAndLock(sourceAddress, destAddress, 1, math.Second, 1+i, private)
 		resp := deliverTxWithTxFee(t, app, tx)
 
 		var expect code.ReturnCode

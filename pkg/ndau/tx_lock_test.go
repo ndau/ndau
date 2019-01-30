@@ -15,9 +15,7 @@ import (
 
 func TestValidLockTxIsValid(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, math.Duration(30*math.Day), 1, private)
+	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 1, private)
 	bytes, err := tx.Marshal(lock, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -26,9 +24,7 @@ func TestValidLockTxIsValid(t *testing.T) {
 
 func TestLockAccountValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, math.Duration(30*math.Day), 1, private)
+	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 1, private)
 
 	// make the account field invalid
 	lock.Target = address.Address{}
@@ -43,9 +39,7 @@ func TestLockAccountValidates(t *testing.T) {
 
 func TestLockSequenceValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, math.Duration(30*math.Day), 0, private)
+	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 0, private)
 
 	// lock must be invalid
 	bytes, err := tx.Marshal(lock, TxIDs)
@@ -56,9 +50,7 @@ func TestLockSequenceValidates(t *testing.T) {
 
 func TestLockSignatureValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, math.Duration(30*math.Day), 1, private)
+	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := lock.Signatures[0].Bytes()
@@ -77,19 +69,17 @@ func TestLockSignatureValidates(t *testing.T) {
 func TestLockChangesAppState(t *testing.T) {
 	duration := math.Duration(30 * math.Day)
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, duration, 1, private)
+	lock := NewLock(sourceAddress, duration, 1, private)
 
 	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sA, app.blockTime)
+	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
 	require.Nil(t, acct.Lock)
 
 	resp := deliverTx(t, app, lock)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(sA, app.blockTime)
+	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
 	require.NotNil(t, acct.Lock)
 	require.Equal(t, duration, acct.Lock.NoticePeriod)
 	require.Nil(t, acct.Lock.UnlocksOn)
@@ -104,9 +94,7 @@ func TestLockCannotReduceLockLength(t *testing.T) {
 	})
 
 	// construct invalid relock tx
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, math.Duration(int64(duration)-1), 1, private)
+	lock := NewLock(sourceAddress, math.Duration(int64(duration)-1), 1, private)
 
 	// lock must be invalid
 	bytes, err := tx.Marshal(lock, TxIDs)
@@ -127,9 +115,7 @@ func TestRelockNotified(t *testing.T) {
 
 	// construct relock tx of half original duration
 	newDuration := math.Duration(int64(duration) / 2)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	lock := NewLock(sA, newDuration, 1, private)
+	lock := NewLock(sourceAddress, newDuration, 1, private)
 
 	// lock must be invalid before halfway point of notice period
 	halfway := math.Timestamp(int64(duration) / 2)
@@ -137,13 +123,13 @@ func TestRelockNotified(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// lock must be valid on and after halfway point of notice period
-	lock = NewLock(sA, newDuration, 2, private)
+	lock = NewLock(sourceAddress, newDuration, 2, private)
 	resp = deliverTxAt(t, app, lock, halfway)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// relock must have reset lock and cleared notification
 	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sA, app.blockTime)
+	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
 	require.NotNil(t, acct.Lock)
 	require.Equal(t, newDuration, acct.Lock.NoticePeriod)
 	require.Nil(t, acct.Lock.UnlocksOn)
@@ -151,15 +137,13 @@ func TestRelockNotified(t *testing.T) {
 
 func TestLockDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
 
 	for i := 0; i < 2; i++ {
-		tx := NewLock(sA, math.Duration(30*math.Day), 1+uint64(i), private)
+		tx := NewLock(sourceAddress, math.Duration(30*math.Day), 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

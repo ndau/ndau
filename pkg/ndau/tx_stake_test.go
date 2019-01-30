@@ -16,20 +16,17 @@ import (
 func initAppStake(t *testing.T) (*App, signature.PrivateKey) {
 	app, private := initAppTx(t)
 
-	nodeA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-
 	const NodeBalance = 10000 * constants.QuantaPerUnit
 
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
 		ad.Balance = NodeBalance
 
 		ad.Stake = &backing.Stake{
-			Address: nodeA,
+			Address: nodeAddress,
 		}
 	})
 	modifyNode(t, eaiNode, app, func(node *backing.Node) {
-		*node = backing.NewNode(nodeA, NodeBalance)
+		*node = backing.NewNode(nodeAddress, NodeBalance)
 	})
 
 	return app, private
@@ -37,11 +34,7 @@ func initAppStake(t *testing.T) (*App, signature.PrivateKey) {
 
 func TestValidStakeTxIsValid(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, private)
+	d := NewStake(sourceAddress, nodeAddress, 1, private)
 
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -55,11 +48,7 @@ func TestValidStakeTxIsValid(t *testing.T) {
 
 func TestStakeAccountValidates(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, private)
+	d := NewStake(sourceAddress, nodeAddress, 1, private)
 
 	// make the account field invalid
 	d.Target = address.Address{}
@@ -74,11 +63,7 @@ func TestStakeAccountValidates(t *testing.T) {
 
 func TestStakeStakeValidates(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, private)
+	d := NewStake(sourceAddress, nodeAddress, 1, private)
 
 	// make the account field invalid
 	d.StakedAccount = address.Address{}
@@ -93,11 +78,7 @@ func TestStakeStakeValidates(t *testing.T) {
 
 func TestStakeSequenceValidates(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewStake(sA, nA, 0, private)
+	d := NewStake(sourceAddress, nodeAddress, 0, private)
 
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
@@ -108,11 +89,7 @@ func TestStakeSequenceValidates(t *testing.T) {
 
 func TestStakeSignatureValidates(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, private)
+	d := NewStake(sourceAddress, nodeAddress, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := d.Signatures[0].Bytes()
@@ -130,11 +107,7 @@ func TestStakeSignatureValidates(t *testing.T) {
 
 func TestStakeChangesAppState(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewStake(sA, nA, 1, private)
+	d := NewStake(sourceAddress, nodeAddress, 1, private)
 
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -142,7 +115,7 @@ func TestStakeChangesAppState(t *testing.T) {
 	state := app.GetState().(*backing.State)
 	// we must have updated the target's stake node
 	require.NotNil(t, state.Accounts[source].Stake)
-	require.Equal(t, nA, state.Accounts[source].Stake.Address)
+	require.Equal(t, nodeAddress, state.Accounts[source].Stake.Address)
 	// we must have updated the stake struct
 	require.ElementsMatch(
 		t,
@@ -150,16 +123,12 @@ func TestStakeChangesAppState(t *testing.T) {
 			state.Accounts[source],
 			state.Accounts[eaiNode],
 		},
-		state.GetCostakers(nA),
+		state.GetCostakers(nodeAddress),
 	)
 }
 
 func TestStakeDeductsTxFee(t *testing.T) {
 	app, private := initAppStake(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
 
 	for i := 0; i < 2; i++ {
 		modify(t, source, app, func(ad *backing.AccountData) {
@@ -167,7 +136,7 @@ func TestStakeDeductsTxFee(t *testing.T) {
 			ad.Stake = nil
 		})
 
-		tx := NewStake(sA, nA, 1+uint64(i), private)
+		tx := NewStake(sourceAddress, nodeAddress, 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

@@ -35,7 +35,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 
 // generate an app with an account with a bunch of escrowed transactions
 //
-// returns that account's private key, and a timestamp after which all escrows
+// returns that account'sourceAddress private key, and a timestamp after which all escrows
 // should be valid
 //
 // It is guaranteed that all escrows expire in the interval (timestamp - 1 day : timestamp)
@@ -54,7 +54,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 	modify(t, settled, app, func(acct *backing.AccountData) {
 		// initialize the address with a bunch of ndau
 		// incoming funds are added to the balance and the settlements;
-		// it's just that the available balance is reduced by the sum
+		// it'sourceAddress just that the available balance is reduced by the sum
 		// of the uncleared settlements
 		for i := 1; i < qtyEscrows; i++ {
 			acct.Balance += math.Ndau(i * constants.QuantaPerUnit)
@@ -70,7 +70,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
 	tn = tn.Add(time.Duration(1 * time.Second))
 
-	// update the app's cached timestamp
+	// update the app'sourceAddress cached timestamp
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: tn,
 	}})
@@ -90,12 +90,8 @@ func modifyDest(t *testing.T, app *App, f func(*backing.AccountData)) {
 }
 
 func generateTransfer(t *testing.T, qty int64, seq uint64, keys []signature.PrivateKey) *Transfer {
-	s, err := address.Validate(source)
-	require.NoError(t, err)
-	d, err := address.Validate(dest)
-	require.NoError(t, err)
 	tr := NewTransfer(
-		s, d,
+		sourceAddress, destAddress,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		seq, keys...,
 	)
@@ -269,21 +265,6 @@ func TestTransfersWhoseSrcAndDestAreEqualAreInvalid(t *testing.T) {
 	seq := uint64(1)
 
 	// generate a transfer
-	// this is almost a straight copy-paste of generateTransfer,
-	// but we use source as dest as well
-	//
-	s, err := address.Validate(source)
-	require.NoError(t, err)
-	_ = NewTransfer(
-		s, s,
-		math.Ndau(qty*constants.QuantaPerUnit),
-		seq, private,
-	)
-
-	// We've just proved that this implementation refuses to generate
-	// a transfer for which source and dest are identical.
-	//
-	// However, what if someone builds one from scratch?
 	// We need to ensure that the application
 	// layer rejects deserialized transfers which are invalid.
 	tr := generateTransfer(t, qty, seq, []signature.PrivateKey{private})
@@ -370,12 +351,12 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	// generate transfer
 	// because the escrowed funds have cleared,
 	// this should succeed
-	s, err := address.Validate(settled)
+	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
-	d, err := address.Validate(dest)
+	destAddress := destAddress
 	require.NoError(t, err)
 	tr := NewTransfer(
-		s, d,
+		sourceAddress, destAddress,
 		math.Ndau(1),
 		1, key,
 	)
@@ -395,12 +376,12 @@ func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
 	// generate transfer
 	// because the escrowed funds have not yet cleared,
 	// this should fail
-	s, err := address.Validate(settled)
+	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
-	d, err := address.Validate(dest)
+	destAddress := destAddress
 	require.NoError(t, err)
 	tr := NewTransfer(
-		s, d,
+		sourceAddress, destAddress,
 		math.Ndau(1),
 		1, key,
 	)
@@ -449,18 +430,13 @@ func TestValidationScriptValidatesTransfers(t *testing.T) {
 
 func TestTransferDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
 
 	for i := uint64(0); i < 2; i++ {
 		modify(t, source, app, func(ad *backing.AccountData) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx := NewTransfer(sA, dA, 1, 1+i, private)
-		require.NoError(t, err)
+		tx := NewTransfer(sourceAddress, destAddress, 1, 1+i, private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 
