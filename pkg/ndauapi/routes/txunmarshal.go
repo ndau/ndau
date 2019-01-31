@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"sort"
 	"strings"
 
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -22,9 +23,14 @@ func TxNames() []string {
 		names[i] = name
 		i++
 	}
+	// sort so that generated API documentation is deterministic
+	sort.Slice(names, func(i, j int) bool {
+		return names[i] < names[j]
+	})
 	return names
 }
 
+// TxUnmarshal constructs an object containing transaction data.
 // Given the name of a transaction type and a reader containing the JSON for a transaction
 // (usually the request Body from a POST), this constructs a new object containing that
 // transactions's data.
