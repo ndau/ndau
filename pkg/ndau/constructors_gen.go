@@ -472,3 +472,25 @@ func NewUnstake(
 
 	return tx
 }
+
+// NewIssue creates a new Issue transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewIssue(
+	qty math.Ndau,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *Issue {
+	tx := &Issue{
+		Qty:      qty,
+		Sequence: sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
