@@ -17,6 +17,11 @@ func (tx *Issue) Validate(appI interface{}) error {
 		return errors.New("Issue qty may not be <= 0")
 	}
 
+	state := app.GetState().(*backing.State)
+	if state.TotalIssue+tx.Qty > state.TotalRFE {
+		return errors.New("cannot issue more ndau than have been RFE'd")
+	}
+
 	_, _, _, err := app.getTxAccount(tx)
 
 	return err
