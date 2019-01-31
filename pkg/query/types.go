@@ -12,6 +12,8 @@ type Summary struct {
 	BlockHeight uint64
 	TotalNdau   types.Ndau
 	NumAccounts int
+	TotalRFE    types.Ndau
+	TotalIssue  types.Ndau
 }
 
 // SidechainTxExistsQuery specifies a particular sidechain tx
