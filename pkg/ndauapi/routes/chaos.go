@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/go-zoo/bone"
 	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
@@ -74,6 +73,7 @@ func HandleChaosNamespaceAll(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		// This returns the value already query-unescaped.
 		nskey64 := bone.GetValue(r, "namespace")
 		nskey, err := base64.StdEncoding.DecodeString(nskey64)
 		if err != nil {
@@ -101,33 +101,23 @@ func HandleChaosNamespaceKey(cf cfg.Cfg) http.HandlerFunc {
 // HandleChaosHistory retrieves the history of a single value in the chaos chain.
 func HandleChaosHistory(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		namespaceBase64Esc := bone.GetValue(r, "namespace")
-		if namespaceBase64Esc == "" {
+		// This returns the value already query-unescaped.
+		namespaceBase64 := bone.GetValue(r, "namespace")
+		if namespaceBase64 == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("namespace parameter required", http.StatusBadRequest))
 			return
 		}
 
-		keyBase64Esc := bone.GetValue(r, "key")
-		if keyBase64Esc == "" {
+		// This returns the value already query-unescaped.
+		keyBase64 := bone.GetValue(r, "key")
+		if keyBase64 == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("key parameter required", http.StatusBadRequest))
-			return
-		}
-
-		namespaceBase64, err := url.QueryUnescape(namespaceBase64Esc)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error unescaping namespace '%s'", namespaceBase64Esc), err, http.StatusBadRequest))
 			return
 		}
 
 		namespaceBytes, err := base64.StdEncoding.DecodeString(namespaceBase64)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error decoding namespace '%s'", namespaceBase64), err, http.StatusBadRequest))
-			return
-		}
-
-		keyBase64, err := url.QueryUnescape(keyBase64Esc)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("error unescaping key '%s'", keyBase64Esc), err, http.StatusBadRequest))
 			return
 		}
 
