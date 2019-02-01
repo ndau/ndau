@@ -17,11 +17,7 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	app, private := initAppTx(t)
 
 	// delegate source to eaiNode
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	d := NewDelegate(sA, nA, 1, private)
+	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 	resp := deliverTx(t, app, d)
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.LastEAIUpdate = 0
@@ -41,9 +37,7 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 
 func TestValidCreditEAITxIsValid(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, private)
+	compute := NewCreditEAI(nodeAddress, 1, private)
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -52,9 +46,7 @@ func TestValidCreditEAITxIsValid(t *testing.T) {
 
 func TestCreditEAINodeValidates(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 2, private)
+	compute := NewCreditEAI(nodeAddress, 2, private)
 
 	// make the node field invalid
 	compute.Node = address.Address{}
@@ -69,9 +61,7 @@ func TestCreditEAINodeValidates(t *testing.T) {
 
 func TestCreditEAISequenceValidates(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 0, private)
+	compute := NewCreditEAI(nodeAddress, 0, private)
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
@@ -81,9 +71,7 @@ func TestCreditEAISequenceValidates(t *testing.T) {
 
 func TestCreditEAISignatureValidates(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 0, private)
+	compute := NewCreditEAI(nodeAddress, 0, private)
 
 	// flip a single bit in the signature
 	sigBytes := compute.Signatures[0].Bytes()
@@ -101,14 +89,10 @@ func TestCreditEAISignatureValidates(t *testing.T) {
 
 func TestCreditEAIChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, private)
+	compute := NewCreditEAI(nodeAddress, 1, private)
 
 	state := app.GetState().(*backing.State)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	acct, _ := state.GetAccount(sA, app.blockTime)
+	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
 	sourceInitial := acct.Balance
 
 	blockTime := math.Timestamp(45 * math.Day)
@@ -120,7 +104,7 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 
 	// require that a positive EAI was applied
 	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(sA, app.blockTime)
+	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
 	t.Log(acct.Balance)
 	// here, we don't bother testing _how much_ eai is applied: we have to
 	// trust that the ndaumath library is well tested. Instead, we just test
@@ -135,24 +119,18 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 
 func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, private)
+	compute := NewCreditEAI(nodeAddress, 1, private)
 
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
 	state := app.GetState().(*backing.State)
-	sAcct, _ := state.GetAccount(sA, app.blockTime)
+	sAcct, _ := state.GetAccount(sourceAddress, app.blockTime)
 	sourceInitial := sAcct.Balance
 
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
 	// verify that the dest account has nothing currently in it
-	dAcct, _ := state.GetAccount(dA, app.blockTime)
+	dAcct, _ := state.GetAccount(destAddress, app.blockTime)
 	require.Equal(t, math.Ndau(0), dAcct.Balance)
 	// have the source acct send rewards to the dest acct
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.RewardsTarget = &dA
+		ad.RewardsTarget = &destAddress
 	})
 
 	blockTime := math.Timestamp(45 * math.Day)
@@ -164,8 +142,8 @@ func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 
 	// require that a positive EAI was applied
 	state = app.GetState().(*backing.State)
-	sAcct, _ = state.GetAccount(sA, app.blockTime)
-	dAcct, dExists := state.GetAccount(dA, app.blockTime)
+	sAcct, _ = state.GetAccount(sourceAddress, app.blockTime)
+	dAcct, dExists := state.GetAccount(destAddress, app.blockTime)
 	t.Log("src:  ", sAcct.Balance)
 	t.Log("dest: ", dAcct.Balance)
 	require.True(t, dExists)
@@ -177,24 +155,18 @@ func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 
 func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	compute := NewCreditEAI(nA, 1, private)
+	compute := NewCreditEAI(nodeAddress, 1, private)
 
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
 	state := app.GetState().(*backing.State)
-	sAcct, _ := state.GetAccount(sA, app.blockTime)
+	sAcct, _ := state.GetAccount(sourceAddress, app.blockTime)
 	sourceInitial := sAcct.Balance
 
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
 	// verify that the dest account has nothing currently in it
-	dAcct, _ := state.GetAccount(dA, app.blockTime)
+	dAcct, _ := state.GetAccount(destAddress, app.blockTime)
 	require.Equal(t, math.Ndau(0), dAcct.Balance)
 	// have the source acct send rewards to the dest acct
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.RewardsTarget = &dA
+		ad.RewardsTarget = &destAddress
 	})
 	modify(t, dest, app, func(ad *backing.AccountData) {
 		uo := math.Timestamp(1 * math.Year)
@@ -211,8 +183,8 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 
 	// require that eai was deposited despite the dest acct being notified
 	state = app.GetState().(*backing.State)
-	sAcct, _ = state.GetAccount(sA, app.blockTime)
-	dAcct, _ = state.GetAccount(dA, app.blockTime)
+	sAcct, _ = state.GetAccount(sourceAddress, app.blockTime)
+	dAcct, _ = state.GetAccount(destAddress, app.blockTime)
 	t.Log("src:  ", sAcct.Balance)
 	t.Log("dest: ", dAcct.Balance)
 	// the source account must not be changed
@@ -223,14 +195,12 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 
 func TestCreditEAIDeductsTxFee(t *testing.T) {
 	app, private := initAppCreditEAI(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
 
 	for i := 0; i < 2; i++ {
-		tx := NewCreditEAI(nA, 1+uint64(i), private)
+		tx := NewCreditEAI(nodeAddress, 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
@@ -18,8 +17,7 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 
 	const newDuration = math.Duration(1 * math.Day)
 
-	addr, err := address.Validate(source)
-	require.NoError(t, err)
+	addr := sourceAddress
 
 	cep := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, private)
 
@@ -49,8 +47,7 @@ func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {
 		ad.Balance = 1
 	})
 
-	addr, err := address.Validate(source)
-	require.NoError(t, err)
+	addr := sourceAddress
 
 	const newDuration = math.Duration(1 * math.Day)
 

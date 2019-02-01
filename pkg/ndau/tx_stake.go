@@ -14,7 +14,7 @@ import (
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *Stake) GetAccountAddresses() []string {
-	return []string{tx.Target.String(), tx.Node.String()}
+	return []string{tx.Target.String(), tx.StakedAccount.String()}
 }
 
 // Validate implements metatx.Transactable
@@ -23,7 +23,7 @@ func (tx *Stake) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "target")
 	}
-	_, err = address.Validate(tx.Node.String())
+	_, err = address.Validate(tx.StakedAccount.String())
 	if err != nil {
 		return errors.Wrap(err, "node")
 	}
@@ -42,7 +42,7 @@ func (tx *Stake) Validate(appI interface{}) error {
 	}
 
 	var minStake math.Ndau
-	err = app.System(sv.MinStakeName, &minStake)
+	err = app.System(sv.MinNodeRegistrationStakeName, &minStake)
 	if err != nil {
 		return errors.Wrap(err, "fetching MinStake system variable")
 	}
@@ -61,48 +61,50 @@ func (tx *Stake) Validate(appI interface{}) error {
 		return fmt.Errorf("target has insufficient balance: have %s ndau, need %s", target.Balance, minStake)
 	}
 
-	node, hasNode := app.GetState().(*backing.State).GetAccount(tx.Node, app.blockTime)
+	node, hasNode := app.GetState().(*backing.State).GetAccount(tx.StakedAccount, app.blockTime)
 	if !hasNode {
 		return errors.New("Node does not exist")
 	}
-	if tx.Node != tx.Target {
-		if node.Stake == nil || node.Stake.Address != tx.Node {
+	if tx.StakedAccount != tx.Target {
+		if node.Stake == nil || node.Stake.Address != tx.StakedAccount {
 			return errors.New("Node is not self-staked")
 		}
 	}
 
-	if target.Balance.Compare(node.Balance) > 0 {
-		return fmt.Errorf("target balance (%s) may not exceed node balance (%s)", target.Balance, node.Balance)
-	}
-
 	return nil
+}
+
+func stake(app *App, targetA, stakedAccountA address.Address) error {
+	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
+		target, _ := state.GetAccount(targetA, app.blockTime)
+
+		target.Stake = &backing.Stake{
+			Address: stakedAccountA,
+			Point:   app.blockTime,
+		}
+
+		state.Accounts[targetA.String()] = target
+		err := state.Stake(targetA, stakedAccountA)
+
+		return state, err
+	})
 }
 
 // Apply implements metatx.Transactable
 func (tx *Stake) Apply(appI interface{}) error {
 	app := appI.(*App)
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		state := stateI.(*backing.State)
-		target, _ := state.GetAccount(tx.Target, app.blockTime)
-		target.Sequence = tx.Sequence
-
-		fee, err := app.calculateTxFee(tx)
-		if err != nil {
-			return state, err
-		}
-		target.Balance -= fee
-
-		target.Stake = &backing.Stake{
-			Address: tx.Node,
-			Point:   app.blockTime,
-		}
-
-		state.Accounts[tx.Target.String()] = target
-		err = state.Stake(tx.Target, tx.Node)
-
-		return state, nil
-	})
+	var err error
+	err = app.applyTxDetails(tx)
+	if err != nil {
+		return err
+	}
+	err = stake(app, tx.Target, tx.StakedAccount)
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 // GetSource implements sourcer

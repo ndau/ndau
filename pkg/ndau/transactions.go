@@ -31,6 +31,8 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(15): &TransferAndLock{},
 	metatx.TxID(16): &CommandValidatorChange{},
 	metatx.TxID(17): &SidechainTx{},
+	metatx.TxID(18): &UnregisterNode{},
+	metatx.TxID(19): &Unstake{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -182,10 +184,10 @@ var _ NTransactable = (*TransferAndLock)(nil)
 
 // A Stake transaction stakes to a node
 type Stake struct {
-	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
-	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
-	Sequence   uint64                `msg:"seq" json:"sequence"`
-	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+	Target        address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	StakedAccount address.Address       `msg:"ska" chain:"5,Tx_StakedAccount" json:"staked_account"`
+	Sequence      uint64                `msg:"seq" json:"sequence"`
+	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Stake)(nil)
@@ -266,3 +268,21 @@ type SidechainTx struct {
 }
 
 var _ NTransactable = (*SidechainTx)(nil)
+
+// An UnregisterNode transaction deactivates a node
+type UnregisterNode struct {
+	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*UnregisterNode)(nil)
+
+// An Unstake transaction stakes to a node
+type Unstake struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*Unstake)(nil)

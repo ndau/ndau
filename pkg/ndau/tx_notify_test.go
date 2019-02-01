@@ -24,9 +24,7 @@ func initAppNotify(t *testing.T) (*App, signature.PrivateKey) {
 
 func TestValidNotifyTxIsValid(t *testing.T) {
 	app, private := initAppNotify(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sourceAddress, 1, private)
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
 	resp := app.CheckTx(bytes)
@@ -35,9 +33,7 @@ func TestValidNotifyTxIsValid(t *testing.T) {
 
 func TestNotifyAccountValidates(t *testing.T) {
 	app, private := initAppNotify(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sourceAddress, 1, private)
 
 	// make the account field invalid
 	notify.Target = address.Address{}
@@ -52,9 +48,7 @@ func TestNotifyAccountValidates(t *testing.T) {
 
 func TestNotifySequenceValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	notify := NewNotify(sA, 0, private)
+	notify := NewNotify(sourceAddress, 0, private)
 
 	// notify must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
@@ -65,9 +59,7 @@ func TestNotifySequenceValidates(t *testing.T) {
 
 func TestNotifySignatureValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sourceAddress, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := notify.Signatures[0].Bytes()
@@ -85,12 +77,10 @@ func TestNotifySignatureValidates(t *testing.T) {
 
 func TestNotifyChangesAppState(t *testing.T) {
 	app, private := initAppNotify(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	notify := NewNotify(sA, 1, private)
+	notify := NewNotify(sourceAddress, 1, private)
 
 	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sA, app.blockTime)
+	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
 	require.NotNil(t, acct.Lock)
 	require.Nil(t, acct.Lock.UnlocksOn)
 
@@ -98,21 +88,19 @@ func TestNotifyChangesAppState(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(sA, app.blockTime)
+	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
 	require.NotNil(t, acct.Lock.UnlocksOn)
 }
 
 func TestNotifyDeductsTxFee(t *testing.T) {
 	app, private := initAppNotify(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
 
 	for i := uint64(0); i < 2; i++ {
-		tx := NewNotify(sA, 1+i, private)
+		tx := NewNotify(sourceAddress, 1+i, private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 
