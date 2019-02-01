@@ -260,14 +260,14 @@ func NewClaimAccount(
 // If signing keys are present, the new transactable is signed with all of them
 func NewStake(
 	target address.Address,
-	node address.Address,
+	stakedaccount address.Address,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *Stake {
 	tx := &Stake{
-		Target:   target,
-		Node:     node,
-		Sequence: sequence,
+		Target:        target,
+		StakedAccount: stakedaccount,
+		Sequence:      sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()
@@ -418,6 +418,72 @@ func NewSidechainTx(
 		SidechainSignableBytes: sidechainsignablebytes,
 		SidechainSignatures:    sidechainsignatures,
 		Sequence:               sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
+// NewUnregisterNode creates a new UnregisterNode transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewUnregisterNode(
+	node address.Address,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *UnregisterNode {
+	tx := &UnregisterNode{
+		Node:     node,
+		Sequence: sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
+// NewUnstake creates a new Unstake transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewUnstake(
+	target address.Address,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *Unstake {
+	tx := &Unstake{
+		Target:   target,
+		Sequence: sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
+// NewIssue creates a new Issue transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewIssue(
+	qty math.Ndau,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *Issue {
+	tx := &Issue{
+		Qty:      qty,
+		Sequence: sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()

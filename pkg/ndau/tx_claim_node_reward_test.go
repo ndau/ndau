@@ -48,7 +48,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	now, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
-	eA, err := address.Validate(eaiNode)
+	eA := nodeAddress
 	require.NoError(t, err)
 
 	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
@@ -75,9 +75,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 }
 func TestValidClaimNodeRewardTxIsValid(t *testing.T) {
 	app, private, _ := initAppCNR(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	cnr := NewClaimNodeReward(nA, 1, private)
+	cnr := NewClaimNodeReward(nodeAddress, 1, private)
 
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)
@@ -88,9 +86,7 @@ func TestValidClaimNodeRewardTxIsValid(t *testing.T) {
 
 func TestClaimNodeRewardAccountValidates(t *testing.T) {
 	app, private, _ := initAppCNR(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	cnr := NewClaimNodeReward(nA, 1, private)
+	cnr := NewClaimNodeReward(nodeAddress, 1, private)
 
 	// make the account field invalid
 	cnr.Node = address.Address{}
@@ -105,9 +101,7 @@ func TestClaimNodeRewardAccountValidates(t *testing.T) {
 
 func TestClaimNodeRewardSequenceValidates(t *testing.T) {
 	app, private, _ := initAppCNR(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	cnr := NewClaimNodeReward(nA, 0, private)
+	cnr := NewClaimNodeReward(nodeAddress, 0, private)
 
 	// cnr must be invalid
 	bytes, err := tx.Marshal(cnr, TxIDs)
@@ -118,9 +112,7 @@ func TestClaimNodeRewardSequenceValidates(t *testing.T) {
 
 func TestClaimNodeRewardSignatureValidates(t *testing.T) {
 	app, private, _ := initAppCNR(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	cnr := NewClaimNodeReward(nA, 1, private)
+	cnr := NewClaimNodeReward(nodeAddress, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := cnr.Signatures[0].Bytes()
@@ -136,21 +128,19 @@ func TestClaimNodeRewardSignatureValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimNodeRewardChangesAppState(t *testing.T) {
+func TestClaimNodeRewardChangesourceAddressppState(t *testing.T) {
 	app, private, now := initAppCNR(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
-	cnr := NewClaimNodeReward(nA, 1, private)
+	cnr := NewClaimNodeReward(nodeAddress, 1, private)
 
 	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(nA, app.blockTime)
+	acct, _ := state.GetAccount(nodeAddress, app.blockTime)
 	require.Equal(t, math.Ndau(cnrStake), acct.Balance)
 
 	resp := deliverTxAt(t, app, cnr, now+1)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(nA, app.blockTime)
+	acct, _ = state.GetAccount(nodeAddress, app.blockTime)
 
 	// The script allocates 80% of node rewards to co-stakers but includes
 	// the node itself as a co-staker, so that means that with one co-staker of
@@ -159,16 +149,12 @@ func TestClaimNodeRewardChangesAppState(t *testing.T) {
 	require.Equal(t, math.Ndau(cnrStake+(60*constants.QuantaPerUnit)), acct.Balance)
 
 	// we expect 40% of node rewards to go to source acct in this setup
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	acct, _ = state.GetAccount(sA, app.blockTime)
+	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
 	require.Equal(t, math.Ndau(cnrStake+(40*constants.QuantaPerUnit)), acct.Balance)
 }
 
 func TestClaimNodeRewardDeductsTxFee(t *testing.T) {
 	app, private, _ := initAppCNR(t)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
 
 	// This test sets the node's balance to 1 napu and then does two
 	// tx with no reward that cost 1 napu. The first should succeed
@@ -179,7 +165,7 @@ func TestClaimNodeRewardDeductsTxFee(t *testing.T) {
 	app.GetState().(*backing.State).UnclaimedNodeReward = 0
 
 	for i := 0; i < 2; i++ {
-		tx := NewClaimNodeReward(nA, 1+uint64(i), private)
+		tx := NewClaimNodeReward(nodeAddress, 1+uint64(i), private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 
@@ -195,9 +181,7 @@ func TestClaimNodeRewardDeductsTxFee(t *testing.T) {
 
 func TestImpostorCannotClaimNodeReward(t *testing.T) {
 	app, private, _ := initAppCNR(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	cnr := NewClaimNodeReward(sA, 1, private)
+	cnr := NewClaimNodeReward(sourceAddress, 1, private)
 
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)

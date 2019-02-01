@@ -16,11 +16,7 @@ import (
 
 func TestValidSetRewardsDestinationTxIsValid(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// srt must be valid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -32,11 +28,7 @@ func TestValidSetRewardsDestinationTxIsValid(t *testing.T) {
 
 func TestSetRewardsDestinationAccountValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// make the account field invalid
 	srt.Source = address.Address{}
@@ -51,11 +43,7 @@ func TestSetRewardsDestinationAccountValidates(t *testing.T) {
 
 func TestSetRewardsDestinationDestinationValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// make the account field invalid
 	srt.Destination = address.Address{}
@@ -70,11 +58,7 @@ func TestSetRewardsDestinationDestinationValidates(t *testing.T) {
 
 func TestSetRewardsDestinationSequenceValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 0, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 0, private)
 
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -85,11 +69,7 @@ func TestSetRewardsDestinationSequenceValidates(t *testing.T) {
 
 func TestSetRewardsDestinationSignatureValidates(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// flip a single bit in the signature
 	sigBytes := srt.Signatures[0].Bytes()
@@ -107,23 +87,19 @@ func TestSetRewardsDestinationSignatureValidates(t *testing.T) {
 
 func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	resp := deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
 	// we must have updated the source's rewards target
-	require.Equal(t, &dA, state.Accounts[source].RewardsTarget)
+	require.Equal(t, &destAddress, state.Accounts[source].RewardsTarget)
 	// we must have updated the dest's inbound rewards targets
-	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
+	require.Equal(t, []address.Address{sourceAddress}, state.Accounts[dest].IncomingRewardsFrom)
 
 	// resetting to source address saves as "nil" dest address
-	srt = NewSetRewardsDestination(sA, sA, 2, private)
+	srt = NewSetRewardsDestination(sourceAddress, sourceAddress, 2, private)
 	resp = deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	state = app.GetState().(*backing.State)
@@ -135,19 +111,13 @@ func TestSetRewardsDestinationChangesAppState(t *testing.T) {
 
 func TestSetRewardsDestinationInvalidIfDestinationAlsoSends(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
 
 	// when the destination has a rewards target set...
 	modify(t, dest, app, func(ad *backing.AccountData) {
-		ad.RewardsTarget = &nA
+		ad.RewardsTarget = &nodeAddress
 	})
 
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -158,19 +128,13 @@ func TestSetRewardsDestinationInvalidIfDestinationAlsoSends(t *testing.T) {
 
 func TestSetRewardsDestinationInvalidIfSourceAlsoReceives(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
 
 	// when the source is receiving rewards from another account
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.IncomingRewardsFrom = []address.Address{nA}
+		ad.IncomingRewardsFrom = []address.Address{nodeAddress}
 	})
 
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -182,33 +146,27 @@ func TestSetRewardsDestinationInvalidIfSourceAlsoReceives(t *testing.T) {
 func TestReSetRewardsDestinationChangesAppState(t *testing.T) {
 	// set up accounts
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
-	nA, err := address.Validate(eaiNode)
-	require.NoError(t, err)
 	tA, err := address.Validate(settled)
 	require.NoError(t, err)
 
-	// set up fixture: sA -> nA
+	// set up fixture: sourceAddress -> nodeAddress
 	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.RewardsTarget = &nA
+		ad.RewardsTarget = &nodeAddress
 	})
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
-		ad.IncomingRewardsFrom = []address.Address{sA, tA}
+		ad.IncomingRewardsFrom = []address.Address{sourceAddress, tA}
 	})
 
 	// deliver transaction
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 	resp := deliverTx(t, app, srt)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	state := app.GetState().(*backing.State)
 	// we must have updated the source's rewards target
-	require.Equal(t, &dA, state.Accounts[source].RewardsTarget)
+	require.Equal(t, &destAddress, state.Accounts[source].RewardsTarget)
 	// we must have updated the dest's inbound rewards targets
-	require.Equal(t, []address.Address{sA}, state.Accounts[dest].IncomingRewardsFrom)
+	require.Equal(t, []address.Address{sourceAddress}, state.Accounts[dest].IncomingRewardsFrom)
 	// we must have removed the prev target's inbound targets
 	require.Equal(t, []address.Address{tA}, state.Accounts[eaiNode].IncomingRewardsFrom)
 }
@@ -219,10 +177,6 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 
 	app, private := initAppTx(t)
 	app.blockTime = ts
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
 
 	// fixture: destination must be notified
 	modify(t, dest, app, func(ad *backing.AccountData) {
@@ -231,7 +185,7 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 		ad.Lock.UnlocksOn = &uo
 	})
 
-	srt := NewSetRewardsDestination(sA, dA, 1, private)
+	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
@@ -242,17 +196,13 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 
 func TestSetRewardsDestinationDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
-	sA, err := address.Validate(source)
-	require.NoError(t, err)
-	dA, err := address.Validate(dest)
-	require.NoError(t, err)
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
 
 	for i := uint64(0); i < 2; i++ {
-		tx := NewSetRewardsDestination(sA, dA, 1+i, private)
+		tx := NewSetRewardsDestination(sourceAddress, destAddress, 1+i, private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 

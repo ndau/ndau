@@ -7,9 +7,11 @@ import (
 
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
@@ -34,6 +36,12 @@ func initAppRFEWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 	err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
 	require.NoError(t, err)
 	assc[rfeKeys], err = MockSystemAccount(app, rfeAddr)
+
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.TotalRFE = 100 * constants.NapuPerNdau
+		return state, nil
+	})
 
 	return app, assc
 }

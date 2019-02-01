@@ -796,6 +796,103 @@ func (z *Delegate) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
+func (z *Issue) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "qty"
+	o = append(o, 0x83, 0xa3, 0x71, 0x74, 0x79)
+	o, err = z.Qty.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Qty")
+		return
+	}
+	// string "seq"
+	o = append(o, 0xa3, 0x73, 0x65, 0x71)
+	o = msgp.AppendUint64(o, z.Sequence)
+	// string "sig"
+	o = append(o, 0xa3, 0x73, 0x69, 0x67)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Signatures)))
+	for za0001 := range z.Signatures {
+		o, err = z.Signatures[za0001].MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
+			return
+		}
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *Issue) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "qty":
+			bts, err = z.Qty.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Qty")
+				return
+			}
+		case "seq":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
+				return
+			}
+		case "sig":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
+				return
+			}
+			if cap(z.Signatures) >= int(zb0002) {
+				z.Signatures = (z.Signatures)[:zb0002]
+			} else {
+				z.Signatures = make([]signature.Signature, zb0002)
+			}
+			for za0001 := range z.Signatures {
+				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
+					return
+				}
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *Issue) Msgsize() (s int) {
+	s = 1 + 4 + z.Qty.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	for za0001 := range z.Signatures {
+		s += z.Signatures[za0001].Msgsize()
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *Lock) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 4
@@ -1589,11 +1686,11 @@ func (z *Stake) MarshalMsg(b []byte) (o []byte, err error) {
 		err = msgp.WrapError(err, "Target")
 		return
 	}
-	// string "nod"
-	o = append(o, 0xa3, 0x6e, 0x6f, 0x64)
-	o, err = z.Node.MarshalMsg(o)
+	// string "ska"
+	o = append(o, 0xa3, 0x73, 0x6b, 0x61)
+	o, err = z.StakedAccount.MarshalMsg(o)
 	if err != nil {
-		err = msgp.WrapError(err, "Node")
+		err = msgp.WrapError(err, "StakedAccount")
 		return
 	}
 	// string "seq"
@@ -1636,10 +1733,10 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Target")
 				return
 			}
-		case "nod":
-			bts, err = z.Node.UnmarshalMsg(bts)
+		case "ska":
+			bts, err = z.StakedAccount.UnmarshalMsg(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "Node")
+				err = msgp.WrapError(err, "StakedAccount")
 				return
 			}
 		case "seq":
@@ -1681,7 +1778,7 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Stake) Msgsize() (s int) {
-	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Node.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.StakedAccount.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}
@@ -1941,6 +2038,200 @@ func (z *TransferAndLock) UnmarshalMsg(bts []byte) (o []byte, err error) {
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *TransferAndLock) Msgsize() (s int) {
 	s = 1 + 4 + z.Source.Msgsize() + 4 + z.Destination.Msgsize() + 4 + z.Qty.Msgsize() + 4 + z.Period.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	for za0001 := range z.Signatures {
+		s += z.Signatures[za0001].Msgsize()
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *UnregisterNode) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "nod"
+	o = append(o, 0x83, 0xa3, 0x6e, 0x6f, 0x64)
+	o, err = z.Node.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Node")
+		return
+	}
+	// string "seq"
+	o = append(o, 0xa3, 0x73, 0x65, 0x71)
+	o = msgp.AppendUint64(o, z.Sequence)
+	// string "sig"
+	o = append(o, 0xa3, 0x73, 0x69, 0x67)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Signatures)))
+	for za0001 := range z.Signatures {
+		o, err = z.Signatures[za0001].MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
+			return
+		}
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *UnregisterNode) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "nod":
+			bts, err = z.Node.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Node")
+				return
+			}
+		case "seq":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
+				return
+			}
+		case "sig":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
+				return
+			}
+			if cap(z.Signatures) >= int(zb0002) {
+				z.Signatures = (z.Signatures)[:zb0002]
+			} else {
+				z.Signatures = make([]signature.Signature, zb0002)
+			}
+			for za0001 := range z.Signatures {
+				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
+					return
+				}
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *UnregisterNode) Msgsize() (s int) {
+	s = 1 + 4 + z.Node.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	for za0001 := range z.Signatures {
+		s += z.Signatures[za0001].Msgsize()
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *Unstake) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "tgt"
+	o = append(o, 0x83, 0xa3, 0x74, 0x67, 0x74)
+	o, err = z.Target.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Target")
+		return
+	}
+	// string "seq"
+	o = append(o, 0xa3, 0x73, 0x65, 0x71)
+	o = msgp.AppendUint64(o, z.Sequence)
+	// string "sig"
+	o = append(o, 0xa3, 0x73, 0x69, 0x67)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Signatures)))
+	for za0001 := range z.Signatures {
+		o, err = z.Signatures[za0001].MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0001)
+			return
+		}
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *Unstake) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "tgt":
+			bts, err = z.Target.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Target")
+				return
+			}
+		case "seq":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
+				return
+			}
+		case "sig":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
+				return
+			}
+			if cap(z.Signatures) >= int(zb0002) {
+				z.Signatures = (z.Signatures)[:zb0002]
+			} else {
+				z.Signatures = make([]signature.Signature, zb0002)
+			}
+			for za0001 := range z.Signatures {
+				bts, err = z.Signatures[za0001].UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0001)
+					return
+				}
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *Unstake) Msgsize() (s int) {
+	s = 1 + 4 + z.Target.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}

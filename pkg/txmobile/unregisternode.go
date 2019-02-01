@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// This file provides an interface to the Ndau Stake transaction
+// This file provides an interface to the Ndau UnregisterNode transaction
 // for use in React and in particular react-native.
 //
 // It is meant to be built using the gomobile tool, so the API is constrained
@@ -34,97 +34,77 @@ import (
 // This package, therefore, consists mainly of wrappers so that we don't have
 // to modify our idiomatic Go code to conform to these requirements.
 
-// Stake is a mobile compatible wrapper for a Stake transaction
-type Stake struct {
-	tx ndau.Stake
+// UnregisterNode is a mobile compatible wrapper for a UnregisterNode transaction
+type UnregisterNode struct {
+	tx ndau.UnregisterNode
 }
 
-// NewStake constructs a new unsigned Stake transaction
-func NewStake(
-	target string,
-	stakedaccount string,
+// NewUnregisterNode constructs a new unsigned UnregisterNode transaction
+func NewUnregisterNode(
+	node string,
 	sequence int64,
-) (*Stake, error) {
-	targetN, err := address.Validate(target)
+) (*UnregisterNode, error) {
+	nodeN, err := address.Validate(node)
 	if err != nil {
-		return nil, errors.Wrap(err, "target")
+		return nil, errors.Wrap(err, "node")
 	}
 
-	stakedaccountN, err := address.Validate(stakedaccount)
-	if err != nil {
-		return nil, errors.Wrap(err, "stakedaccount")
-	}
-
-	return &Stake{
-		tx: ndau.Stake{
-			Target:        targetN,
-			StakedAccount: stakedaccountN,
-			Sequence:      uint64(sequence),
+	return &UnregisterNode{
+		tx: ndau.UnregisterNode{
+			Node:     nodeN,
+			Sequence: uint64(sequence),
 		},
 	}, nil
 }
 
-// ParseStake parses a string into a Stake, if possible
-func ParseStake(s string) (*Stake, error) {
+// ParseUnregisterNode parses a string into a UnregisterNode, if possible
+func ParseUnregisterNode(s string) (*UnregisterNode, error) {
 	bytes, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseStake: b64-decode")
+		return nil, errors.Wrap(err, "ParseUnregisterNode: b64-decode")
 	}
 	tx, err := metatx.Unmarshal(bytes, ndau.TxIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseStake: unmarshal")
+		return nil, errors.Wrap(err, "ParseUnregisterNode: unmarshal")
 	}
-	trp, isTr := tx.(*ndau.Stake)
+	trp, isTr := tx.(*ndau.UnregisterNode)
 	if !isTr {
-		return nil, errors.New("ParseStake: transactable was not Stake")
+		return nil, errors.New("ParseUnregisterNode: transactable was not UnregisterNode")
 	}
 
-	return &Stake{tx: *trp}, nil
+	return &UnregisterNode{tx: *trp}, nil
 }
 
 // ToB64String produces the b64 encoding of the bytes of the transaction
-func (tx *Stake) ToB64String() (string, error) {
+func (tx *UnregisterNode) ToB64String() (string, error) {
 	if tx == nil {
-		return "", errors.New("nil stake")
+		return "", errors.New("nil unregisternode")
 	}
 	bytes, err := metatx.Marshal(&tx.tx, ndau.TxIDs)
 	if err != nil {
-		return "", errors.Wrap(err, "stake: marshalling bytes")
+		return "", errors.Wrap(err, "unregisternode: marshalling bytes")
 	}
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-// GetTarget gets the target of the Stake
+// GetNode gets the node of the UnregisterNode
 //
-// Returns a zero value if Stake is `nil` or if native conversion is fallible and
+// Returns a zero value if UnregisterNode is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetTarget() string {
+func (tx *UnregisterNode) GetNode() string {
 	if tx == nil {
 		return ""
 	}
-	target := tx.tx.Target.String()
+	node := tx.tx.Node.String()
 
-	return target
+	return node
 }
 
-// GetStakedAccount gets the stakedaccount of the Stake
+// GetSequence gets the sequence of the UnregisterNode
 //
-// Returns a zero value if Stake is `nil` or if native conversion is fallible and
+// Returns a zero value if UnregisterNode is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *Stake) GetStakedAccount() string {
-	if tx == nil {
-		return ""
-	}
-	stakedaccount := tx.tx.StakedAccount.String()
-
-	return stakedaccount
-}
-
-// GetSequence gets the sequence of the Stake
-//
-// Returns a zero value if Stake is `nil` or if native conversion is fallible and
-// conversion failed.
-func (tx *Stake) GetSequence() int64 {
+func (tx *UnregisterNode) GetSequence() int64 {
 	if tx == nil {
 		return 0
 	}
@@ -133,20 +113,20 @@ func (tx *Stake) GetSequence() int64 {
 	return sequence
 }
 
-// GetNumSignatures gets the number of signatures of the Stake
+// GetNumSignatures gets the number of signatures of the UnregisterNode
 //
 // If tx == nil, returns -1
-func (tx *Stake) GetNumSignatures() int {
+func (tx *UnregisterNode) GetNumSignatures() int {
 	if tx == nil {
 		return -1
 	}
 	return len(tx.tx.Signatures)
 }
 
-// GetSignature gets a particular signature from this Stake
-func (tx *Stake) GetSignature(idx int) (string, error) {
+// GetSignature gets a particular signature from this UnregisterNode
+func (tx *UnregisterNode) GetSignature(idx int) (string, error) {
 	if tx == nil {
-		return "", errors.New("nil stake")
+		return "", errors.New("nil unregisternode")
 	}
 	if idx < 0 || idx >= len(tx.tx.Signatures) {
 		return "", errors.New("invalid index")
@@ -159,16 +139,16 @@ func (tx *Stake) GetSignature(idx int) (string, error) {
 	return signature, nil
 }
 
-// SignableBytes returns the b64 encoding of the signable bytes of this stake
-func (tx *Stake) SignableBytes() (string, error) {
+// SignableBytes returns the b64 encoding of the signable bytes of this unregisternode
+func (tx *UnregisterNode) SignableBytes() (string, error) {
 	if tx == nil {
-		return "", errors.New("nil stake")
+		return "", errors.New("nil unregisternode")
 	}
 	return base64.StdEncoding.EncodeToString(tx.tx.SignableBytes()), nil
 }
 
-// AppendSignature appends a signature to this stake
-func (tx *Stake) AppendSignature(sig string) error {
+// AppendSignature appends a signature to this unregisternode
+func (tx *UnregisterNode) AppendSignature(sig string) error {
 	if sig == "" {
 		return errors.New("sig must not be blank")
 	}
@@ -180,8 +160,8 @@ func (tx *Stake) AppendSignature(sig string) error {
 	return nil
 }
 
-// Hash computes the hash of this stake
-func (tx *Stake) Hash() string {
+// Hash computes the hash of this unregisternode
+func (tx *UnregisterNode) Hash() string {
 	if tx == nil {
 		return ""
 	}
@@ -189,17 +169,17 @@ func (tx *Stake) Hash() string {
 }
 
 // Name returns the name of this transactable
-func (tx *Stake) Name() string {
+func (tx *UnregisterNode) Name() string {
 	if tx == nil {
 		return ""
 	}
-	return "Stake"
+	return "UnregisterNode"
 }
 
 // TxID returns the transaction id of this transactable
 //
 // Returns -2 if the transactable is nil, or -1 if the transactable is unknown.
-func (tx *Stake) TxID() int {
+func (tx *UnregisterNode) TxID() int {
 	if tx == nil {
 		return -2
 	}

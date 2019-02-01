@@ -247,7 +247,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("ChaosHistory").
 		Doc("Returns the history of changes to a value of a single chaos chain variable.").
 		Notes(`The history includes the block height and the value of each change to the variable.
-		The result is sorted chronologically.`).
+		The result is sorted chronologically.
+		Namespace and key must be URL query-escaped`).
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
@@ -261,6 +262,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
 		Operation("ChaosNamespaceAll").
 		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
+		Notes("Namespace must be URL query-escaped").
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
@@ -268,6 +270,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/chaos/value/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
 		Operation("ChaosNamespaceKey").
 		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
+		Notes("Namespace and key must be URL query-escaped").
 		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
 		Produces(JSON).
@@ -376,7 +379,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("SystemHistoryKey").
 		Doc("Returns the history of changes to a value of a system variable.").
 		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the value.
-		The result is reverse sorted chronologically from the current time, and supports paging by time.`).
+		The result is reverse sorted chronologically from the current time, and supports paging by time.
+		Key must be URL query-escaped.`).
 		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).

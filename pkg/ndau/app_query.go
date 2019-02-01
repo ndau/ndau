@@ -265,6 +265,8 @@ func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 		lastSummary.TotalNdau = total
 		lastSummary.NumAccounts = len(state.Accounts)
 		lastSummary.BlockHeight = app.Height()
+		lastSummary.TotalRFE = state.TotalRFE
+		lastSummary.TotalIssue = state.TotalIssue
 	}
 
 	response.Log = fmt.Sprintf("total ndau at height %d is %d, in %d accounts", lastSummary.BlockHeight, lastSummary.TotalNdau, lastSummary.NumAccounts)

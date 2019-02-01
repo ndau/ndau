@@ -9,14 +9,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-const accountKey = "accounts"
-const delegateKey = "delegates"
-const nodeKey = "nodes"
-const lnrnKey = "lnrn" // last node reward nomination
-const pnrKey = "pnr"   // pending node reward
-const unrKey = "unr"   // uncredited node reward
-const nrwKey = "nrw"   // node reward winner
-const totalRFEKey = "totalRFE"
+const (
+	accountKey    = "accounts"
+	delegateKey   = "delegates"
+	nodeKey       = "nodes"
+	lnrnKey       = "lnrn" // last node reward nomination
+	pnrKey        = "pnr"  // pending node reward
+	unrKey        = "unr"  // uncredited node reward
+	nrwKey        = "nrw"  // node reward winner
+	totalRFEKey   = "totalRFE"
+	totalIssueKey = "totalIssue"
+)
 
 // State is primarily a set of accounts
 type State struct {
@@ -49,6 +52,8 @@ type State struct {
 	// It is also updated by the genesis program: it's initialized with the
 	// implied RFEs for genesis accounts
 	TotalRFE math.Ndau
+	// TotalIssue is the sum of all Issue transactions.
+	TotalIssue math.Ndau
 }
 
 // make sure State is a metaapp.State
@@ -64,14 +69,15 @@ func (s *State) Init(nt.ValueReadWriter) {
 // MarshalNoms satisfies noms' Marshaler interface
 func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 	ns := nt.NewStruct("state", nt.StructData{
-		accountKey:  nt.NewMap(vrw),
-		delegateKey: nt.NewMap(vrw),
-		nodeKey:     nt.NewMap(vrw),
-		lnrnKey:     util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
-		pnrKey:      util.Int(s.PendingNodeReward).ToBlob(vrw),
-		unrKey:      util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
-		nrwKey:      nt.String(s.NodeRewardWinner.String()),
-		totalRFEKey: util.Int(s.TotalRFE).ToBlob(vrw),
+		accountKey:    nt.NewMap(vrw),
+		delegateKey:   nt.NewMap(vrw),
+		nodeKey:       nt.NewMap(vrw),
+		lnrnKey:       util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
+		pnrKey:        util.Int(s.PendingNodeReward).ToBlob(vrw),
+		unrKey:        util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
+		nrwKey:        nt.String(s.NodeRewardWinner.String()),
+		totalRFEKey:   util.Int(s.TotalRFE).ToBlob(vrw),
+		totalIssueKey: util.Int(s.TotalIssue).ToBlob(vrw),
 	})
 
 	// marshal accounts
@@ -212,6 +218,11 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		return errors.Wrap(err, "unmarshalling total RFE")
 	}
 	s.TotalRFE = math.Ndau(trfeI)
+	tisI, err := util.IntFromBlob(st.Get(totalIssueKey).(nt.Blob))
+	if err != nil {
+		return errors.Wrap(err, "unmarshalling total issue")
+	}
+	s.TotalIssue = math.Ndau(tisI)
 
 	return err
 }
@@ -257,6 +268,27 @@ func (s *State) Stake(targetA, nodeA address.Address) error {
 
 	s.Nodes[nodeS] = node
 	return nil
+}
+
+// Unstake updates the state to handle unstaking an account
+func (s *State) Unstake(targetA address.Address) {
+	target, exists := s.Accounts[targetA.String()]
+	if !exists {
+		return
+	}
+	if target.Stake == nil {
+		return
+	}
+	nodeA := target.Stake.Address
+	target.Stake = nil
+	s.Accounts[targetA.String()] = target
+
+	node, isNode := s.Nodes[nodeA.String()]
+	if isNode {
+		// targetA != nodeA
+		node.Unstake(targetA)
+		s.Nodes[nodeA.String()] = node
+	}
 }
 
 // GetCostakers returns the list of costakers associated with a node

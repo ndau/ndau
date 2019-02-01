@@ -441,6 +441,18 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "NumAccounts")
 				return
 			}
+		case "TotalRFE":
+			err = z.TotalRFE.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalRFE")
+				return
+			}
+		case "TotalIssue":
+			err = z.TotalIssue.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalIssue")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -454,9 +466,9 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 3
+	// map header, size 5
 	// write "BlockHeight"
-	err = en.Append(0x83, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	err = en.Append(0x85, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
 	if err != nil {
 		return
 	}
@@ -485,15 +497,35 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "NumAccounts")
 		return
 	}
+	// write "TotalRFE"
+	err = en.Append(0xa8, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x52, 0x46, 0x45)
+	if err != nil {
+		return
+	}
+	err = z.TotalRFE.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalRFE")
+		return
+	}
+	// write "TotalIssue"
+	err = en.Append(0xaa, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x49, 0x73, 0x73, 0x75, 0x65)
+	if err != nil {
+		return
+	}
+	err = z.TotalIssue.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalIssue")
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 3
+	// map header, size 5
 	// string "BlockHeight"
-	o = append(o, 0x83, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	o = append(o, 0x85, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
 	o = msgp.AppendUint64(o, z.BlockHeight)
 	// string "TotalNdau"
 	o = append(o, 0xa9, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x4e, 0x64, 0x61, 0x75)
@@ -505,6 +537,20 @@ func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "NumAccounts"
 	o = append(o, 0xab, 0x4e, 0x75, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73)
 	o = msgp.AppendInt(o, z.NumAccounts)
+	// string "TotalRFE"
+	o = append(o, 0xa8, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x52, 0x46, 0x45)
+	o, err = z.TotalRFE.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalRFE")
+		return
+	}
+	// string "TotalIssue"
+	o = append(o, 0xaa, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x49, 0x73, 0x73, 0x75, 0x65)
+	o, err = z.TotalIssue.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalIssue")
+		return
+	}
 	return
 }
 
@@ -544,6 +590,18 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "NumAccounts")
 				return
 			}
+		case "TotalRFE":
+			bts, err = z.TotalRFE.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalRFE")
+				return
+			}
+		case "TotalIssue":
+			bts, err = z.TotalIssue.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalIssue")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -558,6 +616,6 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Summary) Msgsize() (s int) {
-	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize
+	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize + 9 + z.TotalRFE.Msgsize() + 11 + z.TotalIssue.Msgsize()
 	return
 }
