@@ -35,7 +35,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 
 // generate an app with an account with a bunch of escrowed transactions
 //
-// returns that account'sourceAddress private key, and a timestamp after which all escrows
+// returns that account's private key, and a timestamp after which all escrows
 // should be valid
 //
 // It is guaranteed that all escrows expire in the interval (timestamp - 1 day : timestamp)
@@ -54,7 +54,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 	modify(t, settled, app, func(acct *backing.AccountData) {
 		// initialize the address with a bunch of ndau
 		// incoming funds are added to the balance and the settlements;
-		// it'sourceAddress just that the available balance is reduced by the sum
+		// it's just that the available balance is reduced by the sum
 		// of the uncleared settlements
 		for i := 1; i < qtyEscrows; i++ {
 			acct.Balance += math.Ndau(i * constants.QuantaPerUnit)
@@ -70,7 +70,7 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 	tn := constants.Epoch.Add(time.Duration(int64(ts)) * time.Microsecond)
 	tn = tn.Add(time.Duration(1 * time.Second))
 
-	// update the app'sourceAddress cached timestamp
+	// update the app's cached timestamp
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: tn,
 	}})
