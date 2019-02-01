@@ -361,12 +361,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 		`).
 		Produces(JSON).
 		Writes(routes.OrderChainInfo{
-			MarketPrice:   16.85,
-			TargetPrice:   17.00,
-			FloorPrice:    2.57,
-			EndowmentSold: 2919000 * 100000000,
-			TotalNdau:     3141593 * 100000000,
-			PriceUnits:    "USD",
+			MarketPrice: 16.85,
+			TargetPrice: 17.00,
+			FloorPrice:  2.57,
+			TotalIssued: 2919000 * 100000000,
+			TotalNdau:   3141593 * 100000000,
+			PriceUnits:  "USD",
 		}))
 
 	svc.Route(svc.GET("/system/all").To(routes.HandleSystemAll(cf)).

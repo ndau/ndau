@@ -13,25 +13,31 @@ import (
 
 // OrderChainInfo is a single instance of a rate response (it returns an array of them)
 type OrderChainInfo struct {
-	MarketPrice   float64    `json:"marketPrice"`
-	TargetPrice   float64    `json:"targetPrice"`
-	FloorPrice    float64    `json:"floorPrice"`
-	EndowmentSold types.Ndau `json:"endowmentSold"`
-	TotalNdau     types.Ndau `json:"totalNdau"`
-	SIB           float64    `json:"sib"`
-	PriceUnits    string     `json:"priceUnit"`
+	MarketPrice float64    `json:"marketPrice"`
+	TargetPrice float64    `json:"targetPrice"`
+	FloorPrice  float64    `json:"floorPrice"`
+	TotalIssued types.Ndau `json:"totalIssued"`
+	TotalNdau   types.Ndau `json:"totalNdau"`
+	SIB         float64    `json:"sib"`
+	PriceUnits  string     `json:"priceUnit"`
 }
 
-func getTotals(cf cfg.Cfg) (types.Ndau, types.Ndau, error) {
+// getTotals builds the start of an OrderChainInfo object, filling in the basics
+func getTotals(cf cfg.Cfg) (OrderChainInfo, error) {
+	var oci OrderChainInfo
 	node, err := ws.Node(cf.NodeAddress)
 	if err != nil {
-		return 0, 0, err
+		return oci, err
 	}
 	summ, _, err := tool.GetSummary(node)
 	if err != nil {
-		return 0, 0, err
+		return oci, err
 	}
-	return summ.TotalNdau, summ.EndowmentSold, nil
+	oci.TotalIssued = summ.TotalIssue
+	// the total ndau in circulation is the total in all accounts, excluding
+	// the amount of ndau that have been released but not issued
+	oci.TotalNdau = summ.TotalNdau - (summ.TotalRFE - summ.TotalIssue)
+	return oci, nil
 }
 
 // The idea behind floor price is that even if you sell off all the ndau in the world
@@ -44,7 +50,7 @@ func getTotals(cf cfg.Cfg) (types.Ndau, types.Ndau, error) {
 func getFloorPrice(totalNdau types.Ndau) {
 }
 
-func getSIB(targetPrice, marketPrice, floorPrice float64) float {
+func getSIB(targetPrice, marketPrice, floorPrice float64) float64 {
 	target95 := targetPrice * 0.95
 	// for safety reasons, we check to make sure floor price is reasonable; it should never
 	// get this high
@@ -55,19 +61,16 @@ func getSIB(targetPrice, marketPrice, floorPrice float64) float {
 }
 
 func getOrderChainInfo(cf cfg.Cfg) (OrderChainInfo, error) {
-	totalndau, totalRFE, err := getTotals(cf)
-	targetPrice := pricecurve.PriceAtUnit(totalRFE)
+	oci, err := getTotals(cf)
+	targetPrice := pricecurve.PriceAtUnit(oci.TotalIssued)
 	// floorPrice = getFloorPrice(totalRFE, endowmentValue)
-	info := OrderChainInfo{
-		MarketPrice:   targetPrice,
-		TargetPrice:   targetPrice,
-		FloorPrice:    2.57,
-		EndowmentSold: totalRFE,
-		TotalNdau:     totalndau,
-		SIB:           0,
-		PriceUnits:    "USD",
-	}
-	return info, err
+	oci.MarketPrice = targetPrice
+	oci.TargetPrice = targetPrice
+	oci.FloorPrice = 2.57
+	oci.SIB = 0
+	oci.PriceUnits = "USD"
+
+	return oci, err
 }
 
 // GetOrderChainData returns a block of information from the order chain
