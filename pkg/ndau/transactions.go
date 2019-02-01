@@ -33,6 +33,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(17): &SidechainTx{},
 	metatx.TxID(18): &UnregisterNode{},
 	metatx.TxID(19): &Unstake{},
+	metatx.TxID(20): &Issue{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -286,3 +287,18 @@ type Unstake struct {
 }
 
 var _ NTransactable = (*Unstake)(nil)
+
+// A Issue transaction is the second half of the primary sales process.
+//
+// See https://github.com/oneiro-ndev/ndau/issues/229 for details.
+//
+// The signatures are checked against an account specified by the
+// ReleaseFromEndowmentAddress system variable. That account also specifes
+// the validation script, and pays the transaction fee.
+type Issue struct {
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*Issue)(nil)

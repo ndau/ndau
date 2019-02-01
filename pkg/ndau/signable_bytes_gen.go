@@ -198,3 +198,8 @@ func (tx *UnregisterNode) SignableBytes() []byte {
 func (tx *Unstake) SignableBytes() []byte {
 	return sbOf(tx)
 }
+
+// SignableBytes partially implements metatx.Transactable for Issue
+func (tx *Issue) SignableBytes() []byte {
+	return sbOf(tx)
+}
