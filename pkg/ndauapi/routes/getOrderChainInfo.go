@@ -3,6 +3,8 @@ package routes
 import (
 	"net/http"
 
+	"github.com/oneiro-ndev-old/ndaumath/pkg/constants"
+
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
@@ -40,16 +42,6 @@ func getTotals(cf cfg.Cfg) (OrderChainInfo, error) {
 	return oci, nil
 }
 
-// The idea behind floor price is that even if you sell off all the ndau in the world
-// at the floor price, you can't drain away more than half of the endowment's value
-// The floor price is the total value of the endowment divided by the total ndau in
-// circulation, divided by two.
-// The total value of the endowment is fetched from a system variable -- however,
-// if that system variable is not defined, we use the total purchase price of all
-// ndau instead.
-func getFloorPrice(totalNdau types.Ndau) {
-}
-
 func getSIB(targetPrice, marketPrice, floorPrice float64) float64 {
 	target95 := targetPrice * 0.95
 	// for safety reasons, we check to make sure floor price is reasonable; it should never
@@ -60,14 +52,43 @@ func getSIB(targetPrice, marketPrice, floorPrice float64) float64 {
 	return 0.5 * (target95 - marketPrice) / (target95 - floorPrice)
 }
 
+func getAsFloat64(sysvars map[string][]byte, name string, def float64) float64 {
+	_, ok := sysvars[name]
+	if !ok {
+		return def
+	}
+	// we have to decode bytes here but don't know how yet
+	return def
+}
+
+// The total value of the endowment and current market price are fetched from system variables.
+// If those system variables are not defined or equal to 0, we use:
+// * For endowment value -- the total purchase price of all ndau
+// * For market price -- the target price.
 func getOrderChainInfo(cf cfg.Cfg) (OrderChainInfo, error) {
 	oci, err := getTotals(cf)
+
+	sysvars, err := getSystemVars(cf.NodeAddress)
+	if err != nil {
+		return oci, err
+	}
+	defaultEndowmentValue := pricecurve.TotalPriceFor(oci.TotalIssued, 0)
+	endowmentvalue := getAsFloat64(sysvars, "EndowmentDollarValue", defaultEndowmentValue)
+
 	targetPrice := pricecurve.PriceAtUnit(oci.TotalIssued)
-	// floorPrice = getFloorPrice(totalRFE, endowmentValue)
-	oci.MarketPrice = targetPrice
+	marketPrice := getAsFloat64(sysvars, "MarketPrice", targetPrice)
+
+	oci.MarketPrice = marketPrice
 	oci.TargetPrice = targetPrice
-	oci.FloorPrice = 2.57
-	oci.SIB = 0
+	// The idea behind floor price is that even if you sell off all the ndau in the world
+	// at the floor price, you can't drain away more than half of the endowment's value
+	// The floor price is the total value of the endowment divided by the total ndau in
+	// circulation, divided by two.
+	numNdau := float64(oci.TotalNdau) / constants.QuantaPerUnit
+	if numNdau != 0 {
+		oci.FloorPrice = (endowmentvalue / numNdau) / 2.0
+	}
+	oci.SIB = getSIB(targetPrice, marketPrice, oci.FloorPrice)
 	oci.PriceUnits = "USD"
 
 	return oci, err
@@ -80,6 +101,7 @@ func GetOrderChainData(cf cfg.Cfg) http.HandlerFunc {
 		response, err := getOrderChainInfo(cf)
 		if err != nil {
 			reqres.NewFromErr("order chain query error", err, http.StatusInternalServerError)
+			return
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}
