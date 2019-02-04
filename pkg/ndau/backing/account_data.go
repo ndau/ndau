@@ -105,7 +105,7 @@ func (e *Settlement) fromNomsSettlement(n nomsSettlement) {
 
 // SettlementSettings tracks the settlement settings for outbound transactions
 type SettlementSettings struct {
-	Period    math.Duration   `json:"period" chain:"111SettlementSettings_Period"`
+	Period    math.Duration   `json:"period" chain:"111,SettlementSettings_Period"`
 	ChangesAt *math.Timestamp `json:"changesAt" chain:"112,SettlementSettings_ChangesAt"`
 	Next      *math.Duration  `json:"next" chain:"113,SettlementSettings_Next"`
 }
