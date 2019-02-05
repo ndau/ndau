@@ -23,15 +23,11 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Account address invalid")
 	}
-	kind := string(tx.Target.String()[2])
+	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
-		return fmt.Errorf("Account has invalid address kind: %s", kind)
+		return fmt.Errorf("Account has invalid address kind: %x", kind)
 	}
-	ownershipKind, err := address.NewKind(kind)
-	if err != nil {
-		return errors.Wrap(err, "creating kind for ownership key")
-	}
-	ownershipAddress, err := address.Generate(ownershipKind, tx.Ownership.KeyBytes())
+	ownershipAddress, err := address.Generate(kind, tx.Ownership.KeyBytes())
 	if err != nil {
 		return errors.Wrap(err, "generating address for ownership key")
 	}
@@ -52,7 +48,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 
 	// no transfer key may be equal to the ownership key
 	for _, tk := range tx.ValidationKeys {
-		tkAddress, err := address.Generate(ownershipKind, tk.KeyBytes())
+		tkAddress, err := address.Generate(kind, tk.KeyBytes())
 		if err != nil {
 			return errors.Wrap(err, "generating address for transfer key")
 		}

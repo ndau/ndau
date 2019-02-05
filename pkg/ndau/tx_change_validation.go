@@ -43,19 +43,15 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// we need to generate addresses for the signing key, to verify it matches
 	// the actual ownership key, if used, and for the new transfer key,
 	// to ensure it's not equal to the actual ownership key
-	kind := string(tx.Target.String()[2])
+	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
-		return fmt.Errorf("Target has invalid address kind: %s", kind)
+		return fmt.Errorf("Target has invalid address kind: %x", kind)
 	}
 
 	// per-key validation
 	for _, tk := range tx.NewKeys {
 		// new transfer key must not equal ownership key
-		ntKind, err := address.NewKind(kind)
-		if err != nil {
-			return errors.Wrap(err, "Failed to create kind from new transfer key")
-		}
-		ntAddr, err := address.Generate(ntKind, tk.KeyBytes())
+		ntAddr, err := address.Generate(kind, tk.KeyBytes())
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate address from new transfer key")
 		}
