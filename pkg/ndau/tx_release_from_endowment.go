@@ -41,11 +41,11 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 
 		acct, _ := state.GetAccount(tx.Destination, app.blockTime)
 		acct.Balance, err = acct.Balance.Add(tx.Qty)
-		if err == nil {
-			state.Accounts[tx.Destination.String()] = acct
+		if err != nil {
+			return state, err
 		}
-
 		acct.UpdateCurrencySeat(app.blockTime)
+		state.Accounts[tx.Destination.String()] = acct
 
 		// we give up overflow protection here in exchange for error-free
 		// operation; we have external constraints that we will never issue

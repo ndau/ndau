@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-zoo/bone"
 	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	chtool "github.com/oneiro-ndev/chaos/pkg/tool"
@@ -37,26 +39,34 @@ type ChaosHistoryResponse struct {
 	*chquery.KeyHistoryResponse
 }
 
+func getSystemVars(nodeAddress string) (map[string][]byte, error) {
+	node, err := ws.Node(nodeAddress)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get a node")
+
+		// reqres.NewFromErr("Could not get a node: ", err, http.StatusInternalServerError)
+	}
+
+	resp, err := node.ABCIQuery(query.SysvarsEndpoint, []byte{})
+	if err != nil {
+		return nil, errors.Wrap(err, "query error")
+	}
+
+	// resp.Value is actually JSON so decode it
+	values := make(map[string][]byte)
+	err = json.NewDecoder(bytes.NewReader(resp.Response.Value)).Decode(&values)
+	if err != nil {
+		return nil, errors.Wrap(err, "decode error")
+	}
+	return values, nil
+}
+
 // HandleSystemAll retrieves all the system keys at the current block height.
 func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		node, err := ws.Node(cf.NodeAddress)
+		values, err := getSystemVars(cf.NodeAddress)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
-			return
-		}
-
-		resp, err := node.ABCIQuery(query.SysvarsEndpoint, []byte{})
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("Query error: ", err, http.StatusInternalServerError))
-			return
-		}
-
-		// resp.Value is actually JSON so decode it
-		values := make(map[string][]byte)
-		err = json.NewDecoder(bytes.NewReader(resp.Response.Value)).Decode(&values)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("Decode error: ", err, http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("reading chaos system variables", err, http.StatusInternalServerError))
 			return
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(values))

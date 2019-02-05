@@ -105,9 +105,9 @@ func (e *Settlement) fromNomsSettlement(n nomsSettlement) {
 
 // SettlementSettings tracks the settlement settings for outbound transactions
 type SettlementSettings struct {
-	Period    math.Duration   `chain:"111,SettlementSettings_Period"`
-	ChangesAt *math.Timestamp `chain:"112,SettlementSettings_ChangesAt"`
-	Next      *math.Duration  `chain:"113,SettlementSettings_Next"`
+	Period    math.Duration   `json:"period" chain:"111,SettlementSettings_Period"`
+	ChangesAt *math.Timestamp `json:"changesAt" chain:"112,SettlementSettings_ChangesAt"`
+	Next      *math.Duration  `json:"next" chain:"113,SettlementSettings_Next"`
 }
 
 var _ marshal.Marshaler = (*SettlementSettings)(nil)
@@ -194,7 +194,7 @@ type AccountData struct {
 	Sequence            uint64                `json:"sequence" chain:"71,Acct_Sequence"`
 	Settlements         []Settlement          `json:"settlements" chain:"70,Acct_Settlements"`
 	SettlementSettings  SettlementSettings    `json:"settlementSettings" chain:"."`
-	CurrencySeatDate    *math.Timestamp       `json:"currency_seat_date" chain:"72,Acct_CurrencySeatDate"`
+	CurrencySeatDate    *math.Timestamp       `json:"currencySeatDate" chain:"72,Acct_CurrencySeatDate"`
 	SidechainPayments   map[string]struct{}   `json:"-" msg:"-"` // not useful for consumers; they should use an ABCI query instead
 	UncreditedEAI       math.Ndau             `json:"-" msg:"-"` // exclude from serialization
 }

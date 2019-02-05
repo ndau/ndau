@@ -155,6 +155,22 @@ func New(cf cfg.Cfg) *boneful.Service {
 			Accounts:    []string{dummyAddress.String()},
 		}))
 
+	svc.Route(svc.GET("/account/currencyseats").To(routes.HandleAccountCurrencySeats(cf)).
+		Doc("Returns a list of ndau 'currency seats', which are accounts containing more than 1000 ndau.").
+		Notes(`The ndau currency seats are accounts containing more than 1000 ndau. The seniority of
+		a currency seat is determined by how long it has been above the 1000 threshold, so this endpoint
+		also sorts the result by age (oldest first). It does not return detailed account information.`).
+		Operation("AccountCurrencySeats").
+		Param(boneful.QueryParameter("limit", "The max number of items to return (default=3000)").DataType("int").Required(false)).
+		Produces(JSON).
+		Writes(query.AccountListQueryResponse{
+			NumAccounts: 1,
+			FirstIndex:  1,
+			PageIndex:   0,
+			PageSize:    1000,
+			Accounts:    []string{dummyAddress.String()},
+		}))
+
 	svc.Route(svc.GET("/block/current").To(routes.HandleBlockHeight(cf)).
 		Operation("BlockCurrent").
 		Doc("Returns the most recent block in the chain").
@@ -345,12 +361,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 		`).
 		Produces(JSON).
 		Writes(routes.OrderChainInfo{
-			MarketPrice:   16.85,
-			TargetPrice:   17.00,
-			FloorPrice:    2.57,
-			EndowmentSold: 2919000 * 100000000,
-			TotalNdau:     3141593 * 100000000,
-			PriceUnits:    "USD",
+			MarketPrice: 16.85,
+			TargetPrice: 17.00,
+			FloorPrice:  2.57,
+			TotalIssued: 2919000 * 100000000,
+			TotalNdau:   3141593 * 100000000,
+			PriceUnits:  "USD",
 		}))
 
 	svc.Route(svc.GET("/system/all").To(routes.HandleSystemAll(cf)).

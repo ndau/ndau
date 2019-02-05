@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-zoo/bone"
@@ -208,6 +209,43 @@ func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		reqres.RespondJSON(w, reqres.OKResponse(accts))
+	}
+}
+
+// HandleAccountCurrencySeats returns a HandlerFunc that returns all the accounts
+// in the system that exceed 1000 ndau; they are sorted in order from oldest
+// to newest. It accepts a single parameter for the maximum number of accounts
+// to return (default 3000).
+func HandleAccountCurrencySeats(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		node, err := ws.Node(cf.NodeAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
+			return
+		}
+
+		limit := 3000 // the number of currency seats eligible to vote in the 2nd tier election
+		limitStr := r.URL.Query().Get("limit")
+		if limitStr != "" {
+			var pi int64
+			pi, err = strconv.ParseInt(limitStr, 10, 32)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewAPIError("limit must be a valid number", http.StatusBadRequest))
+				return
+			}
+			limit = int(pi)
+		}
+
+		accts, err := tool.GetCurrencySeats(node)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching currency seats: %s", err), http.StatusInternalServerError))
+			return
+		}
+
+		if limit < len(accts) {
+			accts = accts[:limit]
+		}
 		reqres.RespondJSON(w, reqres.OKResponse(accts))
 	}
 }
