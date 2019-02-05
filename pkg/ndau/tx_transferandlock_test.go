@@ -21,7 +21,8 @@ func generateRandomAddr(t *testing.T) string {
 	require.NoError(t, err)
 	k, err := key.NewMaster(seed)
 	require.NoError(t, err)
-	a, err := address.Generate(address.Kind('a'), k.PubKeyBytes())
+	a, err := address.Generate(address.KindUser, k.PubKeyBytes())
+	require.NoError(t, err)
 	return a.String()
 }
 

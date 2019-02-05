@@ -43,9 +43,9 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// we need to generate addresses for the signing key, to verify it matches
 	// the actual ownership key, if used, and for the new transfer key,
 	// to ensure it's not equal to the actual ownership key
-	kind := address.Kind(string(tx.Target.String()[2]))
+	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
-		return fmt.Errorf("Target has invalid address kind: %s", kind)
+		return fmt.Errorf("Target has invalid address kind: %x", kind)
 	}
 
 	// per-key validation

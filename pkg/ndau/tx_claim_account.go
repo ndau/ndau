@@ -23,9 +23,9 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Account address invalid")
 	}
-	kind := address.Kind(string(tx.Target.String()[2]))
+	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
-		return fmt.Errorf("Account has invalid address kind: %s", kind)
+		return fmt.Errorf("Account has invalid address kind: %x", kind)
 	}
 	ownershipAddress, err := address.Generate(kind, tx.Ownership.KeyBytes())
 	if err != nil {
