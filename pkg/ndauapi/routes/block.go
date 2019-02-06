@@ -283,7 +283,7 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 	}
 
 	// Limit the results to the requested page.
-	pagedFirstHeight := firstHeight + uint64(pageIndex * pageSize)
+	pagedFirstHeight := firstHeight + uint64(pageIndex*pageSize)
 	if pagedFirstHeight > lastHeight {
 		pagedFirstHeight = lastHeight
 	}
@@ -430,5 +430,61 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		reqres.RespondJSON(w, reqres.OKResponse(block))
+	}
+}
+
+// HandleBlockTransactions delivers the transactions contained within the block specified by
+// the given blockhash.
+func HandleBlockTransactions(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		blockhash := bone.GetValue(r, "blockhash")
+		if blockhash == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("blockhash parameter required", http.StatusBadRequest))
+			return
+		}
+
+		node, err := ws.Node(cf.NodeAddress)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
+			return
+		}
+
+		// Prepare search params.
+		params := search.QueryParams{
+			Command: search.HeightByBlockHashCommand,
+			Hash:    blockhash, // Hex digits are query-escaped by default.
+		}
+		paramsBuf := &bytes.Buffer{}
+		json.NewEncoder(paramsBuf).Encode(params)
+		paramsString := paramsBuf.String()
+
+		searchValue, err := tool.GetSearchResults(node, paramsString)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		blockheight, err := strconv.ParseInt(searchValue, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		if blockheight <= 0 {
+			// The search was valid, but there were no results.
+			reqres.RespondJSON(w, reqres.OKResponse(nil))
+			return
+		}
+
+		block, err := node.Block(&blockheight)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		_ = block
+		// ERIC: look up block transaction hashes here
+		txHashes := []string{}
+		reqres.RespondJSON(w, reqres.OKResponse(txHashes))
 	}
 }

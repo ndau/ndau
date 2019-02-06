@@ -42,6 +42,7 @@ func keyFromString(s string) signature.PublicKey {
 }
 
 var dummyPublic = keyFromString("npuba8jadtbbedhhdcad42tysymzpi5ec77vpi4exabh3unu2yem8wn4wv22kvvt24kpm3ghikst")
+var dummyTxHash = "ERIC: PUT SOMETHING THAT LOOKS LIKE A TXHASH HERE"
 
 // var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
 var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.KeyBytes())
@@ -202,6 +203,13 @@ func New(cf cfg.Cfg) *boneful.Service {
 			LastHeight: 12345,
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
+
+	svc.Route(svc.GET("/block/transactions/:blockhash").To(routes.HandleBlockTransactions(cf)).
+		Operation("BlockTransactions").
+		Doc("Returns transaction hashes for a given block. These can be used to fetch data for individual transactions.").
+		Param(boneful.PathParameter("blockhash", "Hex hash of the block.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes([]string{dummyTxHash}))
 
 	svc.Route(svc.GET("/block/daterange/:first/:last").To(routes.HandleBlockDateRange(cf)).
 		Operation("BlockDateRange").
