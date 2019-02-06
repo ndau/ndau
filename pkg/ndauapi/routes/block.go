@@ -353,42 +353,40 @@ func HandleChaosBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
 // HandleBlockHeight returns data for a single block; if height is 0, it's the current block
 func HandleBlockHeight(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		block := handleBlockHeight(cf, w, r)
-		if block != nil {
+		block, apiErr := handleBlockHeight(cf, r)
+		if apiErr.Status() != http.StatusOK {
+			reqres.RespondJSON(w, apiErr)
+		} else {
 			reqres.RespondJSON(w, reqres.OKResponse(block))
 		}
 	}
 }
 
-func handleBlockHeight(cf cfg.Cfg, w http.ResponseWriter, r *http.Request) *rpctypes.ResultBlock {
+func handleBlockHeight(cf cfg.Cfg, r *http.Request) (*rpctypes.ResultBlock, reqres.APIError) {
 	var pheight *int64
 	hp := bone.GetValue(r, "height")
 	if hp != "" {
 		height, err := strconv.ParseInt(hp, 10, 64)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("height must be a valid number", err, http.StatusBadRequest))
-			return nil
+			return nil, reqres.NewFromErr("height must be a valid number", err, http.StatusBadRequest)
 		}
 		if height < 1 {
-			reqres.RespondJSON(w, reqres.NewAPIError("height must be greater than 0", http.StatusBadRequest))
-			return nil
+			return nil, reqres.NewAPIError("height must be greater than 0", http.StatusBadRequest)
 		}
 		pheight = &height
 	}
 
 	node, err := ws.Node(cf.NodeAddress)
 	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-		return nil
+		return nil, reqres.NewAPIError("could not get node client", http.StatusInternalServerError)
 	}
 
 	block, err := node.Block(pheight)
 	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusBadRequest))
-		return nil
+		return nil, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusBadRequest)
 	}
 
-	return block
+	return block, reqres.NewAPIError("", http.StatusOK)
 }
 
 // HandleBlockHash delivers a block matching a hash
@@ -447,8 +445,10 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 // the given blockhash.
 func HandleBlockTransactions(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		block := handleBlockHeight(cf, w, r)
-		if block != nil {
+		block, apiErr := handleBlockHeight(cf, r)
+		if apiErr.Status() != http.StatusOK {
+			reqres.RespondJSON(w, apiErr)
+		} else {
 			txHashes := []string{}
 
 			for _, txBytes := range block.Block.Data.Txs {
