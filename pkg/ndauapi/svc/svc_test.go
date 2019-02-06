@@ -24,6 +24,7 @@ func TestRouting(t *testing.T) {
 		rt{"GET", "/block/height/10234", "/block/height/:height"},
 		rt{"GET", "/block/range/123/143", "/block/range/:first/:last"},
 		rt{"GET", "/block/daterange/x/y", "/block/daterange/:first/:last"},
+		rt{"GET", "/block/transactions/555", "/block/transactions/:height"},
 		rt{"GET", "/chaos/range/123/143", "/chaos/range/:first/:last"},
 		rt{"GET", "/chaos/daterange/x/y", "/chaos/daterange/:first/:last"},
 		rt{"GET", "/chaos/value/mynamespace/all", "/chaos/value/:namespace/all"},
