@@ -387,3 +387,59 @@ func TestBlockHash(t *testing.T) {
 		})
 	}
 }
+
+func TestBlockTransactions(t *testing.T) {
+	if !isIntegration {
+		t.Skip("integration tests are opt-in")
+	}
+
+	// set up apparatus
+	cf, _, err := cfg.New()
+	if err != nil {
+		t.Errorf("Error creating cfg: %s", err)
+		return
+	}
+	mux := svc.New(cf).Mux()
+
+	// Add to the blockchain and index.
+	createNdauBlock(t)
+
+	// Grab the block hash for use in later tests.
+	blockData := getCurrentNdauBlock(t, mux)
+	blockHeight := blockData.BlockMeta.Header.Height
+
+	// set up tests
+	tests := []struct {
+		name   	 string
+		req    	 *http.Request
+		status 	 int
+		wantbody string
+	}{
+		{
+			name:     "good request",
+			req:      httptest.NewRequest("GET", fmt.Sprintf("/block/transactions/%d", blockHeight), nil),
+			status:   http.StatusOK,
+			wantbody: "[\"", // The response should contain a tx hash array.
+		},
+	}
+
+	// run tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			mux.ServeHTTP(w, tt.req)
+			res := w.Result()
+
+			body, _ := ioutil.ReadAll(res.Body)
+
+			if res.StatusCode != tt.status {
+				t.Errorf("got status code %v, want %v. (%s)", res.StatusCode, tt.status, body)
+				return
+			}
+
+			if !strings.Contains(string(body), tt.wantbody) {
+				t.Errorf("SubmitTx() expected err to contain '%s', was '%s'", tt.wantbody, body)
+			}
+		})
+	}
+}

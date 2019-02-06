@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/go-zoo/bone"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
@@ -351,34 +353,42 @@ func HandleChaosBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
 // HandleBlockHeight returns data for a single block; if height is 0, it's the current block
 func HandleBlockHeight(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var pheight *int64
-		hp := bone.GetValue(r, "height")
-		if hp != "" {
-			height, err := strconv.ParseInt(hp, 10, 64)
-			if err != nil {
-				reqres.RespondJSON(w, reqres.NewFromErr("height must be a valid number", err, http.StatusBadRequest))
-				return
-			}
-			if height < 1 {
-				reqres.RespondJSON(w, reqres.NewAPIError("height must be greater than 0", http.StatusBadRequest))
-				return
-			}
-			pheight = &height
+		block := handleBlockHeight(cf, w, r)
+		if block != nil {
+			reqres.RespondJSON(w, reqres.OKResponse(block))
 		}
-
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-			return
-		}
-		block, err := node.Block(pheight)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusBadRequest))
-			return
-		}
-
-		reqres.RespondJSON(w, reqres.OKResponse(block))
 	}
+}
+
+func handleBlockHeight(cf cfg.Cfg, w http.ResponseWriter, r *http.Request) *rpctypes.ResultBlock {
+	var pheight *int64
+	hp := bone.GetValue(r, "height")
+	if hp != "" {
+		height, err := strconv.ParseInt(hp, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("height must be a valid number", err, http.StatusBadRequest))
+			return nil
+		}
+		if height < 1 {
+			reqres.RespondJSON(w, reqres.NewAPIError("height must be greater than 0", http.StatusBadRequest))
+			return nil
+		}
+		pheight = &height
+	}
+
+	node, err := ws.Node(cf.NodeAddress)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
+		return nil
+	}
+
+	block, err := node.Block(pheight)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusBadRequest))
+		return nil
+	}
+
+	return block
 }
 
 // HandleBlockHash delivers a block matching a hash
@@ -437,54 +447,21 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 // the given blockhash.
 func HandleBlockTransactions(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		blockhash := bone.GetValue(r, "blockhash")
-		if blockhash == "" {
-			reqres.RespondJSON(w, reqres.NewAPIError("blockhash parameter required", http.StatusBadRequest))
-			return
-		}
+		block := handleBlockHeight(cf, w, r)
+		if block != nil {
+			txHashes := []string{}
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-			return
-		}
+			for _, txBytes := range block.Block.Data.Txs {
+				txab, err := metatx.Unmarshal(txBytes, ndau.TxIDs)
+				if err != nil {
+					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not decode tx: %v", err), http.StatusInternalServerError))
+					return
+				}
 
-		// Prepare search params.
-		params := search.QueryParams{
-			Command: search.HeightByBlockHashCommand,
-			Hash:    blockhash, // Hex digits are query-escaped by default.
-		}
-		paramsBuf := &bytes.Buffer{}
-		json.NewEncoder(paramsBuf).Encode(params)
-		paramsString := paramsBuf.String()
+				txHashes = append(txHashes,  metatx.Hash(txab))
+			}
 
-		searchValue, err := tool.GetSearchResults(node, paramsString)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
-			return
+			reqres.RespondJSON(w, reqres.OKResponse(txHashes))
 		}
-
-		blockheight, err := strconv.ParseInt(searchValue, 10, 64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
-			return
-		}
-
-		if blockheight <= 0 {
-			// The search was valid, but there were no results.
-			reqres.RespondJSON(w, reqres.OKResponse(nil))
-			return
-		}
-
-		block, err := node.Block(&blockheight)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
-			return
-		}
-
-		_ = block
-		// ERIC: look up block transaction hashes here
-		txHashes := []string{}
-		reqres.RespondJSON(w, reqres.OKResponse(txHashes))
 	}
 }
