@@ -9,11 +9,12 @@ import (
 
 // Summary is the return value from the /summary endpoint
 type Summary struct {
-	BlockHeight uint64
-	TotalNdau   types.Ndau
-	NumAccounts int
-	TotalRFE    types.Ndau
-	TotalIssue  types.Ndau
+	BlockHeight      uint64
+	TotalNdau        types.Ndau
+	NumAccounts      int
+	TotalRFE         types.Ndau
+	TotalIssue       types.Ndau
+	TotalCirculation types.Ndau
 }
 
 // SidechainTxExistsQuery specifies a particular sidechain tx

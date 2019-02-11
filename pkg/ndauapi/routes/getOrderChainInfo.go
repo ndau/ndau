@@ -35,9 +35,7 @@ func getTotals(cf cfg.Cfg) (OrderChainInfo, error) {
 		return oci, err
 	}
 	oci.TotalIssued = summ.TotalIssue
-	// the total ndau in circulation is the total in all accounts, excluding
-	// the amount of ndau that have been released but not issued
-	oci.TotalNdau = summ.TotalNdau - (summ.TotalRFE - summ.TotalIssue)
+	oci.TotalNdau = summ.TotalCirculation
 	return oci, nil
 }
 
