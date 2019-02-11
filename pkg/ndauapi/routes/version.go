@@ -78,7 +78,7 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 		// We don't care about the number of commits, and the g is not interesting, so
 		// we pattern match the middle part.
 		// If the format doesn't match that, we will just return the version string unmodified.
-		p := regexp.MustCompile("-[0-9+]-g")
+		p := regexp.MustCompile("-[0-9]+-g")
 		spv := p.Split(version, -1)
 		result.NdauVersion = spv[0]
 		if len(spv) > 1 {
