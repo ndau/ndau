@@ -94,7 +94,6 @@ func getOrderChainInfo(cf cfg.Cfg) (OrderChainInfo, error) {
 }
 
 // GetOrderChainData returns a block of information from the order chain
-// (Although for now it's mocked up to return fake data)
 func GetOrderChainData(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		response, err := getOrderChainInfo(cf)
