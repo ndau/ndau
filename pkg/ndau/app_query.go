@@ -10,7 +10,7 @@ import (
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
@@ -25,6 +25,7 @@ func init() {
 	meta.RegisterQueryHandler(query.AccountHistoryEndpoint, accountHistoryQuery)
 	meta.RegisterQueryHandler(query.AccountListEndpoint, accountListQuery)
 	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
+	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
@@ -307,4 +308,40 @@ func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 		app.QueryError(err, response, "encoding sysvars")
 	}
 	response.Value = buf.Bytes()
+}
+
+func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+	state := app.GetState().(*backing.State)
+
+	dr := make(query.DelegatesResponse, 0, len(state.Delegates))
+	for nodeS, acctsS := range state.Delegates {
+		node, err := address.Validate(nodeS)
+		if err != nil {
+			app.QueryError(err, response, "node address failed to validate")
+			return
+		}
+		delegate := query.DelegateList{
+			Node: node,
+		}
+
+		for acctS := range acctsS {
+			acct, err := address.Validate(acctS)
+			if err != nil {
+				app.QueryError(err, response, "acct address failed to validate")
+				return
+			}
+			delegate.Delegated = append(delegate.Delegated, acct)
+		}
+
+		dr = append(dr, delegate)
+	}
+
+	bytes, err := dr.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "failed to marshal delegates response")
+		return
+	}
+
+	response.Value = bytes
 }
