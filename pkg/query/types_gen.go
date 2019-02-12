@@ -453,6 +453,12 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "TotalIssue")
 				return
 			}
+		case "TotalCirculation":
+			err = z.TotalCirculation.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalCirculation")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -466,9 +472,9 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 5
+	// map header, size 6
 	// write "BlockHeight"
-	err = en.Append(0x85, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	err = en.Append(0x86, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
 	if err != nil {
 		return
 	}
@@ -517,15 +523,25 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "TotalIssue")
 		return
 	}
+	// write "TotalCirculation"
+	err = en.Append(0xb0, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x43, 0x69, 0x72, 0x63, 0x75, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e)
+	if err != nil {
+		return
+	}
+	err = z.TotalCirculation.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalCirculation")
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 5
+	// map header, size 6
 	// string "BlockHeight"
-	o = append(o, 0x85, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	o = append(o, 0x86, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
 	o = msgp.AppendUint64(o, z.BlockHeight)
 	// string "TotalNdau"
 	o = append(o, 0xa9, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x4e, 0x64, 0x61, 0x75)
@@ -549,6 +565,13 @@ func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	o, err = z.TotalIssue.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "TotalIssue")
+		return
+	}
+	// string "TotalCirculation"
+	o = append(o, 0xb0, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x43, 0x69, 0x72, 0x63, 0x75, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e)
+	o, err = z.TotalCirculation.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalCirculation")
 		return
 	}
 	return
@@ -602,6 +625,12 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "TotalIssue")
 				return
 			}
+		case "TotalCirculation":
+			bts, err = z.TotalCirculation.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalCirculation")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -616,6 +645,6 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Summary) Msgsize() (s int) {
-	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize + 9 + z.TotalRFE.Msgsize() + 11 + z.TotalIssue.Msgsize()
+	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize + 9 + z.TotalRFE.Msgsize() + 11 + z.TotalIssue.Msgsize() + 17 + z.TotalCirculation.Msgsize()
 	return
 }
