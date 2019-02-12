@@ -1,12 +1,12 @@
 package txmobile
 
 // generated with github.com/oneiro-ndev/ndau/pkg/txmobile/generator
-// DO NOT EDIT
+//
 
 import (
 	"encoding/base64"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"

@@ -31,7 +31,7 @@ func TestSetRewardsDestinationAccountValidates(t *testing.T) {
 	srt := NewSetRewardsDestination(sourceAddress, destAddress, 1, private)
 
 	// make the account field invalid
-	srt.Source = address.Address{}
+	srt.Target = address.Address{}
 	srt.Signatures = []signature.Signature{private.Sign(srt.SignableBytes())}
 
 	// srt must be invalid

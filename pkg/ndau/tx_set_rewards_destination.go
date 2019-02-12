@@ -12,7 +12,7 @@ import (
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *SetRewardsDestination) GetAccountAddresses() []string {
-	return []string{tx.Source.String(), tx.Destination.String()}
+	return []string{tx.Target.String(), tx.Destination.String()}
 }
 
 // Validate implements metatx.Transactable
@@ -40,7 +40,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	// if dest is the same as source, we're resetting the EAI to accumulate
 	// in its account of origin.
 	// neither destination rule appllies in that case.
-	if tx.Destination.String() != tx.Source.String() {
+	if tx.Destination.String() != tx.Target.String() {
 		// dest account must not be sending rewards to any other account
 		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
 		if targetData.RewardsTarget != nil {
@@ -66,17 +66,17 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(tx.Source, app.blockTime)
+		accountData, _ := state.GetAccount(tx.Target, app.blockTime)
 
 		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
 
 		// update inbound of rewards target
-		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != tx.Source.String() {
+		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != tx.Target.String() {
 			oldTargetData, _ := state.GetAccount(*accountData.RewardsTarget, app.blockTime)
 			// remove account from current target inbounds list
 			inbounds := make([]address.Address, 0, len(oldTargetData.IncomingRewardsFrom)-1)
 			for _, addr := range oldTargetData.IncomingRewardsFrom {
-				if tx.Source.String() != addr.String() {
+				if tx.Target.String() != addr.String() {
 					inbounds = append(inbounds, addr)
 				}
 			}
@@ -84,22 +84,22 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 			state.Accounts[accountData.RewardsTarget.String()] = oldTargetData
 		}
 
-		if tx.Source.String() == tx.Destination.String() {
+		if tx.Target.String() == tx.Destination.String() {
 			accountData.RewardsTarget = nil
 		} else {
 			accountData.RewardsTarget = &tx.Destination
-			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, tx.Source)
+			targetData.IncomingRewardsFrom = append(targetData.IncomingRewardsFrom, tx.Target)
 			state.Accounts[tx.Destination.String()] = targetData
 		}
 
-		state.Accounts[tx.Source.String()] = accountData
+		state.Accounts[tx.Target.String()] = accountData
 		return state, nil
 	})
 }
 
 // GetSource implements sourcer
 func (tx *SetRewardsDestination) GetSource(*App) (address.Address, error) {
-	return tx.Source, nil
+	return tx.Target, nil
 }
 
 // GetSequence implements sequencer

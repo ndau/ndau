@@ -147,7 +147,7 @@ var _ NTransactable = (*Notify)(nil)
 // When the rewards target is empty, EAI and other rewards are deposited to the
 // origin account. Otherwise, they are deposited to the specified destination.
 type SetRewardsDestination struct {
-	Source      address.Address       `msg:"src" chain:"1,Tx_Source" json:"source"`
+	Target      address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
 	Destination address.Address       `msg:"dst" chain:"2,Tx_Destination" json:"destination"`
 	Sequence    uint64                `msg:"seq" json:"sequence"`
 	Signatures  []signature.Signature `msg:"sig" json:"signatures"`

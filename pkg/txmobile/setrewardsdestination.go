@@ -1,12 +1,12 @@
 package txmobile
 
 // generated with github.com/oneiro-ndev/ndau/pkg/txmobile/generator
-// DO NOT EDIT
+//
 
 import (
 	"encoding/base64"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -41,13 +41,13 @@ type SetRewardsDestination struct {
 
 // NewSetRewardsDestination constructs a new unsigned SetRewardsDestination transaction
 func NewSetRewardsDestination(
-	source string,
+	target string,
 	destination string,
 	sequence int64,
 ) (*SetRewardsDestination, error) {
-	sourceN, err := address.Validate(source)
+	targetN, err := address.Validate(target)
 	if err != nil {
-		return nil, errors.Wrap(err, "source")
+		return nil, errors.Wrap(err, "target")
 	}
 
 	destinationN, err := address.Validate(destination)
@@ -57,7 +57,7 @@ func NewSetRewardsDestination(
 
 	return &SetRewardsDestination{
 		tx: ndau.SetRewardsDestination{
-			Source:      sourceN,
+			Target:      targetN,
 			Destination: destinationN,
 			Sequence:    uint64(sequence),
 		},
@@ -94,17 +94,17 @@ func (tx *SetRewardsDestination) ToB64String() (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-// GetSource gets the source of the SetRewardsDestination
+// GetTarget gets the target of the SetRewardsDestination
 //
 // Returns a zero value if SetRewardsDestination is `nil` or if native conversion is fallible and
 // conversion failed.
-func (tx *SetRewardsDestination) GetSource() string {
+func (tx *SetRewardsDestination) GetTarget() string {
 	if tx == nil {
 		return ""
 	}
-	source := tx.tx.Source.String()
+	target := tx.tx.Target.String()
 
-	return source
+	return target
 }
 
 // GetDestination gets the destination of the SetRewardsDestination

@@ -205,13 +205,13 @@ func NewNotify(
 //
 // If signing keys are present, the new transactable is signed with all of them
 func NewSetRewardsDestination(
-	source address.Address,
+	target address.Address,
 	destination address.Address,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *SetRewardsDestination {
 	tx := &SetRewardsDestination{
-		Source:      source,
+		Target:      target,
 		Destination: destination,
 		Sequence:    sequence,
 	}
