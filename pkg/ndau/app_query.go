@@ -318,8 +318,8 @@ func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.Respon
 	for nodeS, acctsS := range state.Delegates {
 		node, err := address.Validate(nodeS)
 		if err != nil {
-			app.QueryError(err, response, "node address failed to validate")
-			return
+			response.Info += fmt.Sprintf("bad node address: %q\n", nodeS)
+			continue
 		}
 		delegate := query.DelegateList{
 			Node: node,
@@ -328,8 +328,9 @@ func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.Respon
 		for acctS := range acctsS {
 			acct, err := address.Validate(acctS)
 			if err != nil {
-				app.QueryError(err, response, "acct address failed to validate")
-				return
+				response.Info += fmt.Sprintf("bad acct address: %q\n", acctS)
+				response.Info += fmt.Sprintf("        for node: %s\n", node)
+				continue
 			}
 			delegate.Delegated = append(delegate.Delegated, acct)
 		}
