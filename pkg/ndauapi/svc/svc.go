@@ -377,6 +377,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 			PriceUnits:  "USD",
 		}))
 
+	svc.Route(svc.GET("/state/delegates").To(routes.HandleStateDelegates(cf)).
+		Operation("StateDelegates").
+		Doc("Returns the current collection of delegate information.").
+		Produces(JSON).
+		Writes(""))
+
 	svc.Route(svc.GET("/system/all").To(routes.HandleSystemAll(cf)).
 		Operation("SystemAll").
 		Doc("Returns the names and current values of all currently-defined system variables.").

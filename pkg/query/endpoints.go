@@ -6,6 +6,7 @@ const (
 	AccountHistoryEndpoint    = "/accounthistory"
 	AccountListEndpoint       = "/accountlist"
 	DateRangeEndpoint         = "/daterange"
+	DelegatesEndpoint         = "/delegates"
 	PrevalidateEndpoint       = "/prevalidate"
 	SearchEndpoint            = "/search"
 	SidechainTxExistsEndpoint = "/stx"

@@ -32,3 +32,15 @@ type AccountListQueryResponse struct {
 	PageIndex   int
 	Accounts    []string
 }
+
+// DelegateList lists the accounts delegated to a particular node
+type DelegateList struct {
+	Node      address.Address
+	Delegated []address.Address
+}
+
+// DelegatesResponse is the return value from the /delegates endpoint
+//
+// Note that this is _not_ a standard MSGP-able struct; it must instead
+// be marshalled and unmarshalled using msgp.(Un)MarshalIntf methods
+type DelegatesResponse []DelegateList
