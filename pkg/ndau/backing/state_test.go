@@ -1,7 +1,6 @@
 package backing
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -9,22 +8,22 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-func randomState(t *testing.T, n int, qty types.Ndau, rewardsTarget bool) State {
+func randomState(t *testing.T, qty types.Ndau, rewardsTarget bool) (address.Address, State) {
 	s := State{}
 	s.Init(nil)
-	for i := 0; i < n; i++ {
-		data, _ := generateAccount(t, qty, false, false)
-		if rewardsTarget {
-			addr := randAddress()
-			data.RewardsTarget = &addr
-		} else {
-			data.RewardsTarget = nil
-		}
-		addr := randAddress()
-		s.Accounts[addr.String()] = data
+	data, _ := generateAccount(t, qty, false, false)
+	if rewardsTarget {
+		tgtaddr := randAddress()
+		// we want an empty target account that already exists so that its date fields are set
+		tgtdata, _ := generateAccount(t, 0, false, false)
+		s.Accounts[tgtaddr.String()] = tgtdata
+		data.RewardsTarget = &tgtaddr
+	} else {
+		data.RewardsTarget = nil
 	}
-	fmt.Println(s)
-	return s
+	addr := randAddress()
+	s.Accounts[addr.String()] = data
+	return addr, s
 }
 
 // getAccount sorts the list of account indices and returns the nth item;
@@ -45,68 +44,80 @@ func getAddr(id string) address.Address {
 
 func TestState_PayReward(t *testing.T) {
 	const (
-		isEAI    = true
-		notEAI   = false
-		isRedir  = true
-		noRedir  = false
-		chkWAA   = true
-		nochkWAA = false
-		chkEAI   = true
-		nochkEAI = false
+		isEAI   = true
+		notEAI  = false
+		isRedir = true
+		noRedir = false
+		chgW    = true
+		nochgW  = false
+		chgE    = true
+		nochgE  = false
 	)
 
-	type args struct {
-		ix     int
-		reward types.Ndau
+	// test account data for each returned value
+	type ta struct {
+		balance types.Ndau
+		chgWAA  bool
+		chgEAI  bool
 	}
+
 	tests := []struct {
 		name    string
-		numaddr int
 		qty     types.Ndau
 		eai     bool
 		redir   bool
-		args    args
-		want    int
-		amount  types.Ndau
-		ckWAA   bool
-		ckEAI   bool
+		reward  types.Ndau
+		resp    []ta
 		wantErr bool
 	}{
-		{"simple", 1, 0, notEAI, noRedir, args{0, 1234}, 0, 1234, chkWAA, nochkEAI, false},
-		{"nonzero simple", 1, 1234, notEAI, noRedir, args{0, 1}, 0, 1235, chkWAA, nochkEAI, false},
-		{"redirect", 1, 1234, notEAI, isRedir, args{0, 1}, 0, 1, chkWAA, nochkEAI, false},
-		{"eai", 1, 1234, isEAI, isRedir, args{0, 1}, 0, 1, chkWAA, chkEAI, false},
+		// reward nothing, do almost nothing (LastWAAUpdate should be fresh)
+		{"simple", 0, notEAI, noRedir, 1234, []ta{ta{1234, chgW, nochgE}}, false},
+		// reward something, update Balance and LastWAAUpdate
+		{"nonzero simple", 1234, notEAI, noRedir, 1, []ta{ta{1235, chgW, nochgE}}, false},
+		// reward EAI, expect WAA not to change
+		{"nonzero simple EAI", 1234, isEAI, noRedir, 1, []ta{ta{1235, nochgW, chgE}}, false},
+		// redirect non-EAI, source unchanged, target changes WAA
+		{"redirect nonEAI", 1234, notEAI, isRedir, 1, []ta{ta{1, chgW, nochgE}}, false},
+		// redirect EAI, source changes EAI, target changes WAA
+		{"redirect EAI", 1234, isEAI, isRedir, 1, []ta{ta{1234, nochgW, chgE}, ta{1, chgW, nochgE}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := randomState(t, tt.numaddr, tt.qty, tt.redir)
-			addr := getAddr(getAccountID(s, tt.args.ix))
-			wantid := getAccountID(s, tt.want)
-			if tt.redir {
-				wantid = (*s.Accounts[wantid].RewardsTarget).String()
-			}
-			fmt.Println(addr, wantid)
-			for a := range s.Accounts {
-				fmt.Println("Acct: ", a)
+			addr, s := randomState(t, tt.qty, tt.redir)
+			var wantids []string
+			switch {
+			case tt.redir == false:
+				wantids = []string{addr.String()}
+			case tt.redir == true && tt.eai == false:
+				wantids = []string{(*s.Accounts[addr.String()].RewardsTarget).String()}
+			case tt.redir == true && tt.eai == true:
+				wantids = []string{addr.String(), (*s.Accounts[addr.String()].RewardsTarget).String()}
 			}
 			blockTime := randTimestamp()
-			got, err := s.PayReward(addr, tt.args.reward, blockTime, false)
+			got, err := s.PayReward(addr, tt.reward, blockTime, tt.eai)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("State.PayReward() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got.String() != wantid {
-				t.Errorf("State.PayReward() = %v, want %v", got, wantid)
+			if len(got) != len(wantids) {
+				t.Errorf("State.PayReward returned wrong length result: %v but we wanted %v", got, wantids)
+				return
 			}
-			acct := s.Accounts[got.String()]
-			if acct.Balance != tt.amount {
-				t.Errorf("State[%s].amount = %v, want %v", got, acct.Balance, tt.amount)
-			}
-			if tt.ckEAI && acct.LastEAIUpdate != blockTime {
-				t.Errorf("State[%s].LastEAIUpdate = %v, want %v", got, acct.LastEAIUpdate, blockTime)
-			}
-			if tt.ckWAA && acct.LastWAAUpdate != blockTime {
-				t.Errorf("State[%s].LastWAAUpdate = %v, want %v", got, acct.LastWAAUpdate, blockTime)
+			for i, a := range got {
+				if a.String() != wantids[i] {
+					t.Errorf("State.PayReward() returned wrong ID = %v, want %v", a, wantids[i])
+				}
+				acctid := a.String()
+				acct := s.Accounts[acctid]
+				if acct.Balance != tt.resp[i].balance {
+					t.Errorf("%d) State[%s].Balance = %v, want %v", i, acctid, acct.Balance, tt.resp[i].balance)
+				}
+				if tt.resp[i].chgEAI == false && acct.LastEAIUpdate == blockTime {
+					t.Errorf("%d) State[%s].LastEAIUpdate was updated but shouldn't have been", i, acctid)
+				}
+				if tt.resp[i].chgWAA == false && acct.LastWAAUpdate == blockTime {
+					t.Errorf("%d) State[%s].LastWAAUpdate was updated but shouldn't have been", i, acctid)
+				}
 			}
 		})
 	}

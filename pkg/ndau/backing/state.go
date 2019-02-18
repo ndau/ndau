@@ -310,49 +310,70 @@ func (s *State) GetCostakers(nodeA address.Address) []AccountData {
 
 // PayReward updates the state of the target address to add the given qty of ndau, following
 // the link to any specified rewards target. If the rewards target account does not previously exist,
-// it will be created. Returns the address that was updated, which may not be the same as the address
-// specified.
-func (s *State) PayReward(address address.Address, reward math.Ndau, blockTime math.Timestamp, isEAI bool) (address.Address, error) {
-	// follow the chain to the target account
-	acct, _ := s.GetAccount(address, blockTime)
+// it will be created. Returns a list of accounts whose state was updated in some way.
+// Note that if the reward is redirected, it is still the original account whose lastEAIUpdate time
+// is changed.
+// If isEAI we change WAA only if it's the same account (per the rules of EAI).
+// If it's redirected we change WAA for the target account and do nothing to the source.
+// If it's not redirected we change WAA only if it's not EAI.
+func (s *State) PayReward(srcAddress address.Address, reward math.Ndau, blockTime math.Timestamp, isEAI bool) ([]address.Address, error) {
+	var err error
+	srcAccount, _ := s.GetAccount(srcAddress, blockTime)
 
-	rewardForWAA := reward
-
-	if acct.RewardsTarget == nil {
-		// WAA is not affected by rewards coming from EAI, ONLY when the rewards are sent to the
-		// same account; otherwise, WAA *is* adjusted.
-		if isEAI {
-			rewardForWAA = 0
+	if srcAccount.RewardsTarget != nil {
+		// rewards are being redirected, so get the target account
+		tgtAddress := *(srcAccount.RewardsTarget)
+		tgtAccount, _ := s.GetAccount(tgtAddress, blockTime)
+		// recalc WAA
+		err = tgtAccount.WeightedAverageAge.UpdateWeightedAverageAge(
+			blockTime.Since(tgtAccount.LastWAAUpdate),
+			reward,
+			tgtAccount.Balance,
+		)
+		if err != nil {
+			return nil, err
 		}
+		tgtAccount.LastWAAUpdate = blockTime
+		// now we can update the balance
+		tgtAccount.Balance, err = tgtAccount.Balance.Add(math.Ndau(reward))
+		if err != nil {
+			return nil, err
+		}
+		// and store it back into the state
+		s.Accounts[tgtAddress.String()] = tgtAccount
+		// iff this was EAI, update the source account LastEAIUpdate
+		if isEAI {
+			srcAccount.LastEAIUpdate = blockTime
+			s.Accounts[srcAddress.String()] = srcAccount
+			// return both accounts that were changed
+			return []address.Address{srcAddress, tgtAddress}, nil
+		}
+		// it wasn't EAI, but it *was* redirected, so we don't have to update the source
+		// at all; just return the target's address.
+		return []address.Address{tgtAddress}, nil
+	}
+
+	// if we get here, we're not redirected and can do everything to the source account
+	if !isEAI {
+		// it's not EAI so update WAA but not EAI time
+		err = srcAccount.WeightedAverageAge.UpdateWeightedAverageAge(
+			blockTime.Since(srcAccount.LastWAAUpdate),
+			reward,
+			srcAccount.Balance,
+		)
+		if err != nil {
+			return nil, err
+		}
+		srcAccount.LastWAAUpdate = blockTime
 	} else {
-		address = *(acct.RewardsTarget)
-		acct, _ = s.GetAccount(address, blockTime)
+		// it IS EAI so update EAI time but not WAA
+		srcAccount.LastEAIUpdate = blockTime
 	}
-
-	err := acct.WeightedAverageAge.UpdateWeightedAverageAge(
-		blockTime.Since(acct.LastWAAUpdate),
-		rewardForWAA,
-		acct.Balance,
-	)
+	srcAccount.Balance, err = srcAccount.Balance.Add(math.Ndau(reward))
 	if err != nil {
-		return address, err
+		return nil, err
 	}
-
-	// now we can update the balance
-	acct.Balance, err = acct.Balance.Add(math.Ndau(reward))
-	if err != nil {
-		return address, err
-	}
-
-	// and if it was EAI do that too
-	if isEAI {
-		acct.LastEAIUpdate = blockTime
-	}
-	// we always set LastWAAUpdate
-	acct.LastWAAUpdate = blockTime
-
-	acct.UpdateCurrencySeat(blockTime)
-
-	s.Accounts[address.String()] = acct
-	return address, nil
+	// the only account we modify is src
+	s.Accounts[srcAddress.String()] = srcAccount
+	return []address.Address{srcAddress}, nil
 }
