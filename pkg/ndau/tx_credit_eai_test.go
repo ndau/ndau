@@ -114,7 +114,8 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	// distinct. A transfer needs to update WAA but not EAI, so they can
 	// be different.
 	require.Equal(t, blockTime, acct.LastEAIUpdate)
-	require.Equal(t, blockTime, acct.LastWAAUpdate)
+	// EAI does not update WAA when it's delivered to the same account
+	require.NotEqual(t, blockTime, acct.LastWAAUpdate)
 }
 
 func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
