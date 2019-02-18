@@ -313,7 +313,7 @@ func (s *State) GetCostakers(nodeA address.Address) []AccountData {
 // it will be created. Returns a list of accounts whose state was updated in some way.
 // Note that if the reward is redirected, it is still the original account whose lastEAIUpdate time
 // is changed.
-// If isEAI we change WAA only if it's the same account (per the rules of EAI).
+// If isEAI we change WAA only if it's not the same account (per the rules of EAI).
 // If it's redirected we change WAA for the target account and do nothing to the source.
 // If it's not redirected we change WAA only if it's not EAI.
 func (s *State) PayReward(srcAddress address.Address, reward math.Ndau, blockTime math.Timestamp, isEAI bool) ([]address.Address, error) {
