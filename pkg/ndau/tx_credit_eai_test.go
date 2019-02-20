@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -279,21 +280,23 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 	// set up app preconditions
 	app, _ := initApp(t)
 
+	var txs []metatx.Transactable
+
 	delegate := func(from account) {
-		tx := NewDelegate(from.address, node.address, 1, from.private)
-		resp := deliverTx(t, app, tx)
-		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		txs = append(txs,
+			NewDelegate(from.address, node.address, 1, from.private),
+		)
 	}
 
 	redirect := func(from, to account) {
-		tx := NewSetRewardsDestination(
-			from.address,
-			to.address,
-			2,
-			from.private,
+		txs = append(txs,
+			NewSetRewardsDestination(
+				from.address,
+				to.address,
+				2,
+				from.private,
+			),
 		)
-		resp := deliverTx(t, app, tx)
-		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	}
 
 	setup := func(acct account, balance math.Ndau, redirectTo *account) {
@@ -322,6 +325,41 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 	setup(d, 1000, &c)
 	setup(node, 10, nil)
 
+	resps, _ := deliverTxsContext(t, app, txs, ddc(t))
+	for _, resp := range resps {
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	}
+
+	t.Logf("a:    %s", a.address)
+	t.Logf("b:    %s", b.address)
+	t.Logf("c:    %s", c.address)
+	t.Logf("d:    %s", d.address)
+	t.Logf("node: %s", node.address)
+
+	equiv := func(a, b backing.AccountData) {
+		require.Equal(t, a.Balance, b.Balance)
+		require.Equal(t, a.LastEAIUpdate, b.LastEAIUpdate)
+		require.Equal(t, a.LastWAAUpdate, b.LastWAAUpdate)
+		require.Equal(t, a.WeightedAverageAge, b.WeightedAverageAge)
+	}
+
+	checkState := func() {
+		// given the exact same circumstances, each account data pair must
+		// be identical
+		state := app.GetState().(*backing.State)
+
+		A, _ := state.GetAccount(a.address, app.blockTime)
+		B, _ := state.GetAccount(b.address, app.blockTime)
+		C, _ := state.GetAccount(c.address, app.blockTime)
+		D, _ := state.GetAccount(d.address, app.blockTime)
+
+		equiv(A, D)
+		equiv(B, C)
+	}
+
+	// we must have set up the initial state of the accounts identically
+	checkState()
+
 	// perform tests
 	// note: we do _not_ wish to run each iteration here as an independent
 	// subtest, which is a little unusual. However, the intent here is that
@@ -342,23 +380,7 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 		)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-		// given the exact same circumstances, each account data pair must
-		// be identical
-		state := app.GetState().(*backing.State)
-
-		A, _ := state.GetAccount(a.address, app.blockTime)
-		B, _ := state.GetAccount(b.address, app.blockTime)
-		C, _ := state.GetAccount(c.address, app.blockTime)
-		D, _ := state.GetAccount(d.address, app.blockTime)
-
-		equiv := func(a, b backing.AccountData) {
-			require.Equal(t, a.Balance, b.Balance)
-			require.Equal(t, a.LastEAIUpdate, b.LastEAIUpdate)
-			require.Equal(t, a.LastWAAUpdate, b.LastWAAUpdate)
-			require.Equal(t, a.WeightedAverageAge, b.WeightedAverageAge)
-		}
-
-		equiv(A, D)
-		equiv(B, C)
+		// state must still be identical here
+		checkState()
 	}
 }
