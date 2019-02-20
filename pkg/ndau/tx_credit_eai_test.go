@@ -9,6 +9,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -300,7 +301,7 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 			ad.LastEAIUpdate = 0
 			ad.LastWAAUpdate = 0
 			ad.WeightedAverageAge = 0
-			ad.Balance = balance
+			ad.Balance = balance * constants.NapuPerNdau
 			// normally it's enforced that a validation key can't match the
 			// ownership key for the account, but it's not important for the
 			// behavior under test, and this is simpler instead of having
