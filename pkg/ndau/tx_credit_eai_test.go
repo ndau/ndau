@@ -3,6 +3,7 @@ package ndau
 import (
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -326,10 +327,18 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 	// we don't actually vary the conditions within each test instance; we just
 	// want some measure of reassurance that we're not just getting lucky
 	// with random map iteration order.
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
 	for i := uint64(0); i < 128; i++ {
 		// perform a CreditEAI tx
 		tx := NewCreditEAI(node.address, i+5, node.private)
-		resp := deliverTx(t, app, tx)
+
+		resp := deliverTxAt(
+			t,
+			app,
+			tx,
+			now.Add(math.Duration(i*math.Month)),
+		)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 		// given the exact same circumstances, each account data pair must
