@@ -75,7 +75,8 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		nodeData, _ := state.GetAccount(tx.Node, app.blockTime)
+		nodeData, _ := app.getAccount(tx.Node)
+
 		state.Accounts[tx.Node.String()] = nodeData
 		delegatedAccounts := state.Delegates[tx.Node.String()]
 
@@ -114,7 +115,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 			logger = logger.WithField("acct", addr)
 
-			acctData, hasAcct := state.GetAccount(addr, app.blockTime)
+			acctData, hasAcct := app.getAccount(addr)
 			if !hasAcct {
 				// Accounts might sometimes be removed.
 				// If we encounter that, don't worry about it. An account
@@ -171,7 +172,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				return
 			}
 			eaiAward = math.Ndau(reducedAward)
-			_, err = state.PayReward(addr, eaiAward, app.blockTime, true)
+			_, err = state.PayReward(
+				addr,
+				eaiAward,
+				app.blockTime,
+				app.getDefaultSettlementDuration(),
+				true,
+			)
 			if handle(err) {
 				return
 			}
@@ -208,7 +215,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 					continue
 				}
 			} else {
-				feeAcct, _ := state.GetAccount(*fee.To, app.blockTime)
+				feeAcct, _ := app.getAccount(*fee.To)
 				feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))
 				if handle(err) {
 					continue

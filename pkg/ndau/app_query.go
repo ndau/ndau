@@ -43,9 +43,7 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 		return
 	}
 
-	state := app.GetState().(*backing.State)
-
-	ad, exists := state.GetAccount(address, app.blockTime)
+	ad, exists := app.getAccount(address)
 	// we use the Info field in the response to indicate whether the account exists
 	response.Info = fmt.Sprintf(query.AccountInfoFmt, exists)
 	ad.UpdateSettlements(app.blockTime)
@@ -242,7 +240,7 @@ func sidechainTxExistsQuery(appI interface{}, request abci.RequestQuery, respons
 		return
 	}
 
-	acct, _ := app.GetState().(*backing.State).GetAccount(stxq.Source, app.blockTime)
+	acct, _ := app.getAccount(stxq.Source)
 	key := sidechainPayment(stxq.SidechainID, stxq.TxHash)
 
 	_, exists := acct.SidechainPayments[key]

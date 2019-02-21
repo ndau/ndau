@@ -61,7 +61,7 @@ func (tx *Stake) Validate(appI interface{}) error {
 		return fmt.Errorf("target has insufficient balance: have %s ndau, need %s", target.Balance, minStake)
 	}
 
-	node, hasNode := app.GetState().(*backing.State).GetAccount(tx.StakedAccount, app.blockTime)
+	node, hasNode := app.getAccount(tx.StakedAccount)
 	if !hasNode {
 		return errors.New("Node does not exist")
 	}
@@ -77,7 +77,7 @@ func (tx *Stake) Validate(appI interface{}) error {
 func stake(app *App, targetA, stakedAccountA address.Address) error {
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		target, _ := state.GetAccount(targetA, app.blockTime)
+		target, _ := app.getAccount(targetA)
 
 		target.Stake = &backing.Stake{
 			Address: stakedAccountA,

@@ -167,7 +167,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				final = true
 			}
 			state.UnclaimedNodeReward -= award
-			_, err = state.PayReward(addrA, award, app.blockTime, false)
+			_, err = state.PayReward(addrA, award, app.blockTime, app.getDefaultSettlementDuration(), false)
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}
@@ -179,7 +179,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		// if after disbursement to costakers there remains some node reward,
 		// it goes to the node
 		if state.UnclaimedNodeReward > 0 {
-			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.blockTime, false)
+			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.blockTime, app.getDefaultSettlementDuration(), false)
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}

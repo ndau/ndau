@@ -31,7 +31,7 @@ func MockSystemAccount(app *App, addr address.Address) ([]signature.PrivateKey, 
 	return privates, app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
-		acct, _ := st.GetAccount(addr, app.blockTime)
+		acct, _ := app.getAccount(addr)
 		acct.ValidationKeys = publics
 
 		st.Accounts[addr.String()] = acct

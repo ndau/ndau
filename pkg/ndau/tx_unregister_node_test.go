@@ -114,7 +114,7 @@ func TestUnregisterNodeUnstakesSelf(t *testing.T) {
 	resp := deliverTx(t, app, rn)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	node, exists := app.GetState().(*backing.State).GetAccount(targetAddress, app.blockTime)
+	node, exists := app.getAccount(targetAddress)
 	require.True(t, exists)
 	require.Nil(t, node.Stake)
 }
@@ -126,7 +126,7 @@ func TestUnregisterNodeUnstakesCostakers(t *testing.T) {
 	resp := deliverTx(t, app, rn)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	cs, exists := app.GetState().(*backing.State).GetAccount(transferAddress, app.blockTime)
+	cs, exists := app.getAccount(transferAddress)
 	require.True(t, exists)
 	require.Nil(t, cs.Stake)
 }

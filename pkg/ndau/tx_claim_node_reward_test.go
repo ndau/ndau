@@ -132,15 +132,13 @@ func TestClaimNodeRewardChangesourceAddressppState(t *testing.T) {
 	app, private, now := initAppCNR(t)
 	cnr := NewClaimNodeReward(nodeAddress, 1, private)
 
-	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(nodeAddress, app.blockTime)
+	acct, _ := app.getAccount(nodeAddress)
 	require.Equal(t, math.Ndau(cnrStake), acct.Balance)
 
 	resp := deliverTxAt(t, app, cnr, now+1)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(nodeAddress, app.blockTime)
+	acct, _ = app.getAccount(nodeAddress)
 
 	// The script allocates 80% of node rewards to co-stakers but includes
 	// the node itself as a co-staker, so that means that with one co-staker of
@@ -149,7 +147,7 @@ func TestClaimNodeRewardChangesourceAddressppState(t *testing.T) {
 	require.Equal(t, math.Ndau(cnrStake+(60*constants.QuantaPerUnit)), acct.Balance)
 
 	// we expect 40% of node rewards to go to source acct in this setup
-	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ = app.getAccount(sourceAddress)
 	require.Equal(t, math.Ndau(cnrStake+(40*constants.QuantaPerUnit)), acct.Balance)
 }
 

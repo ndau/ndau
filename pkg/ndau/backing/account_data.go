@@ -169,10 +169,13 @@ func (e *SettlementSettings) fromNomsSettlementSettings(n nomsSettlementSettings
 //
 // Unfortunately, go being go, we can't require that this method is used,
 // but we can provide it to make it easier to do the right thing.
-func NewAccountData(blockTime math.Timestamp) AccountData {
+func NewAccountData(blockTime math.Timestamp, defaultSettlementPeriod math.Duration) AccountData {
 	return AccountData{
 		LastEAIUpdate: blockTime,
 		LastWAAUpdate: blockTime,
+		SettlementSettings: SettlementSettings{
+			Period: defaultSettlementPeriod,
+		},
 	}
 }
 

@@ -91,9 +91,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		return backing.AccountData{}, false, nil, err
 	}
 
-	state := app.GetState().(*backing.State)
-
-	acct, exists := state.GetAccount(address, app.blockTime)
+	acct, exists := app.getAccount(address)
 	if tx.GetSequence() <= acct.Sequence {
 		return acct, exists, nil, errors.New("sequence too low")
 	}
@@ -192,8 +190,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
 	}
 
-	state := app.GetState().(*backing.State)
-	source, _ := state.GetAccount(sourceA, app.blockTime)
+	source, _ := app.getAccount(sourceA)
 
 	eai, err := eai.Calculate(
 		source.Balance, app.blockTime, source.LastEAIUpdate,

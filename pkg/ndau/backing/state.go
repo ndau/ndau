@@ -236,10 +236,14 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 //
 // The boolean return value is true when the account previously existed;
 // false when it is new.
-func (s *State) GetAccount(address address.Address, blockTime math.Timestamp) (AccountData, bool) {
+func (s *State) GetAccount(
+	address address.Address,
+	blockTime math.Timestamp,
+	defaultSettlementPeriod math.Duration,
+) (AccountData, bool) {
 	data, hasAccount := s.Accounts[address.String()]
 	if !hasAccount {
-		data = NewAccountData(blockTime)
+		data = NewAccountData(blockTime, defaultSettlementPeriod)
 	}
 	return data, hasAccount
 }
@@ -316,14 +320,20 @@ func (s *State) GetCostakers(nodeA address.Address) []AccountData {
 // If isEAI we change WAA only if it's not the same account (per the rules of EAI).
 // If it's redirected we change WAA for the target account and do nothing to the source.
 // If it's not redirected we change WAA only if it's not EAI.
-func (s *State) PayReward(srcAddress address.Address, reward math.Ndau, blockTime math.Timestamp, isEAI bool) ([]address.Address, error) {
+func (s *State) PayReward(
+	srcAddress address.Address,
+	reward math.Ndau,
+	blockTime math.Timestamp,
+	defaultSettlementPeriod math.Duration,
+	isEAI bool,
+) ([]address.Address, error) {
 	var err error
-	srcAccount, _ := s.GetAccount(srcAddress, blockTime)
+	srcAccount, _ := s.GetAccount(srcAddress, blockTime, defaultSettlementPeriod)
 
 	if srcAccount.RewardsTarget != nil {
 		// rewards are being redirected, so get the target account
 		tgtAddress := *(srcAccount.RewardsTarget)
-		tgtAccount, _ := s.GetAccount(tgtAddress, blockTime)
+		tgtAccount, _ := s.GetAccount(tgtAddress, blockTime, defaultSettlementPeriod)
 		// recalc WAA
 		err = tgtAccount.WeightedAverageAge.UpdateWeightedAverageAge(
 			blockTime.Since(tgtAccount.LastWAAUpdate),

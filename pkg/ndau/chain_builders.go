@@ -112,7 +112,7 @@ func BuildVMForTxValidation(
 		// we want to run, we need to inject the account data of the destination
 		// account onto the bottom of the stack
 		destAddr := tx.(*ReleaseFromEndowment).Destination
-		dest, _ := app.GetState().(*backing.State).GetAccount(destAddr, app.blockTime)
+		dest, _ := app.getAccount(destAddr)
 		destStruct, err := chain.ToValue(dest)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating chain value for dest account data")

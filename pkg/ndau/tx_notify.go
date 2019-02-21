@@ -49,7 +49,7 @@ func (tx *Notify) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(tx.Target, app.blockTime)
+		accountData, _ := app.getAccount(tx.Target)
 
 		uo := app.blockTime.Add(accountData.Lock.NoticePeriod)
 		accountData.Lock.UnlocksOn = &uo
