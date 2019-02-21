@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sort"
 
@@ -24,6 +25,41 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 		Comment: comment,
 		Data:    opcodes,
 	}
+}
+
+// we need to create a distinct seed for this VM which is both deterministic
+// and distinct. We get there by xor-ing the block time with the address
+func makeSeed(addr address.Address, ts math.Timestamp) []byte {
+	addrB := []byte(addr.String())
+	tsB := make([]byte, 8)
+	binary.BigEndian.PutUint64(tsB, uint64(ts))
+	seed := make([]byte, 64)
+	for idx := range seed {
+		seed[idx] = addrB[idx%len(addrB)] ^ tsB[idx%len(tsB)]
+	}
+	return seed
+}
+
+// we always want to transform ndau VMs in certain predictable ways;
+// we bundle those transformations here for convenience
+func ndauVM(VM *vm.ChaincodeVM, timestamp math.Timestamp, seed []byte) error {
+	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
+	// if it has one, or the current time if it doesn't.
+	nower, err := vm.NewCachingNow(vm.NewTimestamp(timestamp))
+	if err != nil {
+		return err
+	}
+	VM.SetNow(nower)
+
+	// Similarly, for transactions rand should return values that will be the same across all nodes.
+	// We're going to build a seed out of the hash of the SignableBytes of the tx.
+	randomer, err := chain.NewSeededRand(seed)
+	if err != nil {
+		return err
+	}
+	VM.SetRand(randomer)
+
+	return err
 }
 
 // IsChaincode is true when the supplied bytes appear to be chaincode
@@ -60,20 +96,6 @@ func BuildVMForTxValidation(
 	}
 	sigs := vm.NewNumber(sigbits)
 
-	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
-	// if it has one, or the current time if it doesn't.
-	var nower vm.Nower
-
-	// Similarly, for transactions rand should return values that will be the same across all nodes.
-	// We're going to build a seed out of the hash of the SignableBytes of the tx.
-	randomer, err := chain.NewSeededRand(tx.SignableBytes())
-	if err != nil {
-		return nil, err
-	}
-	nower, err = vm.NewCachingNow(vm.NewTimestamp(app.blockTime))
-	if err != nil {
-		return nil, err
-	}
 	txID, err := metatx.TxIDOf(tx, TxIDs)
 	if err != nil {
 		return nil, err
@@ -105,12 +127,9 @@ func BuildVMForTxValidation(
 	if err != nil {
 		return nil, err
 	}
-
-	if nower != nil {
-		theVM.SetNow(nower)
-	}
-	if randomer != nil {
-		theVM.SetRand(randomer)
+	err = ndauVM(theVM, app.blockTime, tx.SignableBytes())
+	if err != nil {
+		return nil, err
 	}
 
 	err = theVM.Init(txIndex, args...)
@@ -123,21 +142,6 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	txStruct, err := chain.ToValue(tx)
 	if err != nil {
 		return nil, errors.Wrap(err, "representing tx as chaincode value")
-	}
-
-	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
-	// if it has one, or the current time if it doesn't.
-	var nower vm.Nower
-
-	// Similarly, for transactions rand should return values that will be the same across all nodes.
-	// We're going to build a seed out of the hash of the SignableBytes of the tx.
-	randomer, err := chain.NewSeededRand(tx.SignableBytes())
-	if err != nil {
-		return nil, errors.Wrap(err, "creating seeded rand")
-	}
-	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
-	if err != nil {
-		return nil, errors.Wrap(err, "creating caching now")
 	}
 
 	txID, err := metatx.TxIDOf(tx, TxIDs)
@@ -167,12 +171,9 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "creating chaincode vm")
 	}
-
-	if nower != nil {
-		theVM.SetNow(nower)
-	}
-	if randomer != nil {
-		theVM.SetRand(randomer)
+	err = ndauVM(theVM, ts, tx.SignableBytes())
+	if err != nil {
+		return nil, err
 	}
 
 	// tx fees are initialized to run the handler associated with the
@@ -217,17 +218,9 @@ func BuildVMForNodeGoodness(
 	if err != nil {
 		return nil, err
 	}
-
-	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
-	// if it has one, or the current time if it doesn't.
-	var nower vm.Nower
-
-	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	err = ndauVM(theVM, ts, makeSeed(addr, ts))
 	if err != nil {
 		return nil, err
-	}
-	if nower != nil {
-		theVM.SetNow(nower)
 	}
 
 	// goodness functions all use the default handler
@@ -333,17 +326,9 @@ func BuildVMForNodeDistribution(
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing chaincode vm")
 	}
-
-	// In the context of a transaction, we want the Now opcode to return the transaction's timestamp
-	// if it has one, or the current time if it doesn't.
-	var nower vm.Nower
-
-	nower, err = vm.NewCachingNow(vm.NewTimestamp(ts))
+	err = ndauVM(theVM, ts, makeSeed(node, ts))
 	if err != nil {
-		return nil, errors.Wrap(err, "constructing chaincode nower")
-	}
-	if nower != nil {
-		theVM.SetNow(nower)
+		return nil, err
 	}
 
 	// distribution functions all use the default handler
