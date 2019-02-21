@@ -79,11 +79,7 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 		state := stateI.(*backing.State)
 
 		state.Accounts[tx.Destination.String()] = dest
-		if source.Balance > 0 {
-			state.Accounts[tx.Source.String()] = source
-		} else {
-			delete(state.Accounts, tx.Source.String())
-		}
+		state.Accounts[tx.Source.String()] = source
 
 		return state, nil
 	})

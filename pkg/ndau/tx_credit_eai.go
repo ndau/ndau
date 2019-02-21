@@ -78,49 +78,70 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		nodeData, _ := app.getAccount(tx.Node)
 
 		state.Accounts[tx.Node.String()] = nodeData
-
 		delegatedAccounts := state.Delegates[tx.Node.String()]
-		var errorList []error
-		for accountAddrS := range delegatedAccounts {
-			accountAddr, err := address.Validate(accountAddrS)
+
+		logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
+			"tx":            "CreditEAI",
+			"node":          tx.Node.String(),
+			"blockTime":     app.blockTime,
+			"unlockedTable": unlockedTable,
+			"lockedTable":   lockedTable,
+		})
+
+		// for deterministic EAI calculations, it is necessary that the
+		// accounts receiving awards from elsewhere happen in a different
+		// tranche than accounts not receiving awards from elsewhere.
+		// It doesn't really matter logically which tranche comes first,
+		// so we calculate the EAI of accounts receiving EAI from elsewhere
+		// after the rest of them in order to maximize total EAI awarded.
+		var postponed []string
+
+		// we don't want to error out during CalculateEAI, because that could
+		// result in not all accounts being considered, in a non-deterministic
+		// fashion. Instead, log errors as they occur, but never fail here.
+		handle := func(err error) bool {
 			if err != nil {
-				return state, errors.Wrap(err, "CreditEAI: validating delegated account address")
+				logger.WithError(err).Error("eai.Calculate failed")
+				err = nil
+				return true
 			}
-			acctData, hasAcct := app.getAccount(accountAddr)
+			return false
+		}
+
+		calc := func(addrS string, postpone bool) {
+			addr, err := address.Validate(addrS)
+			if handle(err) {
+				return
+			}
+			logger = logger.WithField("acct", addr)
+
+			acctData, hasAcct := app.getAccount(addr)
 			if !hasAcct {
-				// accounts can sometimes be removed, i.e. due to 0 balance
-				// if we encounter that, don't worry about it
-				// TODO we may want to actually remove the reference to
-				// deleted accounts
-				continue
+				// Accounts might sometimes be removed.
+				// If we encounter that, don't worry about it. An account
+				// which doesn't exist necessarily has 0 balance and is
+				// therefore ineligible to receive EAI anyway. Likewise,
+				// it can't have an incoming rewards list of len > 0.
+				// We can therefore return early here as a minor optimization.
+				return
 			}
-			logger := app.GetLogger().WithFields(log.Fields{
-				"tx":            "CreditEAI",
-				"acct":          accountAddr,
-				"node":          tx.Node.String(),
-				"acctData":      acctData,
-				"blockTime":     app.blockTime,
-				"unlockedTable": unlockedTable,
-				"lockedTable":   lockedTable,
-			})
+
+			if postpone && len(acctData.IncomingRewardsFrom) > 0 {
+				logger.WithField(
+					"len(IncomingRewardsFrom)",
+					len(acctData.IncomingRewardsFrom),
+				).Info("postponing due to incoming rewards")
+				postponed = append(postponed, addrS)
+				return
+			}
+
 			err = acctData.WeightedAverageAge.UpdateWeightedAverageAge(
 				app.blockTime.Since(acctData.LastWAAUpdate),
 				0,
 				acctData.Balance,
 			)
-			if err != nil {
-				// the only error expected from an EAI calculation is overflowing
-				// the Ndau type. If that happens, ndau is broken. If ndau
-				// is broken, then we don't have to uphold its promises for that
-				// account. This means that we'll log the error, but then just
-				// proceed as if no error had occurred.
-				//
-				// The other option would be to panic if things like this
-				// happened, and we choose to follow Douglas Adams' advice.
-				logger.WithError(err).Error("eai.Calculate failed")
-				errorList = append(errorList, err)
-				err = nil
-				continue
+			if handle(err) {
+				return
 			}
 			acctData.LastWAAUpdate = app.blockTime
 
@@ -129,17 +150,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				acctData.WeightedAverageAge, acctData.Lock,
 				*unlockedTable,
 			)
-			if err != nil {
-				errorList = append(errorList, err)
-				err = nil
-				continue
+			if handle(err) {
+				return
 			}
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
-			if err != nil {
-				errorList = append(errorList, err)
-				err = nil
-				continue
+			if handle(err) {
+				return
 			}
 
 			// add the total EAI credited BEFORE reducing it
@@ -151,19 +168,33 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				int64(awardPerNdau),
 				constants.QuantaPerUnit,
 			)
-			if err != nil {
-				errorList = append(errorList, err)
-				err = nil
-				continue
+			if handle(err) {
+				return
 			}
 			eaiAward = math.Ndau(reducedAward)
-			_, err = state.PayReward(accountAddr, eaiAward, app.blockTime, app.getDefaultSettlementDuration(), true)
-			if err != nil {
-				errorList = append(errorList, err)
-				err = nil
-				continue
+			_, err = state.PayReward(
+				addr,
+				eaiAward,
+				app.blockTime,
+				app.getDefaultSettlementDuration(),
+				true,
+			)
+			if handle(err) {
+				return
 			}
+			logger.WithFields(log.Fields{
+				"award":         eaiAward,
+				"rewardsTarget": acctData.RewardsTarget,
+			}).Info("awarded EAI")
+		}
 
+		for acct := range delegatedAccounts {
+			calc(acct, true)
+		}
+
+		logger.WithField("len(postponed)", len(postponed)).Info("calculating postponed accounts")
+		for _, acct := range postponed {
+			calc(acct, false)
 		}
 
 		// before considering the error list generated from the account iteration,
@@ -174,27 +205,19 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				int64(fee.Fee),
 				constants.QuantaPerUnit,
 			)
-			if err != nil {
-				errorList = append(errorList, err)
-				err = nil
+			if handle(err) {
 				continue
 			}
+
 			if fee.To == nil {
 				state.PendingNodeReward, err = state.PendingNodeReward.Add(math.Ndau(feeAward))
-				if err != nil {
-					errorList = append(errorList, errors.Wrap(
-						err,
-						"adding unclaimed node rewards",
-					))
-					err = nil
+				if handle(errors.Wrap(err, "adding unclaimed node rewards")) {
 					continue
 				}
 			} else {
 				feeAcct, _ := app.getAccount(*fee.To)
 				feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))
-				if err != nil {
-					errorList = append(errorList, err)
-					err = nil
+				if handle(err) {
 					continue
 				}
 				// Because this is a required state update, once we get this far,
@@ -207,17 +230,6 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		// propagated even though there are errors, I'm going to suppress the error return
 		// here since the caller will not update state if error is non-nil.
 		// (See app.UpdateState in metanode/pkg/meta/app/application.go)
-		if len(errorList) > 0 {
-			errStr := fmt.Sprintf("Errors found calculating EAI for node %s: ", tx.Node.String())
-			for idx, err := range errorList {
-				if idx != 0 {
-					errStr += ", "
-				}
-				errStr += err.Error()
-			}
-			err = errors.New(errStr)
-			app.DecoratedTxLogger(tx).WithError(err).Error("CreditEAI.Apply() found errors; suppressing")
-		}
 
 		return state, nil
 	})
