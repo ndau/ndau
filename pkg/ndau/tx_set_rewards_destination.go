@@ -18,7 +18,6 @@ func (tx *SetRewardsDestination) GetAccountAddresses() []string {
 // Validate implements metatx.Transactable
 func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	app := appI.(*App)
-	state := app.GetState().(*backing.State)
 
 	accountData, hasAccount, _, err := app.getTxAccount(tx)
 	if err != nil {
@@ -42,7 +41,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 	// neither destination rule appllies in that case.
 	if tx.Destination.String() != tx.Target.String() {
 		// dest account must not be sending rewards to any other account
-		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
+		targetData, _ := app.getAccount(tx.Destination)
 		if targetData.RewardsTarget != nil {
 			return fmt.Errorf("Accounts may not both send and receive rewards. Destination sends rewards to %s", *targetData.RewardsTarget)
 		}
@@ -66,13 +65,13 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		accountData, _ := state.GetAccount(tx.Target, app.blockTime)
+		accountData, _ := app.getAccount(tx.Target)
 
-		targetData, _ := state.GetAccount(tx.Destination, app.blockTime)
+		targetData, _ := app.getAccount(tx.Destination)
 
 		// update inbound of rewards target
 		if accountData.RewardsTarget != nil && accountData.RewardsTarget.String() != tx.Target.String() {
-			oldTargetData, _ := state.GetAccount(*accountData.RewardsTarget, app.blockTime)
+			oldTargetData, _ := app.getAccount(*accountData.RewardsTarget)
 			// remove account from current target inbounds list
 			inbounds := make([]address.Address, 0, len(oldTargetData.IncomingRewardsFrom)-1)
 			for _, addr := range oldTargetData.IncomingRewardsFrom {

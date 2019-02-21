@@ -39,7 +39,7 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 		var err error
 		state := stateI.(*backing.State)
 
-		acct, _ := state.GetAccount(tx.Destination, app.blockTime)
+		acct, _ := app.getAccount(tx.Destination)
 		acct.Balance, err = acct.Balance.Add(tx.Qty)
 		if err != nil {
 			return state, err

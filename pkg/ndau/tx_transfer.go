@@ -17,7 +17,6 @@ func (tx *Transfer) GetAccountAddresses() []string {
 // Validate satisfies metatx.Transactable
 func (tx *Transfer) Validate(appInt interface{}) error {
 	app := appInt.(*App)
-	state := app.GetState().(*backing.State)
 
 	if tx.Qty <= math.Ndau(0) {
 		return errors.New("invalid transfer: Qty not positive")
@@ -36,7 +35,7 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return errors.New("source is locked")
 	}
 
-	dest, _ := state.GetAccount(tx.Destination, app.blockTime)
+	dest, _ := app.getAccount(tx.Destination)
 
 	if dest.IsNotified(app.blockTime) {
 		return errors.New("transfers into notified addresses are invalid")
@@ -53,10 +52,8 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 		return err
 	}
 
-	state := app.GetState().(*backing.State)
-
-	source, _ := state.GetAccount(tx.Source, app.blockTime)
-	dest, _ := state.GetAccount(tx.Destination, app.blockTime)
+	source, _ := app.getAccount(tx.Source)
+	dest, _ := app.getAccount(tx.Destination)
 
 	err = (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
 		app.blockTime.Since(dest.LastWAAUpdate),

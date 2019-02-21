@@ -20,7 +20,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return 0, err
 	}
 
-	acct, hasAcct := state.GetAccount(addr, app.blockTime)
+	acct, hasAcct := app.getAccount(addr)
 	if !hasAcct {
 		return 0, errors.New("no such account")
 	}

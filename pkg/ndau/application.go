@@ -18,8 +18,10 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/system_vars/pkg/svi"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/abci/types"
@@ -237,4 +239,26 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	}
 
 	return
+}
+
+func (app *App) getDefaultSettlementDuration() math.Duration {
+	var defaultSettlementPeriod math.Duration
+	err := app.System(sv.DefaultSettlementDurationName, &defaultSettlementPeriod)
+	// app.System errors in two cases:
+	// - the system variable doesn't exist, which can mean one of two things:
+	//   - the SVI map has been updated in an invalid way
+	//   - the system cache wasn't updated this block (in which case all txs are
+	//     already rejected, so we should never actually see this)
+	// - the variable we passed to receive the sysvar is of the wrong type
+	//
+	// Given this situation, we want to fail in the most noisy way possible.
+	if err != nil {
+		app.DecoratedLogger().WithError(err).Error("app.getAccount failed to fetch defaultSettlementPeriod")
+		panic(err)
+	}
+	return defaultSettlementPeriod
+}
+
+func (app *App) getAccount(addr address.Address) (backing.AccountData, bool) {
+	return app.GetState().(*backing.State).GetAccount(addr, app.blockTime, app.getDefaultSettlementDuration())
 }

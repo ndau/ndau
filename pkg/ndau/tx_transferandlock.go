@@ -19,7 +19,6 @@ func (tx *TransferAndLock) GetAccountAddresses() []string {
 // Validate satisfies metatx.Transactable
 func (tx *TransferAndLock) Validate(appInt interface{}) error {
 	app := appInt.(*App)
-	state := app.GetState().(*backing.State)
 
 	if tx.Qty <= math.Ndau(0) {
 		return errors.New("invalid transfer: Qty not positive")
@@ -38,7 +37,7 @@ func (tx *TransferAndLock) Validate(appInt interface{}) error {
 		return errors.New("source is locked")
 	}
 
-	_, exists := state.GetAccount(tx.Destination, app.blockTime)
+	_, exists := app.getAccount(tx.Destination)
 
 	// TransferAndLock cannot be sent to an existing account
 	if exists {
@@ -62,11 +61,9 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 		return err
 	}
 
-	state := app.GetState().(*backing.State)
-
-	source, _ := state.GetAccount(tx.Source, app.blockTime)
+	source, _ := app.getAccount(tx.Source)
 	// we know dest is a new account so WAA, WAA update and EAI update times are set properly
-	dest, _ := state.GetAccount(tx.Destination, app.blockTime)
+	dest, _ := app.getAccount(tx.Destination)
 	dest.Balance = tx.Qty
 	if source.SettlementSettings.Period != 0 {
 		dest.Settlements = append(dest.Settlements, backing.Settlement{

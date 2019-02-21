@@ -48,7 +48,7 @@ func (tx *Delegate) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		as := tx.Target.String()
 		ds := tx.Node.String()
-		acct, hasAcct := state.GetAccount(tx.Target, app.blockTime)
+		acct, hasAcct := app.getAccount(tx.Target)
 		if !hasAcct {
 			return state, errors.New("Account does not exist")
 		}

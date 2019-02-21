@@ -71,15 +71,13 @@ func TestLockChangesAppState(t *testing.T) {
 	app, private := initAppTx(t)
 	lock := NewLock(sourceAddress, duration, 1, private)
 
-	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ := app.getAccount(sourceAddress)
 	require.Nil(t, acct.Lock)
 
 	resp := deliverTx(t, app, lock)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ = app.getAccount(sourceAddress)
 	require.NotNil(t, acct.Lock)
 	require.Equal(t, duration, acct.Lock.NoticePeriod)
 	require.Nil(t, acct.Lock.UnlocksOn)
@@ -128,8 +126,7 @@ func TestRelockNotified(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// relock must have reset lock and cleared notification
-	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ := app.getAccount(sourceAddress)
 	require.NotNil(t, acct.Lock)
 	require.Equal(t, newDuration, acct.Lock.NoticePeriod)
 	require.Nil(t, acct.Lock.UnlocksOn)

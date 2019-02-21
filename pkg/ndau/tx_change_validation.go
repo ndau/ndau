@@ -73,7 +73,7 @@ func (tx *ChangeValidation) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		ad, _ := state.GetAccount(tx.Target, app.blockTime)
+		ad, _ := app.getAccount(tx.Target)
 
 		ad.ValidationKeys = tx.NewKeys
 		ad.ValidationScript = tx.ValidationScript

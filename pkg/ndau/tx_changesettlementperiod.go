@@ -38,7 +38,7 @@ func (tx *ChangeSettlementPeriod) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		acct, _ := state.GetAccount(tx.Target, app.blockTime)
+		acct, _ := app.getAccount(tx.Target)
 
 		ca := app.blockTime.Add(acct.SettlementSettings.Period)
 		acct.SettlementSettings.ChangesAt = &ca

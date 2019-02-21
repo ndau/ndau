@@ -75,7 +75,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		nodeData, _ := state.GetAccount(tx.Node, app.blockTime)
+		nodeData, _ := app.getAccount(tx.Node)
 
 		state.Accounts[tx.Node.String()] = nodeData
 
@@ -86,7 +86,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			if err != nil {
 				return state, errors.Wrap(err, "CreditEAI: validating delegated account address")
 			}
-			acctData, hasAcct := state.GetAccount(accountAddr, app.blockTime)
+			acctData, hasAcct := app.getAccount(accountAddr)
 			if !hasAcct {
 				// accounts can sometimes be removed, i.e. due to 0 balance
 				// if we encounter that, don't worry about it
@@ -157,7 +157,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				continue
 			}
 			eaiAward = math.Ndau(reducedAward)
-			_, err = state.PayReward(accountAddr, eaiAward, app.blockTime, true)
+			_, err = state.PayReward(accountAddr, eaiAward, app.blockTime, app.getDefaultSettlementDuration(), true)
 			if err != nil {
 				errorList = append(errorList, err)
 				err = nil
@@ -190,7 +190,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 					continue
 				}
 			} else {
-				feeAcct, _ := state.GetAccount(*fee.To, app.blockTime)
+				feeAcct, _ := app.getAccount(*fee.To)
 				feeAcct.Balance, err = feeAcct.Balance.Add(math.Ndau(feeAward))
 				if err != nil {
 					errorList = append(errorList, err)

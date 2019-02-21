@@ -91,8 +91,7 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	compute := NewCreditEAI(nodeAddress, 1, private)
 
-	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ := app.getAccount(sourceAddress)
 	sourceInitial := acct.Balance
 
 	blockTime := math.Timestamp(45 * math.Day)
@@ -103,8 +102,7 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// require that a positive EAI was applied
-	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ = app.getAccount(sourceAddress)
 	t.Log(acct.Balance)
 	// here, we don't bother testing _how much_ eai is applied: we have to
 	// trust that the ndaumath library is well tested. Instead, we just test
@@ -122,12 +120,11 @@ func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	compute := NewCreditEAI(nodeAddress, 1, private)
 
-	state := app.GetState().(*backing.State)
-	sAcct, _ := state.GetAccount(sourceAddress, app.blockTime)
+	sAcct, _ := app.getAccount(sourceAddress)
 	sourceInitial := sAcct.Balance
 
 	// verify that the dest account has nothing currently in it
-	dAcct, _ := state.GetAccount(destAddress, app.blockTime)
+	dAcct, _ := app.getAccount(destAddress)
 	require.Equal(t, math.Ndau(0), dAcct.Balance)
 	// have the source acct send rewards to the dest acct
 	modify(t, source, app, func(ad *backing.AccountData) {
@@ -142,9 +139,8 @@ func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// require that a positive EAI was applied
-	state = app.GetState().(*backing.State)
-	sAcct, _ = state.GetAccount(sourceAddress, app.blockTime)
-	dAcct, dExists := state.GetAccount(destAddress, app.blockTime)
+	sAcct, _ = app.getAccount(sourceAddress)
+	dAcct, dExists := app.getAccount(destAddress)
 	t.Log("src:  ", sAcct.Balance)
 	t.Log("dest: ", dAcct.Balance)
 	require.True(t, dExists)
@@ -158,12 +154,11 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	compute := NewCreditEAI(nodeAddress, 1, private)
 
-	state := app.GetState().(*backing.State)
-	sAcct, _ := state.GetAccount(sourceAddress, app.blockTime)
+	sAcct, _ := app.getAccount(sourceAddress)
 	sourceInitial := sAcct.Balance
 
 	// verify that the dest account has nothing currently in it
-	dAcct, _ := state.GetAccount(destAddress, app.blockTime)
+	dAcct, _ := app.getAccount(destAddress)
 	require.Equal(t, math.Ndau(0), dAcct.Balance)
 	// have the source acct send rewards to the dest acct
 	modify(t, source, app, func(ad *backing.AccountData) {
@@ -183,9 +178,8 @@ func TestCreditEAIWithNotifiedRewardsTargetIsAllowed(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// require that eai was deposited despite the dest acct being notified
-	state = app.GetState().(*backing.State)
-	sAcct, _ = state.GetAccount(sourceAddress, app.blockTime)
-	dAcct, _ = state.GetAccount(destAddress, app.blockTime)
+	sAcct, _ = app.getAccount(sourceAddress)
+	dAcct, _ = app.getAccount(destAddress)
 	t.Log("src:  ", sAcct.Balance)
 	t.Log("dest: ", dAcct.Balance)
 	// the source account must not be changed

@@ -79,16 +79,14 @@ func TestNotifyChangesAppState(t *testing.T) {
 	app, private := initAppNotify(t)
 	notify := NewNotify(sourceAddress, 1, private)
 
-	state := app.GetState().(*backing.State)
-	acct, _ := state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ := app.getAccount(sourceAddress)
 	require.NotNil(t, acct.Lock)
 	require.Nil(t, acct.Lock.UnlocksOn)
 
 	resp := deliverTx(t, app, notify)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	state = app.GetState().(*backing.State)
-	acct, _ = state.GetAccount(sourceAddress, app.blockTime)
+	acct, _ = app.getAccount(sourceAddress)
 	require.NotNil(t, acct.Lock.UnlocksOn)
 }
 

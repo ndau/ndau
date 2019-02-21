@@ -114,7 +114,7 @@ func TestRegisterNodeStakesSelf(t *testing.T) {
 	resp := deliverTx(t, app, rn)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	node, exists := app.GetState().(*backing.State).GetAccount(targetAddress, app.blockTime)
+	node, exists := app.getAccount(targetAddress)
 	require.True(t, exists)
 	require.NotNil(t, node.Stake)
 	require.Equal(t, targetAddress, node.Stake.Address)

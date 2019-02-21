@@ -86,7 +86,7 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
-		acct, _ := st.GetAccount(tx.Target, app.blockTime)
+		acct, _ := app.getAccount(tx.Target)
 		acct.ValidationKeys = tx.ValidationKeys
 		acct.ValidationScript = tx.ValidationScript
 
