@@ -2,7 +2,6 @@ package backing
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
@@ -72,11 +71,7 @@ func (n *Node) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 
 	cNMapE := nt.NewMap(vrw).Edit()
 	for costaker, stake := range n.Costakers {
-		stakeV, err := util.Int(stake).MarshalNoms(vrw)
-		if err != nil {
-			return nil, fmt.Errorf("encoding stake (%d) to noms", stake)
-		}
-		cNMapE.Set(nt.String(costaker), stakeV)
+		cNMapE.Set(nt.String(costaker), util.Int(stake).NomsValue())
 	}
 
 	return nt.NewStruct("node", nt.StructData{
