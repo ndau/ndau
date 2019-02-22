@@ -7,8 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/attic-labs/noms/go/chunks"
 	"github.com/attic-labs/noms/go/marshal"
 	"github.com/attic-labs/noms/go/spec"
+	nt "github.com/attic-labs/noms/go/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
@@ -375,5 +377,24 @@ func TestAccountData_ValidateSignatures(t *testing.T) {
 				t.Errorf("AccountData.ValidateSignatures() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
+	}
+}
+
+func newTestValueStore() *nt.ValueStore {
+	ts := &chunks.TestStorage{}
+	return nt.NewValueStore(ts.NewView())
+}
+
+var vval nt.Value
+
+func BenchmarkMarshalNomsAccountData(b *testing.B) {
+	v := AccountData{}
+
+	vrw := newTestValueStore()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		vval, _ = v.MarshalNoms(vrw)
 	}
 }

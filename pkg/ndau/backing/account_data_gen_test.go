@@ -5,8 +5,6 @@ package backing
 import (
 	"testing"
 
-	"github.com/attic-labs/noms/go/chunks"
-	nt "github.com/attic-labs/noms/go/types"
 	"github.com/tinylib/msgp/msgp"
 )
 
@@ -42,36 +40,15 @@ func BenchmarkMarshalMsgAccountData(b *testing.B) {
 	}
 }
 
-var bts []byte
-
 func BenchmarkAppendMsgAccountData(b *testing.B) {
 	v := AccountData{}
-	bts = make([]byte, 0, v.Msgsize())
+	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalMsg(bts[0:0])
 	b.SetBytes(int64(len(bts)))
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		bts, _ = v.MarshalMsg(bts[0:0])
-	}
-}
-
-func newTestValueStore() *nt.ValueStore {
-	ts := &chunks.TestStorage{}
-	return nt.NewValueStore(ts.NewView())
-}
-
-var vval nt.Value
-
-func BenchmarkMarshalNomsAccountData(b *testing.B) {
-	v := AccountData{}
-
-	vrw := newTestValueStore()
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		vval, _ = v.MarshalNoms(vrw)
 	}
 }
 
