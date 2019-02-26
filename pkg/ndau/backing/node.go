@@ -71,14 +71,14 @@ func (n *Node) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 
 	cNMapE := nt.NewMap(vrw).Edit()
 	for costaker, stake := range n.Costakers {
-		cNMapE.Set(nt.String(costaker), util.Int(stake).ToBlob(vrw))
+		cNMapE.Set(nt.String(costaker), util.Int(stake).NomsValue())
 	}
 
 	return nt.NewStruct("node", nt.StructData{
 		"active":             nt.Bool(n.Active),
 		"distributionScript": dsBlob,
 		"rpcAddress":         nt.String(n.RPCAddress),
-		"totalStake":         util.Int(n.TotalStake).ToBlob(vrw),
+		"totalStake":         util.Int(n.TotalStake).NomsValue(),
 		"costakers":          cNMapE.Map(),
 	}), nil
 }
@@ -97,25 +97,24 @@ func (n *Node) UnmarshalNoms(v nt.Value) error {
 
 	n.RPCAddress = string(s.Get("rpcAddress").(nt.String))
 
-	stakeI, err := util.IntFromBlob(s.Get("totalStake").(nt.Blob))
+	stakeI, err := util.IntFrom(s.Get("totalStake"))
 	if err != nil {
-		return errors.Wrap(err, "parsing int from totalStake blob")
+		return errors.Wrap(err, "totalStake")
 	}
 	n.TotalStake = math.Ndau(stakeI)
 
 	n.Costakers = make(map[string]math.Ndau)
-	var iterErr error
 	s.Get("costakers").(nt.Map).Iter(func(kV, vV nt.Value) (stop bool) {
-		vI, err := util.IntFromBlob(vV.(nt.Blob))
+		vI, err := util.IntFrom(vV)
 		if err != nil {
 			stop = true
-			iterErr = errors.Wrap(err, "parsing costaker stake from blob")
+			err = errors.Wrap(err, "parsing costaker stake from blob")
 			return
 		}
 		n.Costakers[string(kV.(nt.String))] = math.Ndau(vI)
 		return
 	})
-	return iterErr
+	return err
 }
 
 // MarshalNodesNoms marshals a map of nodes into a noms map

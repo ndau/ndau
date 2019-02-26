@@ -72,12 +72,12 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		accountKey:    nt.NewMap(vrw),
 		delegateKey:   nt.NewMap(vrw),
 		nodeKey:       nt.NewMap(vrw),
-		lnrnKey:       util.Int(s.LastNodeRewardNomination).ToBlob(vrw),
-		pnrKey:        util.Int(s.PendingNodeReward).ToBlob(vrw),
-		unrKey:        util.Int(s.UnclaimedNodeReward).ToBlob(vrw),
+		lnrnKey:       util.Int(s.LastNodeRewardNomination).NomsValue(),
+		pnrKey:        util.Int(s.PendingNodeReward).NomsValue(),
+		unrKey:        util.Int(s.UnclaimedNodeReward).NomsValue(),
 		nrwKey:        nt.String(s.NodeRewardWinner.String()),
-		totalRFEKey:   util.Int(s.TotalRFE).ToBlob(vrw),
-		totalIssueKey: util.Int(s.TotalIssue).ToBlob(vrw),
+		totalRFEKey:   util.Int(s.TotalRFE).NomsValue(),
+		totalIssueKey: util.Int(s.TotalIssue).NomsValue(),
 	})
 
 	// marshal accounts
@@ -188,19 +188,19 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 	}
 
 	// unmarshal last node reward nomination
-	lnrnI, err := util.IntFromBlob(st.Get(lnrnKey).(nt.Blob))
+	lnrnI, err := util.IntFrom(st.Get(lnrnKey))
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling last node reward nomination")
 	}
 	s.LastNodeRewardNomination = math.Timestamp(lnrnI)
 	// unmarshal pending node reward
-	pnrI, err := util.IntFromBlob(st.Get(pnrKey).(nt.Blob))
+	pnrI, err := util.IntFrom(st.Get(pnrKey))
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling pending node reward")
 	}
 	s.PendingNodeReward = math.Ndau(pnrI)
 	// unmarshal unclaimed node reward
-	unrI, err := util.IntFromBlob(st.Get(unrKey).(nt.Blob))
+	unrI, err := util.IntFrom(st.Get(unrKey))
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling unclaimed node reward")
 	}
@@ -213,12 +213,12 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 			return errors.Wrap(err, "validating node reward winner")
 		}
 	}
-	trfeI, err := util.IntFromBlob(st.Get(totalRFEKey).(nt.Blob))
+	trfeI, err := util.IntFrom(st.Get(totalRFEKey))
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling total RFE")
 	}
 	s.TotalRFE = math.Ndau(trfeI)
-	tisI, err := util.IntFromBlob(st.Get(totalIssueKey).(nt.Blob))
+	tisI, err := util.IntFrom(st.Get(totalIssueKey))
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling total issue")
 	}
