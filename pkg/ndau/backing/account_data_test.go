@@ -398,3 +398,18 @@ func BenchmarkMarshalNomsAccountData(b *testing.B) {
 		vval, _ = v.MarshalNoms(vrw)
 	}
 }
+
+var ad AccountData
+
+func BenchmarkUnmarshalNomsAccountData(b *testing.B) {
+	v := AccountData{}
+
+	vrw := newTestValueStore()
+	vval, _ = v.MarshalNoms(vrw)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ad.UnmarshalNoms(vval)
+	}
+}
