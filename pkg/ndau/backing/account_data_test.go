@@ -131,6 +131,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		LastWAAUpdate:      randTimestamp(),
 		WeightedAverageAge: randDuration(),
 		Sequence:           rand.Uint64(),
+		Settlements:        []Settlement{},
 		SettlementSettings: generateEscrowSettings(randBool()),
 		UncreditedEAI:      randNdau(),
 		SidechainPayments:  make(map[string]struct{}),
