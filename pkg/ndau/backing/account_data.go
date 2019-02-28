@@ -12,6 +12,8 @@ import (
 //go:generate msgp -io=0
 
 // generate noms marshaler implementations for appropriate types
+//go:generate go run $GOPATH/src/github.com/oneiro-ndev/generator/cmd/nomsify $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing
+//go:generate find $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing -name "*noms_gen*.go" -maxdepth 1 -exec goimports -w {} ;
 //nomsify AccountData Stake Settlement SettlementSettings
 
 // Stake keeps track of an account's staking information
