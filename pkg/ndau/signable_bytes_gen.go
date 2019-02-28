@@ -203,3 +203,5 @@ func (tx *Unstake) SignableBytes() []byte {
 func (tx *Issue) SignableBytes() []byte {
 	return sbOf(tx)
 }
+
+
