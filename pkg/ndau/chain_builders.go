@@ -7,6 +7,7 @@ import (
 
 	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -196,20 +197,32 @@ func BuildVMForNodeGoodness(
 	acct backing.AccountData,
 	totalStake math.Ndau,
 	ts math.Timestamp,
+	voteStats metast.VoteStats,
 ) (*vm.ChaincodeVM, error) {
 	addrV, err := chain.ToValue(addr)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "addr")
 	}
 
 	acctV, err := chain.ToValue(acct)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "acct")
 	}
 
-	totalAwardV, err := chain.ToValue(totalStake)
+	totalStakeV, err := chain.ToValue(totalStake)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "totalStake")
+	}
+
+	var votingHistory []metast.NodeRoundStats
+	for _, round := range voteStats.History {
+		if nrs, ok := round.Validators[addr.String()]; ok {
+			votingHistory = append(votingHistory, nrs)
+		}
+	}
+	votingHistoryV, err := chain.ToValue(votingHistory)
+	if err != nil {
+		return nil, errors.Wrap(err, "votingHistory")
 	}
 
 	bin := buildBinary(code, fmt.Sprintf("goodness of %s", addr), "")
@@ -224,7 +237,7 @@ func BuildVMForNodeGoodness(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, addrV, acctV, totalAwardV)
+	err = theVM.Init(0, votingHistoryV, addrV, acctV, totalStakeV)
 	return theVM, err
 }
 
