@@ -131,6 +131,7 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		LastWAAUpdate:      randTimestamp(),
 		WeightedAverageAge: randDuration(),
 		Sequence:           rand.Uint64(),
+		Settlements:        []Settlement{},
 		SettlementSettings: generateEscrowSettings(randBool()),
 		UncreditedEAI:      randNdau(),
 		SidechainPayments:  make(map[string]struct{}),
@@ -396,5 +397,20 @@ func BenchmarkMarshalNomsAccountData(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		vval, _ = v.MarshalNoms(vrw)
+	}
+}
+
+var ad AccountData
+
+func BenchmarkUnmarshalNomsAccountData(b *testing.B) {
+	v := AccountData{}
+
+	vrw := newTestValueStore()
+	vval, _ = v.MarshalNoms(vrw)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ad.UnmarshalNoms(vval)
 	}
 }
