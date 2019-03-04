@@ -42,6 +42,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		acct,
 		math.Ndau(node.TotalStake),
 		app.blockTime,
+		app.GetStats(),
 	)
 	if err != nil {
 		return 0, errors.Wrap(err, "building goodness vm")
