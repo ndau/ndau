@@ -112,6 +112,7 @@ func GetAccountListBatch(node client.ABCIClient) ([]address.Address, error) {
 			err = errors.Wrap(err, fmt.Sprintf(
 				"getPage(%d)", index,
 			))
+			return
 		}
 		accts = append(accts, qaccts.Accounts...)
 		index++
