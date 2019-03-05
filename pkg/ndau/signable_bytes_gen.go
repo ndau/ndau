@@ -204,4 +204,9 @@ func (tx *Issue) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
+// SignableBytes partially implements metatx.Transactable for ClaimChildAccount
+func (tx *ClaimChildAccount) SignableBytes() []byte {
+	return sbOf(tx)
+}
+
 

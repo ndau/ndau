@@ -12,9 +12,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 15
+	// map header, size 17
 	// string "Balance"
-	o = append(o, 0x8f, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0xde, 0x0, 0x11, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Balance")
@@ -156,6 +156,28 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 		o, err = z.CurrencySeatDate.MarshalMsg(o)
 		if err != nil {
 			err = msgp.WrapError(err, "CurrencySeatDate")
+			return
+		}
+	}
+	// string "Parent"
+	o = append(o, 0xa6, 0x50, 0x61, 0x72, 0x65, 0x6e, 0x74)
+	if z.Parent == nil {
+		o = msgp.AppendNil(o)
+	} else {
+		o, err = z.Parent.MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Parent")
+			return
+		}
+	}
+	// string "Progenitor"
+	o = append(o, 0xaa, 0x50, 0x72, 0x6f, 0x67, 0x65, 0x6e, 0x69, 0x74, 0x6f, 0x72)
+	if z.Progenitor == nil {
+		o = msgp.AppendNil(o)
+	} else {
+		o, err = z.Progenitor.MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Progenitor")
 			return
 		}
 	}
@@ -422,6 +444,40 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 			}
+		case "Parent":
+			if msgp.IsNil(bts) {
+				bts, err = msgp.ReadNilBytes(bts)
+				if err != nil {
+					return
+				}
+				z.Parent = nil
+			} else {
+				if z.Parent == nil {
+					z.Parent = new(address.Address)
+				}
+				bts, err = z.Parent.UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Parent")
+					return
+				}
+			}
+		case "Progenitor":
+			if msgp.IsNil(bts) {
+				bts, err = msgp.ReadNilBytes(bts)
+				if err != nil {
+					return
+				}
+				z.Progenitor = nil
+			} else {
+				if z.Progenitor == nil {
+					z.Progenitor = new(address.Address)
+				}
+				bts, err = z.Progenitor.UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Progenitor")
+					return
+				}
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -436,7 +492,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *AccountData) Msgsize() (s int) {
-	s = 1 + 8 + z.Balance.Msgsize() + 15 + msgp.ArrayHeaderSize
+	s = 3 + 8 + z.Balance.Msgsize() + 15 + msgp.ArrayHeaderSize
 	for za0001 := range z.ValidationKeys {
 		s += z.ValidationKeys[za0001].Msgsize()
 	}
@@ -477,6 +533,18 @@ func (z *AccountData) Msgsize() (s int) {
 		s += msgp.NilSize
 	} else {
 		s += z.CurrencySeatDate.Msgsize()
+	}
+	s += 7
+	if z.Parent == nil {
+		s += msgp.NilSize
+	} else {
+		s += z.Parent.Msgsize()
+	}
+	s += 11
+	if z.Progenitor == nil {
+		s += msgp.NilSize
+	} else {
+		s += z.Progenitor.Msgsize()
 	}
 	return
 }
