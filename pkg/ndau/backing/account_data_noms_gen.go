@@ -231,7 +231,7 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 			sidechainPaymentsSorted = append(sidechainPaymentsSorted, sidechainPaymentsItem)
 		}
 		sort.Sort(sort.StringSlice(sidechainPaymentsSorted))
-		for sidechainPaymentsItem := range sidechainPaymentsSorted {
+		for _, sidechainPaymentsItem := range sidechainPaymentsSorted {
 			sidechainPaymentsItems = append(
 				sidechainPaymentsItems,
 				nt.String(sidechainPaymentsItem),
