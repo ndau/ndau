@@ -3,6 +3,7 @@ package backing
 import (
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
@@ -223,11 +224,19 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 	// template decompose: x.SidechainPayments (map[string]struct{}->*ast.MapType)
 	// template set:  x.SidechainPayments
 	sidechainPaymentsItems := make([]nt.Value, 0, len(x.SidechainPayments))
-	for sidechainPaymentsItem := range x.SidechainPayments {
-		sidechainPaymentsItems = append(
-			sidechainPaymentsItems,
-			nt.String(sidechainPaymentsItem),
-		)
+	if len(x.SidechainPayments) > 0 {
+		// We need to iterate the set in sorted order, so build []string and sort it first
+		sidechainPaymentsSorted := make([]string, 0, len(x.SidechainPayments))
+		for sidechainPaymentsItem := range x.SidechainPayments {
+			sidechainPaymentsSorted = append(sidechainPaymentsSorted, sidechainPaymentsItem)
+		}
+		sort.Sort(sort.StringSlice(sidechainPaymentsSorted))
+		for _, sidechainPaymentsItem := range sidechainPaymentsSorted {
+			sidechainPaymentsItems = append(
+				sidechainPaymentsItems,
+				nt.String(sidechainPaymentsItem),
+			)
+		}
 	}
 
 	// x.UncreditedEAI (math.Ndau->*ast.SelectorExpr) is primitive: true
