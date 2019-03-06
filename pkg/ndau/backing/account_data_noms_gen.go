@@ -404,7 +404,7 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 							err = validationKeysItemValue.UnmarshalText([]byte(validationKeysItemString))
 						} else {
 							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
+								"AccountData.UnmarshalNoms expected validationKeysItem to be a nt.String; found %s",
 								reflect.ValueOf(validationKeysItem).Type(),
 							)
 						}
@@ -466,8 +466,8 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = rewardsTargetValue.UnmarshalText([]byte(rewardsTargetString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.RewardsTarget).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
@@ -488,7 +488,7 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 							err = incomingRewardsFromItemValue.UnmarshalText([]byte(incomingRewardsFromItemString))
 						} else {
 							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
+								"AccountData.UnmarshalNoms expected incomingRewardsFromItem to be a nt.String; found %s",
 								reflect.ValueOf(incomingRewardsFromItem).Type(),
 							)
 						}
@@ -535,8 +535,8 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = delegationNodeValue.UnmarshalText([]byte(delegationNodeString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.DelegationNode).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
@@ -761,8 +761,8 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = parentValue.UnmarshalText([]byte(parentString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Parent).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
@@ -798,8 +798,8 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = progenitorValue.UnmarshalText([]byte(progenitorString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Progenitor).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
@@ -927,8 +927,8 @@ func (x *Stake) UnmarshalNoms(value nt.Value) (err error) {
 					err = addressValue.UnmarshalText([]byte(addressString))
 				} else {
 					err = fmt.Errorf(
-						"Stake.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Address).Type(),
+						"Stake.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 

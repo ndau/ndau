@@ -208,5 +208,3 @@ func (tx *Issue) SignableBytes() []byte {
 func (tx *ClaimChildAccount) SignableBytes() []byte {
 	return sbOf(tx)
 }
-
-
