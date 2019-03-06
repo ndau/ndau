@@ -3,6 +3,7 @@ package tool
 import (
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -95,6 +96,8 @@ func ResultLog(result interface{}) string {
 		}
 	case *ctypes.ResultBroadcastTx:
 		out = x.Log
+	default:
+		out = fmt.Sprintf("can't extract log from %s", reflect.TypeOf(result))
 	}
 	return out
 }
