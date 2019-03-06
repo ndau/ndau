@@ -7,9 +7,9 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
-
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type broadcaster func(client.ABCIClient, []byte) (interface{}, error)
@@ -81,4 +81,20 @@ func sendGeneric(
 	}
 
 	return result, nil
+}
+
+// ResultLog extracts the log message(s) from the result of a broadcast
+func ResultLog(result interface{}) string {
+	var out string
+	switch x := result.(type) {
+	case *ctypes.ResultBroadcastTxCommit:
+		if x.CheckTx.Log != "" && x.DeliverTx.Log != "" {
+			out = fmt.Sprintf("CheckTx: %s; DeliverTx: %s", x.CheckTx.Log, x.DeliverTx.Log)
+		} else {
+			out = x.CheckTx.Log + x.DeliverTx.Log
+		}
+	case *ctypes.ResultBroadcastTx:
+		out = x.Log
+	}
+	return out
 }
