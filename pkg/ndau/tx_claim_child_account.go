@@ -23,7 +23,7 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 		return errors.Wrap(err,
 			fmt.Sprintf("Target account address invalid: %s", tx.Target.String()))
 	}
-	_, err := address.Validate(tx.Child.String())
+	_, err = address.Validate(tx.Child.String())
 	if err != nil {
 		return errors.Wrap(err,
 			fmt.Sprintf("Child account address invalid: %s", tx.Child.String()))
@@ -82,7 +82,7 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 	// This consequently also ensures that:
 	// - We won't have ancestry loops
 	// - You cannot claim a locked child account
-	if len(child.ChildValidationKeys) > 0 {
+	if len(child.ValidationKeys) > 0 {
 		return errors.New("Cannot claim a child account that is already claimed")
 	}
 
@@ -105,9 +105,9 @@ func (tx *ClaimChildAccount) Apply(appI interface{}) error {
 		child.ValidationScript = tx.ChildValidationScript
 
 		target, _ := app.getAccount(tx.Target)
-		child.Parent = &target
+		child.Parent = &tx.Target
 		if target.Progenitor == nil {
-			child.Progenitor = &target
+			child.Progenitor = &tx.Target
 		} else {
 			child.Progenitor = target.Progenitor
 		}
