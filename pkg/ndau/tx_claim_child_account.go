@@ -3,7 +3,6 @@ package ndau
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	"github.com/pkg/errors"
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
