@@ -3,7 +3,6 @@ package tool
 import (
 	"fmt"
 	"os"
-	"reflect"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -21,12 +20,6 @@ func broadcastCommit(node client.ABCIClient, tx []byte) (interface{}, error) {
 		return result, err
 	}
 	rc := code.ReturnCode(result.CheckTx.Code)
-	if result.CheckTx.Log != "" {
-		fmt.Fprintln(os.Stderr, result.CheckTx.Log)
-	}
-	if result.DeliverTx.Log != "" {
-		fmt.Fprintln(os.Stderr, result.DeliverTx.Log)
-	}
 	if rc != code.OK {
 		return result, errors.New(rc.String())
 	}
@@ -35,9 +28,6 @@ func broadcastCommit(node client.ABCIClient, tx []byte) (interface{}, error) {
 
 func broadcastAsync(node client.ABCIClient, tx []byte) (interface{}, error) {
 	result, err := node.BroadcastTxAsync(tx)
-	if result.Log != "" {
-		fmt.Fprintln(os.Stderr, result.Log)
-	}
 	if err != nil {
 		return result, err
 	}
@@ -50,9 +40,6 @@ func broadcastAsync(node client.ABCIClient, tx []byte) (interface{}, error) {
 
 func broadcastSync(node client.ABCIClient, tx []byte) (interface{}, error) {
 	result, err := node.BroadcastTxSync(tx)
-	if result.Log != "" {
-		fmt.Fprintln(os.Stderr, result.Log)
-	}
 	if err != nil {
 		return result, err
 	}
@@ -74,30 +61,32 @@ func sendGeneric(
 	}
 
 	result, err := broadcast(node, bytes)
+	rl := ResultLog(result)
+	if rl != "" {
+		fmt.Fprintln(os.Stderr, rl)
+	}
 	if err != nil {
 		if err.Error() == code.EncodingError.String() {
 			fmt.Fprintf(os.Stderr, "tx bytes: %x\n", bytes)
 		}
-		return nil, errors.Wrap(err, "failed to broadcast transaction")
 	}
-
-	return result, nil
+	return result, errors.Wrap(err, "failed to broadcast transaction")
 }
 
 // ResultLog extracts the log message(s) from the result of a broadcast
 func ResultLog(result interface{}) string {
 	var out string
-	switch x := result.(type) {
-	case *ctypes.ResultBroadcastTxCommit:
-		if x.CheckTx.Log != "" && x.DeliverTx.Log != "" {
-			out = fmt.Sprintf("CheckTx: %s; DeliverTx: %s", x.CheckTx.Log, x.DeliverTx.Log)
-		} else {
-			out = x.CheckTx.Log + x.DeliverTx.Log
+	if result != nil {
+		switch x := result.(type) {
+		case *ctypes.ResultBroadcastTxCommit:
+			if x.CheckTx.Log != "" && x.DeliverTx.Log != "" {
+				out = fmt.Sprintf("CheckTx: %s; DeliverTx: %s", x.CheckTx.Log, x.DeliverTx.Log)
+			} else {
+				out = x.CheckTx.Log + x.DeliverTx.Log
+			}
+		case *ctypes.ResultBroadcastTx:
+			out = x.Log
 		}
-	case *ctypes.ResultBroadcastTx:
-		out = x.Log
-	default:
-		out = fmt.Sprintf("can't extract log from %s", reflect.TypeOf(result))
 	}
 	return out
 }
