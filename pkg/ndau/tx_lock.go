@@ -44,6 +44,25 @@ func (tx *Lock) Validate(appI interface{}) error {
 		}
 	}
 
+	// Ensure that this is not an exchange account, as they are not allowed to be locked.
+	accountAttributes := sv.AccountAttributes{}
+	err = app.System(sv.AccountAttributesName, &accountAttributes)
+	if err != nil {
+		return err
+	}
+	var progenitor *address.Address
+	target, _ := app.getAccount(tx.Target)
+	if target.Progenitor == nil {
+		progenitor = &tx.Target
+	} else {
+		progenitor = target.Progenitor
+	}
+	if attributes, ok := accountAttributes[progenitor.String()]; ok {
+		if _, ok := attributes[sv.AccountAttributeExchange]; ok {
+			return errors.New("Cannot lock exchange accounts")
+		}
+	}
+
 	return nil
 }
 
