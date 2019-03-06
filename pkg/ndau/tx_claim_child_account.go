@@ -7,6 +7,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -79,11 +80,35 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 	}
 
 	// Ensure the child account is not already claimed.
-	// This consequently also ensures that:
-	// - We won't have ancestry loops
-	// - You cannot claim a locked child account
+	// This consequently also ensures that we won't have ancestry loops.
 	if len(child.ValidationKeys) > 0 {
 		return errors.New("Cannot claim a child account that is already claimed")
+	}
+
+	// Ensure the child account is not locked.  This is a rule for exchange accounts.
+	// We look at the target account for this, since it's fully established and the child will
+	// inherit the attributes from the parent.
+	isExchangeAccount, err := app.accountHasAttribute(tx.Target, sv.AccountAttributeExchange)
+	if err != nil {
+		return err
+	}
+	// Here we can check the child account state to see if it's locked.  It's possible that it
+	// already exists, has a balance, is locked, etc.  If it doesn't exist, the Lock field will
+	// be nil, and therefore unlocked by default.  If it does exist, the Lock field will be
+	// non-nil and we have to look closer at the notification state before determining whether
+	// it's currently locked.
+	if isExchangeAccount && child.Lock != nil {
+		uo := child.Lock.UnlocksOn
+		if uo == nil {
+			// Locked and not notified.
+			return errors.New("Cannot claim a locked exchange account")
+		}
+		if uo.Compare(app.blockTime) > 0 {
+			// Locked, notified, but not yet expired.
+			return errors.New("Cannot claim an unexpired notified exchange account")
+		}
+		// At this point, it was locked, notified, and expired.  So it is now unlocked again,
+		// and so the child account can be claimed.
 	}
 
 	return nil

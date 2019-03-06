@@ -40,6 +40,7 @@ func (tx *TransferAndLock) Validate(appInt interface{}) error {
 	_, exists := app.getAccount(tx.Destination)
 
 	// TransferAndLock cannot be sent to an existing account
+	// This consequently also ensures that you cannot transfer and lock an exchange account.
 	if exists {
 		return errors.New("invalid TransferAndLock: cannot be sent to an existing account")
 	}
