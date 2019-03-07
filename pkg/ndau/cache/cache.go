@@ -206,16 +206,18 @@ func (c *SystemCache) GetRaw(name string) []byte {
 }
 
 // Get unmarshals the specified system variable into the provided value
-func (c *SystemCache) Get(name string, value msgp.Unmarshaler) error {
+// Returns false if the given system variable does not exist.  Useful for discerning between the
+// special non-existence error vs other, possibly more critical errors.
+func (c *SystemCache) Get(name string, value msgp.Unmarshaler) (bool, error) {
 	valBytes := c.GetRaw(name)
 	if valBytes == nil {
-		return fmt.Errorf("Requested system variable '%s' does not exist", name)
+		return false, fmt.Errorf("Requested system variable '%s' does not exist", name)
 	}
 	leftover, err := value.UnmarshalMsg(valBytes)
 	if len(leftover) > 0 {
-		return errors.New("Provided value type did not completely unmarshal system variable")
+		return true, errors.New("Provided value type did not completely unmarshal system variable")
 	}
-	return err
+	return true, err
 }
 
 // Set sets the specified system variable

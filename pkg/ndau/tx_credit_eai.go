@@ -50,11 +50,10 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 	}
-	lockedTable := new(eai.RateTable)
-	err = app.System(sv.LockedRateTableName, lockedTable)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.LockedRateTableName))
-	}
+
+	// Exchange accounts get a flat rate for EAI.  To accomplish this, we make a 1-element rate
+	// table using the exchange account Rate (dependent on account) with a zero From field.
+	exchangeTable := make(eai.RateTable, 1, 1)
 
 	feeTable := new(sv.EAIFeeTable)
 	err = app.System(sv.EAIFeeTableName, feeTable)
@@ -85,7 +84,6 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			"node":          tx.Node.String(),
 			"blockTime":     app.blockTime,
 			"unlockedTable": unlockedTable,
-			"lockedTable":   lockedTable,
 		})
 
 		// for deterministic EAI calculations, it is necessary that the
@@ -145,10 +143,24 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 			acctData.LastWAAUpdate = app.blockTime
 
+			// Select the appropriate age/rate table to use.
+			ageTable := unlockedTable
+			isExchangeAccount, err := app.accountHasAttribute(addr, sv.AccountAttributeExchange)
+			if handle(err) {
+				return
+			}
+			if isExchangeAccount {
+				exchangeTable[0].Rate, err = app.calculateExchangeEAIRate(acctData)
+				if handle(err) {
+					return
+				}
+				ageTable = &exchangeTable
+			}
+
 			eaiAward, err := eai.Calculate(
 				acctData.Balance, app.blockTime, acctData.LastEAIUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
-				*unlockedTable,
+				*ageTable,
 			)
 			if handle(err) {
 				return

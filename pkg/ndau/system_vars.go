@@ -13,5 +13,12 @@ import (
 // test our code, there needs to be a second indirect where we choose
 // whether or not to divert to a mock.
 func (app *App) System(name string, value msgp.Unmarshaler) (err error) {
+	_, err = app.systemCache.Get(name, value)
+	return err
+}
+
+// SystemOptional retrieves a named system variable, like System, but returns an additional
+// flag to discern between errors from non-existence vs other types of errors.
+func (app *App) SystemOptional(name string, value msgp.Unmarshaler) (exists bool, err error) {
 	return app.systemCache.Get(name, value)
 }
