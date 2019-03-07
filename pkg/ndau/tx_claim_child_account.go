@@ -106,7 +106,7 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 	// non-nil and we have to look closer at the notification state before determining whether
 	// it's currently locked.
 	if isExchangeAccount && child.IsLocked(app.blockTime) {
-		return errors.New("Cannot claim a locked exchange account")
+		return errors.New("Cannot claim a locked child exchange account")
 	}
 
 	return nil

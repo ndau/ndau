@@ -7,6 +7,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -67,6 +68,20 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 
 	if len(acct.ValidationKeys) > 1 {
 		return errors.New("claim account is not valid if there are 2 or more transfer keys")
+	}
+
+	// Prevent claiming of locked exchange accounts.  If this fails, it means we've been working
+	// with an exchange, they have an address, they locked their account, then tried to claim it.
+	// That would be in direct defiance of our instructions to them and they'll have to make a new
+	// address to use with their progenitor account.  If this check passes for a to-become child
+	// exchange account, then the ClaimChildAccount tx will later fail, and likewise will have to
+	// make a new child account that isn't locked before claiming it as a child.
+	isExchangeAccount, err := app.accountHasAttribute(tx.Target, sv.AccountAttributeExchange)
+	if err != nil {
+		return err
+	}
+	if isExchangeAccount && acct.IsLocked(app.blockTime) {
+		return errors.New("Cannot claim a locked exchange account")
 	}
 
 	return nil
