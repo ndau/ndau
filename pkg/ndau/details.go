@@ -132,7 +132,8 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 
 	if available.Compare(fee) < 0 {
 		err = fmt.Errorf(
-			"insufficient available balance (%s ndau) to pay for tx (%s ndau)",
+			"%s: insufficient available balance (%s ndau) to pay for tx (%s ndau)",
+			address,
 			available,
 			fee,
 		)
