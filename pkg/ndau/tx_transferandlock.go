@@ -41,6 +41,14 @@ func (tx *TransferAndLock) Validate(appInt interface{}) error {
 
 	// TransferAndLock cannot be sent to an existing account
 	// This consequently also ensures that you cannot transfer and lock an exchange account.
+	// The reason this is a sufficient check for that (and why we do not specifically check
+	// whether the destination, if it's an exchange account, should not become locked), is
+	// because being an exchange accounts implies that it exists.  An account cannot be an
+	// exchange account and not exist, because an exchange accounts is defined to be one for
+	// which its Progenitor is present in the AccountAttributes system variable and has the
+	// AccountAttributeExchange flag associated with it there.  If getAccount() says that the
+	// destination account doesn't exist, then it can't possibly be an exchange account.  So
+	// it is not possible for this transaction to lock an exchange account when error'ing here.
 	if exists {
 		return errors.New("invalid TransferAndLock: cannot be sent to an existing account")
 	}

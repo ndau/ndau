@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"bytes"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -48,11 +49,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 
 	// no transfer key may be equal to the ownership key
 	for _, tk := range tx.ValidationKeys {
-		tkAddress, err := address.Generate(kind, tk.KeyBytes())
-		if err != nil {
-			return errors.Wrap(err, "generating address for transfer key")
-		}
-		if tkAddress.String() == ownershipAddress.String() {
+		if bytes.Equal(tk.KeyBytes(), tx.Ownership.KeyBytes()) {
 			return errors.New("Ownership key may not be used as a transfer key")
 		}
 	}

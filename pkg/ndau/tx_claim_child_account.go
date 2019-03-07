@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"bytes"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -57,13 +58,9 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 			backing.MaxKeysInAccount, len(tx.ChildValidationKeys))
 	}
 
-	// No transfer key may be equal to the ownership key.
+	// No child transfer key may be equal to the child ownership key.
 	for _, tk := range tx.ChildValidationKeys {
-		tkAddress, err := address.Generate(childKind, tk.KeyBytes())
-		if err != nil {
-			return errors.Wrap(err, "Unable to generate address for transfer key")
-		}
-		if tkAddress.String() == childOwnershipAddress.String() {
+		if bytes.Equal(tk.KeyBytes(), tx.ChildOwnership.KeyBytes()) {
 			return errors.New("Child ownership key may not be used as a transfer key")
 		}
 	}
@@ -74,41 +71,42 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 	}
 
 	app := appI.(*App)
-	child, _, _, err := app.getTxAccount(tx)
+
+	_, _, _, err = app.getTxAccount(tx)
 	if err != nil {
 		return err
 	}
 
+	child, _ := app.getAccount(tx.Child)
+
 	// Ensure the child account is not already claimed.
 	// This consequently also ensures that we won't have ancestry loops.
+	// It also ensures that the child account does not yet have a Parent or Progenitor set,
+	// as that happens in Apply().  Those are set precisely when its validation keys are set.
+	// So only checking validation keys here is sufficient.
 	if len(child.ValidationKeys) > 0 {
 		return errors.New("Cannot claim a child account that is already claimed")
 	}
 
-	// Ensure the child account is not locked.  This is a rule for exchange accounts.
-	// We look at the target account for this, since it's fully established and the child will
-	// inherit the attributes from the parent.
+	// Below we ensure that the child account is not locked.
+	// This rule only applies for exchange accounts.
+
+	// We look at the target (i.e. parent) account for whether the child is (rather, will be) an
+	// exchange account.  The parent account is fully established at this point; the child account
+	// may not be.  In Apply(), the child account will be "adopted" and automatically inherit all
+	// attributes from the parent when the child's Progenitor is set.
 	isExchangeAccount, err := app.accountHasAttribute(tx.Target, sv.AccountAttributeExchange)
 	if err != nil {
 		return err
 	}
+
 	// Here we can check the child account state to see if it's locked.  It's possible that it
 	// already exists, has a balance, is locked, etc.  If it doesn't exist, the Lock field will
 	// be nil, and therefore unlocked by default.  If it does exist, the Lock field will be
 	// non-nil and we have to look closer at the notification state before determining whether
 	// it's currently locked.
-	if isExchangeAccount && child.Lock != nil {
-		uo := child.Lock.UnlocksOn
-		if uo == nil {
-			// Locked and not notified.
-			return errors.New("Cannot claim a locked exchange account")
-		}
-		if uo.Compare(app.blockTime) > 0 {
-			// Locked, notified, but not yet expired.
-			return errors.New("Cannot claim an unexpired notified exchange account")
-		}
-		// At this point, it was locked, notified, and expired.  So it is now unlocked again,
-		// and so the child account can be claimed.
+	if isExchangeAccount && child.IsLocked(app.blockTime) {
+		return errors.New("Cannot claim a locked exchange account")
 	}
 
 	return nil
