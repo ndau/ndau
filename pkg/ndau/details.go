@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/json"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -131,12 +132,29 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	}
 
 	if available.Compare(fee) < 0 {
-		err = fmt.Errorf(
-			"%s: insufficient available balance (%s ndau) to pay for tx (%s ndau)",
-			address,
-			available,
-			fee,
-		)
+		var errb []byte
+		errb, err = json.Marshal(map[string]interface{}{
+			"balance":                 acct.Balance,
+			"available balance":       available,
+			"address":                 address,
+			"tx cost":                 fee,
+			"msg":                     "insufficient available balance to pay for tx",
+			"tx hash":                 metatx.Hash(tx),
+			"qty pending settlements": len(acct.Settlements),
+		})
+		if err == nil {
+			err = errors.New(string(errb))
+		} else {
+			// we don't really care what the marshalling error was, and it's
+			// unlikely ever to occur, but we left the old code in here just in case
+			err = fmt.Errorf(
+				"%s: insufficient available balance (%s ndau) to pay for tx (%s ndau)",
+				address,
+				available,
+				fee,
+			)
+		}
+
 		return acct, exists, sigset, err
 	}
 
