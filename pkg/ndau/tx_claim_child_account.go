@@ -45,10 +45,9 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 		return errors.New("Child ownership key and address do not match")
 	}
 
-	// The child ownership signature should properly sign the signable bytes
-	// using the child ownership key.
-	if !tx.ChildSignature.Verify(tx.SignableBytes(), tx.ChildOwnership) {
-		return errors.New("Child signature unable to sign transaction")
+	// The child signature should properly sign the address bytes using the child ownership key.
+	if !tx.ChildSignature.Verify([]byte(tx.Child.String()), tx.ChildOwnership) {
+		return errors.New("Invalid child signature")
 	}
 
 	// Similar to ClaimAccount tx: there must be at least 1 and no more than a const transfer
@@ -154,4 +153,9 @@ func (tx *ClaimChildAccount) GetSequence() uint64 {
 // GetSignatures implements signeder
 func (tx *ClaimChildAccount) GetSignatures() []signature.Signature {
 	return tx.Signatures
+}
+
+// ExtendSignatures implements Signable
+func (tx *ClaimChildAccount) ExtendSignatures(sa []signature.Signature) {
+	tx.Signatures = append(tx.Signatures, sa...)
 }

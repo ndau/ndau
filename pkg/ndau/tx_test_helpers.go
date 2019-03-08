@@ -43,6 +43,11 @@ var (
 	targetPublic  signature.PublicKey
 	targetAddress address.Address
 
+	childAddress   address.Address
+	childPublic    signature.PublicKey
+	childPrivate   signature.PrivateKey
+	childSignature signature.Signature
+
 	transferPublic  signature.PublicKey
 	transferPrivate signature.PrivateKey
 	transferAddress address.Address
@@ -69,6 +74,22 @@ func init() {
 	sig := targetPrivate.Sign(testdata)
 	if !targetPublic.Verify(testdata, sig) {
 		panic("target public and private keys do not agree")
+	}
+
+	childPublic, childPrivate, err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	childAddress, err = address.Generate(address.KindUser, childPublic.KeyBytes())
+	if err != nil {
+		panic(err)
+	}
+
+	childAddressBytes := []byte(childAddress.String())
+	childSignature = childPrivate.Sign(childAddressBytes)
+	if !childPublic.Verify(childAddressBytes, childSignature) {
+		panic("child public and private keys do not agree")
 	}
 
 	transferPublic, transferPrivate, err = signature.Generate(signature.Ed25519, nil)
