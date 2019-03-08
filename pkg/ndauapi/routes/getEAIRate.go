@@ -43,12 +43,12 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// TODO: need to actually query the chaos chain
+		// FIXME: need to actually query the chaos chain
 		// These are just the default values
 		unlockedTable := eai.DefaultUnlockedEAI
 
 		// Below is code that came from the ndau app but can't run because we don't have
-		// app or config objects. This needs to be fixed but not as part of this PR.
+		// app or config objects.
 
 		// sc, err := cache.NewSystemCache(config)
 		// if err != nil {
