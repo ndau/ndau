@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -64,10 +65,16 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 		// }
 
+		now, err := types.TimestampFrom(time.Now())
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("cannot get current time", err, http.StatusInternalServerError))
+			return
+		}
+
 		response := make([]EAIRateResponse, len(requests))
 		for i := range requests {
 			response[i].Address = requests[i].Address
-			response[i].EAIRate = uint64(eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable))
+			response[i].EAIRate = uint64(eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable, now))
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}
