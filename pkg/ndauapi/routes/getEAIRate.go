@@ -15,9 +15,10 @@ import (
 // EAIRateRequest is the type of a single instance of the rate request (the API takes
 // an array).
 type EAIRateRequest struct {
-	Address string         `json:"address"`
-	WAA     types.Duration `json:"weightedAverageAge"`
-	Lock    backing.Lock   `json:"lock"`
+	Address string          `json:"address"`
+	WAA     types.Duration  `json:"weightedAverageAge"`
+	Lock    backing.Lock    `json:"lock"`
+	At      types.Timestamp `json:"at"`
 }
 
 // EAIRateResponse is a single instance of a rate response (it returns an array of them)
@@ -47,7 +48,7 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		unlockedTable := eai.DefaultUnlockedEAI
 
 		// Below is code that came from the ndau app but can't run because we don't have
-		// app or config objects.
+		// app or config objects. This needs to be fixed but not as part of this PR.
 
 		// sc, err := cache.NewSystemCache(config)
 		// if err != nil {
@@ -56,11 +57,6 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		// }
 
 		// err = app.System(sv.UnlockedRateTableName, unlockedTable)
-		// if err != nil {
-		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
-		// }
-		// lockedTable := new(eai.RateTable)
-		// err = app.System(sv.LockedRateTableName, lockedTable)
 		// if err != nil {
 		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 		// }
@@ -74,7 +70,12 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		response := make([]EAIRateResponse, len(requests))
 		for i := range requests {
 			response[i].Address = requests[i].Address
-			response[i].EAIRate = uint64(eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable, now))
+			if requests[i].At == 0 {
+				requests[i].At = now
+			}
+			response[i].EAIRate = uint64(
+				eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable, requests[i].At),
+			)
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}
