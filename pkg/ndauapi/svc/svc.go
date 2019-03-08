@@ -58,6 +58,11 @@ var dummyResultBlock = rpctypes.ResultBlock{
 	Block:     &tmtypes.Block{},
 }
 
+func dummyParsedTimestamp() types.Timestamp {
+	x, _ := types.ParseTimestamp(dummyTimestamp)
+	return x
+}
+
 var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 
 var dummySubmitResult = routes.SubmitResult{
@@ -104,25 +109,10 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(map[string]backing.AccountData{dummyAddress.String(): dummyAccount}))
 
 	svc.Route(svc.POST("/account/eai/rate").To(routes.GetEAIRate(cf)).
-		Operation("AccountEAIRate").
-		Doc("Returns eai rates for a collection of account information.").
-		Notes(`Accepts an array of rate requests that includes an address
-		field; this field may be any string (the account information is not
-		checked). It returns an array of rate responses, which includes
-		the address passed so that responses may be correctly correlated
-		to the input.
-		`).
+		Operation("DEPRECATEDAccountEAIRate").
+		Doc("This call is deprecated -- please use /system/eai/rate.").
 		Consumes(JSON).
-		Reads([]routes.EAIRateRequest{routes.EAIRateRequest{
-			Address: dummyAddress.String(),
-			WAA:     90 * types.Day,
-			Lock:    *backing.NewLock(180*types.Day, eai.DefaultLockBonusEAI),
-		}}).
-		Produces(JSON).
-		Writes([]routes.EAIRateResponse{routes.EAIRateResponse{
-			Address: dummyAddress.String(),
-			EAIRate: 6000000,
-		}}))
+		Produces(JSON))
 
 	svc.Route(svc.GET("/account/history/:address").To(routes.HandleAccountHistory(cf)).
 		Doc("Returns the balance history of an account given its address.").
@@ -388,6 +378,35 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns the names and current values of all currently-defined system variables.").
 		Produces(JSON).
 		Writes(""))
+
+	svc.Route(svc.POST("/system/eai/rate").To(routes.GetEAIRate(cf)).
+		Operation("AccountEAIRate").
+		Doc("Returns eai rates for a collection of account information.").
+		Notes(`Accepts an array of rate requests that includes an address
+		field; this field may be any string (the account information is not
+		checked). It returns an array of rate responses, which includes
+		the address passed so that responses may be correctly correlated
+		to the input.
+
+		It accepts a timestamp, which will be used to adjust WAA in the
+		event the account is locked and has a non-nil "unlocksOn" value.
+		If the timestamp field is omitted, the current time is used.
+
+		EAIRate in the response is an integer equal to the fractional EAI
+		rate times 10^12.
+		`).
+		Consumes(JSON).
+		Reads([]routes.EAIRateRequest{routes.EAIRateRequest{
+			Address: dummyAddress.String(),
+			WAA:     90 * types.Day,
+			Lock:    *backing.NewLock(180*types.Day, eai.DefaultLockBonusEAI),
+			At:      dummyParsedTimestamp(),
+		}}).
+		Produces(JSON).
+		Writes([]routes.EAIRateResponse{routes.EAIRateResponse{
+			Address: dummyAddress.String(),
+			EAIRate: 60000000000,
+		}}))
 
 	svc.Route(svc.GET("/system/history/:key").To(routes.HandleSystemHistory(cf)).
 		Operation("SystemHistoryKey").
