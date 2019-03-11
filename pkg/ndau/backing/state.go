@@ -320,6 +320,8 @@ func (s *State) GetCostakers(nodeA address.Address) []AccountData {
 // If isEAI we change WAA only if it's not the same account (per the rules of EAI).
 // If it's redirected we change WAA for the target account and do nothing to the source.
 // If it's not redirected we change WAA only if it's not EAI.
+// After updating the balance in an account, this also updates currency seat
+// information for that account.
 func (s *State) PayReward(
 	srcAddress address.Address,
 	reward math.Ndau,
@@ -349,11 +351,13 @@ func (s *State) PayReward(
 		if err != nil {
 			return nil, err
 		}
+		tgtAccount.UpdateCurrencySeat(blockTime)
 		// and store it back into the state
 		s.Accounts[tgtAddress.String()] = tgtAccount
 		// iff this was EAI, update the source account LastEAIUpdate
 		if isEAI {
 			srcAccount.LastEAIUpdate = blockTime
+			srcAccount.UpdateCurrencySeat(blockTime)
 			s.Accounts[srcAddress.String()] = srcAccount
 			// return both accounts that were changed
 			return []address.Address{srcAddress, tgtAddress}, nil
@@ -383,6 +387,7 @@ func (s *State) PayReward(
 	if err != nil {
 		return nil, err
 	}
+	srcAccount.UpdateCurrencySeat(blockTime)
 	// the only account we modify is src
 	s.Accounts[srcAddress.String()] = srcAccount
 	return []address.Address{srcAddress}, nil
