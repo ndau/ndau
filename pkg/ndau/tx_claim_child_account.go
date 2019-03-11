@@ -99,11 +99,8 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 		return err
 	}
 
-	// Here we can check the child account state to see if it's locked.  It's possible that it
-	// already exists, has a balance, is locked, etc.  If it doesn't exist, the Lock field will
-	// be nil, and therefore unlocked by default.  If it does exist, the Lock field will be
-	// non-nil and we have to look closer at the notification state before determining whether
-	// it's currently locked.
+	// Here we can check the child account state to see if it's locked.  However, it shouldn't
+	// be possible for the child to be locked here, since you cannot lock an unclaimed account.
 	if isExchangeAccount && child.IsLocked(app.blockTime) {
 		return errors.New("Cannot claim a locked child exchange account")
 	}

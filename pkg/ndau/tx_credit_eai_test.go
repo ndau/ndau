@@ -13,6 +13,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
@@ -118,6 +119,34 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	require.Equal(t, blockTime, acct.LastEAIUpdate)
 	// EAI does not update WAA when it's delivered to the same account
 	require.NotEqual(t, blockTime, acct.LastWAAUpdate)
+}
+
+func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	compute := NewCreditEAI(nodeAddress, 1, private)
+
+	acct, _ := app.getAccount(sourceAddress)
+	sourceInitial := acct.Balance
+
+	app.setExchangeAccount(sourceAddress.String())
+	rate, err := app.calculateExchangeEAIRate(acct)
+	require.NoError(t, err)
+	expectedEAI, err := signed.MulDiv(
+		int64(sourceInitial),
+		int64(rate),
+		constants.RateDenominator,
+	)
+
+	blockTime := math.Timestamp(1 * math.Year)
+	resp := deliverTxAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	acct, _ = app.getAccount(sourceAddress)
+	t.Log(acct.Balance)
+	require.Equal(t, sourceInitial + math.Ndau(expectedEAI), acct.Balance)
 }
 
 func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {

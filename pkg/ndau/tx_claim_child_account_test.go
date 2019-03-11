@@ -1,22 +1,18 @@
 package ndau
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func TestClaimChildAccountAddressFieldValidates(t *testing.T) {
+func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
 	app, private := initAppTx(t)
 
 	// Flip the bits of the last byte so the address is no longer correct.
@@ -50,12 +46,52 @@ func TestClaimChildAccountAddressFieldValidates(t *testing.T) {
 
 	resp := app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
 
-	// What about an address which is valid but doesn't already exist?
-	fakeSource, err := address.Generate(address.KindUser, addrBytes)
+func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
+	app, private := initAppTx(t)
+
+	// Flip the bits of the last byte so the address is no longer correct.
+	addrBytes := []byte(sourceAddress.String())
+	addrBytes[len(addrBytes)-1] = ^addrBytes[len(addrBytes)-1]
+	addrS := string(addrBytes)
+
+	// Ensure that we didn't accidentally create a valid address.
+	addr, err := address.Validate(addrS)
+	require.Error(t, err)
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
-	cca = NewClaimChildAccount(
-		fakeSource,
+
+	// The address is invalid, but NewClaimChildAccount doesn't validate this.
+	cca := NewClaimChildAccount(
+		sourceAddress,
+		addr,
+		childPublic,
+		childSignature,
+		childSettlementPeriod,
+		[]signature.PublicKey{newPublic},
+		[]byte{},
+		1,
+		private,
+	)
+
+	// However, the resultant transaction must not be valid.
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
+	app, private := initAppTx(t)
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	cca := NewClaimChildAccount(
+		targetAddress,
 		childAddress,
 		childPublic,
 		childSignature,
@@ -66,9 +102,10 @@ func TestClaimChildAccountAddressFieldValidates(t *testing.T) {
 		private,
 	)
 
-	ctkBytes, err = tx.Marshal(cca, TxIDs)
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
-	resp = app.CheckTx(ctkBytes)
+
+	resp := app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -97,16 +134,10 @@ func TestValidClaimChildAccount(t *testing.T) {
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	// Apply the transaction as tendermint would.
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.Now(),
-	}})
-	dresp := app.DeliverTx(ctkBytes)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
+	dresp := deliverTx(t, app, cca)
+	t.Log(dresp.Log)
 
 	// Ensure the child's settlement period matches the default from the system variable.
-	t.Log(dresp.Log)
 	child, _ := app.getAccount(childAddress)
 	require.Equal(t, app.getDefaultSettlementDuration(), child.SettlementSettings.Period)
 }
@@ -138,16 +169,10 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	// Apply the transaction as tendermint would.
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.Now(),
-	}})
-	dresp := app.DeliverTx(ctkBytes)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
+	dresp := deliverTx(t, app, cca)
+	t.Log(dresp.Log)
 
 	// Ensure the child's settlement period matches what we set it to.
-	t.Log(dresp.Log)
 	child, _ := app.getAccount(childAddress)
 	require.Equal(t, period, child.SettlementSettings.Period)
 }
@@ -200,15 +225,9 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	// Apply the transaction as tendermint would.
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: time.Now(),
-	}})
-	dresp := app.DeliverTx(ctkBytes)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
-
+	dresp := deliverTx(t, app, cca)
 	t.Log(dresp.Log)
+
 	require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
 	modify(t, childAddress.String(), app, func(ad *backing.AccountData) {
 		require.Equal(t, newPublic.KeyBytes(), ad.ValidationKeys[0].KeyBytes())
@@ -302,60 +321,78 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimChildAccountDeductsTxFee(t *testing.T) {
+func TestClaimGrandchildAccount(t *testing.T) {
 	app, private := initAppTx(t)
 
-	modify(t, childAddress.String(), app, func(ad *backing.AccountData) {
-		ad.Balance = 1
-	})
+	newChildPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 
-	for i := 0; i < 2; i++ {
-		newPublic, _, err := signature.Generate(signature.Ed25519, nil)
-		require.NoError(t, err)
+	cca := NewClaimChildAccount(
+		sourceAddress,
+		childAddress,
+		childPublic,
+		childSignature,
+		childSettlementPeriod,
+		[]signature.PublicKey{newChildPublic},
+		[]byte{},
+		1,
+		private,
+	)
 
-		cca := NewClaimChildAccount(
-			sourceAddress,
-			childAddress,
-			childPublic,
-			childSignature,
-			childSettlementPeriod,
-			[]signature.PublicKey{newPublic},
-			[]byte{},
-			1+uint64(i),
-			private,
-		)
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
 
-		resp := deliverTxWithTxFee(t, app, cca)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-		var expect code.ReturnCode
-		if i == 0 {
-			expect = code.OK
-		} else {
-			expect = code.InvalidTransaction
-		}
-		require.Equal(t, expect, code.ReturnCode(resp.Code))
-	}
+	dresp := deliverTx(t, app, cca)
+	t.Log(dresp.Log)
+
+	child, _ := app.getAccount(childAddress)
+	require.Equal(t, sourceAddress, *child.Parent)
+	require.Equal(t, sourceAddress, *child.Progenitor)
+
+	// Do it all over again with a grandchild.
+	grandchildPublic, grandchildPrivate, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	grandchildAddress, err := address.Generate(address.KindUser, grandchildPublic.KeyBytes())
+	require.NoError(t, err)
+	grandchildAddressBytes := []byte(grandchildAddress.String())
+	grandchildSignature := grandchildPrivate.Sign(grandchildAddressBytes)
+
+	newGrandchildPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	cca = NewClaimChildAccount(
+		childAddress,
+		grandchildAddress,
+		grandchildPublic,
+		grandchildSignature,
+		childSettlementPeriod,
+		[]signature.PublicKey{newGrandchildPublic},
+		[]byte{},
+		2,
+		childPrivate,
+	)
+
+	ctkBytes, err = tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
+
+	resp = app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	dresp = deliverTx(t, app, cca)
+	t.Log(dresp.Log)
+
+	grandchild, _ := app.getAccount(grandchildAddress)
+	require.Equal(t, childAddress, *grandchild.Parent)
+	require.Equal(t, sourceAddress, *grandchild.Progenitor)
 }
 
-func TestClaimChildAccountDoesntResetWAA(t *testing.T) {
+func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
 	app, private := initAppTx(t)
-
-	assertExistsAndNonzeroWAAUpdate := func(expectExists bool) {
-		resp := app.Query(abci.RequestQuery{
-			Path: query.AccountEndpoint,
-			Data: []byte(childAddress.String()),
-		})
-		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-		require.Equal(t, fmt.Sprintf(query.AccountInfoFmt, expectExists), resp.Info)
-
-		accountData := new(backing.AccountData)
-		_, err := accountData.UnmarshalMsg(resp.Value)
-		require.NoError(t, err)
-
-		require.NotZero(t, accountData.LastWAAUpdate)
-	}
-
-	assertExistsAndNonzeroWAAUpdate(false)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
@@ -367,13 +404,41 @@ func TestClaimChildAccountDoesntResetWAA(t *testing.T) {
 		childSignature,
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
+		[]byte{0x01},
+		1,
+		private,
+	)
+
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestClaimChildAccountInvalidChildSignature(t *testing.T) {
+	app, private := initAppTx(t)
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	cca := NewClaimChildAccount(
+		sourceAddress,
+		childAddress,
+		childPublic,
+		private.Sign([]byte(childAddress.String())),
+		childSettlementPeriod,
+		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,
 		private,
 	)
 
-	resp := deliverTx(t, app, cca)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
 
-	assertExistsAndNonzeroWAAUpdate(true)
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
