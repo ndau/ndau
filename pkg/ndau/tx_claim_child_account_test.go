@@ -11,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -36,6 +37,7 @@ func TestClaimChildAccountAddressFieldValidates(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,
@@ -57,6 +59,7 @@ func TestClaimChildAccountAddressFieldValidates(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,
@@ -80,6 +83,7 @@ func TestValidClaimChildAccount(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,
@@ -92,6 +96,60 @@ func TestValidClaimChildAccount(t *testing.T) {
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// Apply the transaction as tendermint would.
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: time.Now(),
+	}})
+	dresp := app.DeliverTx(ctkBytes)
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
+
+	// Ensure the child's settlement period matches the default from the system variable.
+	t.Log(dresp.Log)
+	child, _ := app.getAccount(childAddress)
+	require.Equal(t, app.getDefaultSettlementDuration(), child.SettlementSettings.Period)
+}
+
+func TestClaimChildAccountSettlementPeriod(t *testing.T) {
+	app, private := initAppTx(t)
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	period := math.Duration(1234)
+
+	cca := NewClaimChildAccount(
+		sourceAddress,
+		childAddress,
+		childPublic,
+		childSignature,
+		period,
+		[]signature.PublicKey{newPublic},
+		[]byte{},
+		1,
+		private,
+	)
+
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// Apply the transaction as tendermint would.
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+		Time: time.Now(),
+	}})
+	dresp := app.DeliverTx(ctkBytes)
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
+
+	// Ensure the child's settlement period matches what we set it to.
+	t.Log(dresp.Log)
+	child, _ := app.getAccount(childAddress)
+	require.Equal(t, period, child.SettlementSettings.Period)
 }
 
 func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
@@ -102,6 +160,7 @@ func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{childPublic},
 		[]byte{},
 		1,
@@ -127,6 +186,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,
@@ -163,6 +223,7 @@ func TestClaimChildAccountNoValidationKeys(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{},
 		[]byte{},
 		1,
@@ -193,6 +254,7 @@ func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		newKeys,
 		[]byte{},
 		1,
@@ -225,6 +287,7 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,
@@ -255,6 +318,7 @@ func TestClaimChildAccountDeductsTxFee(t *testing.T) {
 			childAddress,
 			childPublic,
 			childSignature,
+			childSettlementPeriod,
 			[]signature.PublicKey{newPublic},
 			[]byte{},
 			1+uint64(i),
@@ -301,6 +365,7 @@ func TestClaimChildAccountDoesntResetWAA(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
+		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		1,

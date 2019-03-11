@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
 func intbytes(i int64) []byte {

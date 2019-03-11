@@ -177,6 +177,7 @@ type ClaimChildAccount struct {
 	Child                 address.Address       `msg:"chd"  json:"child"`
 	ChildOwnership        signature.PublicKey   `msg:"cown" json:"child_ownership"`
 	ChildSignature        signature.Signature   `msg:"csig" json:"child_signature"`
+	ChildSettlementPeriod math.Duration         `msg:"cper" json:"child_settlement_period"`
 	ChildValidationKeys   []signature.PublicKey `msg:"ckey" json:"child_validation_keys"`
 	ChildValidationScript []byte                `msg:"cval" json:"child_validation_script"`
 	Sequence              uint64                `msg:"seq"  json:"sequence"`

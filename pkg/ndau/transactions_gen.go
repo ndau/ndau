@@ -392,9 +392,9 @@ func (z *ClaimAccount) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *ClaimChildAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 8
+	// map header, size 9
 	// string "tgt"
-	o = append(o, 0x88, 0xa3, 0x74, 0x67, 0x74)
+	o = append(o, 0x89, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Target")
@@ -419,6 +419,13 @@ func (z *ClaimChildAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	o, err = z.ChildSignature.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "ChildSignature")
+		return
+	}
+	// string "cper"
+	o = append(o, 0xa4, 0x63, 0x70, 0x65, 0x72)
+	o, err = z.ChildSettlementPeriod.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "ChildSettlementPeriod")
 		return
 	}
 	// string "ckey"
@@ -492,6 +499,12 @@ func (z *ClaimChildAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "ChildSignature")
 				return
 			}
+		case "cper":
+			bts, err = z.ChildSettlementPeriod.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildSettlementPeriod")
+				return
+			}
 		case "ckey":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
@@ -556,7 +569,7 @@ func (z *ClaimChildAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ClaimChildAccount) Msgsize() (s int) {
-	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Child.Msgsize() + 5 + z.ChildOwnership.Msgsize() + 5 + z.ChildSignature.Msgsize() + 5 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Child.Msgsize() + 5 + z.ChildOwnership.Msgsize() + 5 + z.ChildSignature.Msgsize() + 5 + z.ChildSettlementPeriod.Msgsize() + 5 + msgp.ArrayHeaderSize
 	for za0001 := range z.ChildValidationKeys {
 		s += z.ChildValidationKeys[za0001].Msgsize()
 	}

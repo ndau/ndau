@@ -134,6 +134,12 @@ func (tx *ClaimChildAccount) Apply(appI interface{}) error {
 			child.Progenitor = target.Progenitor
 		}
 
+		period := tx.ChildSettlementPeriod
+		if period < 0 {
+			period = app.getDefaultSettlementDuration()
+		}
+		child.SettlementSettings.Period = period
+
 		st.Accounts[tx.Child.String()] = child
 
 		return st, nil

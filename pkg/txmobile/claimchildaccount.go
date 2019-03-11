@@ -6,10 +6,11 @@ package txmobile
 import (
 	"encoding/base64"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -45,6 +46,7 @@ func NewClaimChildAccount(
 	child string,
 	childownership string,
 	childsignature string,
+	childsettlementperiod int64,
 	childvalidationscript string,
 	sequence int64,
 ) (*ClaimChildAccount, error) {
@@ -79,6 +81,7 @@ func NewClaimChildAccount(
 			Child:                 childN,
 			ChildOwnership:        *childownershipN,
 			ChildSignature:        *childsignatureN,
+			ChildSettlementPeriod: math.Duration(childsettlementperiod),
 			ChildValidationScript: childvalidationscriptN,
 			Sequence:              uint64(sequence),
 		},
@@ -171,6 +174,19 @@ func (tx *ClaimChildAccount) GetChildSignature() (string, error) {
 	}
 
 	return childsignature, nil
+}
+
+// GetChildSettlementPeriod gets the childsettlementperiod of the ClaimChildAccount
+//
+// Returns a zero value if ClaimChildAccount is `nil` or if native conversion is fallible and
+// conversion failed.
+func (tx *ClaimChildAccount) GetChildSettlementPeriod() int64 {
+	if tx == nil {
+		return 0
+	}
+	childsettlementperiod := int64(tx.tx.ChildSettlementPeriod)
+
+	return childsettlementperiod
 }
 
 // GetNumChildValidationKeys gets the number of childvalidationkeys of the ClaimChildAccount
