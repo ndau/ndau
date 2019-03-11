@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"encoding/base64"
+
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -17,7 +19,10 @@ func (app *App) calculateExchangeEAIRate(exchangeAccount backing.AccountData) (e
 			return 0, errors.Wrap(err, "Could not fetch ExchangeEAIScript system variable")
 		}
 		// The system variable doesn't exist, use the default.
-		script = wkt.Bytes(sv.ExchangeEAIScriptDefault)
+		script, err = base64.StdEncoding.DecodeString(sv.ExchangeEAIScriptDefault)
+		if err != nil {
+			return 0, errors.Wrap(err, "Could not decode ExchangeEAIScriptDefault")
+		}
 	}
 
 	vm, err := BuildVMForExchangeEAI(script, exchangeAccount)
