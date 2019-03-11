@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -22,6 +23,10 @@ func TestGetEAIRate(t *testing.T) {
 	}
 
 	baseHandler := routes.GetEAIRate
+	now, err := types.TimestampFrom(time.Now())
+	if err != nil {
+		panic(err)
+	}
 
 	tests := []struct {
 		name   string
@@ -44,7 +49,7 @@ func TestGetEAIRate(t *testing.T) {
 		{
 			name: "zero rate",
 			body: []routes.EAIRateRequest{
-				routes.EAIRateRequest{"zero", types.Duration(0), backing.Lock{}},
+				routes.EAIRateRequest{"zero", types.Duration(0), backing.Lock{}, now},
 			},
 			status: http.StatusOK,
 			want: []routes.EAIRateResponse{
@@ -54,7 +59,7 @@ func TestGetEAIRate(t *testing.T) {
 		{
 			name: "unlocked 3month rate",
 			body: []routes.EAIRateRequest{
-				routes.EAIRateRequest{"3L0", types.Month * 3, backing.Lock{}},
+				routes.EAIRateRequest{"3L0", types.Month * 3, backing.Lock{}, now},
 			},
 			status: http.StatusOK,
 			want: []routes.EAIRateResponse{
@@ -64,25 +69,25 @@ func TestGetEAIRate(t *testing.T) {
 		{
 			name: "locked 90 days at time 0",
 			body: []routes.EAIRateRequest{
-				routes.EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
+				routes.EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI), now},
 			},
 			status: http.StatusOK,
 			want: []routes.EAIRateResponse{
-				routes.EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
+				routes.EAIRateResponse{"0L90", uint64(eai.RateFromPercent(5))},
 			},
 		},
 		{
 			name: "several accounts",
 			body: []routes.EAIRateRequest{
-				routes.EAIRateRequest{"90L90", 90 * types.Day, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
-				routes.EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI)},
-				routes.EAIRateRequest{"90L0", 90 * types.Day, backing.Lock{}},
-				routes.EAIRateRequest{"400L1095", 400 * types.Day, *backing.NewLock(1095*types.Day, eai.DefaultLockBonusEAI)},
+				routes.EAIRateRequest{"90L90", 90 * types.Day, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI), now},
+				routes.EAIRateRequest{"0L90", 0, *backing.NewLock(90*types.Day, eai.DefaultLockBonusEAI), now},
+				routes.EAIRateRequest{"90L0", 90 * types.Day, backing.Lock{}, now},
+				routes.EAIRateRequest{"400L1095", 400 * types.Day, *backing.NewLock(1095*types.Day, eai.DefaultLockBonusEAI), now},
 			},
 			status: http.StatusOK,
 			want: []routes.EAIRateResponse{
-				routes.EAIRateResponse{"90L90", uint64(eai.RateFromPercent(5))},
-				routes.EAIRateResponse{"0L90", uint64(eai.RateFromPercent(1))},
+				routes.EAIRateResponse{"90L90", uint64(eai.RateFromPercent(8))},
+				routes.EAIRateResponse{"0L90", uint64(eai.RateFromPercent(5))},
 				routes.EAIRateResponse{"90L0", uint64(eai.RateFromPercent(4))},
 				routes.EAIRateResponse{"400L1095", uint64(eai.RateFromPercent(15))},
 			},

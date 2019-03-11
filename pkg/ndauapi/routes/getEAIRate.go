@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -14,9 +15,10 @@ import (
 // EAIRateRequest is the type of a single instance of the rate request (the API takes
 // an array).
 type EAIRateRequest struct {
-	Address string         `json:"address"`
-	WAA     types.Duration `json:"weightedAverageAge"`
-	Lock    backing.Lock   `json:"lock"`
+	Address string          `json:"address"`
+	WAA     types.Duration  `json:"weightedAverageAge"`
+	Lock    backing.Lock    `json:"lock"`
+	At      types.Timestamp `json:"at"`
 }
 
 // EAIRateResponse is a single instance of a rate response (it returns an array of them)
@@ -41,7 +43,7 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// TODO: need to actually query the chaos chain
+		// FIXME: need to actually query the chaos chain
 		// These are just the default values
 		unlockedTable := eai.DefaultUnlockedEAI
 
@@ -58,16 +60,22 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 		// if err != nil {
 		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 		// }
-		// lockedTable := new(eai.RateTable)
-		// err = app.System(sv.LockedRateTableName, lockedTable)
-		// if err != nil {
-		// 	return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
-		// }
+
+		now, err := types.TimestampFrom(time.Now())
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("cannot get current time", err, http.StatusInternalServerError))
+			return
+		}
 
 		response := make([]EAIRateResponse, len(requests))
 		for i := range requests {
 			response[i].Address = requests[i].Address
-			response[i].EAIRate = uint64(eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable))
+			if requests[i].At == 0 {
+				requests[i].At = now
+			}
+			response[i].EAIRate = uint64(
+				eai.CalculateEAIRate(requests[i].WAA, &requests[i].Lock, unlockedTable, requests[i].At),
+			)
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}
