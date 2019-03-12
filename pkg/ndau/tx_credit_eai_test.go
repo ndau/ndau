@@ -169,6 +169,31 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	require.Equal(t, sourceInitial+math.Ndau(expectedEAI), acct.Balance)
 }
 
+func TestCreditEAIUpdatesCurrencySeat(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	compute := NewCreditEAI(nodeAddress, 1, private)
+
+	modify(t, sourceAddress.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 999 * constants.QuantaPerUnit
+		ad.CurrencySeatDate = nil
+	})
+
+	acct, _ := app.getAccount(sourceAddress)
+
+	// we want enough time to earn some ndau
+	blockTime := math.Timestamp(90 * math.Day)
+	resp := deliverTxAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	acct, _ = app.getAccount(sourceAddress)
+	t.Log("BALANCE: ", acct.Balance)
+	require.True(t, acct.Balance > 1000*constants.QuantaPerUnit)
+	require.NotNil(t, acct.CurrencySeatDate)
+}
+
 func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	compute := NewCreditEAI(nodeAddress, 1, private)
