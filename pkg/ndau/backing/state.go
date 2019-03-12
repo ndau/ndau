@@ -357,7 +357,6 @@ func (s *State) PayReward(
 		// iff this was EAI, update the source account LastEAIUpdate
 		if isEAI {
 			srcAccount.LastEAIUpdate = blockTime
-			srcAccount.UpdateCurrencySeat(blockTime)
 			s.Accounts[srcAddress.String()] = srcAccount
 			// return both accounts that were changed
 			return []address.Address{srcAddress, tgtAddress}, nil
