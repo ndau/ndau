@@ -131,17 +131,24 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	app.setExchangeAccount(sourceAddress.String())
 	rate, err := app.calculateExchangeEAIRate(acct)
 	require.NoError(t, err)
-/* FIXME: Use compounded interest at the given rate for one full year
-	expectedEAI, err := signed.MulDiv(
-		int64(sourceInitial),
-		int64(rate),
-		constants.RateDenominator,
-	)
-*/
-	// FIXME: This is just temporary until I can get this unit test working properly.
-	// app.setExchangeAccount() isn't working; isExchangeAccount is false is tx_credit_eai.go.
-	expectedEAI := 54541450078
+	t.Log("rate:", rate.String())
 
+	// expected EAI = BALANCE * (e^(RATE*TIME) - 1)
+	// however, as TIME == 1, we can exclude it from our calculations
+	// e ^ RATE
+	expectedEAI, err := signed.ExpFrac(int64(rate), constants.RateDenominator)
+	require.NoError(t, err)
+	t.Log("e^RATE =", expectedEAI)
+	// x-1
+	expectedEAI -= constants.RateDenominator
+	t.Log("(e^RATE)-1 =", expectedEAI)
+	// BALANCE * x
+	t.Log("sourceInitial =", sourceInitial.String())
+	expectedEAI, err = signed.MulDiv(int64(sourceInitial), expectedEAI, constants.RateDenominator)
+	require.NoError(t, err)
+	t.Log("expectedEAI =", math.Ndau(expectedEAI).String())
+
+	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
 	blockTime := math.Timestamp(1 * math.Year)
 	resp := deliverTxAt(t, app, compute, blockTime)
 	if resp.Log != "" {
@@ -151,7 +158,7 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 
 	acct, _ = app.getAccount(sourceAddress)
 	t.Log(acct.Balance)
-	require.Equal(t, sourceInitial + math.Ndau(expectedEAI), acct.Balance)
+	require.Equal(t, sourceInitial+math.Ndau(expectedEAI), acct.Balance)
 }
 
 func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
