@@ -184,6 +184,28 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 	return theVM, errors.Wrap(err, "initializing chaincode vm")
 }
 
+// BuildVMForExchangeEAI accepts an exchange account data and builds a VM that it sets up to call
+// the default handler.  All that needs to happen after this is to call Run().
+func BuildVMForExchangeEAI(code []byte, acct backing.AccountData) (*vm.ChaincodeVM, error) {
+	acctV, err := chain.ToValue(acct)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting account data for exchange EAI chaincode vm")
+	}
+
+	bin := buildBinary(code, "Exchange account EAI rate", "")
+	theVM, err := vm.New(*bin)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating exchange EAI chaincode vm")
+	}
+
+	err = theVM.Init(0, acctV)
+	if err != nil {
+		return nil, errors.Wrap(err, "initializing exchange EAI chaincode vm")
+	}
+
+	return theVM, nil
+}
+
 // BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
 //
 // Node goodness functions can currently only use the following three pieces

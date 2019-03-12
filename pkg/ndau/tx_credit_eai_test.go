@@ -13,6 +13,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
@@ -118,6 +119,54 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	require.Equal(t, blockTime, acct.LastEAIUpdate)
 	// EAI does not update WAA when it's delivered to the same account
 	require.NotEqual(t, blockTime, acct.LastWAAUpdate)
+}
+
+func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	compute := NewCreditEAI(nodeAddress, 1, private)
+
+	acct, _ := app.getAccount(sourceAddress)
+	sourceInitial := acct.Balance
+
+	rate, err := app.calculateExchangeEAIRate(acct)
+	require.NoError(t, err)
+	t.Log("rate:", rate.String())
+
+	// expected EAI = BALANCE * (e^(RATE*TIME) - 1)
+	// however, as TIME == 1, we can exclude it from our calculations
+	// e ^ RATE
+	expectedEAI, err := signed.ExpFrac(int64(rate), constants.RateDenominator)
+	require.NoError(t, err)
+	t.Log("e^RATE =", expectedEAI)
+	// x-1
+	expectedEAI -= constants.RateDenominator
+	t.Log("(e^RATE)-1 =", expectedEAI)
+	// BALANCE * x
+	t.Log("sourceInitial =", sourceInitial.String())
+	expectedEAI, err = signed.MulDiv(int64(sourceInitial), expectedEAI, constants.RateDenominator)
+	require.NoError(t, err)
+	t.Log("expectedEAI =", math.Ndau(expectedEAI).String())
+	// Subtract off the 15% EAI fees.
+	expectedEAI, err = signed.MulDiv(
+		int64(expectedEAI),
+		int64(eai.RateFromPercent(85)),
+		constants.RateDenominator)
+	require.NoError(t, err)
+	t.Log("expectedEAI less fees =", math.Ndau(expectedEAI).String())
+
+	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
+
+	blockTime := math.Timestamp(1 * math.Year)
+	context := makeExchangeAccountContext(blockTime, sourceAddress)
+	resp, _ := deliverTxContext(t, app, compute, context)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	acct, _ = app.getAccount(sourceAddress)
+	t.Log(acct.Balance)
+	require.Equal(t, sourceInitial+math.Ndau(expectedEAI), acct.Balance)
 }
 
 func TestCreditEAIUpdatesCurrencySeat(t *testing.T) {

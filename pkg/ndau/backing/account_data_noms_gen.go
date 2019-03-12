@@ -27,12 +27,16 @@ func init() {
 		"HasCurrencySeatDate",
 		"HasDelegationNode",
 		"HasLock",
+		"HasParent",
+		"HasProgenitor",
 		"HasRewardsTarget",
 		"HasStake",
 		"IncomingRewardsFrom",
 		"LastEAIUpdate",
 		"LastWAAUpdate",
 		"Lock",
+		"Parent",
+		"Progenitor",
 		"RewardsTarget",
 		"Sequence",
 		"SettlementSettings",
@@ -219,6 +223,44 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		currencySeatDateUnptr = util.Int((*x.CurrencySeatDate)).NomsValue()
 	}
 
+	// x.Parent (*address.Address->*ast.StarExpr) is primitive: false
+
+	// template decompose: x.Parent (*address.Address->*ast.StarExpr)
+	// template pointer:  x.Parent
+	var parentUnptr nt.Value
+	if x.Parent == nil {
+		parentUnptr = nt.String("")
+	} else {
+
+		// template decompose: (*x.Parent) (address.Address->*ast.SelectorExpr)
+		// template textmarshaler: (*x.Parent)
+		parentString, err := (*x.Parent).MarshalText()
+		if err != nil {
+			return nil, errors.Wrap(err, "AccountData.MarshalNoms->Parent.MarshalText")
+		}
+
+		parentUnptr = nt.String(parentString)
+	}
+
+	// x.Progenitor (*address.Address->*ast.StarExpr) is primitive: false
+
+	// template decompose: x.Progenitor (*address.Address->*ast.StarExpr)
+	// template pointer:  x.Progenitor
+	var progenitorUnptr nt.Value
+	if x.Progenitor == nil {
+		progenitorUnptr = nt.String("")
+	} else {
+
+		// template decompose: (*x.Progenitor) (address.Address->*ast.SelectorExpr)
+		// template textmarshaler: (*x.Progenitor)
+		progenitorString, err := (*x.Progenitor).MarshalText()
+		if err != nil {
+			return nil, errors.Wrap(err, "AccountData.MarshalNoms->Progenitor.MarshalText")
+		}
+
+		progenitorUnptr = nt.String(progenitorString)
+	}
+
 	// x.SidechainPayments (map[string]struct{}->*ast.MapType) is primitive: false
 
 	// template decompose: x.SidechainPayments (map[string]struct{}->*ast.MapType)
@@ -258,6 +300,12 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		// x.HasLock (bool)
 
 		nt.Bool(x.Lock != nil),
+		// x.HasParent (bool)
+
+		nt.Bool(x.Parent != nil),
+		// x.HasProgenitor (bool)
+
+		nt.Bool(x.Progenitor != nil),
 		// x.HasRewardsTarget (bool)
 
 		nt.Bool(x.RewardsTarget != nil),
@@ -274,6 +322,10 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		util.Int(x.LastWAAUpdate).NomsValue(),
 		// x.Lock (*Lock)
 		lockUnptr,
+		// x.Parent (*address.Address)
+		parentUnptr,
+		// x.Progenitor (*address.Address)
+		progenitorUnptr,
 		// x.RewardsTarget (*address.Address)
 		rewardsTargetUnptr,
 		// x.Sequence (uint64)
@@ -352,7 +404,7 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 							err = validationKeysItemValue.UnmarshalText([]byte(validationKeysItemString))
 						} else {
 							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
+								"AccountData.UnmarshalNoms expected validationKeysItem to be a nt.String; found %s",
 								reflect.ValueOf(validationKeysItem).Type(),
 							)
 						}
@@ -414,8 +466,8 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = rewardsTargetValue.UnmarshalText([]byte(rewardsTargetString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.RewardsTarget).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
@@ -436,7 +488,7 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 							err = incomingRewardsFromItemValue.UnmarshalText([]byte(incomingRewardsFromItemString))
 						} else {
 							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
+								"AccountData.UnmarshalNoms expected incomingRewardsFromItem to be a nt.String; found %s",
 								reflect.ValueOf(incomingRewardsFromItem).Type(),
 							)
 						}
@@ -483,8 +535,8 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = delegationNodeValue.UnmarshalText([]byte(delegationNodeString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.DelegationNode).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
@@ -679,6 +731,80 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 
 				x.CurrencySeatDate = &currencySeatDateTyped
 
+			// x.Parent (*address.Address->*ast.StarExpr) is primitive: false
+			case "Parent":
+				// template u_decompose: x.Parent (*address.Address->*ast.StarExpr)
+				// template u_pointer:  x.Parent
+				if hasParentValue, ok := vs.MaybeGet("HasParent"); ok {
+					if hasParent, ok := hasParentValue.(nt.Bool); ok {
+						if !hasParent {
+							return
+						}
+					} else {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected HasParent to be a nt.Bool; found %s",
+							reflect.TypeOf(hasParentValue),
+						)
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms->Parent is a pointer, so expected a HasParent field: not found",
+					)
+					return
+				}
+
+				// template u_decompose: x.Parent (address.Address->*ast.SelectorExpr)
+				// template u_textmarshaler: x.Parent
+				var parentValue address.Address
+				if parentString, ok := value.(nt.String); ok {
+					err = parentValue.UnmarshalText([]byte(parentString))
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
+					)
+				}
+
+				x.Parent = &parentValue
+
+			// x.Progenitor (*address.Address->*ast.StarExpr) is primitive: false
+			case "Progenitor":
+				// template u_decompose: x.Progenitor (*address.Address->*ast.StarExpr)
+				// template u_pointer:  x.Progenitor
+				if hasProgenitorValue, ok := vs.MaybeGet("HasProgenitor"); ok {
+					if hasProgenitor, ok := hasProgenitorValue.(nt.Bool); ok {
+						if !hasProgenitor {
+							return
+						}
+					} else {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected HasProgenitor to be a nt.Bool; found %s",
+							reflect.TypeOf(hasProgenitorValue),
+						)
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms->Progenitor is a pointer, so expected a HasProgenitor field: not found",
+					)
+					return
+				}
+
+				// template u_decompose: x.Progenitor (address.Address->*ast.SelectorExpr)
+				// template u_textmarshaler: x.Progenitor
+				var progenitorValue address.Address
+				if progenitorString, ok := value.(nt.String); ok {
+					err = progenitorValue.UnmarshalText([]byte(progenitorString))
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
+					)
+				}
+
+				x.Progenitor = &progenitorValue
+
 			// x.SidechainPayments (map[string]struct{}->*ast.MapType) is primitive: false
 			case "SidechainPayments":
 				// template u_decompose: x.SidechainPayments (map[string]struct{}->*ast.MapType)
@@ -801,8 +927,8 @@ func (x *Stake) UnmarshalNoms(value nt.Value) (err error) {
 					err = addressValue.UnmarshalText([]byte(addressString))
 				} else {
 					err = fmt.Errorf(
-						"Stake.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Address).Type(),
+						"Stake.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 

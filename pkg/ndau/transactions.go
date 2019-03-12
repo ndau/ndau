@@ -34,6 +34,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(18): &UnregisterNode{},
 	metatx.TxID(19): &Unstake{},
 	metatx.TxID(20): &Issue{},
+	metatx.TxID(21): &ClaimChildAccount{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -157,7 +158,7 @@ var _ NTransactable = (*SetRewardsDestination)(nil)
 
 // A ClaimAccount transaction is used to set the initial transfer keys for an account.
 //
-// It is the only type of transaction which may be signed with the ownership key.
+// It is the only type of transaction which may be signed with only the ownership key.
 type ClaimAccount struct {
 	Target           address.Address       `msg:"tgt" json:"target"`
 	Ownership        signature.PublicKey   `msg:"own" json:"ownership"`
@@ -168,6 +169,22 @@ type ClaimAccount struct {
 }
 
 var _ NTransactable = (*ClaimAccount)(nil)
+
+// A ClaimChildAccount transaction is used to set the initial transfer keys for a child account,
+// and link the target account as its parent.
+type ClaimChildAccount struct {
+	Target                address.Address       `msg:"tgt"  json:"target"`
+	Child                 address.Address       `msg:"chd"  json:"child"`
+	ChildOwnership        signature.PublicKey   `msg:"cown" json:"child_ownership"`
+	ChildSignature        signature.Signature   `msg:"csig" json:"child_signature"`
+	ChildSettlementPeriod math.Duration         `msg:"cper" json:"child_settlement_period"`
+	ChildValidationKeys   []signature.PublicKey `msg:"ckey" json:"child_validation_keys"`
+	ChildValidationScript []byte                `msg:"cval" json:"child_validation_script"`
+	Sequence              uint64                `msg:"seq"  json:"sequence"`
+	Signatures            []signature.Signature `msg:"sig"  json:"signatures"`
+}
+
+var _ NTransactable = (*ClaimChildAccount)(nil)
 
 // TransferAndLock allows a transaction where the received amount is locked
 // for a specified period. It can only be sent to accounts that did not

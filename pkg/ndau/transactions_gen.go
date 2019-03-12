@@ -390,6 +390,197 @@ func (z *ClaimAccount) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
+func (z *ClaimChildAccount) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 9
+	// string "tgt"
+	o = append(o, 0x89, 0xa3, 0x74, 0x67, 0x74)
+	o, err = z.Target.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Target")
+		return
+	}
+	// string "chd"
+	o = append(o, 0xa3, 0x63, 0x68, 0x64)
+	o, err = z.Child.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Child")
+		return
+	}
+	// string "cown"
+	o = append(o, 0xa4, 0x63, 0x6f, 0x77, 0x6e)
+	o, err = z.ChildOwnership.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "ChildOwnership")
+		return
+	}
+	// string "csig"
+	o = append(o, 0xa4, 0x63, 0x73, 0x69, 0x67)
+	o, err = z.ChildSignature.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "ChildSignature")
+		return
+	}
+	// string "cper"
+	o = append(o, 0xa4, 0x63, 0x70, 0x65, 0x72)
+	o, err = z.ChildSettlementPeriod.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "ChildSettlementPeriod")
+		return
+	}
+	// string "ckey"
+	o = append(o, 0xa4, 0x63, 0x6b, 0x65, 0x79)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.ChildValidationKeys)))
+	for za0001 := range z.ChildValidationKeys {
+		o, err = z.ChildValidationKeys[za0001].MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "ChildValidationKeys", za0001)
+			return
+		}
+	}
+	// string "cval"
+	o = append(o, 0xa4, 0x63, 0x76, 0x61, 0x6c)
+	o = msgp.AppendBytes(o, z.ChildValidationScript)
+	// string "seq"
+	o = append(o, 0xa3, 0x73, 0x65, 0x71)
+	o = msgp.AppendUint64(o, z.Sequence)
+	// string "sig"
+	o = append(o, 0xa3, 0x73, 0x69, 0x67)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Signatures)))
+	for za0002 := range z.Signatures {
+		o, err = z.Signatures[za0002].MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Signatures", za0002)
+			return
+		}
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *ClaimChildAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "tgt":
+			bts, err = z.Target.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Target")
+				return
+			}
+		case "chd":
+			bts, err = z.Child.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Child")
+				return
+			}
+		case "cown":
+			bts, err = z.ChildOwnership.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildOwnership")
+				return
+			}
+		case "csig":
+			bts, err = z.ChildSignature.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildSignature")
+				return
+			}
+		case "cper":
+			bts, err = z.ChildSettlementPeriod.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildSettlementPeriod")
+				return
+			}
+		case "ckey":
+			var zb0002 uint32
+			zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildValidationKeys")
+				return
+			}
+			if cap(z.ChildValidationKeys) >= int(zb0002) {
+				z.ChildValidationKeys = (z.ChildValidationKeys)[:zb0002]
+			} else {
+				z.ChildValidationKeys = make([]signature.PublicKey, zb0002)
+			}
+			for za0001 := range z.ChildValidationKeys {
+				bts, err = z.ChildValidationKeys[za0001].UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "ChildValidationKeys", za0001)
+					return
+				}
+			}
+		case "cval":
+			z.ChildValidationScript, bts, err = msgp.ReadBytesBytes(bts, z.ChildValidationScript)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildValidationScript")
+				return
+			}
+		case "seq":
+			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Sequence")
+				return
+			}
+		case "sig":
+			var zb0003 uint32
+			zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Signatures")
+				return
+			}
+			if cap(z.Signatures) >= int(zb0003) {
+				z.Signatures = (z.Signatures)[:zb0003]
+			} else {
+				z.Signatures = make([]signature.Signature, zb0003)
+			}
+			for za0002 := range z.Signatures {
+				bts, err = z.Signatures[za0002].UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Signatures", za0002)
+					return
+				}
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *ClaimChildAccount) Msgsize() (s int) {
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Child.Msgsize() + 5 + z.ChildOwnership.Msgsize() + 5 + z.ChildSignature.Msgsize() + 5 + z.ChildSettlementPeriod.Msgsize() + 5 + msgp.ArrayHeaderSize
+	for za0001 := range z.ChildValidationKeys {
+		s += z.ChildValidationKeys[za0001].Msgsize()
+	}
+	s += 5 + msgp.BytesPrefixSize + len(z.ChildValidationScript) + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	for za0002 := range z.Signatures {
+		s += z.Signatures[za0002].Msgsize()
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *ClaimNodeReward) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3

@@ -153,3 +153,15 @@ func TestLockDeductsTxFee(t *testing.T) {
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
 }
+
+func TestCannotLockExchangeAccount(t *testing.T) {
+	app, private := initAppTx(t)
+
+	setExchangeAccount(sourceAddress, app.systemCache)
+
+	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 1, private)
+	bytes, err := tx.Marshal(lock, TxIDs)
+	require.NoError(t, err)
+	resp := app.CheckTx(bytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}

@@ -43,6 +43,12 @@ var (
 	targetPublic  signature.PublicKey
 	targetAddress address.Address
 
+	childAddress          address.Address
+	childPublic           signature.PublicKey
+	childPrivate          signature.PrivateKey
+	childSignature        signature.Signature
+	childSettlementPeriod math.Duration
+
 	transferPublic  signature.PublicKey
 	transferPrivate signature.PrivateKey
 	transferAddress address.Address
@@ -70,6 +76,25 @@ func init() {
 	if !targetPublic.Verify(testdata, sig) {
 		panic("target public and private keys do not agree")
 	}
+
+	childPublic, childPrivate, err = signature.Generate(signature.Ed25519, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	childAddress, err = address.Generate(address.KindUser, childPublic.KeyBytes())
+	if err != nil {
+		panic(err)
+	}
+
+	childAddressBytes := []byte(childAddress.String())
+	childSignature = childPrivate.Sign(childAddressBytes)
+	if !childPublic.Verify(childAddressBytes, childSignature) {
+		panic("child public and private keys do not agree")
+	}
+
+	// We'll use the default settlement period for child accounts.  Any negative duration will do.
+	childSettlementPeriod = -math.Duration(1)
 
 	transferPublic, transferPrivate, err = signature.Generate(signature.Ed25519, nil)
 	if err != nil {
@@ -191,6 +216,15 @@ func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.Res
 	return resp
 }
 
+func makeExchangeAccountContext(ts math.Timestamp, addr address.Address) deliveryContext {
+	return deliveryContext{
+		ts:        ts,
+		svUpdater: func(systemCache *cache.SystemCache) {
+			setExchangeAccount(addr, systemCache)
+		},
+	}
+}
+
 type deliveryContext struct {
 	ts        math.Timestamp
 	svUpdater func(*cache.SystemCache)
@@ -258,4 +292,18 @@ func deliverTxsContext(
 	app.Commit()
 
 	return resps, reb
+}
+
+// setExchangeAccount marks the given address as having the exchange account attribute.
+func setExchangeAccount(addr address.Address, systemCache *cache.SystemCache) {
+	accountAttributes := sv.AccountAttributes{}
+
+	attributes := make(map[string]struct{})
+	accountAttributes[addr.String()] = attributes
+
+	type Attribute struct{}
+	var attribute Attribute
+	attributes[sv.AccountAttributeExchange] = attribute
+
+	systemCache.Set(sv.AccountAttributesName, accountAttributes)
 }

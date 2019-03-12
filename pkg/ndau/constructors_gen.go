@@ -494,3 +494,37 @@ func NewIssue(
 
 	return tx
 }
+
+// NewClaimChildAccount creates a new ClaimChildAccount transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewClaimChildAccount(
+	target address.Address,
+	child address.Address,
+	childownership signature.PublicKey,
+	childsignature signature.Signature,
+	childsettlementperiod math.Duration,
+	childvalidationkeys []signature.PublicKey,
+	childvalidationscript []byte,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *ClaimChildAccount {
+	tx := &ClaimChildAccount{
+		Target:                target,
+		Child:                 child,
+		ChildOwnership:        childownership,
+		ChildSignature:        childsignature,
+		ChildSettlementPeriod: childsettlementperiod,
+		ChildValidationKeys:   childvalidationkeys,
+		ChildValidationScript: childvalidationscript,
+		Sequence:              sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}

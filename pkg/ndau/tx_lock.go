@@ -44,6 +44,15 @@ func (tx *Lock) Validate(appI interface{}) error {
 		}
 	}
 
+	// Ensure that this is not an exchange account, as they are not allowed to be locked.
+	isExchangeAccount, err := app.accountHasAttribute(tx.Target, sv.AccountAttributeExchange)
+	if err != nil {
+		return err
+	}
+	if isExchangeAccount {
+		return errors.New("Cannot lock exchange accounts")
+	}
+
 	return nil
 }
 
