@@ -216,6 +216,15 @@ func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.Res
 	return resp
 }
 
+func makeExchangeAccountContext(ts math.Timestamp, addr address.Address) deliveryContext {
+	return deliveryContext{
+		ts:        ts,
+		svUpdater: func(systemCache *cache.SystemCache) {
+			setExchangeAccount(addr, systemCache)
+		},
+	}
+}
+
 type deliveryContext struct {
 	ts        math.Timestamp
 	svUpdater func(*cache.SystemCache)
@@ -286,11 +295,11 @@ func deliverTxsContext(
 }
 
 // setExchangeAccount marks the given address as having the exchange account attribute.
-func setExchangeAccount(addr string, systemCache *cache.SystemCache) {
+func setExchangeAccount(addr address.Address, systemCache *cache.SystemCache) {
 	accountAttributes := sv.AccountAttributes{}
 
 	attributes := make(map[string]struct{})
-	accountAttributes[addr] = attributes
+	accountAttributes[addr.String()] = attributes
 
 	type Attribute struct{}
 	var attribute Attribute

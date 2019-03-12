@@ -99,8 +99,8 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 		return err
 	}
 
-	// Here we can check the child account state to see if it's locked.  However, it shouldn't
-	// be possible for the child to be locked here, since you cannot lock an unclaimed account.
+	// Ensure the child account is not locked, which could happen, for example, if a
+	// TransferAndLock happened on the child prior to claiming.
 	if isExchangeAccount && child.IsLocked(app.blockTime) {
 		return errors.New("Cannot claim a locked child exchange account")
 	}

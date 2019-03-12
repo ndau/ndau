@@ -9,7 +9,6 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -122,15 +121,6 @@ func TestCreditEAIChangesAppState(t *testing.T) {
 	require.NotEqual(t, blockTime, acct.LastWAAUpdate)
 }
 
-func makeExchangeAccountEAIContext(ts math.Timestamp, addr string) deliveryContext {
-	return deliveryContext{
-		ts:        ts,
-		svUpdater: func(systemCache *cache.SystemCache) {
-			setExchangeAccount(addr, systemCache)
-		},
-	}
-}
-
 func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	compute := NewCreditEAI(nodeAddress, 1, private)
@@ -167,7 +157,7 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
 
 	blockTime := math.Timestamp(1 * math.Year)
-	context := makeExchangeAccountEAIContext(blockTime, sourceAddress.String())
+	context := makeExchangeAccountContext(blockTime, sourceAddress)
 	resp, _ := deliverTxContext(t, app, compute, context)
 	if resp.Log != "" {
 		t.Log(resp.Log)

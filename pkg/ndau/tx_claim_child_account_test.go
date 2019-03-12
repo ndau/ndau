@@ -9,6 +9,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 )
 
@@ -354,7 +355,9 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			parentPrivate,
 		)
 
-		dresp := deliverTx(t, app, cca)
+		// Make the progenitor an exchange account, to test more code paths.
+		context := makeExchangeAccountContext(app.blockTime, progenitor)
+		dresp, _ := deliverTxContext(t, app, cca, context)
 		require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
 
 		childAcct, exists := app.getAccount(child)
@@ -367,6 +370,11 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			cca.ChildValidationKeys[0].KeyBytes(),
 			childAcct.ValidationKeys[0].KeyBytes(),
 		)
+
+		// Since the progenitor was marked as an exchange account, so should any descendant.
+		isExchangeAccount, err := app.accountHasAttribute(child, sv.AccountAttributeExchange)
+		require.NoError(t, err)
+		require.True(t, isExchangeAccount)
 
 		return child, validationPrivate
 	}
