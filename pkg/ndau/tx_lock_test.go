@@ -157,7 +157,7 @@ func TestLockDeductsTxFee(t *testing.T) {
 func TestCannotLockExchangeAccount(t *testing.T) {
 	app, private := initAppTx(t)
 
-	app.setExchangeAccount(sourceAddress.String())
+	setExchangeAccount(sourceAddress.String(), app.systemCache)
 
 	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 1, private)
 	bytes, err := tx.Marshal(lock, TxIDs)

@@ -286,7 +286,7 @@ func deliverTxsContext(
 }
 
 // setExchangeAccount marks the given address as having the exchange account attribute.
-func (app *App) setExchangeAccount(addr string) {
+func setExchangeAccount(addr string, systemCache *cache.SystemCache) {
 	accountAttributes := sv.AccountAttributes{}
 
 	attributes := make(map[string]struct{})
@@ -296,5 +296,5 @@ func (app *App) setExchangeAccount(addr string) {
 	var attribute Attribute
 	attributes[sv.AccountAttributeExchange] = attribute
 
-	app.systemCache.Set(sv.AccountAttributesName, accountAttributes)
+	systemCache.Set(sv.AccountAttributesName, accountAttributes)
 }

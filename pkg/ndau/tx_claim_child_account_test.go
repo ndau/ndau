@@ -322,13 +322,16 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 }
 
 func TestClaimGrandchildAccount(t *testing.T) {
-	app, validation := initAppTx(t)
+	app, sourceValidation := initAppTx(t)
 
 	claimChild := func(
 		parent address.Address,
-		childPublic signature.PublicKey,
-		private, childPrivate signature.PrivateKey,
-	) (address.Address, backing.AccountData, signature.PrivateKey) {
+		progenitor address.Address,
+		parentPrivate signature.PrivateKey,
+	) (address.Address, signature.PrivateKey) {
+		childPublic, childPrivate, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+
 		child, err := address.Generate(parent.Kind(), childPublic.KeyBytes())
 		require.NoError(t, err)
 
@@ -348,7 +351,7 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			[]signature.PublicKey{validationPublic},
 			[]byte{},
 			parentAcct.Sequence+1,
-			private,
+			parentPrivate,
 		)
 
 		dresp := deliverTx(t, app, cca)
@@ -356,33 +359,23 @@ func TestClaimGrandchildAccount(t *testing.T) {
 
 		childAcct, exists := app.getAccount(child)
 		require.True(t, exists)
-		require.Equal(t, &sourceAddress, childAcct.Parent)
-		require.Equal(t, &sourceAddress, childAcct.Progenitor)
-		require.ElementsMatch(t, cca.ChildValidationKeys, childAcct.ValidationKeys)
+		require.Equal(t, &parent, childAcct.Parent)
+		require.Equal(t, &progenitor, childAcct.Progenitor)
+		require.Equal(t, 1, len(cca.ChildValidationKeys))
+		require.Equal(t, 1, len(childAcct.ValidationKeys))
+		require.Equal(t,
+			cca.ChildValidationKeys[0].KeyBytes(),
+			childAcct.ValidationKeys[0].KeyBytes(),
+		)
 
-		return child, childAcct, validationPrivate
+		return child, validationPrivate
 	}
 
-	// set up a fresh shild account
-	childPublic, childPrivate, err := signature.Generate(signature.Ed25519, nil)
-	require.NoError(t, err)
+	// Claim a child of the source account.
+	child, childValidation := claimChild(sourceAddress, sourceAddress, sourceValidation)
 
-	child, _, childValidation := claimChild(
-		sourceAddress,
-		childPublic,
-		validation,
-		childPrivate,
-	)
-
-	// Do it all over again with a grandchild.
-	grandchildPublic, grandchildPrivate, err := signature.Generate(signature.Ed25519, nil)
-	require.NoError(t, err)
-	claimChild(
-		child,
-		grandchildPublic,
-		childValidation,
-		grandchildPrivate,
-	)
+	// Claim a child of the child (a grandchild of the source account).
+	claimChild(child, sourceAddress, childValidation)
 }
 
 func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
