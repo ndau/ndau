@@ -322,74 +322,67 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 }
 
 func TestClaimGrandchildAccount(t *testing.T) {
-	app, private := initAppTx(t)
+	app, validation := initAppTx(t)
 
-	newChildPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	claimChild := func(
+		parent address.Address,
+		childPublic signature.PublicKey,
+		private, childPrivate signature.PrivateKey,
+	) (address.Address, backing.AccountData, signature.PrivateKey) {
+		child, err := address.Generate(parent.Kind(), childPublic.KeyBytes())
+		require.NoError(t, err)
+
+		childSignature := childPrivate.Sign([]byte(child.String()))
+
+		validationPublic, validationPrivate, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+
+		parentAcct, _ := app.getAccount(parent)
+
+		cca := NewClaimChildAccount(
+			parent,
+			child,
+			childPublic,
+			childSignature,
+			childSettlementPeriod,
+			[]signature.PublicKey{validationPublic},
+			[]byte{},
+			parentAcct.Sequence+1,
+			private,
+		)
+
+		dresp := deliverTx(t, app, cca)
+		require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
+
+		childAcct, exists := app.getAccount(child)
+		require.True(t, exists)
+		require.Equal(t, &sourceAddress, childAcct.Parent)
+		require.Equal(t, &sourceAddress, childAcct.Progenitor)
+		require.ElementsMatch(t, cca.ChildValidationKeys, childAcct.ValidationKeys)
+
+		return child, childAcct, validationPrivate
+	}
+
+	// set up a fresh shild account
+	childPublic, childPrivate, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	child, _, childValidation := claimChild(
 		sourceAddress,
-		childAddress,
 		childPublic,
-		childSignature,
-		childSettlementPeriod,
-		[]signature.PublicKey{newChildPublic},
-		[]byte{},
-		1,
-		private,
+		validation,
+		childPrivate,
 	)
-
-	ctkBytes, err := tx.Marshal(cca, TxIDs)
-	require.NoError(t, err)
-
-	resp := app.CheckTx(ctkBytes)
-	t.Log(resp.Log)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	dresp := deliverTx(t, app, cca)
-	t.Log(dresp.Log)
-
-	child, _ := app.getAccount(childAddress)
-	require.Equal(t, sourceAddress, *child.Parent)
-	require.Equal(t, sourceAddress, *child.Progenitor)
 
 	// Do it all over again with a grandchild.
 	grandchildPublic, grandchildPrivate, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
-	grandchildAddress, err := address.Generate(address.KindUser, grandchildPublic.KeyBytes())
-	require.NoError(t, err)
-	grandchildAddressBytes := []byte(grandchildAddress.String())
-	grandchildSignature := grandchildPrivate.Sign(grandchildAddressBytes)
-
-	newGrandchildPublic, _, err := signature.Generate(signature.Ed25519, nil)
-	require.NoError(t, err)
-
-	cca = NewClaimChildAccount(
-		childAddress,
-		grandchildAddress,
+	claimChild(
+		child,
 		grandchildPublic,
-		grandchildSignature,
-		childSettlementPeriod,
-		[]signature.PublicKey{newGrandchildPublic},
-		[]byte{},
-		2,
-		childPrivate,
+		childValidation,
+		grandchildPrivate,
 	)
-
-	ctkBytes, err = tx.Marshal(cca, TxIDs)
-	require.NoError(t, err)
-/* FIXME: Get this passing
-	resp = app.CheckTx(ctkBytes)
-	t.Log(resp.Log)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	dresp = deliverTx(t, app, cca)
-	t.Log(dresp.Log)
-
-	grandchild, _ := app.getAccount(grandchildAddress)
-	require.Equal(t, childAddress, *grandchild.Parent)
-	require.Equal(t, sourceAddress, *grandchild.Progenitor)
-*/
 }
 
 func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
