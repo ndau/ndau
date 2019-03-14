@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -37,7 +38,12 @@ func GetEAIRate(cf cfg.Cfg) http.HandlerFunc {
 			reqres.RespondJSON(w, reqres.NewAPIError("request body required", http.StatusBadRequest))
 			return
 		}
-		err := json.NewDecoder(r.Body).Decode(&requests)
+		buf, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("failed to read request body", err, http.StatusBadRequest))
+			return
+		}
+		err = json.Unmarshal(buf, &requests)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("unable to decode", err, http.StatusBadRequest))
 			return
