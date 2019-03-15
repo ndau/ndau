@@ -69,10 +69,10 @@ func getOrderChainInfo(cf cfg.Cfg) (OrderChainInfo, error) {
 	if err != nil {
 		return oci, err
 	}
-	defaultEndowmentValue := pricecurve.TotalPriceFor(oci.TotalIssued, 0)
+	defaultEndowmentValue := pricecurve.ApproxTotalPriceFor(oci.TotalIssued, 0)
 	endowmentvalue := getAsFloat64(sysvars, "EndowmentDollarValue", defaultEndowmentValue)
 
-	targetPrice := pricecurve.PriceAtUnit(oci.TotalIssued)
+	targetPrice := pricecurve.ApproxPriceAtUnit(oci.TotalIssued)
 	marketPrice := getAsFloat64(sysvars, "MarketPrice", targetPrice)
 
 	oci.MarketPrice = marketPrice
