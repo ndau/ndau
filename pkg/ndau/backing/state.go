@@ -4,6 +4,7 @@ import (
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	util "github.com/oneiro-ndev/noms-util"
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ const (
 	nrwKey        = "nrw"  // node reward winner
 	totalRFEKey   = "totalRFE"
 	totalIssueKey = "totalIssue"
+	sibKey        = "sib"
 )
 
 // State is primarily a set of accounts
@@ -54,6 +56,8 @@ type State struct {
 	TotalRFE math.Ndau
 	// TotalIssue is the sum of all Issue transactions.
 	TotalIssue math.Ndau
+	// SIB is the current burn rate applied to all transfers.
+	SIB eai.Rate
 }
 
 // make sure State is a metaapp.State
@@ -78,6 +82,7 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		nrwKey:        nt.String(s.NodeRewardWinner.String()),
 		totalRFEKey:   util.Int(s.TotalRFE).NomsValue(),
 		totalIssueKey: util.Int(s.TotalIssue).NomsValue(),
+		sibKey:        util.Int(s.SIB).NomsValue(),
 	})
 
 	// marshal accounts
@@ -223,6 +228,17 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		return errors.Wrap(err, "unmarshalling total issue")
 	}
 	s.TotalIssue = math.Ndau(tisI)
+
+	sibV, ok := st.MaybeGet(sibKey)
+	if ok {
+		sibI, err := util.IntFrom(sibV)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling SIB")
+		}
+		s.SIB = eai.Rate(sibI)
+	} else {
+		s.SIB = 0
+	}
 
 	return err
 }
