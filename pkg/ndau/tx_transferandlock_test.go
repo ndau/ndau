@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
@@ -395,4 +396,84 @@ func TestTnLDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
+	app, private := initAppTx(t)
+
+	destPublic, destPrivate, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	destAddress, err := address.Generate(address.KindUser, destPublic.KeyBytes())
+	require.NoError(t, err)
+
+	tr := generateTransferAndLock(
+		t, destAddress.String(), 123, 888, 1, []signature.PrivateKey{private})
+	resp := deliverTx(t, app, tr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	// If the dest is an exchange address, we shouldn't be able to claim the locked account.
+	setExchangeAccount(destAddress, app.systemCache)
+
+	ca := NewClaimAccount(
+		destAddress,
+		destPublic,
+		[]signature.PublicKey{newPublic},
+		[]byte{},
+		2,
+		destPrivate,
+	)
+
+	ctkBytes, err := tx.Marshal(ca, TxIDs)
+	require.NoError(t, err)
+
+	// The ClaimAccount should fail.
+	r := app.CheckTx(ctkBytes)
+	t.Log(r.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(r.Code))
+
+	// The dest should still be locked after the TransferAndLock.
+	destAcct, _ := app.getAccount(destAddress)
+	require.True(t, destAcct.IsLocked(app.blockTime))
+}
+
+func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
+	app, private := initAppTx(t)
+
+	tr := generateTransferAndLock(
+		t, childAddress.String(), 123, 888, 1, []signature.PrivateKey{private})
+	resp := deliverTx(t, app, tr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+
+	// If the source is an exchange address, we shouldn't be able to claim the locked child.
+	setExchangeAccount(sourceAddress, app.systemCache)
+
+	cca := NewClaimChildAccount(
+		sourceAddress,
+		childAddress,
+		childPublic,
+		childSignature,
+		childSettlementPeriod,
+		[]signature.PublicKey{newPublic},
+		[]byte{},
+		2,
+		private,
+	)
+
+	ctkBytes, err := tx.Marshal(cca, TxIDs)
+	require.NoError(t, err)
+
+	// The ClaimChildAccount should fail.
+	r := app.CheckTx(ctkBytes)
+	t.Log(r.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(r.Code))
+
+	// The child should still be locked after the TransferAndLock.
+	childAcct, _ := app.getAccount(childAddress)
+	require.True(t, childAcct.IsLocked(app.blockTime))
 }

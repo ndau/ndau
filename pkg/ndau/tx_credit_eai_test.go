@@ -128,7 +128,6 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	acct, _ := app.getAccount(sourceAddress)
 	sourceInitial := acct.Balance
 
-	app.setExchangeAccount(sourceAddress.String())
 	rate, err := app.calculateExchangeEAIRate(acct)
 	require.NoError(t, err)
 	t.Log("rate:", rate.String())
@@ -147,10 +146,19 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	expectedEAI, err = signed.MulDiv(int64(sourceInitial), expectedEAI, constants.RateDenominator)
 	require.NoError(t, err)
 	t.Log("expectedEAI =", math.Ndau(expectedEAI).String())
+	// Subtract off the 15% EAI fees.
+	expectedEAI, err = signed.MulDiv(
+		int64(expectedEAI),
+		int64(eai.RateFromPercent(85)),
+		constants.RateDenominator)
+	require.NoError(t, err)
+	t.Log("expectedEAI less fees =", math.Ndau(expectedEAI).String())
 
 	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
+
 	blockTime := math.Timestamp(1 * math.Year)
-	resp := deliverTxAt(t, app, compute, blockTime)
+	context := makeExchangeAccountContext(blockTime, sourceAddress)
+	resp, _ := deliverTxContext(t, app, compute, context)
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
@@ -159,6 +167,31 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	acct, _ = app.getAccount(sourceAddress)
 	t.Log(acct.Balance)
 	require.Equal(t, sourceInitial+math.Ndau(expectedEAI), acct.Balance)
+}
+
+func TestCreditEAIUpdatesCurrencySeat(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	compute := NewCreditEAI(nodeAddress, 1, private)
+
+	modify(t, sourceAddress.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 999 * constants.QuantaPerUnit
+		ad.CurrencySeatDate = nil
+	})
+
+	acct, _ := app.getAccount(sourceAddress)
+
+	// we want enough time to earn some ndau
+	blockTime := math.Timestamp(90 * math.Day)
+	resp := deliverTxAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	acct, _ = app.getAccount(sourceAddress)
+	t.Log("BALANCE: ", acct.Balance)
+	require.True(t, acct.Balance > 1000*constants.QuantaPerUnit)
+	require.NotNil(t, acct.CurrencySeatDate)
 }
 
 func TestCreditEAIWithRewardsTargetChangesAppState(t *testing.T) {
