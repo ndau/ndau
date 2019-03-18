@@ -28,6 +28,7 @@ func init() {
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
+	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
 	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
@@ -343,4 +344,15 @@ func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.Respon
 	}
 
 	response.Value = bytes
+}
+
+func sibQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	var err error
+	app := appI.(*App)
+	sib := app.GetState().(*backing.State).SIB
+	response.Info = sib.String()
+	response.Value, err = sib.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "encoding SIB")
+	}
 }
