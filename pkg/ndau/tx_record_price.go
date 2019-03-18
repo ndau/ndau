@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
@@ -94,6 +95,16 @@ func (tx *RecordPrice) Apply(appI interface{}) error {
 // GetSource implements sourcer
 func (tx *RecordPrice) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.RecordPriceAddressName, &addr)
+	if err != nil {
+		return
+	}
+	if addr.String() == "" {
+		err = fmt.Errorf(
+			"%s sysvar not set; RecordPrice therefore disallowed",
+			sv.RecordPriceAddressName,
+		)
+		return
+	}
 	return
 }
 
