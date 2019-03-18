@@ -12,6 +12,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -202,10 +203,15 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 
 // BuildVMForExchangeEAI accepts an exchange account data and builds a VM that it sets up to call
 // the default handler.  All that needs to happen after this is to call Run().
-func BuildVMForExchangeEAI(code []byte, acct backing.AccountData) (*vm.ChaincodeVM, error) {
+func BuildVMForExchangeEAI(code []byte, acct backing.AccountData, sib eai.Rate) (*vm.ChaincodeVM, error) {
 	acctV, err := chain.ToValue(acct)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting account data for exchange EAI chaincode vm")
+	}
+
+	sibV, err := chain.ToValue(sib)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting current SIB rate for chaincode vm")
 	}
 
 	bin := buildBinary(code, "Exchange account EAI rate", "")
@@ -214,7 +220,7 @@ func BuildVMForExchangeEAI(code []byte, acct backing.AccountData) (*vm.Chaincode
 		return nil, errors.Wrap(err, "creating exchange EAI chaincode vm")
 	}
 
-	err = theVM.Init(0, acctV)
+	err = theVM.Init(0, sibV, acctV)
 	if err != nil {
 		return nil, errors.Wrap(err, "initializing exchange EAI chaincode vm")
 	}
