@@ -27,14 +27,15 @@ func (tx *RecordPrice) CalculateSIB(app *App) (eai.Rate, error) {
 	// get the script used to perform the calculation
 	var sibScript wkt.Bytes
 	exists, err := app.SystemOptional(sv.SIBScriptName, &sibScript)
-	if err != nil {
-		return 0, errors.Wrap(err, "fetching "+sv.SIBScriptName)
-	}
 	if !exists {
+		// overwrite err: it will always be non-nil when it doesn't exist
 		sibScript, err = base64.StdEncoding.DecodeString(sv.SIBScriptDefault)
 		if err != nil {
 			return 0, errors.Wrap(err, "decoding sv.SIBScriptDefault")
 		}
+	}
+	if err != nil {
+		return 0, errors.Wrap(err, "fetching "+sv.SIBScriptName)
 	}
 	if !IsChaincode(sibScript) {
 		return 0, errors.New("sibScript appears not to be chaincode")
@@ -98,7 +99,7 @@ func (tx *RecordPrice) GetSource(app *App) (addr address.Address, err error) {
 	if err != nil {
 		return
 	}
-	if addr.String() == "" {
+	if addr.Revalidate() != nil {
 		err = fmt.Errorf(
 			"%s sysvar not set; RecordPrice therefore disallowed",
 			sv.RecordPriceAddressName,
