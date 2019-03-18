@@ -21,6 +21,8 @@ const (
 	totalRFEKey   = "totalRFE"
 	totalIssueKey = "totalIssue"
 	sibKey        = "sib"
+	totalSIBKey   = "totalSIB"
+	totalFeesKey  = "totalFees"
 )
 
 // State is primarily a set of accounts
@@ -58,6 +60,10 @@ type State struct {
 	TotalIssue math.Ndau
 	// SIB is the current burn rate applied to all transfers.
 	SIB eai.Rate
+	// TotalSIB is the sum of all burned SIB
+	TotalSIB math.Ndau
+	// TotalFees is the sum of all burned tx fees
+	TotalFees math.Ndau
 }
 
 // make sure State is a metaapp.State
@@ -83,6 +89,8 @@ func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
 		totalRFEKey:   util.Int(s.TotalRFE).NomsValue(),
 		totalIssueKey: util.Int(s.TotalIssue).NomsValue(),
 		sibKey:        util.Int(s.SIB).NomsValue(),
+		totalSIBKey:   util.Int(s.TotalSIB).NomsValue(),
+		totalFeesKey:  util.Int(s.TotalFees).NomsValue(),
 	})
 
 	// marshal accounts
@@ -229,8 +237,7 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 	}
 	s.TotalIssue = math.Ndau(tisI)
 
-	sibV, ok := st.MaybeGet(sibKey)
-	if ok {
+	if sibV, ok := st.MaybeGet(sibKey); ok {
 		sibI, err := util.IntFrom(sibV)
 		if err != nil {
 			return errors.Wrap(err, "unmarshalling SIB")
@@ -238,6 +245,26 @@ func (s *State) UnmarshalNoms(v nt.Value) (err error) {
 		s.SIB = eai.Rate(sibI)
 	} else {
 		s.SIB = 0
+	}
+
+	if tsibV, ok := st.MaybeGet(totalSIBKey); ok {
+		tsibI, err := util.IntFrom(tsibV)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling total SIB")
+		}
+		s.TotalSIB = math.Ndau(tsibI)
+	} else {
+		s.TotalSIB = 0
+	}
+
+	if tfeesV, ok := st.MaybeGet(totalFeesKey); ok {
+		tfeesI, err := util.IntFrom(tfeesV)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling total fees")
+		}
+		s.TotalFees = math.Ndau(tfeesI)
+	} else {
+		s.TotalFees = 0
 	}
 
 	return err
