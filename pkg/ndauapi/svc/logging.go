@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/oneiro-ndev/o11y/pkg/honeycomb"
+	"github.com/sirupsen/logrus"
 )
 
 // LogWriter proxies http.ResponseWriter and logs.
@@ -29,12 +30,15 @@ func (w *LogWriter) Write(b []byte) (int, error) {
 
 // LogMW wraps a regular handler and replaces the writer with some logging middleware.
 func LogMW(handler http.Handler) http.HandlerFunc {
+
+	logger := honeycomb.Setup(logrus.New())
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lw := LogWriter{ResponseWriter: w}
 		handler.ServeHTTP(&lw, r)
 		duration := time.Now().Sub(start)
-		log.WithFields(log.Fields{
+		logger.WithFields(logrus.Fields{
 			"host":       r.Host,
 			"remoteAddr": r.RemoteAddr,
 			"method":     r.Method,
