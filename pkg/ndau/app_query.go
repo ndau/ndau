@@ -166,9 +166,19 @@ func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.
 func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	tx, err := metatx.Unmarshal(request.GetData(), TxIDs)
+	mtx, err := metatx.Unmarshal(request.GetData(), TxIDs)
 	if err != nil {
 		app.QueryError(err, response, "deserializing transactable")
+		return
+	}
+
+	tx, ok := mtx.(NTransactable)
+	if !ok {
+		app.QueryError(
+			fmt.Errorf("tx %s not an NTransactable", metatx.NameOf(mtx)),
+			response,
+			"converting metatx.Transactable to NTransactable",
+		)
 		return
 	}
 
@@ -178,7 +188,14 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 		app.QueryError(err, response, "calculating tx fee")
 		return
 	}
-	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee)
+
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		app.QueryError(err, response, "calculating sib")
+		return
+	}
+
+	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee, sib)
 
 	err = tx.Validate(appI)
 	if err != nil {
