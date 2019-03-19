@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -15,29 +15,30 @@ import (
 
 // Prevalidate prevalidates the provided transactable
 func Prevalidate(node client.ABCIClient, tx metatx.Transactable) (
-	math.Ndau, *rpctypes.ResultABCIQuery, error,
+	fee math.Ndau, sib math.Ndau, resp *rpctypes.ResultABCIQuery, err error,
 ) {
 	txb, err := metatx.Marshal(tx, ndau.TxIDs)
 	if err != nil {
-		return 0, nil, err
+		return
 	}
 
 	// perform the query
-	resp, err := node.ABCIQuery(query.PrevalidateEndpoint, txb)
+	resp, err = node.ABCIQuery(query.PrevalidateEndpoint, txb)
 	if err != nil {
-		return 0, resp, err
+		return
 	}
 
 	// parse the response
-	var fee math.Ndau
-	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee)
+	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	if err != nil {
-		return fee, resp, err
+		return
 	}
 
 	// promote returned errors
 	if code.ReturnCode(resp.Response.Code) != code.OK {
-		return fee, resp, errors.New(resp.Response.Log)
+		err = errors.New(resp.Response.Log)
+		return
 	}
-	return fee, resp, err
+
+	return
 }

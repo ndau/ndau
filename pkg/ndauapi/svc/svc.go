@@ -123,7 +123,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
 		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
-		Writes(routes.AccountHistoryItems{[]routes.AccountHistoryItem{{
+		Writes(routes.AccountHistoryItems{Items: []routes.AccountHistoryItem{{
 			Balance:   123000000,
 			Timestamp: dummyTimestamp,
 			TxHash:    dummyTxHash,
@@ -359,12 +359,10 @@ func New(cf cfg.Cfg) *boneful.Service {
 		`).
 		Produces(JSON).
 		Writes(routes.OrderChainInfo{
-			MarketPrice: 16.85,
-			TargetPrice: 17.00,
-			FloorPrice:  2.57,
 			TotalIssued: 2919000 * 100000000,
 			TotalNdau:   3141593 * 100000000,
-			PriceUnits:  "USD",
+			TotalSIB:    123 * 100000000,
+			CurrentSIB:  9876543210,
 		}))
 
 	svc.Route(svc.GET("/state/delegates").To(routes.HandleStateDelegates(cf)).
