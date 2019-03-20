@@ -388,13 +388,13 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				balanceTyped := math.Ndau(balanceValue)
 
 				x.Balance = balanceTyped
-
 			// x.ValidationKeys ([]signature.PublicKey->*ast.ArrayType) is primitive: false
 			case "ValidationKeys":
 				// template u_decompose: x.ValidationKeys ([]signature.PublicKey->*ast.ArrayType)
 				// template u_slice: x.ValidationKeys
+				var validationKeysSlice []signature.PublicKey
 				if validationKeysList, ok := value.(nt.List); ok {
-					x.ValidationKeys = make([]signature.PublicKey, 0, validationKeysList.Len())
+					validationKeysSlice = make([]signature.PublicKey, 0, validationKeysList.Len())
 					validationKeysList.Iter(func(validationKeysItem nt.Value, idx uint64) (stop bool) {
 
 						// template u_decompose: validationKeysItem (signature.PublicKey->*ast.SelectorExpr)
@@ -404,23 +404,24 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 							err = validationKeysItemValue.UnmarshalText([]byte(validationKeysItemString))
 						} else {
 							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
+								"AccountData.UnmarshalNoms expected validationKeysItem to be a nt.String; found %s",
 								reflect.ValueOf(validationKeysItem).Type(),
 							)
 						}
 						if err != nil {
 							return true
 						}
-						x.ValidationKeys = append(x.ValidationKeys, validationKeysItemValue)
+						validationKeysSlice = append(validationKeysSlice, validationKeysItemValue)
 						return false
 					})
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected x.ValidationKeys to be a nt.List; found %s",
+						"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
 						reflect.TypeOf(value),
 					)
 				}
 
+				x.ValidationKeys = validationKeysSlice
 			// x.ValidationScript ([]byte->*ast.ArrayType) is primitive: true
 			case "ValidationScript":
 				// template u_decompose: x.ValidationScript ([]byte->*ast.ArrayType)
@@ -435,7 +436,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				validationScriptTyped := []byte(validationScriptValue)
 
 				x.ValidationScript = validationScriptTyped
-
 			// x.RewardsTarget (*address.Address->*ast.StarExpr) is primitive: false
 			case "RewardsTarget":
 				// template u_decompose: x.RewardsTarget (*address.Address->*ast.StarExpr)
@@ -466,19 +466,19 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = rewardsTargetValue.UnmarshalText([]byte(rewardsTargetString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.RewardsTarget).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
 				x.RewardsTarget = &rewardsTargetValue
-
 			// x.IncomingRewardsFrom ([]address.Address->*ast.ArrayType) is primitive: false
 			case "IncomingRewardsFrom":
 				// template u_decompose: x.IncomingRewardsFrom ([]address.Address->*ast.ArrayType)
 				// template u_slice: x.IncomingRewardsFrom
+				var incomingRewardsFromSlice []address.Address
 				if incomingRewardsFromList, ok := value.(nt.List); ok {
-					x.IncomingRewardsFrom = make([]address.Address, 0, incomingRewardsFromList.Len())
+					incomingRewardsFromSlice = make([]address.Address, 0, incomingRewardsFromList.Len())
 					incomingRewardsFromList.Iter(func(incomingRewardsFromItem nt.Value, idx uint64) (stop bool) {
 
 						// template u_decompose: incomingRewardsFromItem (address.Address->*ast.SelectorExpr)
@@ -488,23 +488,24 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 							err = incomingRewardsFromItemValue.UnmarshalText([]byte(incomingRewardsFromItemString))
 						} else {
 							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
+								"AccountData.UnmarshalNoms expected incomingRewardsFromItem to be a nt.String; found %s",
 								reflect.ValueOf(incomingRewardsFromItem).Type(),
 							)
 						}
 						if err != nil {
 							return true
 						}
-						x.IncomingRewardsFrom = append(x.IncomingRewardsFrom, incomingRewardsFromItemValue)
+						incomingRewardsFromSlice = append(incomingRewardsFromSlice, incomingRewardsFromItemValue)
 						return false
 					})
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected x.IncomingRewardsFrom to be a nt.List; found %s",
+						"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
 						reflect.TypeOf(value),
 					)
 				}
 
+				x.IncomingRewardsFrom = incomingRewardsFromSlice
 			// x.DelegationNode (*address.Address->*ast.StarExpr) is primitive: false
 			case "DelegationNode":
 				// template u_decompose: x.DelegationNode (*address.Address->*ast.StarExpr)
@@ -535,13 +536,12 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = delegationNodeValue.UnmarshalText([]byte(delegationNodeString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.DelegationNode).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
 				x.DelegationNode = &delegationNodeValue
-
 			// x.Lock (*Lock->*ast.StarExpr) is primitive: false
 			case "Lock":
 				// template u_decompose: x.Lock (*Lock->*ast.StarExpr)
@@ -572,7 +572,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Lock")
 
 				x.Lock = &lockInstance
-
 			// x.Stake (*Stake->*ast.StarExpr) is primitive: false
 			case "Stake":
 				// template u_decompose: x.Stake (*Stake->*ast.StarExpr)
@@ -603,7 +602,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Stake")
 
 				x.Stake = &stakeInstance
-
 			// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
 			case "LastEAIUpdate":
 				// template u_decompose: x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr)
@@ -617,7 +615,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				lastEAIUpdateTyped := math.Timestamp(lastEAIUpdateValue)
 
 				x.LastEAIUpdate = lastEAIUpdateTyped
-
 			// x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
 			case "LastWAAUpdate":
 				// template u_decompose: x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr)
@@ -631,7 +628,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				lastWAAUpdateTyped := math.Timestamp(lastWAAUpdateValue)
 
 				x.LastWAAUpdate = lastWAAUpdateTyped
-
 			// x.WeightedAverageAge (math.Duration->*ast.SelectorExpr) is primitive: true
 			case "WeightedAverageAge":
 				// template u_decompose: x.WeightedAverageAge (math.Duration->*ast.SelectorExpr)
@@ -645,7 +641,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				weightedAverageAgeTyped := math.Duration(weightedAverageAgeValue)
 
 				x.WeightedAverageAge = weightedAverageAgeTyped
-
 			// x.Sequence (uint64->*ast.Ident) is primitive: true
 			case "Sequence":
 				// template u_decompose: x.Sequence (uint64->*ast.Ident)
@@ -659,13 +654,13 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				sequenceTyped := uint64(sequenceValue)
 
 				x.Sequence = sequenceTyped
-
 			// x.Settlements ([]Settlement->*ast.ArrayType) is primitive: false
 			case "Settlements":
 				// template u_decompose: x.Settlements ([]Settlement->*ast.ArrayType)
 				// template u_slice: x.Settlements
+				var settlementsSlice []Settlement
 				if settlementsList, ok := value.(nt.List); ok {
-					x.Settlements = make([]Settlement, 0, settlementsList.Len())
+					settlementsSlice = make([]Settlement, 0, settlementsList.Len())
 					settlementsList.Iter(func(settlementsItem nt.Value, idx uint64) (stop bool) {
 
 						// template u_decompose: settlementsItem (Settlement->*ast.Ident)
@@ -676,16 +671,17 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 						if err != nil {
 							return true
 						}
-						x.Settlements = append(x.Settlements, settlementsItemInstance)
+						settlementsSlice = append(settlementsSlice, settlementsItemInstance)
 						return false
 					})
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected x.Settlements to be a nt.List; found %s",
+						"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
 						reflect.TypeOf(value),
 					)
 				}
 
+				x.Settlements = settlementsSlice
 			// x.SettlementSettings (SettlementSettings->*ast.Ident) is primitive: false
 			case "SettlementSettings":
 				// template u_decompose: x.SettlementSettings (SettlementSettings->*ast.Ident)
@@ -695,7 +691,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				err = errors.Wrap(err, "AccountData.UnmarshalNoms->SettlementSettings")
 
 				x.SettlementSettings = settlementSettingsInstance
-
 			// x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr) is primitive: false
 			case "CurrencySeatDate":
 				// template u_decompose: x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr)
@@ -730,7 +725,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				currencySeatDateTyped := math.Timestamp(currencySeatDateValue)
 
 				x.CurrencySeatDate = &currencySeatDateTyped
-
 			// x.Parent (*address.Address->*ast.StarExpr) is primitive: false
 			case "Parent":
 				// template u_decompose: x.Parent (*address.Address->*ast.StarExpr)
@@ -761,13 +755,12 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = parentValue.UnmarshalText([]byte(parentString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Parent).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
 				x.Parent = &parentValue
-
 			// x.Progenitor (*address.Address->*ast.StarExpr) is primitive: false
 			case "Progenitor":
 				// template u_decompose: x.Progenitor (*address.Address->*ast.StarExpr)
@@ -798,22 +791,21 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					err = progenitorValue.UnmarshalText([]byte(progenitorString))
 				} else {
 					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Progenitor).Type(),
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
 				x.Progenitor = &progenitorValue
-
 			// x.SidechainPayments (map[string]struct{}->*ast.MapType) is primitive: false
 			case "SidechainPayments":
 				// template u_decompose: x.SidechainPayments (map[string]struct{}->*ast.MapType)
 				// template u_set: x.SidechainPayments
-				x.SidechainPayments = make(map[string]struct{})
+				sidechainPaymentsGoSet := make(map[string]struct{})
 				if sidechainPaymentsSet, ok := value.(nt.Set); ok {
 					sidechainPaymentsSet.Iter(func(sidechainPaymentsItem nt.Value) (stop bool) {
 						if sidechainPaymentsItemString, ok := sidechainPaymentsItem.(nt.String); ok {
-							x.SidechainPayments[string(sidechainPaymentsItemString)] = struct{}{}
+							sidechainPaymentsGoSet[string(sidechainPaymentsItemString)] = struct{}{}
 						} else {
 							err = fmt.Errorf(
 								"AccountData.AccountData.UnmarshalNoms expected SidechainPaymentsItem to be a nt.String; found %s",
@@ -829,6 +821,7 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					)
 				}
 
+				x.SidechainPayments = sidechainPaymentsGoSet
 			// x.UncreditedEAI (math.Ndau->*ast.SelectorExpr) is primitive: true
 			case "UncreditedEAI":
 				// template u_decompose: x.UncreditedEAI (math.Ndau->*ast.SelectorExpr)
@@ -842,7 +835,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				uncreditedEAITyped := math.Ndau(uncreditedEAIValue)
 
 				x.UncreditedEAI = uncreditedEAITyped
-
 			}
 		}
 	})
@@ -917,7 +909,6 @@ func (x *Stake) UnmarshalNoms(value nt.Value) (err error) {
 				pointTyped := math.Timestamp(pointValue)
 
 				x.Point = pointTyped
-
 			// x.Address (address.Address->*ast.SelectorExpr) is primitive: false
 			case "Address":
 				// template u_decompose: x.Address (address.Address->*ast.SelectorExpr)
@@ -927,13 +918,12 @@ func (x *Stake) UnmarshalNoms(value nt.Value) (err error) {
 					err = addressValue.UnmarshalText([]byte(addressString))
 				} else {
 					err = fmt.Errorf(
-						"Stake.UnmarshalNoms expected ValidationKeys Item to be a nt.String; found %s",
-						reflect.ValueOf(x.Address).Type(),
+						"Stake.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.ValueOf(value).Type(),
 					)
 				}
 
 				x.Address = addressValue
-
 			}
 		}
 	})
@@ -1002,7 +992,6 @@ func (x *Settlement) UnmarshalNoms(value nt.Value) (err error) {
 				qtyTyped := math.Ndau(qtyValue)
 
 				x.Qty = qtyTyped
-
 			// x.Expiry (math.Timestamp->*ast.SelectorExpr) is primitive: true
 			case "Expiry":
 				// template u_decompose: x.Expiry (math.Timestamp->*ast.SelectorExpr)
@@ -1016,7 +1005,6 @@ func (x *Settlement) UnmarshalNoms(value nt.Value) (err error) {
 				expiryTyped := math.Timestamp(expiryValue)
 
 				x.Expiry = expiryTyped
-
 			}
 		}
 	})
@@ -1121,7 +1109,6 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 				periodTyped := math.Duration(periodValue)
 
 				x.Period = periodTyped
-
 			// x.ChangesAt (*math.Timestamp->*ast.StarExpr) is primitive: false
 			case "ChangesAt":
 				// template u_decompose: x.ChangesAt (*math.Timestamp->*ast.StarExpr)
@@ -1156,7 +1143,6 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 				changesAtTyped := math.Timestamp(changesAtValue)
 
 				x.ChangesAt = &changesAtTyped
-
 			// x.Next (*math.Duration->*ast.StarExpr) is primitive: false
 			case "Next":
 				// template u_decompose: x.Next (*math.Duration->*ast.StarExpr)
@@ -1191,7 +1177,6 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 				nextTyped := math.Duration(nextValue)
 
 				x.Next = &nextTyped
-
 			}
 		}
 	})
