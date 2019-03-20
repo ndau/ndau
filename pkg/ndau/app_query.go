@@ -1,12 +1,10 @@
 package ndau
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
@@ -70,9 +68,8 @@ func accountHistoryQuery(
 	}
 	client := search.(*srch.Client)
 
-	paramsString := string(request.GetData())
 	var params srch.AccountHistoryParams
-	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
 			errors.New("Cannot decode search params json"), response, "invalid search query")
@@ -93,9 +90,8 @@ func accountHistoryQuery(
 func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	paramsString := string(request.GetData())
 	var params srch.AccountHistoryParams
-	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
 			errors.New("cannot decode search params json"), response, "invalid search query")
@@ -198,9 +194,8 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	}
 	client := search.(*srch.Client)
 
-	paramsString := string(request.GetData())
 	var params srch.QueryParams
-	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
 			errors.New("Cannot decode search params json"), response, "invalid search query")
@@ -300,12 +295,11 @@ func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 		v := app.systemCache.GetRaw(n)
 		sysvars[n] = v
 	}
-	buf := &bytes.Buffer{}
-	err := json.NewEncoder(buf).Encode(sysvars)
+	buf, err := json.Marshal(sysvars)
 	if err != nil {
 		app.QueryError(err, response, "encoding sysvars")
 	}
-	response.Value = buf.Bytes()
+	response.Value = buf
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {

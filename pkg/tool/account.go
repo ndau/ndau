@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -70,11 +69,13 @@ func GetAccountList(node client.ABCIClient, pageIndex int, pageSize int) (
 		PageIndex: pageIndex,
 		PageSize:  pageSize,
 	}
-	paramsBuf := &bytes.Buffer{}
-	json.NewEncoder(paramsBuf).Encode(params)
+	paramsBuf, err := json.Marshal(params)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// perform the query
-	res, err := node.ABCIQuery(query.AccountListEndpoint, paramsBuf.Bytes())
+	res, err := node.ABCIQuery(query.AccountListEndpoint, paramsBuf)
 	if err != nil {
 		return nil, res, err
 	}

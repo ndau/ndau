@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"reflect"
 	"sort"
 	"strings"
@@ -48,7 +49,11 @@ func TxUnmarshal(txtype string, r io.Reader) (metatx.Transactable, error) {
 			// create a new object that is of the same type (it's also hidden in an interface)
 			tx := reflect.New(reflect.TypeOf(txobj)).Interface()
 			// decode the stream into the object
-			err := json.NewDecoder(r).Decode(tx)
+			buf, err := ioutil.ReadAll(r)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(buf, tx)
 			// cast the result to a Transactable as promised.
 			return tx.(metatx.Transactable), err
 		}
