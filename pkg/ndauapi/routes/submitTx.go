@@ -52,7 +52,9 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		// and now commit it synchronously
 		cr, err := tool.SendCommit(node, tx)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error from commit", err, http.StatusInternalServerError))
+			// chances are high that if this fails, it's the user's fault, so let's
+			// blame them, not ourselves
+			reqres.RespondJSON(w, reqres.NewFromErr("error from commit", err, http.StatusBadRequest, tool.ResultLog(cr)))
 			return
 		}
 
