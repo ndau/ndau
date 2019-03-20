@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -48,9 +49,13 @@ func HandleAccount(cf cfg.Cfg) http.HandlerFunc {
 // on a POSTed list of account IDs.
 func HandleAccounts(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-		addrs := []string{}
-		err := decoder.Decode(&addrs)
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError("could not read request body", http.StatusBadRequest))
+			return
+		}
+		var addrs []string
+		err = json.Unmarshal(bodyBytes, &addrs)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not parse request body as json", http.StatusBadRequest))
 			return

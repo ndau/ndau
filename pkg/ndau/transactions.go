@@ -3,6 +3,7 @@ package ndau
 import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
@@ -35,6 +36,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(19): &Unstake{},
 	metatx.TxID(20): &Issue{},
 	metatx.TxID(21): &ClaimChildAccount{},
+	metatx.TxID(22): &RecordPrice{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -305,7 +307,7 @@ type Unstake struct {
 
 var _ NTransactable = (*Unstake)(nil)
 
-// A Issue transaction is the second half of the primary sales process.
+// An Issue transaction is the second half of the primary sales process.
 //
 // See https://github.com/oneiro-ndev/ndau/issues/229 for details.
 //
@@ -319,3 +321,18 @@ type Issue struct {
 }
 
 var _ NTransactable = (*Issue)(nil)
+
+// A RecordPrice transaction records the current market price of Ndau.
+//
+// This data is used to calculate the current SIB in effect.
+//
+// Its signatures are checked against an account specified by the
+// RecordPriceAddress system variable. That account also specifies the validation
+// script, and pays the transaction fee.
+type RecordPrice struct {
+	MarketPrice pricecurve.Nanocent   `msg:"prc" chain:"11, Tx_Quantity" json:"market_price"`
+	Sequence    uint64                `msg:"seq" json:"sequence"`
+	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*RecordPrice)(nil)

@@ -1,12 +1,10 @@
 package ndau
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
@@ -28,6 +26,7 @@ func init() {
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
+	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
 	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
@@ -70,9 +69,8 @@ func accountHistoryQuery(
 	}
 	client := search.(*srch.Client)
 
-	paramsString := string(request.GetData())
 	var params srch.AccountHistoryParams
-	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
 			errors.New("Cannot decode search params json"), response, "invalid search query")
@@ -93,9 +91,8 @@ func accountHistoryQuery(
 func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	paramsString := string(request.GetData())
 	var params srch.AccountHistoryParams
-	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
 			errors.New("cannot decode search params json"), response, "invalid search query")
@@ -165,9 +162,19 @@ func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.
 func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	tx, err := metatx.Unmarshal(request.GetData(), TxIDs)
+	mtx, err := metatx.Unmarshal(request.GetData(), TxIDs)
 	if err != nil {
 		app.QueryError(err, response, "deserializing transactable")
+		return
+	}
+
+	tx, ok := mtx.(NTransactable)
+	if !ok {
+		app.QueryError(
+			fmt.Errorf("tx %s not an NTransactable", metatx.NameOf(mtx)),
+			response,
+			"converting metatx.Transactable to NTransactable",
+		)
 		return
 	}
 
@@ -177,7 +184,14 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 		app.QueryError(err, response, "calculating tx fee")
 		return
 	}
-	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee)
+
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		app.QueryError(err, response, "calculating sib")
+		return
+	}
+
+	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee, sib)
 
 	err = tx.Validate(appI)
 	if err != nil {
@@ -198,9 +212,8 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	}
 	client := search.(*srch.Client)
 
-	paramsString := string(request.GetData())
 	var params srch.QueryParams
-	err := json.NewDecoder(strings.NewReader(paramsString)).Decode(&params)
+	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
 			errors.New("Cannot decode search params json"), response, "invalid search query")
@@ -266,9 +279,11 @@ func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 		lastSummary.BlockHeight = app.Height()
 		lastSummary.TotalRFE = state.TotalRFE
 		lastSummary.TotalIssue = state.TotalIssue
+		lastSummary.TotalFees = state.TotalFees
+		lastSummary.TotalSIB = state.TotalSIB
 		// the total ndau in circulation is the total in all accounts, excluding
 		// the amount of ndau that have been released but not issued
-		lastSummary.TotalCirculation = lastSummary.TotalNdau - (lastSummary.TotalRFE - lastSummary.TotalIssue)
+		lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalFees + lastSummary.TotalSIB)
 	}
 
 	response.Log = fmt.Sprintf("total ndau at height %d is %d, in %d accounts", lastSummary.BlockHeight, lastSummary.TotalNdau, lastSummary.NumAccounts)
@@ -300,12 +315,11 @@ func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 		v := app.systemCache.GetRaw(n)
 		sysvars[n] = v
 	}
-	buf := &bytes.Buffer{}
-	err := json.NewEncoder(buf).Encode(sysvars)
+	buf, err := json.Marshal(sysvars)
 	if err != nil {
 		app.QueryError(err, response, "encoding sysvars")
 	}
-	response.Value = buf.Bytes()
+	response.Value = buf
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
@@ -343,4 +357,20 @@ func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.Respon
 	}
 
 	response.Value = bytes
+}
+
+func sibQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	var err error
+	app := appI.(*App)
+	state := app.GetState().(*backing.State)
+	resp := query.SIBResponse{
+		SIB:         state.SIB,
+		MarketPrice: state.MarketPrice,
+		TargetPrice: state.TargetPrice,
+	}
+	response.Info = resp.SIB.String()
+	response.Value, err = resp.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "encoding SIB")
+	}
 }

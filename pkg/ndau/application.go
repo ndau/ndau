@@ -111,7 +111,7 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	return &app, nil
 }
 
-func (app *App) updateSystemVariableCache() {
+func (app *App) updateSystemVariableCache() error {
 	// update system variable cache
 	err := app.systemCache.Update(app.Height(), app.GetLogger())
 	if err != nil {
@@ -122,6 +122,7 @@ func (app *App) updateSystemVariableCache() {
 	// if err == nil, then the state is valid. Otherwise, this blocks us from
 	// returning potentially invalid information to callers.
 	app.SetStateValidity(err)
+	return err
 }
 
 // InitChain performs necessary chain initialization.
@@ -132,7 +133,14 @@ func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseIn
 	// perform basic chain init
 	response = app.App.InitChain(req)
 
-	app.updateSystemVariableCache()
+	// now wait, potentially forever, for chaos chain (and sysvars)
+	sleep := time.Second / 4
+	// exponential backoff
+	for err := app.updateSystemVariableCache(); err != nil; {
+		app.GetLogger().WithError(err).Errorf("trying again after sleep of %s", sleep)
+		time.Sleep(sleep)
+		sleep *= 2
+	}
 
 	return
 }

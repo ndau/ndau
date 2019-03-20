@@ -458,7 +458,7 @@ func HandleBlockTransactions(cf cfg.Cfg) http.HandlerFunc {
 					return
 				}
 
-				txHashes = append(txHashes,  metatx.Hash(txab))
+				txHashes = append(txHashes, metatx.Hash(txab))
 			}
 
 			reqres.RespondJSON(w, reqres.OKResponse(txHashes))

@@ -66,7 +66,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 		// given the distribution script in place and this quantity of
 		// ndau, we expect 60 ndau to be disbursed to eaiNode and
 		// 40 ndau to source
-		st.NodeRewardWinner = eA
+		st.NodeRewardWinner = &eA
 
 		return st, nil
 	})

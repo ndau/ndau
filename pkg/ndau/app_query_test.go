@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
@@ -148,9 +147,10 @@ func TestPrevalidateValidTx(t *testing.T) {
 	require.NotEmpty(t, resp.Info)
 
 	var fee math.Ndau
-	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee)
+	var sib math.Ndau
+	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
-	require.Equal(t, 1, n)
+	require.Equal(t, 2, n)
 }
 
 func TestPrevalidateInvalidTx(t *testing.T) {
@@ -168,9 +168,10 @@ func TestPrevalidateInvalidTx(t *testing.T) {
 	require.NotEmpty(t, resp.Info)
 
 	var fee math.Ndau
-	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee)
+	var sib math.Ndau
+	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
-	require.Equal(t, 1, n)
+	require.Equal(t, 2, n)
 }
 
 func TestCanQuerySidechainTxExists(t *testing.T) {

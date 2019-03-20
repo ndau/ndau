@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -54,7 +53,7 @@ func getSystemVars(nodeAddress string) (map[string][]byte, error) {
 
 	// resp.Value is actually JSON so decode it
 	values := make(map[string][]byte)
-	err = json.NewDecoder(bytes.NewReader(resp.Response.Value)).Decode(&values)
+	err = json.Unmarshal(resp.Response.Value, &values)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode error")
 	}

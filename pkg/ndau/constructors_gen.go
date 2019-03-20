@@ -5,6 +5,7 @@ package ndau
 
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
@@ -518,6 +519,28 @@ func NewClaimChildAccount(
 		ChildValidationKeys:   childvalidationkeys,
 		ChildValidationScript: childvalidationscript,
 		Sequence:              sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
+// NewRecordPrice creates a new RecordPrice transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewRecordPrice(
+	marketprice pricecurve.Nanocent,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *RecordPrice {
+	tx := &RecordPrice{
+		MarketPrice: marketprice,
+		Sequence:    sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()

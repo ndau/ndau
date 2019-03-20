@@ -12,6 +12,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -32,11 +33,27 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 // and distinct. We get there by xor-ing the block time with the address
 func makeSeed(addr address.Address, ts math.Timestamp) []byte {
 	addrB := []byte(addr.String())
-	tsB := make([]byte, 8)
-	binary.BigEndian.PutUint64(tsB, uint64(ts))
+	tsB := i2b(uint64(ts))
 	seed := make([]byte, 64)
 	for idx := range seed {
 		seed[idx] = addrB[idx%len(addrB)] ^ tsB[idx%len(tsB)]
+	}
+	return seed
+}
+
+func i2b(i uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, i)
+	return b
+}
+
+func makeSeedInt(a, b, c uint64) []byte {
+	ab := i2b(a)
+	bb := i2b(b)
+	cb := i2b(c)
+	seed := make([]byte, 64)
+	for idx := range seed {
+		seed[idx] = ab[idx%len(ab)] ^ bb[(idx+3)%len(bb)] ^ cb[(idx+6)%len(cb)]
 	}
 	return seed
 }
@@ -186,10 +203,15 @@ func BuildVMForTxFees(code []byte, tx metatx.Transactable, ts math.Timestamp) (*
 
 // BuildVMForExchangeEAI accepts an exchange account data and builds a VM that it sets up to call
 // the default handler.  All that needs to happen after this is to call Run().
-func BuildVMForExchangeEAI(code []byte, acct backing.AccountData) (*vm.ChaincodeVM, error) {
+func BuildVMForExchangeEAI(code []byte, acct backing.AccountData, sib eai.Rate) (*vm.ChaincodeVM, error) {
 	acctV, err := chain.ToValue(acct)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting account data for exchange EAI chaincode vm")
+	}
+
+	sibV, err := chain.ToValue(sib)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting current SIB rate for chaincode vm")
 	}
 
 	bin := buildBinary(code, "Exchange account EAI rate", "")
@@ -198,7 +220,7 @@ func BuildVMForExchangeEAI(code []byte, acct backing.AccountData) (*vm.Chaincode
 		return nil, errors.Wrap(err, "creating exchange EAI chaincode vm")
 	}
 
-	err = theVM.Init(0, acctV)
+	err = theVM.Init(0, sibV, acctV)
 	if err != nil {
 		return nil, errors.Wrap(err, "initializing exchange EAI chaincode vm")
 	}
@@ -374,4 +396,45 @@ func BuildVMForNodeDistribution(
 	//        node (account data decorated with address)
 	err = theVM.Init(0, nodeV, totalAwardV, vm.List(costakersV))
 	return theVM, errors.Wrap(err, "initializing chaincode vm")
+}
+
+// BuildVMForSIB builds a VM that it sets up to calculate SIB.
+//
+// The SIB calculation uses exactly two pieces of data: the target price (at
+// stack top) and the market price. In principle it doesn't matter what units
+// are used for these calculations; any integer pair will do. In practice
+// we standardize on Nanocents.
+//
+// The SIB calculation function returns an integer compatible with eai.Rate:
+// the unit is 10^12; 1% is 10^10.
+//
+// All that needs to happen after this is to call Run().
+func BuildVMForSIB(
+	code []byte,
+	target, market uint64,
+	ts math.Timestamp,
+) (*vm.ChaincodeVM, error) {
+	targetV, err := chain.ToValue(target)
+	if err != nil {
+		return nil, errors.Wrap(err, "target")
+	}
+	marketV, err := chain.ToValue(market)
+	if err != nil {
+		return nil, errors.Wrap(err, "market")
+	}
+
+	bin := buildBinary(code, "calculate SIB", fmt.Sprintf("market %d; target %d", market, target))
+
+	theVM, err := vm.New(*bin)
+	if err != nil {
+		return nil, err
+	}
+	err = ndauVM(theVM, ts, makeSeedInt(target, market, uint64(ts)))
+	if err != nil {
+		return nil, err
+	}
+
+	// goodness functions all use the default handler
+	err = theVM.Init(0, marketV, targetV)
+	return theVM, err
 }

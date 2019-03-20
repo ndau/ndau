@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/json"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -124,6 +125,15 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		}
 	}
 
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		return acct, exists, sigset, err
+	}
+	fee, err = fee.Add(sib)
+	if err != nil {
+		return acct, exists, sigset, err
+	}
+
 	acct.UpdateSettlements(app.blockTime)
 	available, err := acct.AvailableBalance()
 	if err != nil {
@@ -131,11 +141,29 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	}
 
 	if available.Compare(fee) < 0 {
-		err = fmt.Errorf(
-			"insufficient available balance (%s ndau) to pay for tx (%s ndau)",
-			available,
-			fee,
-		)
+		var errb []byte
+		errb, err = json.Marshal(map[string]interface{}{
+			"balance":                 acct.Balance,
+			"available balance":       available,
+			"address":                 address,
+			"tx cost":                 fee,
+			"msg":                     "insufficient available balance to pay for tx",
+			"tx hash":                 metatx.Hash(tx),
+			"qty pending settlements": len(acct.Settlements),
+		})
+		if err == nil {
+			err = errors.New(string(errb))
+		} else {
+			// we don't really care what the marshalling error was, and it's
+			// unlikely ever to occur, but we left the old code in here just in case
+			err = fmt.Errorf(
+				"%s: insufficient available balance (%s ndau) to pay for tx (%s ndau)",
+				address,
+				available,
+				fee,
+			)
+		}
+
 		return acct, exists, sigset, err
 	}
 
@@ -173,6 +201,11 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 		return errors.Wrap(err, "calculating tx fee")
 	}
 
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		return errors.Wrap(err, "calculating SIB")
+	}
+
 	sourceA, err := tx.GetSource(app)
 	if err != nil {
 		return errors.Wrap(err, "getting tx source")
@@ -204,11 +237,14 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	}
 	source.LastEAIUpdate = app.blockTime
 
-	withdrawal := fee
+	withdrawal, err := fee.Add(sib)
+	if err != nil {
+		return errors.Wrap(err, "adding fee and sib")
+	}
 	if w, isWithdrawer := tx.(withdrawer); isWithdrawer {
 		withdrawal, err = withdrawal.Add(w.Withdrawal())
 		if err != nil {
-			return errors.Wrap(err, "adding fee and withdrawal")
+			return errors.Wrap(err, "adding withdrawal qty to fees")
 		}
 	}
 
@@ -231,6 +267,8 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source
+		st.TotalFees += fee
+		st.TotalSIB += sib
 		return st, nil
 	})
 }
