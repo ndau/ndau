@@ -16,12 +16,15 @@ import (
 )
 
 // CalculateSIB calculates the SIB implied by the market price given the current app state.
-func (tx *RecordPrice) CalculateSIB(app *App) (eai.Rate, error) {
+//
+// It also returns the calculated target price.
+func (tx *RecordPrice) CalculateSIB(app *App) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
 	// compute the current target price
 	state := app.GetState().(*backing.State)
-	targetPrice, err := pricecurve.PriceAtUnit(state.TotalIssue)
+	targetPrice, err = pricecurve.PriceAtUnit(state.TotalIssue)
 	if err != nil {
-		return 0, errors.Wrap(err, "computing target price")
+		err = errors.Wrap(err, "computing target price")
+		return
 	}
 
 	// get the script used to perform the calculation
@@ -31,33 +34,40 @@ func (tx *RecordPrice) CalculateSIB(app *App) (eai.Rate, error) {
 		// overwrite err: it will always be non-nil when it doesn't exist
 		sibScript, err = base64.StdEncoding.DecodeString(sv.SIBScriptDefault)
 		if err != nil {
-			return 0, errors.Wrap(err, "decoding sv.SIBScriptDefault")
+			err = errors.Wrap(err, "decoding sv.SIBScriptDefault")
+			return
 		}
 	}
 	if err != nil {
-		return 0, errors.Wrap(err, "fetching "+sv.SIBScriptName)
+		err = errors.Wrap(err, "fetching "+sv.SIBScriptName)
+		return
 	}
 	if !IsChaincode(sibScript) {
-		return 0, errors.New("sibScript appears not to be chaincode")
+		err = errors.New("sibScript appears not to be chaincode")
+		return
 	}
 
 	// compute SIB
 	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(tx.MarketPrice), app.blockTime)
 	if err != nil {
-		return 0, errors.Wrap(err, "building vm for SIB calculation")
+		err = errors.Wrap(err, "building vm for SIB calculation")
+		return
 	}
 
 	err = vm.Run(nil)
 	if err != nil {
-		return 0, errors.Wrap(err, "computing SIB")
+		err = errors.Wrap(err, "computing SIB")
+		return
 	}
 
 	top, err := vm.Stack().PopAsInt64()
 	if err != nil {
-		return 0, errors.Wrap(err, "retrieving SIB from VM")
+		err = errors.Wrap(err, "retrieving SIB from VM")
+		return
 	}
 
-	return eai.Rate(top), nil
+	sib = eai.Rate(top)
+	return
 }
 
 // Validate implements metatx.Transactable
@@ -82,12 +92,14 @@ func (tx *RecordPrice) Apply(appI interface{}) error {
 	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		sib, err := tx.CalculateSIB(app)
+		sib, target, err := tx.CalculateSIB(app)
 		if err != nil {
 			return stateI, err
 		}
 		state := stateI.(*backing.State)
 		state.SIB = sib
+		state.MarketPrice = tx.MarketPrice
+		state.TargetPrice = target
 
 		return state, err
 	})

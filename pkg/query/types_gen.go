@@ -639,6 +639,171 @@ func (z DelegatesResponse) Msgsize() (s int) {
 }
 
 // DecodeMsg implements msgp.Decodable
+func (z *SIBResponse) DecodeMsg(dc *msgp.Reader) (err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, err = dc.ReadMapHeader()
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, err = dc.ReadMapKeyPtr()
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "SIB":
+			err = z.SIB.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "SIB")
+				return
+			}
+		case "TargetPrice":
+			err = z.TargetPrice.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TargetPrice")
+				return
+			}
+		case "MarketPrice":
+			err = z.MarketPrice.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "MarketPrice")
+				return
+			}
+		default:
+			err = dc.Skip()
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z *SIBResponse) EncodeMsg(en *msgp.Writer) (err error) {
+	// map header, size 3
+	// write "SIB"
+	err = en.Append(0x83, 0xa3, 0x53, 0x49, 0x42)
+	if err != nil {
+		return
+	}
+	err = z.SIB.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "SIB")
+		return
+	}
+	// write "TargetPrice"
+	err = en.Append(0xab, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	if err != nil {
+		return
+	}
+	err = z.TargetPrice.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TargetPrice")
+		return
+	}
+	// write "MarketPrice"
+	err = en.Append(0xab, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	if err != nil {
+		return
+	}
+	err = z.MarketPrice.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "MarketPrice")
+		return
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *SIBResponse) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "SIB"
+	o = append(o, 0x83, 0xa3, 0x53, 0x49, 0x42)
+	o, err = z.SIB.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "SIB")
+		return
+	}
+	// string "TargetPrice"
+	o = append(o, 0xab, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	o, err = z.TargetPrice.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TargetPrice")
+		return
+	}
+	// string "MarketPrice"
+	o = append(o, 0xab, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	o, err = z.MarketPrice.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "MarketPrice")
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *SIBResponse) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "SIB":
+			bts, err = z.SIB.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "SIB")
+				return
+			}
+		case "TargetPrice":
+			bts, err = z.TargetPrice.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TargetPrice")
+				return
+			}
+		case "MarketPrice":
+			bts, err = z.MarketPrice.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "MarketPrice")
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *SIBResponse) Msgsize() (s int) {
+	s = 1 + 4 + z.SIB.Msgsize() + 12 + z.TargetPrice.Msgsize() + 12 + z.MarketPrice.Msgsize()
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
 func (z *SidechainTxExistsQuery) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field

@@ -3,7 +3,6 @@ package tool
 import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -11,7 +10,7 @@ import (
 
 // GetSIB returns the current SIB in effect
 func GetSIB(node client.ABCIClient) (
-	sib eai.Rate, resp *rpctypes.ResultABCIQuery, err error,
+	sib query.SIBResponse, resp *rpctypes.ResultABCIQuery, err error,
 ) {
 	// perform the query
 	resp, err = node.ABCIQuery(query.SIBEndpoint, nil)

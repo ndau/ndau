@@ -5,6 +5,7 @@ import (
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -49,6 +50,10 @@ type State struct {
 	TotalSIB math.Ndau
 	// TotalFees is the sum of all burned tx fees
 	TotalFees math.Ndau
+	// These prices are preserved here just to assist downstream consumers
+	// have more trust in the SIB calculations.
+	MarketPrice pricecurve.Nanocent
+	TargetPrice pricecurve.Nanocent
 }
 
 // make sure State is a metaapp.State

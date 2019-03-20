@@ -2,6 +2,8 @@ package query
 
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
@@ -46,3 +48,12 @@ type DelegateList struct {
 // Note that this is _not_ a standard MSGP-able struct; it must instead
 // be marshalled and unmarshalled using msgp.(Un)MarshalIntf methods
 type DelegatesResponse []DelegateList
+
+// SIBResponse is the return value from the /sib endpoint
+//
+// This includes market and target price values so end users can check our math
+type SIBResponse struct {
+	SIB         eai.Rate
+	TargetPrice pricecurve.Nanocent
+	MarketPrice pricecurve.Nanocent
+}

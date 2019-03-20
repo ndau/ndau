@@ -368,9 +368,14 @@ func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.Respon
 func sibQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	var err error
 	app := appI.(*App)
-	sib := app.GetState().(*backing.State).SIB
-	response.Info = sib.String()
-	response.Value, err = sib.MarshalMsg(nil)
+	state := app.GetState().(*backing.State)
+	resp := query.SIBResponse{
+		SIB:         state.SIB,
+		MarketPrice: state.MarketPrice,
+		TargetPrice: state.TargetPrice,
+	}
+	response.Info = resp.SIB.String()
+	response.Value, err = resp.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "encoding SIB")
 	}

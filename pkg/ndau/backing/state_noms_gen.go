@@ -9,6 +9,7 @@ import (
 	nt "github.com/attic-labs/noms/go/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	util "github.com/oneiro-ndev/noms-util"
 	"github.com/pkg/errors"
@@ -24,10 +25,12 @@ func init() {
 		"Accounts",
 		"Delegates",
 		"LastNodeRewardNomination",
+		"MarketPrice",
 		"NodeRewardWinner",
 		"Nodes",
 		"PendingNodeReward",
 		"SIB",
+		"TargetPrice",
 		"TotalFees",
 		"TotalIssue",
 		"TotalRFE",
@@ -137,6 +140,10 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.TotalFees (math.Ndau->*ast.SelectorExpr) is primitive: true
 
+	// x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+
+	// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+
 	return stateStructTemplate.NewStruct([]nt.Value{
 		// x.Accounts (map[string]AccountData)
 
@@ -147,6 +154,9 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.LastNodeRewardNomination (math.Timestamp)
 
 		util.Int(x.LastNodeRewardNomination).NomsValue(),
+		// x.MarketPrice (pricecurve.Nanocent)
+
+		util.Int(x.MarketPrice).NomsValue(),
 		// x.NodeRewardWinner (address.Address)
 		nt.String(nodeRewardWinnerString),
 		// x.Nodes (map[string]Node)
@@ -158,6 +168,9 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.SIB (eai.Rate)
 
 		util.Int(x.SIB).NomsValue(),
+		// x.TargetPrice (pricecurve.Nanocent)
+
+		util.Int(x.TargetPrice).NomsValue(),
 		// x.TotalFees (math.Ndau)
 
 		util.Int(x.TotalFees).NomsValue(),
@@ -438,6 +451,32 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				totalFeesTyped := math.Ndau(totalFeesValue)
 
 				x.TotalFees = totalFeesTyped
+			// x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+			case "MarketPrice":
+				// template u_decompose: x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr)
+				// template u_primitive: x.MarketPrice
+				var marketPriceValue util.Int
+				marketPriceValue, err = util.IntFrom(value)
+				if err != nil {
+					err = errors.Wrap(err, "State.UnmarshalNoms->MarketPrice")
+					return
+				}
+				marketPriceTyped := pricecurve.Nanocent(marketPriceValue)
+
+				x.MarketPrice = marketPriceTyped
+			// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+			case "TargetPrice":
+				// template u_decompose: x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr)
+				// template u_primitive: x.TargetPrice
+				var targetPriceValue util.Int
+				targetPriceValue, err = util.IntFrom(value)
+				if err != nil {
+					err = errors.Wrap(err, "State.UnmarshalNoms->TargetPrice")
+					return
+				}
+				targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
+
+				x.TargetPrice = targetPriceTyped
 			}
 		}
 	})
