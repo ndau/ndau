@@ -10,7 +10,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
@@ -162,11 +161,11 @@ func TestZeroMarketPriceMustIncurSIB(t *testing.T) {
 		require.NotEmpty(t, resp.Value)
 		require.NotEmpty(t, resp.Info) // human-readable representation of value
 
-		var sib eai.Rate
+		var sib query.SIBResponse
 		leftovers, err := sib.UnmarshalMsg(resp.Value)
 		require.NoError(t, err)
 		require.Empty(t, leftovers)
 
-		require.Equal(t, app.GetState().(*backing.State).SIB, sib)
+		require.Equal(t, app.GetState().(*backing.State).SIB, sib.SIB)
 	})
 }
