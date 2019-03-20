@@ -18,7 +18,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/key"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/words"
-	"github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -59,11 +59,12 @@ func GetConfigPath() string {
 
 // Config represents all data from `ndautool.toml`
 type Config struct {
-	Node     string              `toml:"node"`
-	Accounts map[string]*Account `toml:"accounts"`
-	RFE      *SysAccount         `toml:"rfe"`
-	NNR      *SysAccount         `toml:"nnr"`
-	CVC      *SysAccount         `toml:"cvc"`
+	Node        string              `toml:"node"`
+	Accounts    map[string]*Account `toml:"accounts"`
+	RFE         *SysAccount         `toml:"rfe"`
+	NNR         *SysAccount         `toml:"nnr"`
+	CVC         *SysAccount         `toml:"cvc"`
+	RecordPrice *SysAccount         `toml:"record_price"`
 }
 
 // NewConfig creates a new configuration with the given address
@@ -369,6 +370,7 @@ func (c *Config) UpdateFrom(asscPath string, bpcPublic []byte) error {
 		{&c.CVC, sv.CommandValidatorChange},
 		{&c.NNR, sv.NominateNodeReward},
 		{&c.RFE, sv.ReleaseFromEndowment},
+		{&c.RecordPrice, sv.RecordPrice},
 	}
 	for _, sa := range sysaccts {
 		*sa.configAcct, err = SysAccountFromAssc(assc, sa.sys)

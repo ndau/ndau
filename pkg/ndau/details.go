@@ -125,6 +125,15 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		}
 	}
 
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		return acct, exists, sigset, err
+	}
+	fee, err = fee.Add(sib)
+	if err != nil {
+		return acct, exists, sigset, err
+	}
+
 	acct.UpdateSettlements(app.blockTime)
 	available, err := acct.AvailableBalance()
 	if err != nil {
@@ -192,6 +201,11 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 		return errors.Wrap(err, "calculating tx fee")
 	}
 
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		return errors.Wrap(err, "calculating SIB")
+	}
+
 	sourceA, err := tx.GetSource(app)
 	if err != nil {
 		return errors.Wrap(err, "getting tx source")
@@ -223,11 +237,14 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	}
 	source.LastEAIUpdate = app.blockTime
 
-	withdrawal := fee
+	withdrawal, err := fee.Add(sib)
+	if err != nil {
+		return errors.Wrap(err, "adding fee and sib")
+	}
 	if w, isWithdrawer := tx.(withdrawer); isWithdrawer {
 		withdrawal, err = withdrawal.Add(w.Withdrawal())
 		if err != nil {
-			return errors.Wrap(err, "adding fee and withdrawal")
+			return errors.Wrap(err, "adding withdrawal qty to fees")
 		}
 	}
 
@@ -250,6 +267,8 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source
+		st.TotalFees += fee
+		st.TotalSIB += sib
 		return st, nil
 	})
 }

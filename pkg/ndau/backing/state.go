@@ -4,24 +4,14 @@ import (
 	nt "github.com/attic-labs/noms/go/types"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	util "github.com/oneiro-ndev/noms-util"
 	"github.com/pkg/errors"
 )
 
-const (
-	accountKey    = "accounts"
-	delegateKey   = "delegates"
-	nodeKey       = "nodes"
-	lnrnKey       = "lnrn" // last node reward nomination
-	pnrKey        = "pnr"  // pending node reward
-	unrKey        = "unr"  // uncredited node reward
-	nrwKey        = "nrw"  // node reward winner
-	totalRFEKey   = "totalRFE"
-	totalIssueKey = "totalIssue"
-)
-
 // State is primarily a set of accounts
+//nomsify State
 type State struct {
 	Accounts map[string]AccountData
 	// Delegates is a map of strings to a set of strings
@@ -47,13 +37,23 @@ type State struct {
 	PendingNodeReward   math.Ndau
 	UnclaimedNodeReward math.Ndau
 	// Of course, we have to keep track of which node has acutally won
-	NodeRewardWinner address.Address
+	NodeRewardWinner *address.Address
 	// TotalRFE is the sum of all RFE transactions.
 	// It is also updated by the genesis program: it's initialized with the
 	// implied RFEs for genesis accounts
 	TotalRFE math.Ndau
 	// TotalIssue is the sum of all Issue transactions.
 	TotalIssue math.Ndau
+	// SIB is the current burn rate applied to all transfers.
+	SIB eai.Rate
+	// TotalSIB is the sum of all burned SIB
+	TotalSIB math.Ndau
+	// TotalFees is the sum of all burned tx fees
+	TotalFees math.Ndau
+	// These prices are preserved here just to assist downstream consumers
+	// have more trust in the SIB calculations.
+	MarketPrice pricecurve.Nanocent
+	TargetPrice pricecurve.Nanocent
 }
 
 // make sure State is a metaapp.State
@@ -64,167 +64,6 @@ func (s *State) Init(nt.ValueReadWriter) {
 	s.Accounts = make(map[string]AccountData)
 	s.Delegates = make(map[string]map[string]struct{})
 	s.Nodes = make(map[string]Node)
-}
-
-// MarshalNoms satisfies noms' Marshaler interface
-func (s State) MarshalNoms(vrw nt.ValueReadWriter) (nt.Value, error) {
-	ns := nt.NewStruct("state", nt.StructData{
-		accountKey:    nt.NewMap(vrw),
-		delegateKey:   nt.NewMap(vrw),
-		nodeKey:       nt.NewMap(vrw),
-		lnrnKey:       util.Int(s.LastNodeRewardNomination).NomsValue(),
-		pnrKey:        util.Int(s.PendingNodeReward).NomsValue(),
-		unrKey:        util.Int(s.UnclaimedNodeReward).NomsValue(),
-		nrwKey:        nt.String(s.NodeRewardWinner.String()),
-		totalRFEKey:   util.Int(s.TotalRFE).NomsValue(),
-		totalIssueKey: util.Int(s.TotalIssue).NomsValue(),
-	})
-
-	// marshal accounts
-	editor := ns.Get(accountKey).(nt.Map).Edit()
-	for k, v := range s.Accounts {
-		vval, err := v.MarshalNoms(vrw)
-		if err != nil {
-			return ns, err
-		}
-		editor.Set(nt.String(k), vval)
-	}
-	ns = ns.Set(accountKey, editor.Map())
-	// marshal delegates
-	editor = ns.Get(delegateKey).(nt.Map).Edit()
-	for delegateNode, delegateAddresses := range s.Delegates {
-		daSet := nt.NewSet(vrw)
-		setEditor := daSet.Edit()
-		for delegateAddress := range delegateAddresses {
-			setEditor.Insert(nt.String(delegateAddress))
-		}
-		editor.Set(nt.String(delegateNode), setEditor.Set())
-	}
-	ns = ns.Set(delegateKey, editor.Map())
-	// marshal nodes
-	nm, err := MarshalNodesNoms(vrw, s.Nodes)
-	if err != nil {
-		return ns, err
-	}
-	ns = ns.Set(nodeKey, nm)
-
-	return ns, nil
-}
-
-// UnmarshalNoms satisfies noms' Unmarshaler interface
-func (s *State) UnmarshalNoms(v nt.Value) (err error) {
-	st, isStruct := v.(nt.Struct)
-	if !isStruct {
-		return errors.New("v is not an nt.Struct")
-	}
-
-	// unmarshal accounts
-	mV := st.Get(accountKey)
-	m, isMap := mV.(nt.Map)
-	if !isMap {
-		return errors.New("account data not a nt.Map")
-	}
-	s.Accounts = make(map[string]AccountData)
-	m.IterAll(func(key, value nt.Value) {
-		if err == nil {
-			ad := AccountData{}
-			err = ad.UnmarshalNoms(value)
-			if err == nil {
-				k, keyIsString := key.(nt.String)
-				if !keyIsString {
-					err = errors.New("non-nt.String key")
-				}
-				if err == nil {
-					s.Accounts[string(k)] = ad
-				}
-			}
-		}
-	})
-	if err != nil {
-		return err
-	}
-
-	// unmarshal delegates
-	mV = st.Get(delegateKey)
-	m, isMap = mV.(nt.Map)
-	if !isMap {
-		return errors.New("delegates not a nt.Map")
-	}
-	s.Delegates = make(map[string]map[string]struct{})
-	m.IterAll(func(key, value nt.Value) {
-		if err == nil {
-			inner := make(map[string]struct{})
-			ks, isStr := key.(nt.String)
-			if !isStr {
-				err = errors.New("delegates key not nt.String")
-			}
-			if err == nil {
-				innerSet, isSet := value.(nt.Set)
-				if !isSet {
-					err = errors.New("delegates value is not nt.Set")
-				}
-				if err == nil {
-					innerSet.IterAll(func(innerVal nt.Value) {
-						if err == nil {
-							setStr, isStr := innerVal.(nt.String)
-							if !isStr {
-								err = errors.New("delegates inner value is not nt.String")
-							}
-							if err == nil {
-								inner[string(setStr)] = struct{}{}
-							}
-						}
-					})
-					s.Delegates[string(ks)] = inner
-				}
-			}
-		}
-	})
-
-	// unmarshal nodes
-	s.Nodes, err = UnmarshalNodesNoms(st.Get(nodeKey))
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling nodes")
-	}
-
-	// unmarshal last node reward nomination
-	lnrnI, err := util.IntFrom(st.Get(lnrnKey))
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling last node reward nomination")
-	}
-	s.LastNodeRewardNomination = math.Timestamp(lnrnI)
-	// unmarshal pending node reward
-	pnrI, err := util.IntFrom(st.Get(pnrKey))
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling pending node reward")
-	}
-	s.PendingNodeReward = math.Ndau(pnrI)
-	// unmarshal unclaimed node reward
-	unrI, err := util.IntFrom(st.Get(unrKey))
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling unclaimed node reward")
-	}
-	s.UnclaimedNodeReward = math.Ndau(unrI)
-	// unmarshal node reward winner
-	nrwS := string(st.Get(nrwKey).(nt.String))
-	if nrwS != "" {
-		s.NodeRewardWinner, err = address.Validate(string(st.Get(nrwKey).(nt.String)))
-		if err != nil {
-			return errors.Wrap(err, "validating node reward winner")
-		}
-	}
-	trfeI, err := util.IntFrom(st.Get(totalRFEKey))
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling total RFE")
-	}
-	s.TotalRFE = math.Ndau(trfeI)
-	tisI, err := util.IntFrom(st.Get(totalIssueKey))
-	if err != nil {
-		return errors.Wrap(err, "unmarshalling total issue")
-	}
-	s.TotalIssue = math.Ndau(tisI)
-
-	return err
 }
 
 // GetAccount returns the account at the requested address.

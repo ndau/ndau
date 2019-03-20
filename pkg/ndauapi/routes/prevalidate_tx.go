@@ -14,6 +14,7 @@ import (
 // attempting to commit it.
 type PrevalidateResult struct {
 	FeeNapu int64  `json:"fee_napu"`
+	SibNapu int64  `json:"sib_napu,omitempty"`
 	Err     string `json:"err,omitempty"`
 	ErrCode int    `json:"err_code,omitempty"`
 }
@@ -37,8 +38,11 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		// and now run the prevalidation query
-		fee, _, err := tool.Prevalidate(node, tx)
-		result := PrevalidateResult{FeeNapu: int64(fee)}
+		fee, sib, _, err := tool.Prevalidate(node, tx)
+		result := PrevalidateResult{
+			FeeNapu: int64(fee),
+			SibNapu: int64(sib),
+		}
 		code := http.StatusOK
 		if err != nil {
 			result.Err = err.Error()

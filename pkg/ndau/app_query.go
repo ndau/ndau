@@ -26,6 +26,7 @@ func init() {
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
+	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
 	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
@@ -161,9 +162,19 @@ func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.
 func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	tx, err := metatx.Unmarshal(request.GetData(), TxIDs)
+	mtx, err := metatx.Unmarshal(request.GetData(), TxIDs)
 	if err != nil {
 		app.QueryError(err, response, "deserializing transactable")
+		return
+	}
+
+	tx, ok := mtx.(NTransactable)
+	if !ok {
+		app.QueryError(
+			fmt.Errorf("tx %s not an NTransactable", metatx.NameOf(mtx)),
+			response,
+			"converting metatx.Transactable to NTransactable",
+		)
 		return
 	}
 
@@ -173,7 +184,14 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 		app.QueryError(err, response, "calculating tx fee")
 		return
 	}
-	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee)
+
+	sib, err := app.calculateSIB(tx)
+	if err != nil {
+		app.QueryError(err, response, "calculating sib")
+		return
+	}
+
+	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee, sib)
 
 	err = tx.Validate(appI)
 	if err != nil {
@@ -261,9 +279,11 @@ func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 		lastSummary.BlockHeight = app.Height()
 		lastSummary.TotalRFE = state.TotalRFE
 		lastSummary.TotalIssue = state.TotalIssue
+		lastSummary.TotalFees = state.TotalFees
+		lastSummary.TotalSIB = state.TotalSIB
 		// the total ndau in circulation is the total in all accounts, excluding
 		// the amount of ndau that have been released but not issued
-		lastSummary.TotalCirculation = lastSummary.TotalNdau - (lastSummary.TotalRFE - lastSummary.TotalIssue)
+		lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalFees + lastSummary.TotalSIB)
 	}
 
 	response.Log = fmt.Sprintf("total ndau at height %d is %d, in %d accounts", lastSummary.BlockHeight, lastSummary.TotalNdau, lastSummary.NumAccounts)
@@ -337,4 +357,20 @@ func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.Respon
 	}
 
 	response.Value = bytes
+}
+
+func sibQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	var err error
+	app := appI.(*App)
+	state := app.GetState().(*backing.State)
+	resp := query.SIBResponse{
+		SIB:         state.SIB,
+		MarketPrice: state.MarketPrice,
+		TargetPrice: state.TargetPrice,
+	}
+	response.Info = resp.SIB.String()
+	response.Value, err = resp.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "encoding SIB")
+	}
 }

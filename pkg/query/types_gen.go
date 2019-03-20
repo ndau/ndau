@@ -639,6 +639,171 @@ func (z DelegatesResponse) Msgsize() (s int) {
 }
 
 // DecodeMsg implements msgp.Decodable
+func (z *SIBResponse) DecodeMsg(dc *msgp.Reader) (err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, err = dc.ReadMapHeader()
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, err = dc.ReadMapKeyPtr()
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "SIB":
+			err = z.SIB.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "SIB")
+				return
+			}
+		case "TargetPrice":
+			err = z.TargetPrice.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TargetPrice")
+				return
+			}
+		case "MarketPrice":
+			err = z.MarketPrice.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "MarketPrice")
+				return
+			}
+		default:
+			err = dc.Skip()
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z *SIBResponse) EncodeMsg(en *msgp.Writer) (err error) {
+	// map header, size 3
+	// write "SIB"
+	err = en.Append(0x83, 0xa3, 0x53, 0x49, 0x42)
+	if err != nil {
+		return
+	}
+	err = z.SIB.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "SIB")
+		return
+	}
+	// write "TargetPrice"
+	err = en.Append(0xab, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	if err != nil {
+		return
+	}
+	err = z.TargetPrice.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TargetPrice")
+		return
+	}
+	// write "MarketPrice"
+	err = en.Append(0xab, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	if err != nil {
+		return
+	}
+	err = z.MarketPrice.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "MarketPrice")
+		return
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *SIBResponse) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "SIB"
+	o = append(o, 0x83, 0xa3, 0x53, 0x49, 0x42)
+	o, err = z.SIB.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "SIB")
+		return
+	}
+	// string "TargetPrice"
+	o = append(o, 0xab, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	o, err = z.TargetPrice.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TargetPrice")
+		return
+	}
+	// string "MarketPrice"
+	o = append(o, 0xab, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65)
+	o, err = z.MarketPrice.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "MarketPrice")
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *SIBResponse) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "SIB":
+			bts, err = z.SIB.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "SIB")
+				return
+			}
+		case "TargetPrice":
+			bts, err = z.TargetPrice.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TargetPrice")
+				return
+			}
+		case "MarketPrice":
+			bts, err = z.MarketPrice.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "MarketPrice")
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *SIBResponse) Msgsize() (s int) {
+	s = 1 + 4 + z.SIB.Msgsize() + 12 + z.TargetPrice.Msgsize() + 12 + z.MarketPrice.Msgsize()
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
 func (z *SidechainTxExistsQuery) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
@@ -843,6 +1008,18 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "TotalIssue")
 				return
 			}
+		case "TotalFees":
+			err = z.TotalFees.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalFees")
+				return
+			}
+		case "TotalSIB":
+			err = z.TotalSIB.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalSIB")
+				return
+			}
 		case "TotalCirculation":
 			err = z.TotalCirculation.DecodeMsg(dc)
 			if err != nil {
@@ -862,9 +1039,9 @@ func (z *Summary) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 6
+	// map header, size 8
 	// write "BlockHeight"
-	err = en.Append(0x86, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	err = en.Append(0x88, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
 	if err != nil {
 		return
 	}
@@ -913,6 +1090,26 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "TotalIssue")
 		return
 	}
+	// write "TotalFees"
+	err = en.Append(0xa9, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x46, 0x65, 0x65, 0x73)
+	if err != nil {
+		return
+	}
+	err = z.TotalFees.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalFees")
+		return
+	}
+	// write "TotalSIB"
+	err = en.Append(0xa8, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x53, 0x49, 0x42)
+	if err != nil {
+		return
+	}
+	err = z.TotalSIB.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalSIB")
+		return
+	}
 	// write "TotalCirculation"
 	err = en.Append(0xb0, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x43, 0x69, 0x72, 0x63, 0x75, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e)
 	if err != nil {
@@ -929,9 +1126,9 @@ func (z *Summary) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 6
+	// map header, size 8
 	// string "BlockHeight"
-	o = append(o, 0x86, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	o = append(o, 0x88, 0xab, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
 	o = msgp.AppendUint64(o, z.BlockHeight)
 	// string "TotalNdau"
 	o = append(o, 0xa9, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x4e, 0x64, 0x61, 0x75)
@@ -955,6 +1152,20 @@ func (z *Summary) MarshalMsg(b []byte) (o []byte, err error) {
 	o, err = z.TotalIssue.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "TotalIssue")
+		return
+	}
+	// string "TotalFees"
+	o = append(o, 0xa9, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x46, 0x65, 0x65, 0x73)
+	o, err = z.TotalFees.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalFees")
+		return
+	}
+	// string "TotalSIB"
+	o = append(o, 0xa8, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x53, 0x49, 0x42)
+	o, err = z.TotalSIB.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "TotalSIB")
 		return
 	}
 	// string "TotalCirculation"
@@ -1015,6 +1226,18 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "TotalIssue")
 				return
 			}
+		case "TotalFees":
+			bts, err = z.TotalFees.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalFees")
+				return
+			}
+		case "TotalSIB":
+			bts, err = z.TotalSIB.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "TotalSIB")
+				return
+			}
 		case "TotalCirculation":
 			bts, err = z.TotalCirculation.UnmarshalMsg(bts)
 			if err != nil {
@@ -1035,6 +1258,6 @@ func (z *Summary) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Summary) Msgsize() (s int) {
-	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize + 9 + z.TotalRFE.Msgsize() + 11 + z.TotalIssue.Msgsize() + 17 + z.TotalCirculation.Msgsize()
+	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize + 9 + z.TotalRFE.Msgsize() + 11 + z.TotalIssue.Msgsize() + 10 + z.TotalFees.Msgsize() + 9 + z.TotalSIB.Msgsize() + 17 + z.TotalCirculation.Msgsize()
 	return
 }

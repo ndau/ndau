@@ -25,7 +25,7 @@ func (app *App) calculateExchangeEAIRate(exchangeAccount backing.AccountData) (e
 		}
 	}
 
-	vm, err := BuildVMForExchangeEAI(script, exchangeAccount)
+	vm, err := BuildVMForExchangeEAI(script, exchangeAccount, app.GetState().(*backing.State).SIB)
 	if err != nil {
 		return 0, errors.Wrap(err, "Could not build vm for exchange EAI script")
 	}

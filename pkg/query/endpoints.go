@@ -9,6 +9,7 @@ const (
 	DelegatesEndpoint         = "/delegates"
 	PrevalidateEndpoint       = "/prevalidate"
 	SearchEndpoint            = "/search"
+	SIBEndpoint               = "/sib"
 	SidechainTxExistsEndpoint = "/stx"
 	SummaryEndpoint           = "/summary"
 	SysvarsEndpoint           = "/sysvars"

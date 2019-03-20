@@ -96,7 +96,6 @@ func (x *Lock) UnmarshalNoms(value nt.Value) (err error) {
 				noticePeriodTyped := math.Duration(noticePeriodValue)
 
 				x.NoticePeriod = noticePeriodTyped
-
 			// x.UnlocksOn (*math.Timestamp->*ast.StarExpr) is primitive: false
 			case "UnlocksOn":
 				// template u_decompose: x.UnlocksOn (*math.Timestamp->*ast.StarExpr)
@@ -131,7 +130,6 @@ func (x *Lock) UnmarshalNoms(value nt.Value) (err error) {
 				unlocksOnTyped := math.Timestamp(unlocksOnValue)
 
 				x.UnlocksOn = &unlocksOnTyped
-
 			// x.Bonus (eai.Rate->*ast.SelectorExpr) is primitive: true
 			case "Bonus":
 				// template u_decompose: x.Bonus (eai.Rate->*ast.SelectorExpr)
@@ -145,7 +143,6 @@ func (x *Lock) UnmarshalNoms(value nt.Value) (err error) {
 				bonusTyped := eai.Rate(bonusValue)
 
 				x.Bonus = bonusTyped
-
 			}
 		}
 	})
