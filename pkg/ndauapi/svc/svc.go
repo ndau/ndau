@@ -350,15 +350,18 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/order/current").To(routes.GetOrderChainData(cf)).
 		Operation("OrderCurrent").
 		Doc("Returns current order chain data for key parameters.").
-		Notes(`Returns current order chain information for 5 parameters:
+		Notes(`Returns current order chain information:
 		* Market price
 		* Target price
-		* Floor price
-		* Total ndau sold from the endowment
+		* Total ndau issued from the endowment
 		* Total ndau in circulation
+		* Total SIB burned
+		* Current SIB in effect
 		`).
 		Produces(JSON).
 		Writes(routes.OrderChainInfo{
+			MarketPrice: 1234 * 1000000000,
+			TargetPrice: 5678 * 1000000000,
 			TotalIssued: 2919000 * 100000000,
 			TotalNdau:   3141593 * 100000000,
 			TotalSIB:    123 * 100000000,

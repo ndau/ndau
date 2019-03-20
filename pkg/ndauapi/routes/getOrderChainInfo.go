@@ -8,15 +8,18 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // OrderChainInfo is a single instance of a rate response (it returns an array of them)
 type OrderChainInfo struct {
-	TotalIssued types.Ndau `json:"totalIssued"`
-	TotalNdau   types.Ndau `json:"totalNdau"`
-	TotalSIB    types.Ndau `json:"totalSIB"`
-	CurrentSIB  eai.Rate   `json:"sib"`
+	MarketPrice pricecurve.Nanocent `json:"marketPrice"`
+	TargetPrice pricecurve.Nanocent `json:"targetPrice"`
+	TotalIssued types.Ndau          `json:"totalIssued"`
+	TotalNdau   types.Ndau          `json:"totalNdau"`
+	TotalSIB    types.Ndau          `json:"totalSIB"`
+	CurrentSIB  eai.Rate            `json:"sib"`
 }
 
 // getOCI builds the start of an OrderChainInfo object, filling in the basics
@@ -26,6 +29,7 @@ func getOCI(cf cfg.Cfg) (OrderChainInfo, error) {
 	if err != nil {
 		return oci, err
 	}
+
 	summ, _, err := tool.GetSummary(node)
 	if err != nil {
 		return oci, err
@@ -33,10 +37,15 @@ func getOCI(cf cfg.Cfg) (OrderChainInfo, error) {
 	oci.TotalIssued = summ.TotalIssue
 	oci.TotalNdau = summ.TotalCirculation
 	oci.TotalSIB = summ.TotalSIB
-	oci.CurrentSIB, _, err = tool.GetSIB(node)
+
+	sib, _, err := tool.GetSIB(node)
 	if err != nil {
 		return oci, err
 	}
+
+	oci.CurrentSIB = sib.SIB
+	oci.TargetPrice = sib.TargetPrice
+	oci.MarketPrice = sib.MarketPrice
 	return oci, err
 }
 
