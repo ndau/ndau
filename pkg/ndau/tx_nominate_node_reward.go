@@ -60,11 +60,12 @@ func (tx *NominateNodeReward) Apply(appI interface{}) error {
 		state.UnclaimedNodeReward = state.PendingNodeReward
 		state.PendingNodeReward = 0
 
-		state.NodeRewardWinner, err = app.SelectByGoodness(uint64(tx.Random))
+		nrw, err := app.SelectByGoodness(uint64(tx.Random))
 		if err != nil {
 			return state, err
 		}
-		go app.callWinnerWebhook(tx, state.NodeRewardWinner)
+		go app.callWinnerWebhook(tx, nrw)
+		state.NodeRewardWinner = &nrw
 		return state, err
 	})
 }

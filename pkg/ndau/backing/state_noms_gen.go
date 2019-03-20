@@ -24,6 +24,7 @@ func init() {
 	stateStructTemplate = nt.MakeStructTemplate("State", []string{
 		"Accounts",
 		"Delegates",
+		"HasNodeRewardWinner",
 		"LastNodeRewardNomination",
 		"MarketPrice",
 		"NodeRewardWinner",
@@ -121,13 +122,23 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.UnclaimedNodeReward (math.Ndau->*ast.SelectorExpr) is primitive: true
 
-	// x.NodeRewardWinner (address.Address->*ast.SelectorExpr) is primitive: false
+	// x.NodeRewardWinner (*address.Address->*ast.StarExpr) is primitive: false
 
-	// template decompose: x.NodeRewardWinner (address.Address->*ast.SelectorExpr)
-	// template textmarshaler: x.NodeRewardWinner
-	nodeRewardWinnerString, err := x.NodeRewardWinner.MarshalText()
-	if err != nil {
-		return nil, errors.Wrap(err, "State.MarshalNoms->NodeRewardWinner.MarshalText")
+	// template decompose: x.NodeRewardWinner (*address.Address->*ast.StarExpr)
+	// template pointer:  x.NodeRewardWinner
+	var nodeRewardWinnerUnptr nt.Value
+	if x.NodeRewardWinner == nil {
+		nodeRewardWinnerUnptr = nt.String("")
+	} else {
+
+		// template decompose: (*x.NodeRewardWinner) (address.Address->*ast.SelectorExpr)
+		// template textmarshaler: (*x.NodeRewardWinner)
+		nodeRewardWinnerString, err := (*x.NodeRewardWinner).MarshalText()
+		if err != nil {
+			return nil, errors.Wrap(err, "State.MarshalNoms->NodeRewardWinner.MarshalText")
+		}
+
+		nodeRewardWinnerUnptr = nt.String(nodeRewardWinnerString)
 	}
 
 	// x.TotalRFE (math.Ndau->*ast.SelectorExpr) is primitive: true
@@ -151,14 +162,17 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.Delegates (map[string]map[string]struct{})
 
 		nt.NewMap(vrw, delegatesKVs...),
+		// x.HasNodeRewardWinner (bool)
+
+		nt.Bool(x.NodeRewardWinner != nil),
 		// x.LastNodeRewardNomination (math.Timestamp)
 
 		util.Int(x.LastNodeRewardNomination).NomsValue(),
 		// x.MarketPrice (pricecurve.Nanocent)
 
 		util.Int(x.MarketPrice).NomsValue(),
-		// x.NodeRewardWinner (address.Address)
-		nt.String(nodeRewardWinnerString),
+		// x.NodeRewardWinner (*address.Address)
+		nodeRewardWinnerUnptr,
 		// x.Nodes (map[string]Node)
 
 		nt.NewMap(vrw, nodesKVs...),
@@ -371,8 +385,29 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				unclaimedNodeRewardTyped := math.Ndau(unclaimedNodeRewardValue)
 
 				x.UnclaimedNodeReward = unclaimedNodeRewardTyped
-			// x.NodeRewardWinner (address.Address->*ast.SelectorExpr) is primitive: false
+			// x.NodeRewardWinner (*address.Address->*ast.StarExpr) is primitive: false
 			case "NodeRewardWinner":
+				// template u_decompose: x.NodeRewardWinner (*address.Address->*ast.StarExpr)
+				// template u_pointer:  x.NodeRewardWinner
+				if hasNodeRewardWinnerValue, ok := vs.MaybeGet("HasNodeRewardWinner"); ok {
+					if hasNodeRewardWinner, ok := hasNodeRewardWinnerValue.(nt.Bool); ok {
+						if !hasNodeRewardWinner {
+							return
+						}
+					} else {
+						err = fmt.Errorf(
+							"State.UnmarshalNoms expected HasNodeRewardWinner to be a nt.Bool; found %s",
+							reflect.TypeOf(hasNodeRewardWinnerValue),
+						)
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"State.UnmarshalNoms->NodeRewardWinner is a pointer, so expected a HasNodeRewardWinner field: not found",
+					)
+					return
+				}
+
 				// template u_decompose: x.NodeRewardWinner (address.Address->*ast.SelectorExpr)
 				// template u_textmarshaler: x.NodeRewardWinner
 				var nodeRewardWinnerValue address.Address
@@ -385,7 +420,7 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 					)
 				}
 
-				x.NodeRewardWinner = nodeRewardWinnerValue
+				x.NodeRewardWinner = &nodeRewardWinnerValue
 			// x.TotalRFE (math.Ndau->*ast.SelectorExpr) is primitive: true
 			case "TotalRFE":
 				// template u_decompose: x.TotalRFE (math.Ndau->*ast.SelectorExpr)

@@ -37,7 +37,7 @@ type State struct {
 	PendingNodeReward   math.Ndau
 	UnclaimedNodeReward math.Ndau
 	// Of course, we have to keep track of which node has acutally won
-	NodeRewardWinner address.Address
+	NodeRewardWinner *address.Address
 	// TotalRFE is the sum of all RFE transactions.
 	// It is also updated by the genesis program: it's initialized with the
 	// implied RFEs for genesis accounts
