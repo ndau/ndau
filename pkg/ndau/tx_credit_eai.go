@@ -157,8 +157,16 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				ageTable = &exchangeTable
 			}
 
+			// we have to add the uncredited EAI to the balance before calculating
+			// new EAI so that we grant the full amount. Failure to do so
+			// means that people won't earn EAI on what is currently uncredited.
+			pending, err := acctData.Balance.Add(acctData.UncreditedEAI)
+			if handle(err) {
+				return
+			}
+
 			eaiAward, err := eai.Calculate(
-				acctData.Balance, app.blockTime, acctData.LastEAIUpdate,
+				pending, app.blockTime, acctData.LastEAIUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
 				*ageTable,
 			)
