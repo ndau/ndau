@@ -225,8 +225,13 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 
 	source, _ := app.getAccount(sourceA)
 
+	pending, err := source.Balance.Add(source.UncreditedEAI)
+	if err != nil {
+		return errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
+	}
+
 	eai, err := eai.Calculate(
-		source.Balance, app.blockTime, source.LastEAIUpdate,
+		pending, app.blockTime, source.LastEAIUpdate,
 		source.WeightedAverageAge, source.Lock,
 		*unlockedTable,
 	)
