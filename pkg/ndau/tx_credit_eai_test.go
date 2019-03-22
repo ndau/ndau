@@ -156,8 +156,7 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 
 	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
 
-	blockTime := math.Timestamp(1 * math.Year)
-	context := makeExchangeAccountContext(blockTime, sourceAddress)
+	context := ddc(t).at(math.Timestamp(1 * math.Year)).withExchangeAccount(sourceAddress)
 	resp, _ := deliverTxContext(t, app, compute, context)
 	if resp.Log != "" {
 		t.Log(resp.Log)

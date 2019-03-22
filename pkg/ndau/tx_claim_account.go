@@ -76,7 +76,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	// address to use with their progenitor account.  If this check passes for a to-become child
 	// exchange account, then the ClaimChildAccount tx will later fail, and likewise will have to
 	// make a new child account that isn't locked before claiming it as a child.
-	isExchangeAccount, err := app.accountHasAttribute(tx.Target, sv.AccountAttributeExchange)
+	isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(tx.Target, sv.AccountAttributeExchange)
 	if err != nil {
 		return err
 	}

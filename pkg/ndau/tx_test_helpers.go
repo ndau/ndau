@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -203,29 +204,17 @@ func deliverTxAt(t *testing.T, app *App, tx metatx.Transactable, at math.Timesta
 
 // delivers a transaction with a script which unconditionally sets a tx fee of 1 napu
 func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
-	// resp, _ := deliverTxContext(t, app, tx, ddc(t).sv(func(systemCache *cache.SystemCache) {
-	// 	// set the cached tx fee script to unconditionally return 1
-	// 	systemCache.Set(
-	// 		sv.TxFeeScriptName,
-	// 		wkt.Bytes(vm.MiniAsm("handler 0 one enddef").Bytes()),
-	// 	)
-	// }))
-	resp := abci.ResponseDeliverTx{
-		Code: uint32(code.InvalidNodeState),
-		Log:  "sysvars currently unimplemented",
-	}
+	dc := ddc(t).with(func(sysvars map[string][]byte) {
+		sysvars[sv.TxFeeScriptName] = vm.MiniAsm("handler 0 one enddef").Bytes()
+	})
+	resp, _ := deliverTxContext(t, app, tx, dc)
 	return resp
 }
 
-func makeExchangeAccountContext(ts math.Timestamp, addr address.Address) deliveryContext {
-	return deliveryContext{
-		ts: ts,
-	}
-}
-
 type deliveryContext struct {
-	ts        math.Timestamp
-	svUpdater func()
+	t          *testing.T
+	ts         math.Timestamp
+	svUpdaters []func(svs map[string][]byte)
 }
 
 // default delivery context
@@ -234,8 +223,9 @@ func ddc(t *testing.T) deliveryContext {
 	require.NoError(t, err)
 
 	return deliveryContext{
-		ts:        now,
-		svUpdater: func() {},
+		t:          t,
+		ts:         now,
+		svUpdaters: nil,
 	}
 }
 
@@ -243,6 +233,36 @@ func ddc(t *testing.T) deliveryContext {
 func (dc deliveryContext) at(ts math.Timestamp) deliveryContext {
 	dc.ts = ts
 	return dc
+}
+
+// add an updater to the list of system variable updaters
+func (dc deliveryContext) with(updater func(map[string][]byte)) deliveryContext {
+	dc.svUpdaters = append(dc.svUpdaters, updater)
+	return dc
+}
+
+func (dc deliveryContext) withExchangeAccount(addr address.Address) deliveryContext {
+	return dc.with(func(sysvars map[string][]byte) {
+		accountAttributes := sv.AccountAttributes{}
+		aab, ok := sysvars[sv.AccountAttributesName]
+		if ok {
+			// modify the existing
+			// unpack the struct
+			_, err := accountAttributes.UnmarshalMsg(aab)
+			require.NoError(dc.t, err)
+		}
+
+		// set the attribute
+		pattrs := accountAttributes[addr.String()]
+		pattrs[sv.AccountAttributeExchange] = struct{}{}
+		accountAttributes[addr.String()] = pattrs
+
+		// remarshal
+		aab, err := accountAttributes.MarshalMsg(nil)
+		require.NoError(dc.t, err)
+		// reset
+		sysvars[sv.AccountAttributesName] = aab
+	})
 }
 
 func deliverTxContext(
@@ -262,6 +282,23 @@ func deliverTxsContext(
 	txs []metatx.Transactable,
 	dc deliveryContext,
 ) ([]abci.ResponseDeliverTx, abci.ResponseEndBlock) {
+	sysvarCache := make(map[string][]byte)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+
+		// copy the current sysvars so we can restore them after the test
+		for k, v := range state.Sysvars {
+			sysvarCache[k] = v
+		}
+
+		// run the sysvar updaters
+		for _, updater := range dc.svUpdaters {
+			updater(state.Sysvars)
+		}
+
+		return state, nil
+	})
+
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: dc.ts.AsTime(),
 	}})
@@ -281,6 +318,13 @@ func deliverTxsContext(
 	}
 	reb := app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
+
+	// restore state
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.Sysvars = sysvarCache
+		return state, nil
+	})
 
 	return resps, reb
 }

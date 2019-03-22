@@ -3,16 +3,14 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
 	bpcvalone signature.PublicKey
-	nsSystem  = []byte("system")
 )
 
 func init() {
@@ -26,40 +24,14 @@ func init() {
 func initAppSystem(t *testing.T, height uint64) *App {
 	app, _ := initApp(t)
 
-	// inject some test variables
-	require.NotNil(t, app.config.UseMock)
-	gfile, err := genesisfile.Load(*app.config.UseMock)
+	oneb, err := bpcvalone.MarshalMsg(nil)
 	require.NoError(t, err)
 
-	sets := func(ns []byte, key string, value genesisfile.Valuable) {
-		tru := true
-
-		loc := svi.Location{
-			Namespace: ns,
-			Key:       []byte(key),
-		}
-		err = gfile.Set(loc, value)
-		require.NoError(t, err)
-		err = gfile.Edit(loc, func(val *genesisfile.Value) error {
-			val.System = &tru
-			return nil
-		})
-		require.NoError(t, err)
-	}
-
-	sets(nsSystem, "one", &bpcvalone)
-
-	// dump the genesisfile
-	err = gfile.Dump(*app.config.UseMock)
-	require.NoError(t, err)
-
-	// refresh the systemcache
-	// sc, err := cache.NewSystemCache(app.config)
-	// require.NoError(t, err)
-	// app.systemCache = sc
-
-	// update the system cache
-	app.InitChain(abci.RequestInitChain{})
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.Sysvars["one"] = oneb
+		return state, nil
+	})
 
 	return app
 }

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/attic-labs/noms/go/datas"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 )
 
 // IndexBlockchain fills the index with data from the blockchain,

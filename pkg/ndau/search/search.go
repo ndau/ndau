@@ -89,5 +89,5 @@ func (search *Client) SearchAccountHistory(
 	offsetStart, offsetEnd := srch.GetPageOffsets(pageIndex, pageSize, len(ahr.Txs))
 	ahr.Txs = ahr.Txs[offsetStart:offsetEnd]
 
- 	return ahr, err
+	return ahr, err
 }

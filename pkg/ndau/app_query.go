@@ -289,7 +289,11 @@ func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 
 func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
-	app.QueryError(errors.New("unimplemented"), response, "major changes to sysvars coming soon")
+	var err error
+	response.Value, err = json.Marshal(app.GetState().(*backing.State).Sysvars)
+	if err != nil {
+		app.QueryError(err, response, "encoding sysvars")
+	}
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {

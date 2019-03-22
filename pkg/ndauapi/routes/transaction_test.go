@@ -46,9 +46,9 @@ func TestTxHash(t *testing.T) {
 
 	// set up tests
 	tests := []struct {
-		name   	 string
-		req    	 *http.Request
-		status 	 int
+		name     string
+		req      *http.Request
+		status   int
 		wantbody string
 	}{
 		{
@@ -58,13 +58,13 @@ func TestTxHash(t *testing.T) {
 			wantbody: "txhash parameter required",
 		}, {
 			name:     "invalid hash",
-			req:      httptest.NewRequest("GET", "/transaction/" + invalidTxHashEsc, nil),
+			req:      httptest.NewRequest("GET", "/transaction/"+invalidTxHashEsc, nil),
 			status:   http.StatusOK,
 			wantbody: "null", // The response is empty, so "null" is produced.
 		}, {
-			name:     "valid hash",
-			req:      httptest.NewRequest("GET", "/transaction/" + txHashEsc, nil),
-			status:   http.StatusOK,
+			name:   "valid hash",
+			req:    httptest.NewRequest("GET", "/transaction/"+txHashEsc, nil),
+			status: http.StatusOK,
 			// The tx hash isn't part of the response, just make sure a valid tx is returned.
 			wantbody: "{\"Tx\":{\"Nonce\":",
 		},

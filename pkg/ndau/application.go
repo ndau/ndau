@@ -11,15 +11,15 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/system_vars/pkg/svi"
+	"github.com/oneiro-ndev/system_vars/pkg/genesisfile"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -149,23 +149,6 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 		return
 	}
 
-	// update the config with the genesisfile path and the
-	// svi location
-	var gfile genesisfile.GFile
-	gfile, err = genesisfile.Load(gfilepath)
-	if err != nil {
-		return
-	}
-	var svi *svi.Location
-	svi, err = gfile.FindSVIStub()
-	if err != nil {
-		return
-	}
-	if svi == nil {
-		err = errors.New("svi stub must exist in generated genesisfile")
-		return
-	}
-
 	var configfile *os.File
 	configfile, err = ioutil.TempFile("", "config.*.toml")
 	if err != nil {
@@ -176,17 +159,20 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	if err != nil {
 		return
 	}
-	conf.UseMock = &gfilepath
-	conf.SystemVariableIndirect = *svi
-	err = conf.Dump(configfile.Name())
-	if err != nil {
-		return
-	}
 
 	app, err = NewAppSilent("", indexAddr, indexVersion, *conf)
 	if err != nil {
 		return
 	}
+
+	gfile, err := genesisfile.Load(gfilepath)
+
+	// load the genesis state data
+	err = app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.Sysvars, err = gfile.IntoSysvars()
+		return state, err
+	})
 
 	// now load the appropriate associated data
 	var af generator.AssociatedFile
@@ -208,10 +194,7 @@ func (app *App) getDefaultSettlementDuration() math.Duration {
 	var defaultSettlementPeriod math.Duration
 	err := app.System(sv.DefaultSettlementDurationName, &defaultSettlementPeriod)
 	// app.System errors in two cases:
-	// - the system variable doesn't exist, which can mean one of two things:
-	//   - the SVI map has been updated in an invalid way
-	//   - the system cache wasn't updated this block (in which case all txs are
-	//     already rejected, so we should never actually see this)
+	// - the system variable doesn't exist: chain is in a bad state
 	// - the variable we passed to receive the sysvar is of the wrong type
 	//
 	// Given this situation, we want to fail in the most noisy way possible.
