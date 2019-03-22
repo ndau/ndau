@@ -36,6 +36,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(20): &Issue{},
 	metatx.TxID(21): &ClaimChildAccount{},
 	metatx.TxID(22): &RecordPrice{},
+	metatx.TxID(23): &SetSysvar{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -317,9 +318,23 @@ var _ NTransactable = (*Issue)(nil)
 // RecordPriceAddress system variable. That account also specifies the validation
 // script, and pays the transaction fee.
 type RecordPrice struct {
-	MarketPrice pricecurve.Nanocent   `msg:"prc" chain:"11, Tx_Quantity" json:"market_price"`
+	MarketPrice pricecurve.Nanocent   `msg:"prc" chain:"11,Tx_Quantity" json:"market_price"`
 	Sequence    uint64                `msg:"seq" json:"sequence"`
 	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*RecordPrice)(nil)
+
+// A SetSysvar transaction sets a system variable.
+//
+// Its signatures are checked against an account specified by the SetSysvarAddress
+// system variable. That account also specifies the validation script, and pays
+// the transaction fee.
+type SetSysvar struct {
+	Name       string                `msg:"nme" chain:"6,Tx_Name" json:"name"`
+	Value      []byte                `msg:"val" chain:"7,Tx_Value" json:"value"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*SetSysvar)(nil)

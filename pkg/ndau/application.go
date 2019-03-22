@@ -5,13 +5,11 @@
 package ndau
 
 import (
-	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/BurntSushi/toml"
-	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -19,6 +17,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/system_vars/pkg/genesisfile"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
@@ -141,10 +140,9 @@ func InitMockApp() (app *App, assc generator.Associated, err error) {
 func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	app *App, assc generator.Associated, err error,
 ) {
-	var bpc []byte
 	var gfilepath, asscpath string
 
-	bpc, gfilepath, asscpath, err = generator.GenerateIn("")
+	gfilepath, asscpath, err = generator.GenerateIn("")
 	if err != nil {
 		return
 	}
@@ -175,15 +173,8 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	})
 
 	// now load the appropriate associated data
-	var af generator.AssociatedFile
-	_, err = toml.DecodeFile(asscpath, &af)
+	_, err = toml.DecodeFile(asscpath, &assc)
 	if err != nil {
-		return
-	}
-	var ok bool
-	assc, ok = af[base64.StdEncoding.EncodeToString(bpc)]
-	if !ok {
-		err = errors.New("associated data for this bpc not found in assc file")
 		return
 	}
 
