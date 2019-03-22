@@ -287,12 +287,39 @@ func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 	response.Value = []byte(v)
 }
 
-func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
+func sysvarsQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
+
+	// decode request
 	var err error
-	response.Value, err = json.Marshal(app.GetState().(*backing.State).Sysvars)
+	var svr query.SysvarsRequest
+	if len(request.Data) > 0 {
+		_, err = svr.UnmarshalMsg(request.Data)
+		if err != nil {
+			app.QueryError(err, response, "decoding sysvars request")
+			return
+		}
+	}
+
+	// get sysvars
+	sv := app.GetState().(*backing.State).Sysvars
+
+	// apply filter as required
+	svo := make(map[string][]byte)
+	filter := []string(svr)
+	if len(filter) > 0 {
+		for _, f := range filter {
+			svo[f] = sv[f]
+		}
+	} else {
+		svo = sv
+	}
+
+	// return
+	resp := query.SysvarsResponse(svo)
+	response.Value, err = resp.MarshalMsg(nil)
 	if err != nil {
-		app.QueryError(err, response, "encoding sysvars")
+		app.QueryError(err, response, "encoding sysvars response")
 	}
 }
 

@@ -1261,3 +1261,200 @@ func (z *Summary) Msgsize() (s int) {
 	s = 1 + 12 + msgp.Uint64Size + 10 + z.TotalNdau.Msgsize() + 12 + msgp.IntSize + 9 + z.TotalRFE.Msgsize() + 11 + z.TotalIssue.Msgsize() + 10 + z.TotalFees.Msgsize() + 9 + z.TotalSIB.Msgsize() + 17 + z.TotalCirculation.Msgsize()
 	return
 }
+
+// DecodeMsg implements msgp.Decodable
+func (z *SysvarsRequest) DecodeMsg(dc *msgp.Reader) (err error) {
+	var zb0002 uint32
+	zb0002, err = dc.ReadArrayHeader()
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	if cap((*z)) >= int(zb0002) {
+		(*z) = (*z)[:zb0002]
+	} else {
+		(*z) = make(SysvarsRequest, zb0002)
+	}
+	for zb0001 := range *z {
+		(*z)[zb0001], err = dc.ReadString()
+		if err != nil {
+			err = msgp.WrapError(err, zb0001)
+			return
+		}
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z SysvarsRequest) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteArrayHeader(uint32(len(z)))
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0003 := range z {
+		err = en.WriteString(z[zb0003])
+		if err != nil {
+			err = msgp.WrapError(err, zb0003)
+			return
+		}
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z SysvarsRequest) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendArrayHeader(o, uint32(len(z)))
+	for zb0003 := range z {
+		o = msgp.AppendString(o, z[zb0003])
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *SysvarsRequest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var zb0002 uint32
+	zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	if cap((*z)) >= int(zb0002) {
+		(*z) = (*z)[:zb0002]
+	} else {
+		(*z) = make(SysvarsRequest, zb0002)
+	}
+	for zb0001 := range *z {
+		(*z)[zb0001], bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err, zb0001)
+			return
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z SysvarsRequest) Msgsize() (s int) {
+	s = msgp.ArrayHeaderSize
+	for zb0003 := range z {
+		s += msgp.StringPrefixSize + len(z[zb0003])
+	}
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
+func (z *SysvarsResponse) DecodeMsg(dc *msgp.Reader) (err error) {
+	var zb0003 uint32
+	zb0003, err = dc.ReadMapHeader()
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	if (*z) == nil {
+		(*z) = make(SysvarsResponse, zb0003)
+	} else if len((*z)) > 0 {
+		for key := range *z {
+			delete((*z), key)
+		}
+	}
+	for zb0003 > 0 {
+		zb0003--
+		var zb0001 string
+		var zb0002 []byte
+		zb0001, err = dc.ReadString()
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		zb0002, err = dc.ReadBytes(zb0002)
+		if err != nil {
+			err = msgp.WrapError(err, zb0001)
+			return
+		}
+		(*z)[zb0001] = zb0002
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z SysvarsResponse) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteMapHeader(uint32(len(z)))
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0004, zb0005 := range z {
+		err = en.WriteString(zb0004)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		err = en.WriteBytes(zb0005)
+		if err != nil {
+			err = msgp.WrapError(err, zb0004)
+			return
+		}
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z SysvarsResponse) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendMapHeader(o, uint32(len(z)))
+	for zb0004, zb0005 := range z {
+		o = msgp.AppendString(o, zb0004)
+		o = msgp.AppendBytes(o, zb0005)
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *SysvarsResponse) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var zb0003 uint32
+	zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	if (*z) == nil {
+		(*z) = make(SysvarsResponse, zb0003)
+	} else if len((*z)) > 0 {
+		for key := range *z {
+			delete((*z), key)
+		}
+	}
+	for zb0003 > 0 {
+		var zb0001 string
+		var zb0002 []byte
+		zb0003--
+		zb0001, bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		zb0002, bts, err = msgp.ReadBytesBytes(bts, zb0002)
+		if err != nil {
+			err = msgp.WrapError(err, zb0001)
+			return
+		}
+		(*z)[zb0001] = zb0002
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z SysvarsResponse) Msgsize() (s int) {
+	s = msgp.MapHeaderSize
+	if z != nil {
+		for zb0004, zb0005 := range z {
+			_ = zb0005
+			s += msgp.StringPrefixSize + len(zb0004) + msgp.BytesPrefixSize + len(zb0005)
+		}
+	}
+	return
+}

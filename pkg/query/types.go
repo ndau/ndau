@@ -57,3 +57,11 @@ type SIBResponse struct {
 	TargetPrice pricecurve.Nanocent
 	MarketPrice pricecurve.Nanocent
 }
+
+// SysvarsRequest is the request value for the /sysvars endpoint
+//
+// If set, only the named sysvars are returned
+type SysvarsRequest []string
+
+// SysvarsResponse is the return value from the /sysvars endpoint
+type SysvarsResponse map[string][]byte
