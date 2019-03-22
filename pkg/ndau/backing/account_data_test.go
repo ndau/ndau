@@ -82,7 +82,6 @@ func TestAccountDataRoundTrip(t *testing.T) {
 						require.Equal(t, account.ValidationScript, recoveredAccount.ValidationScript)
 					}
 					require.Equal(t, account.UncreditedEAI, recoveredAccount.UncreditedEAI)
-					require.Equal(t, account.SidechainPayments, recoveredAccount.SidechainPayments)
 					require.Equal(t, account.CurrencySeatDate, recoveredAccount.CurrencySeatDate)
 				})
 			}
@@ -134,7 +133,6 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 		Settlements:        []Settlement{},
 		SettlementSettings: generateEscrowSettings(randBool()),
 		UncreditedEAI:      randNdau(),
-		SidechainPayments:  make(map[string]struct{}),
 	}
 	if randBool() {
 		addr := randAddress()
@@ -164,10 +162,6 @@ func generateAccount(t *testing.T, balance math.Ndau, hasLock, hasStake bool) (A
 	if randBool() {
 		ad.ValidationScript = make([]byte, 20)
 		rand.Read(ad.ValidationScript)
-	}
-	qtySidechainPayments := rand.Intn(4)
-	for i := 0; i < qtySidechainPayments; i++ {
-		ad.SidechainPayments[randAddress().String()] = struct{}{}
 	}
 	if randBool() {
 		csd := randTimestamp()
