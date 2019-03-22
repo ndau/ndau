@@ -1,7 +1,6 @@
 package ndau
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -29,15 +28,7 @@ func (tx *RecordPrice) CalculateSIB(app *App) (sib eai.Rate, targetPrice pricecu
 
 	// get the script used to perform the calculation
 	var sibScript wkt.Bytes
-	exists, err := app.SystemOptional(sv.SIBScriptName, &sibScript)
-	if !exists {
-		// overwrite err: it will always be non-nil when it doesn't exist
-		sibScript, err = base64.StdEncoding.DecodeString(sv.SIBScriptDefault)
-		if err != nil {
-			err = errors.Wrap(err, "decoding sv.SIBScriptDefault")
-			return
-		}
-	}
+	err = app.System(sv.SIBScriptName, &sibScript)
 	if err != nil {
 		err = errors.Wrap(err, "fetching "+sv.SIBScriptName)
 		return

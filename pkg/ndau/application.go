@@ -15,7 +15,6 @@ import (
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -35,9 +34,6 @@ type App struct {
 	// from the chaos chain (or a mock as necessary), but it permits
 	// growth as requirements evolve
 	config config.Config
-
-	// cache of system variables, updated every block
-	systemCache *cache.SystemCache
 
 	// official chain time of the current block
 	blockTime math.Timestamp
@@ -61,11 +57,6 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
-	}
-
-	sc, err := cache.NewSystemCache(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
 	}
 
 	initialBlockTime, err := math.TimestampFrom(time.Now())
@@ -104,45 +95,10 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	app := App{
 		metaapp,
 		config,
-		sc,
 		initialBlockTime,
 	}
 	app.App.SetChild(&app)
 	return &app, nil
-}
-
-func (app *App) updateSystemVariableCache() error {
-	// update system variable cache
-	err := app.systemCache.Update(app.Height(), app.GetLogger())
-	if err != nil {
-		app.GetLogger().WithError(err).Error(
-			"failed update of system variable cache",
-		)
-	}
-	// if err == nil, then the state is valid. Otherwise, this blocks us from
-	// returning potentially invalid information to callers.
-	app.SetStateValidity(err)
-	return err
-}
-
-// InitChain performs necessary chain initialization.
-//
-// Most of this is taken care of for us by meta.App, but we
-// still need to initialize the system variable cache ourselves
-func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseInitChain) {
-	// perform basic chain init
-	response = app.App.InitChain(req)
-
-	// now wait, potentially forever, for chaos chain (and sysvars)
-	sleep := time.Second / 4
-	// exponential backoff
-	for err := app.updateSystemVariableCache(); err != nil; {
-		app.GetLogger().WithError(err).Errorf("trying again after sleep of %s", sleep)
-		time.Sleep(sleep)
-		sleep *= 2
-	}
-
-	return
 }
 
 // BeginBlock is called every time a block starts
@@ -162,7 +118,6 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 		panic(err)
 	}
 	app.blockTime = blockTime
-	app.updateSystemVariableCache()
 
 	app.GetLogger().WithFields(log.Fields{
 		"height": app.Height(),

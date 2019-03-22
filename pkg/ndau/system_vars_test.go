@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/system_vars/pkg/svi"
 	"github.com/stretchr/testify/require"
@@ -55,9 +54,9 @@ func initAppSystem(t *testing.T, height uint64) *App {
 	require.NoError(t, err)
 
 	// refresh the systemcache
-	sc, err := cache.NewSystemCache(app.config)
-	require.NoError(t, err)
-	app.systemCache = sc
+	// sc, err := cache.NewSystemCache(app.config)
+	// require.NoError(t, err)
+	// app.systemCache = sc
 
 	// update the system cache
 	app.InitChain(abci.RequestInitChain{})

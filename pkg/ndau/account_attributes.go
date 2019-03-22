@@ -10,14 +10,10 @@ import (
 // Valid attributes can be found in system_vars/pkg/system_vars/account_attributes.go
 func (app *App) accountHasAttribute(addr address.Address, attr string) (bool, error) {
 	accountAttributes := sv.AccountAttributes{}
-	exists, err := app.SystemOptional(sv.AccountAttributesName, &accountAttributes)
+	err := app.System(sv.AccountAttributesName, &accountAttributes)
 	if err != nil {
-		if exists {
-			// Some critical error occurred fetching the system variable.
-			return false, errors.Wrap(err, "Could not fetch AccountAttributes system variable")
-		}
-		// The system variable doesn't exist, so no accounts have the given attribute.
-		return false, nil
+		// Some critical error occurred fetching the system variable.
+		return false, errors.Wrap(err, "Could not fetch AccountAttributes system variable")
 	}
 
 	var progenitor *address.Address

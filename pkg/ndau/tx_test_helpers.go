@@ -4,14 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -206,28 +203,29 @@ func deliverTxAt(t *testing.T, app *App, tx metatx.Transactable, at math.Timesta
 
 // delivers a transaction with a script which unconditionally sets a tx fee of 1 napu
 func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
-	resp, _ := deliverTxContext(t, app, tx, ddc(t).sv(func(systemCache *cache.SystemCache) {
-		// set the cached tx fee script to unconditionally return 1
-		systemCache.Set(
-			sv.TxFeeScriptName,
-			wkt.Bytes(vm.MiniAsm("handler 0 one enddef").Bytes()),
-		)
-	}))
+	// resp, _ := deliverTxContext(t, app, tx, ddc(t).sv(func(systemCache *cache.SystemCache) {
+	// 	// set the cached tx fee script to unconditionally return 1
+	// 	systemCache.Set(
+	// 		sv.TxFeeScriptName,
+	// 		wkt.Bytes(vm.MiniAsm("handler 0 one enddef").Bytes()),
+	// 	)
+	// }))
+	resp := abci.ResponseDeliverTx{
+		Code: uint32(code.InvalidNodeState),
+		Log:  "sysvars currently unimplemented",
+	}
 	return resp
 }
 
 func makeExchangeAccountContext(ts math.Timestamp, addr address.Address) deliveryContext {
 	return deliveryContext{
-		ts:        ts,
-		svUpdater: func(systemCache *cache.SystemCache) {
-			setExchangeAccount(addr, systemCache)
-		},
+		ts: ts,
 	}
 }
 
 type deliveryContext struct {
 	ts        math.Timestamp
-	svUpdater func(*cache.SystemCache)
+	svUpdater func()
 }
 
 // default delivery context
@@ -237,19 +235,13 @@ func ddc(t *testing.T) deliveryContext {
 
 	return deliveryContext{
 		ts:        now,
-		svUpdater: func(*cache.SystemCache) {},
+		svUpdater: func() {},
 	}
 }
 
 // note: we don't take a pointer, so this copies values, doesn't edit
 func (dc deliveryContext) at(ts math.Timestamp) deliveryContext {
 	dc.ts = ts
-	return dc
-}
-
-// note: we don't take a pointer, so this copies values, doesn't edit
-func (dc deliveryContext) sv(update func(*cache.SystemCache)) deliveryContext {
-	dc.svUpdater = update
 	return dc
 }
 
@@ -273,7 +265,6 @@ func deliverTxsContext(
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: dc.ts.AsTime(),
 	}})
-	dc.svUpdater(app.systemCache)
 
 	resps := make([]abci.ResponseDeliverTx, 0, len(txs))
 
@@ -295,7 +286,7 @@ func deliverTxsContext(
 }
 
 // setExchangeAccount marks the given address as having the exchange account attribute.
-func setExchangeAccount(addr address.Address, systemCache *cache.SystemCache) {
+func setExchangeAccount(addr address.Address) {
 	accountAttributes := sv.AccountAttributes{}
 
 	attributes := make(map[string]struct{})
@@ -304,6 +295,4 @@ func setExchangeAccount(addr address.Address, systemCache *cache.SystemCache) {
 	type Attribute struct{}
 	var attribute Attribute
 	attributes[sv.AccountAttributeExchange] = attribute
-
-	systemCache.Set(sv.AccountAttributesName, accountAttributes)
 }

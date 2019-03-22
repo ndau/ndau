@@ -27,7 +27,6 @@ func init() {
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
-	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
@@ -243,24 +242,6 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	}
 }
 
-func sidechainTxExistsQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
-	app := appI.(*App)
-
-	stxq := new(query.SidechainTxExistsQuery)
-	_, err := stxq.UnmarshalMsg(request.GetData())
-	if err != nil {
-		app.QueryError(err, response, "unmarshalling SidechainTxExistsQuery")
-		return
-	}
-
-	acct, _ := app.getAccount(stxq.Source)
-	key := sidechainPayment(stxq.SidechainID, stxq.TxHash)
-
-	_, exists := acct.SidechainPayments[key]
-
-	response.Info = fmt.Sprintf(query.SidechainTxExistsInfoFmt, exists)
-}
-
 var lastSummary query.Summary
 
 func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -308,18 +289,7 @@ func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 
 func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
-	names := app.systemCache.GetNames()
-
-	sysvars := make(map[string][]byte)
-	for _, n := range names {
-		v := app.systemCache.GetRaw(n)
-		sysvars[n] = v
-	}
-	buf, err := json.Marshal(sysvars)
-	if err != nil {
-		app.QueryError(err, response, "encoding sysvars")
-	}
-	response.Value = buf
+	app.QueryError(errors.New("unimplemented"), response, "major changes to sysvars coming soon")
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {

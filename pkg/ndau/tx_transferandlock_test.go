@@ -415,7 +415,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	// If the dest is an exchange address, we shouldn't be able to claim the locked account.
-	setExchangeAccount(destAddress, app.systemCache)
+	setExchangeAccount(destAddress)
 
 	ca := NewClaimAccount(
 		destAddress,
@@ -451,7 +451,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 	require.NoError(t, err)
 
 	// If the source is an exchange address, we shouldn't be able to claim the locked child.
-	setExchangeAccount(sourceAddress, app.systemCache)
+	setExchangeAccount(sourceAddress)
 
 	cca := NewClaimChildAccount(
 		sourceAddress,

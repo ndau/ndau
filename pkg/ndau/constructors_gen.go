@@ -402,34 +402,6 @@ func NewCommandValidatorChange(
 	return tx
 }
 
-// NewSidechainTx creates a new SidechainTx transactable
-//
-// If signing keys are present, the new transactable is signed with all of them
-func NewSidechainTx(
-	source address.Address,
-	sidechainid byte,
-	sidechainsignablebytes []byte,
-	sidechainsignatures []signature.Signature,
-	sequence uint64,
-	signingKeys ...signature.PrivateKey,
-) *SidechainTx {
-	tx := &SidechainTx{
-		Source:                 source,
-		SidechainID:            sidechainid,
-		SidechainSignableBytes: sidechainsignablebytes,
-		SidechainSignatures:    sidechainsignatures,
-		Sequence:               sequence,
-	}
-	if len(signingKeys) > 0 {
-		bytes := tx.SignableBytes()
-		for _, key := range signingKeys {
-			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
-		}
-	}
-
-	return tx
-}
-
 // NewUnregisterNode creates a new UnregisterNode transactable
 //
 // If signing keys are present, the new transactable is signed with all of them

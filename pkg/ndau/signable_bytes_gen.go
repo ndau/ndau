@@ -184,11 +184,6 @@ func (tx *CommandValidatorChange) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-// SignableBytes partially implements metatx.Transactable for SidechainTx
-func (tx *SidechainTx) SignableBytes() []byte {
-	return sbOf(tx)
-}
-
 // SignableBytes partially implements metatx.Transactable for UnregisterNode
 func (tx *UnregisterNode) SignableBytes() []byte {
 	return sbOf(tx)
@@ -213,5 +208,3 @@ func (tx *ClaimChildAccount) SignableBytes() []byte {
 func (tx *RecordPrice) SignableBytes() []byte {
 	return sbOf(tx)
 }
-
-

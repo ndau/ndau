@@ -1,8 +1,6 @@
 package ndau
 
 import (
-	"encoding/base64"
-
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -12,17 +10,9 @@ import (
 
 func (app *App) calculateExchangeEAIRate(exchangeAccount backing.AccountData) (eai.Rate, error) {
 	var script wkt.Bytes
-	exists, err := app.SystemOptional(sv.ExchangeEAIScriptName, &script)
+	err := app.System(sv.ExchangeEAIScriptName, &script)
 	if err != nil {
-		if exists {
-			// Some critical error occurred fetching the system variable.
-			return 0, errors.Wrap(err, "Could not fetch ExchangeEAIScript system variable")
-		}
-		// The system variable doesn't exist, use the default.
-		script, err = base64.StdEncoding.DecodeString(sv.ExchangeEAIScriptDefault)
-		if err != nil {
-			return 0, errors.Wrap(err, "Could not decode ExchangeEAIScriptDefault")
-		}
+		return 0, errors.Wrap(err, "Could not fetch ExchangeEAIScript system variable")
 	}
 
 	vm, err := BuildVMForExchangeEAI(script, exchangeAccount, app.GetState().(*backing.State).SIB)
