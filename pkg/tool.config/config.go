@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,11 +12,11 @@ import (
 
 	"github.com/BurntSushi/toml"
 	homedir "github.com/mitchellh/go-homedir"
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/key"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/words"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
@@ -65,6 +64,7 @@ type Config struct {
 	NNR         *SysAccount         `toml:"nnr"`
 	CVC         *SysAccount         `toml:"cvc"`
 	RecordPrice *SysAccount         `toml:"record_price"`
+	SetSysvar   *SysAccount         `toml:"set_sysvar"`
 }
 
 // NewConfig creates a new configuration with the given address
@@ -351,18 +351,21 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 
 // UpdateFrom updates the config file given the path to the associated data file
 // and the public key of the BPC.
-func (c *Config) UpdateFrom(asscPath string, bpcPublic []byte) error {
-	asscFile := make(generator.AssociatedFile)
-	_, err := toml.DecodeFile(asscPath, &asscFile)
+func (c *Config) UpdateFrom(asscPath string) error {
+	assc := make(generator.Associated)
+	_, err := toml.DecodeFile(asscPath, &assc)
 	if err != nil {
-		return errors.Wrap(err, "reading asscfile path")
-	}
-	bpcs := base64.StdEncoding.EncodeToString(bpcPublic)
-	assc, ok := asscFile[bpcs]
-	if !ok {
-		return errors.New("bpc key not found in associated data file")
+		return errors.Wrap(err, "decoding asscfile")
 	}
 
+	// this bit is a bit tricky:
+	// for each of the pairs of items in the list literal, we associate
+	// a reference to an item in the config c with a system account.
+	// Note that it's a double-pointer.
+	//
+	// Then, we go through the list. For each pair, we assign the dereferenced
+	// config acct to the value we compute from the associated file. This
+	// has the effect of changing the value known by c.
 	sysaccts := []struct {
 		configAcct **SysAccount
 		sys        sv.SysAcct
@@ -371,6 +374,7 @@ func (c *Config) UpdateFrom(asscPath string, bpcPublic []byte) error {
 		{&c.NNR, sv.NominateNodeReward},
 		{&c.RFE, sv.ReleaseFromEndowment},
 		{&c.RecordPrice, sv.RecordPrice},
+		{&c.SetSysvar, sv.SetSysvar},
 	}
 	for _, sa := range sysaccts {
 		*sa.configAcct, err = SysAccountFromAssc(assc, sa.sys)
