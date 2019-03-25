@@ -310,21 +310,25 @@ func (c Config) toToml() (tomlConfig, error) {
 	sort.Slice(tacs, func(i, j int) bool { return tacs[i].Name < tacs[j].Name })
 
 	return tomlConfig{
-		Node:     c.Node,
-		Accounts: tacs,
-		RFE:      c.RFE,
-		NNR:      c.NNR,
-		CVC:      c.CVC,
+		Node:        c.Node,
+		Accounts:    tacs,
+		RFE:         c.RFE,
+		NNR:         c.NNR,
+		CVC:         c.CVC,
+		RecordPrice: c.RecordPrice,
+		SetSysvar:   c.SetSysvar,
 	}, nil
 }
 
 // Config represents all data from `ndautool.toml`
 type tomlConfig struct {
-	Node     string      `toml:"node"`
-	Accounts []Account   `toml:"accounts"`
-	RFE      *SysAccount `toml:"rfe"`
-	NNR      *SysAccount `toml:"nnr"`
-	CVC      *SysAccount `toml:"cvc"`
+	Node        string      `toml:"node"`
+	Accounts    []Account   `toml:"accounts"`
+	RFE         *SysAccount `toml:"rfe"`
+	NNR         *SysAccount `toml:"nnr"`
+	CVC         *SysAccount `toml:"cvc"`
+	RecordPrice *SysAccount `toml:"record_price"`
+	SetSysvar   *SysAccount `toml:"set_sysvar"`
 }
 
 func (tc tomlConfig) toConfig() (*Config, error) {
@@ -341,11 +345,13 @@ func (tc tomlConfig) toConfig() (*Config, error) {
 	}
 
 	return &Config{
-		Node:     tc.Node,
-		Accounts: acts,
-		RFE:      tc.RFE,
-		NNR:      tc.NNR,
-		CVC:      tc.CVC,
+		Node:        tc.Node,
+		Accounts:    acts,
+		RFE:         tc.RFE,
+		NNR:         tc.NNR,
+		CVC:         tc.CVC,
+		RecordPrice: tc.RecordPrice,
+		SetSysvar:   tc.SetSysvar,
 	}, nil
 }
 
