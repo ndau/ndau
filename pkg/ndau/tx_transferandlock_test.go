@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
@@ -415,7 +414,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	// If the dest is an exchange address, we shouldn't be able to claim the locked account.
-	setExchangeAccount(destAddress)
+	context := ddc(t).withExchangeAccount(destAddress)
 
 	ca := NewClaimAccount(
 		destAddress,
@@ -426,13 +425,9 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 		destPrivate,
 	)
 
-	ctkBytes, err := tx.Marshal(ca, TxIDs)
-	require.NoError(t, err)
-
 	// The ClaimAccount should fail.
-	r := app.CheckTx(ctkBytes)
-	t.Log(r.Log)
-	require.Equal(t, code.InvalidTransaction, code.ReturnCode(r.Code))
+	resp, _ = deliverTxContext(t, app, ca, context)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// The dest should still be locked after the TransferAndLock.
 	destAcct, _ := app.getAccount(destAddress)
@@ -451,7 +446,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 	require.NoError(t, err)
 
 	// If the source is an exchange address, we shouldn't be able to claim the locked child.
-	setExchangeAccount(sourceAddress)
+	context := ddc(t).withExchangeAccount(sourceAddress)
 
 	cca := NewClaimChildAccount(
 		sourceAddress,
@@ -465,13 +460,8 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 		private,
 	)
 
-	ctkBytes, err := tx.Marshal(cca, TxIDs)
-	require.NoError(t, err)
-
-	// The ClaimChildAccount should fail.
-	r := app.CheckTx(ctkBytes)
-	t.Log(r.Log)
-	require.Equal(t, code.InvalidTransaction, code.ReturnCode(r.Code))
+	resp, _ = deliverTxContext(t, app, cca, context)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// The child should still be locked after the TransferAndLock.
 	childAcct, _ := app.getAccount(childAddress)
