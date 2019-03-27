@@ -79,13 +79,17 @@ func ResultLog(result interface{}) string {
 	if result != nil {
 		switch x := result.(type) {
 		case *ctypes.ResultBroadcastTxCommit:
-			if x.CheckTx.Log != "" && x.DeliverTx.Log != "" {
-				out = fmt.Sprintf("CheckTx: %s; DeliverTx: %s", x.CheckTx.Log, x.DeliverTx.Log)
-			} else {
-				out = x.CheckTx.Log + x.DeliverTx.Log
+			if x != nil {
+				if x.CheckTx.Log != "" && x.DeliverTx.Log != "" {
+					out = fmt.Sprintf("CheckTx: %s; DeliverTx: %s", x.CheckTx.Log, x.DeliverTx.Log)
+				} else {
+					out = x.CheckTx.Log + x.DeliverTx.Log
+				}
 			}
 		case *ctypes.ResultBroadcastTx:
-			out = x.Log
+			if x != nil {
+				out = x.Log
+			}
 		}
 	}
 	return out
