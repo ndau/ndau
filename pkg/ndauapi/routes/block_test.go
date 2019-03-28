@@ -232,13 +232,13 @@ func TestBlockDateRange(t *testing.T) {
 			req:    httptest.NewRequest("GET", "/block/daterange/one/2018-07-10T20:01:02Z", nil),
 			status: http.StatusBadRequest,
 		}, {
-			name:   "start and end the same",
-			req:    httptest.NewRequest("GET",
+			name: "start and end the same",
+			req: httptest.NewRequest("GET",
 				"/block/daterange/2018-07-10T20:01:02Z/2018-07-10T20:01:02Z", nil),
 			status: http.StatusOK,
 		}, {
-			name:   "good request",
-			req:    httptest.NewRequest("GET",
+			name: "good request",
+			req: httptest.NewRequest("GET",
 				"/block/daterange/2018-07-10T00:00:00Z/2018-07-11T00:00:00Z", nil),
 			status: http.StatusOK,
 		},
@@ -288,13 +288,13 @@ func TestChaosBlockDateRange(t *testing.T) {
 			req:    httptest.NewRequest("GET", "/chaos/daterange/one/2018-07-10T20:01:02Z", nil),
 			status: http.StatusBadRequest,
 		}, {
-			name:   "start and end the same",
-			req:    httptest.NewRequest("GET",
+			name: "start and end the same",
+			req: httptest.NewRequest("GET",
 				"/chaos/daterange/2018-07-10T20:01:02Z/2018-07-10T20:01:02Z", nil),
 			status: http.StatusOK,
 		}, {
-			name:   "good request",
-			req:    httptest.NewRequest("GET",
+			name: "good request",
+			req: httptest.NewRequest("GET",
 				"/chaos/daterange/2018-07-10T00:00:00Z/2018-07-11T00:00:00Z", nil),
 			status: http.StatusOK,
 		},
@@ -344,9 +344,9 @@ func TestBlockHash(t *testing.T) {
 
 	// set up tests
 	tests := []struct {
-		name   	 string
-		req    	 *http.Request
-		status 	 int
+		name     string
+		req      *http.Request
+		status   int
 		wantbody string
 	}{
 		{
@@ -361,7 +361,7 @@ func TestBlockHash(t *testing.T) {
 			wantbody: "null", // The response is empty, so "null" is produced.
 		}, {
 			name:     "valid hash",
-			req:      httptest.NewRequest("GET", "/block/hash/" + blockHash, nil),
+			req:      httptest.NewRequest("GET", "/block/hash/"+blockHash, nil),
 			status:   http.StatusOK,
 			wantbody: blockHash, // The response should contain the hash we searched for.
 		},
@@ -410,9 +410,9 @@ func TestBlockTransactions(t *testing.T) {
 
 	// set up tests
 	tests := []struct {
-		name   	 string
-		req    	 *http.Request
-		status 	 int
+		name     string
+		req      *http.Request
+		status   int
 		wantbody string
 	}{
 		{

@@ -27,23 +27,23 @@ type QueryParams struct {
 
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
 type AccountHistoryParams struct {
-	Address string `json:"addr"`
-	PageIndex int `json:"index"`
-	PageSize int `json:"size"`
+	Address   string `json:"addr"`
+	PageIndex int    `json:"index"`
+	PageSize  int    `json:"size"`
 }
 
 // TxValueData is used for storing the block height and transaction offset within the block.
 type TxValueData struct {
 	BlockHeight uint64
-	TxOffset int
+	TxOffset    int
 }
 
 // AccountTxValueData is like TxValueData that stores account balance at the associated block.
 // We could index a Ref target hash, but that would use more space than just storing the balance.
 type AccountTxValueData struct {
 	BlockHeight uint64
-	TxOffset int
-	Balance types.Ndau
+	TxOffset    int
+	Balance     types.Ndau
 }
 
 // AccountHistoryResponse is the return value from the account history endpoint.
@@ -121,7 +121,7 @@ func (response *AccountHistoryResponse) Marshal() string {
 // Unmarshal the account history response from something we received over RPC.
 func (response *AccountHistoryResponse) Unmarshal(searchValue string) error {
 	response.Txs = nil
-	
+
 	items := strings.Split(searchValue, ":")
 	for _, item := range items {
 		if item != "" {

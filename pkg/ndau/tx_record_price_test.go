@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"

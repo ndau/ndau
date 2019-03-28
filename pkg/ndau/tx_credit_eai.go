@@ -145,7 +145,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 
 			// Select the appropriate age/rate table to use.
 			ageTable := unlockedTable
-			isExchangeAccount, err := app.accountHasAttribute(addr, sv.AccountAttributeExchange)
+			isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(addr, sv.AccountAttributeExchange)
 			if handle(err) {
 				return
 			}

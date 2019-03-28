@@ -43,7 +43,7 @@ func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 			if err != nil {
 				return 0, errors.Wrap(err, "getting tx source")
 			}
-			isExchangeAccount, err := app.accountHasAttribute(source, sv.AccountAttributeExchange)
+			isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(source, sv.AccountAttributeExchange)
 			if err != nil {
 				return 0, errors.Wrap(err, "determing whether tx source is exchange account")
 			}

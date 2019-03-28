@@ -74,7 +74,7 @@ func createNdauBlock(t *testing.T) string {
 	if err != nil {
 		t.Errorf("Error creating account command: %s", err)
 	}
-	err = acctCmd.Start(); 
+	err = acctCmd.Start()
 	if err != nil {
 		t.Errorf("Error starting account command: %s", err)
 	}
@@ -144,7 +144,7 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	if err != nil {
 		t.Errorf("Error creating namespace command: %s", err)
 	}
-	err = namespaceCmd.Start(); 
+	err = namespaceCmd.Start()
 	if err != nil {
 		t.Errorf("Error starting namespace command: %s", err)
 	}
@@ -175,7 +175,7 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	if err != nil {
 		t.Errorf("Error creating list command: %s", err)
 	}
-	err = listCmd.Start(); 
+	err = listCmd.Start()
 	if err != nil {
 		t.Errorf("Error starting list command: %s", err)
 	}

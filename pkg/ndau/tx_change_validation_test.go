@@ -5,11 +5,10 @@ import (
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
-
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 

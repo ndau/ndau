@@ -31,12 +31,12 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(14): &ClaimNodeReward{},
 	metatx.TxID(15): &TransferAndLock{},
 	metatx.TxID(16): &CommandValidatorChange{},
-	metatx.TxID(17): &SidechainTx{},
 	metatx.TxID(18): &UnregisterNode{},
 	metatx.TxID(19): &Unstake{},
 	metatx.TxID(20): &Issue{},
 	metatx.TxID(21): &ClaimChildAccount{},
 	metatx.TxID(22): &RecordPrice{},
+	metatx.TxID(23): &SetSysvar{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -277,18 +277,6 @@ type CommandValidatorChange struct {
 
 var _ NTransactable = (*CommandValidatorChange)(nil)
 
-// A SidechainTx is used to validate and pay for transactions on side chains.
-type SidechainTx struct {
-	Source                 address.Address       `msg:"src" chain:"1,Tx_Source" json:"source"`
-	SidechainID            byte                  `msg:"sch" chain:"42,Tx_SidechainID" json:"sidechain_id"`
-	SidechainSignableBytes []byte                `msg:"ssb" chain:"43,Tx_SidechainSignableBytes" json:"sidechain_signable_bytes"`
-	SidechainSignatures    []signature.Signature `msg:"ssg" chain:"44,Tx_SidechainSignatures" json:"sidechain_signatures"`
-	Sequence               uint64                `msg:"seq" json:"sequence"`
-	Signatures             []signature.Signature `msg:"sig" json:"signatures"`
-}
-
-var _ NTransactable = (*SidechainTx)(nil)
-
 // An UnregisterNode transaction deactivates a node
 type UnregisterNode struct {
 	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
@@ -330,9 +318,23 @@ var _ NTransactable = (*Issue)(nil)
 // RecordPriceAddress system variable. That account also specifies the validation
 // script, and pays the transaction fee.
 type RecordPrice struct {
-	MarketPrice pricecurve.Nanocent   `msg:"prc" chain:"11, Tx_Quantity" json:"market_price"`
+	MarketPrice pricecurve.Nanocent   `msg:"prc" chain:"11,Tx_Quantity" json:"market_price"`
 	Sequence    uint64                `msg:"seq" json:"sequence"`
 	Signatures  []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*RecordPrice)(nil)
+
+// A SetSysvar transaction sets a system variable.
+//
+// Its signatures are checked against an account specified by the SetSysvarAddress
+// system variable. That account also specifies the validation script, and pays
+// the transaction fee.
+type SetSysvar struct {
+	Name       string                `msg:"nme" chain:"6,Tx_Name" json:"name"`
+	Value      []byte                `msg:"val" chain:"7,Tx_Value" json:"value"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*SetSysvar)(nil)

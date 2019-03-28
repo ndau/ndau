@@ -5,16 +5,15 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
-	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/oneiro-ndev/writers/pkg/testwriter"
 	"github.com/sirupsen/logrus"
@@ -206,28 +205,20 @@ func deliverTxAt(t *testing.T, app *App, tx metatx.Transactable, at math.Timesta
 
 // delivers a transaction with a script which unconditionally sets a tx fee of 1 napu
 func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
-	resp, _ := deliverTxContext(t, app, tx, ddc(t).sv(func(systemCache *cache.SystemCache) {
-		// set the cached tx fee script to unconditionally return 1
-		systemCache.Set(
-			sv.TxFeeScriptName,
-			wkt.Bytes(vm.MiniAsm("handler 0 one enddef").Bytes()),
-		)
-	}))
+	dc := ddc(t).with(func(sysvars map[string][]byte) {
+		script := vm.MiniAsm("handler 0 one enddef").Bytes()
+		msgp, err := wkt.Bytes(script).MarshalMsg(nil)
+		require.NoError(t, err)
+		sysvars[sv.TxFeeScriptName] = msgp
+	})
+	resp, _ := deliverTxContext(t, app, tx, dc)
 	return resp
 }
 
-func makeExchangeAccountContext(ts math.Timestamp, addr address.Address) deliveryContext {
-	return deliveryContext{
-		ts:        ts,
-		svUpdater: func(systemCache *cache.SystemCache) {
-			setExchangeAccount(addr, systemCache)
-		},
-	}
-}
-
 type deliveryContext struct {
-	ts        math.Timestamp
-	svUpdater func(*cache.SystemCache)
+	t          *testing.T
+	ts         math.Timestamp
+	svUpdaters []func(svs map[string][]byte)
 }
 
 // default delivery context
@@ -236,8 +227,9 @@ func ddc(t *testing.T) deliveryContext {
 	require.NoError(t, err)
 
 	return deliveryContext{
-		ts:        now,
-		svUpdater: func(*cache.SystemCache) {},
+		t:          t,
+		ts:         now,
+		svUpdaters: nil,
 	}
 }
 
@@ -247,10 +239,65 @@ func (dc deliveryContext) at(ts math.Timestamp) deliveryContext {
 	return dc
 }
 
-// note: we don't take a pointer, so this copies values, doesn't edit
-func (dc deliveryContext) sv(update func(*cache.SystemCache)) deliveryContext {
-	dc.svUpdater = update
+// add an updater to the list of system variable updaters
+func (dc deliveryContext) with(updater func(map[string][]byte)) deliveryContext {
+	dc.svUpdaters = append(dc.svUpdaters, updater)
 	return dc
+}
+
+func (dc deliveryContext) withExchangeAccount(addr address.Address) deliveryContext {
+	return dc.with(func(sysvars map[string][]byte) {
+		accountAttributes := sv.AccountAttributes{}
+		aab, ok := sysvars[sv.AccountAttributesName]
+		if ok {
+			// modify the existing
+			// unpack the struct
+			_, err := accountAttributes.UnmarshalMsg(aab)
+			require.NoError(dc.t, err)
+		}
+
+		// set the attribute
+		pattrs := accountAttributes[addr.String()]
+		if pattrs == nil {
+			pattrs = make(map[string]struct{})
+		}
+		pattrs[sv.AccountAttributeExchange] = struct{}{}
+		accountAttributes[addr.String()] = pattrs
+
+		// remarshal
+		aab, err := accountAttributes.MarshalMsg(nil)
+		require.NoError(dc.t, err)
+		// reset
+		sysvars[sv.AccountAttributesName] = aab
+	})
+}
+
+func (dc deliveryContext) Within(app *App, inner func()) {
+	sysvarCache := make(map[string][]byte)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+
+		// copy the current sysvars so we can restore them after the test
+		for k, v := range state.Sysvars {
+			sysvarCache[k] = v
+		}
+
+		// run the sysvar updaters
+		for _, updater := range dc.svUpdaters {
+			updater(state.Sysvars)
+		}
+
+		return state, nil
+	})
+
+	inner()
+
+	// restore state
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.Sysvars = sysvarCache
+		return state, nil
+	})
 }
 
 func deliverTxContext(
@@ -270,40 +317,27 @@ func deliverTxsContext(
 	txs []metatx.Transactable,
 	dc deliveryContext,
 ) ([]abci.ResponseDeliverTx, abci.ResponseEndBlock) {
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-		Time: dc.ts.AsTime(),
-	}})
-	dc.svUpdater(app.systemCache)
-
 	resps := make([]abci.ResponseDeliverTx, 0, len(txs))
+	var reb abci.ResponseEndBlock
+	dc.Within(app, func() {
+		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
+			Time: dc.ts.AsTime(),
+		}})
 
-	for _, transactable := range txs {
-		bytes, err := metatx.Marshal(transactable, TxIDs)
-		require.NoError(t, err)
+		for _, transactable := range txs {
+			bytes, err := metatx.Marshal(transactable, TxIDs)
+			require.NoError(t, err)
 
-		resp := app.DeliverTx(bytes)
-		t.Log(code.ReturnCode(resp.Code))
-		if resp.Log != "" {
-			t.Log(resp.Log)
+			resp := app.DeliverTx(bytes)
+			t.Log(code.ReturnCode(resp.Code))
+			if resp.Log != "" {
+				t.Log(resp.Log)
+			}
+			resps = append(resps, resp)
 		}
-		resps = append(resps, resp)
-	}
-	reb := app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
+		reb = app.EndBlock(abci.RequestEndBlock{})
+		app.Commit()
+	})
 
 	return resps, reb
-}
-
-// setExchangeAccount marks the given address as having the exchange account attribute.
-func setExchangeAccount(addr address.Address, systemCache *cache.SystemCache) {
-	accountAttributes := sv.AccountAttributes{}
-
-	attributes := make(map[string]struct{})
-	accountAttributes[addr.String()] = attributes
-
-	type Attribute struct{}
-	var attribute Attribute
-	attributes[sv.AccountAttributeExchange] = attribute
-
-	systemCache.Set(sv.AccountAttributesName, accountAttributes)
 }

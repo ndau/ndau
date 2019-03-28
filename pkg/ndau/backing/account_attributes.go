@@ -1,4 +1,4 @@
-package ndau
+package backing
 
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -6,22 +6,29 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Return whether the account with the given address has the given account attribute.
+// AccountHasAttribute returns whether the account with the given address has
+// the given account attribute.
 // Valid attributes can be found in system_vars/pkg/system_vars/account_attributes.go
-func (app *App) accountHasAttribute(addr address.Address, attr string) (bool, error) {
+func (s *State) AccountHasAttribute(addr address.Address, attr string) (bool, error) {
+	aab, ok := s.Sysvars[sv.AccountAttributesName]
+	if !ok {
+		// if the sysvar is not set, the account doesn't have the attribute
+		return false, nil
+	}
+
+	// unpack the struct
 	accountAttributes := sv.AccountAttributes{}
-	exists, err := app.SystemOptional(sv.AccountAttributesName, &accountAttributes)
+	_, err := accountAttributes.UnmarshalMsg(aab)
 	if err != nil {
-		if exists {
-			// Some critical error occurred fetching the system variable.
-			return false, errors.Wrap(err, "Could not fetch AccountAttributes system variable")
-		}
-		// The system variable doesn't exist, so no accounts have the given attribute.
+		return false, errors.Wrap(err, "could not get AccountAttributes system variable")
+	}
+
+	acct, exists := s.Accounts[addr.String()]
+	if !exists {
 		return false, nil
 	}
 
 	var progenitor *address.Address
-	acct, _ := app.getAccount(addr)
 	if acct.Progenitor == nil {
 		progenitor = &addr
 	} else {

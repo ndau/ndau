@@ -33,12 +33,12 @@ type Indexable interface {
 type Client struct {
 	*metasearch.Client
 
-	state metastate.State
-	txs []metatx.Transactable
-	blockTime time.Time
-	blockHash string
+	state       metastate.State
+	txs         []metatx.Transactable
+	blockTime   time.Time
+	blockHash   string
 	blockHeight uint64
-	nextHeight uint64
+	nextHeight  uint64
 }
 
 // NewClient is a factory method for Client.

@@ -31,6 +31,7 @@ func init() {
 		"Nodes",
 		"PendingNodeReward",
 		"SIB",
+		"Sysvars",
 		"TargetPrice",
 		"TotalFees",
 		"TotalIssue",
@@ -155,6 +156,22 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
+	// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
+
+	// template decompose: x.Sysvars (map[string][]byte->*ast.MapType)
+	// template map: x.Sysvars
+	sysvarsKVs := make([]nt.Value, 0, len(x.Sysvars)*2)
+	for sysvarsKey, sysvarsValue := range x.Sysvars {
+
+		// template decompose: sysvarsValue ([]byte->*ast.ArrayType)
+
+		sysvarsKVs = append(
+			sysvarsKVs,
+			nt.String(sysvarsKey),
+			nt.String(sysvarsValue),
+		)
+	}
+
 	return stateStructTemplate.NewStruct([]nt.Value{
 		// x.Accounts (map[string]AccountData)
 
@@ -182,6 +199,9 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.SIB (eai.Rate)
 
 		util.Int(x.SIB).NomsValue(),
+		// x.Sysvars (map[string][]byte)
+
+		nt.NewMap(vrw, sysvarsKVs...),
 		// x.TargetPrice (pricecurve.Nanocent)
 
 		util.Int(x.TargetPrice).NomsValue(),
@@ -512,6 +532,46 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
 
 				x.TargetPrice = targetPriceTyped
+			// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
+			case "Sysvars":
+				// template u_decompose: x.Sysvars (map[string][]byte->*ast.MapType)
+				// template u_map: x.Sysvars
+				sysvarsGMap := make(map[string][]byte)
+				if sysvarsNMap, ok := value.(nt.Map); ok {
+					sysvarsNMap.Iter(func(sysvarsKey, sysvarsValue nt.Value) (stop bool) {
+						sysvarsKeyString, ok := sysvarsKey.(nt.String)
+						if !ok {
+							err = fmt.Errorf(
+								"State.UnmarshalNoms expected sysvarsKey to be a nt.String; found %s",
+								reflect.TypeOf(sysvarsKey),
+							)
+							return true
+						}
+
+						// template u_decompose: sysvarsValue ([]byte->*ast.ArrayType)
+						// template u_primitive: sysvarsValue
+						sysvarsValueValue, ok := sysvarsValue.(nt.String)
+						if !ok {
+							err = fmt.Errorf(
+								"State.UnmarshalNoms expected sysvarsValue to be a nt.String; found %s",
+								reflect.TypeOf(sysvarsValue),
+							)
+						}
+						sysvarsValueTyped := []byte(sysvarsValueValue)
+						if err != nil {
+							return true
+						}
+						sysvarsGMap[string(sysvarsKeyString)] = sysvarsValueTyped
+						return false
+					})
+				} else {
+					err = fmt.Errorf(
+						"State.UnmarshalNoms expected sysvarsGMap to be a nt.Map; found %s",
+						reflect.TypeOf(value),
+					)
+				}
+
+				x.Sysvars = sysvarsGMap
 			}
 		}
 	})

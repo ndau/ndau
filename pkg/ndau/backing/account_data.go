@@ -75,6 +75,5 @@ type AccountData struct {
 	CurrencySeatDate    *math.Timestamp       `json:"currencySeatDate" chain:"72,Acct_CurrencySeatDate"`
 	Parent              *address.Address      `json:"parent" chain:"73,Acct_Parent"`
 	Progenitor          *address.Address      `json:"progenitor" chain:"74,Acct_Progenitor"`
-	SidechainPayments   map[string]struct{}   `json:"-" msg:"-"` // not useful for consumers; they should use an ABCI query instead
 	UncreditedEAI       math.Ndau             `json:"-" msg:"-"` // exclude from serialization
 }

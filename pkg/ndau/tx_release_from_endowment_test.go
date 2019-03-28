@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"

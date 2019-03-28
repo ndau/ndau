@@ -45,9 +45,9 @@ func TestKeyHistory(t *testing.T) {
 
 	// set up tests
 	tests := []struct {
-		name   	 string
-		req    	 *http.Request
-		status 	 int
+		name     string
+		req      *http.Request
+		status   int
 		wantbody string
 	}{
 		{
@@ -81,9 +81,9 @@ func TestKeyHistory(t *testing.T) {
 			status:   http.StatusOK,
 			wantbody: "{\"History\":null}", // Successful but empty response.
 		}, {
-			name:     "valid namespace and key",
-			req:      httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", namespaceBase64Esc, keyBase64Esc), nil),
-			status:   http.StatusOK,
+			name:   "valid namespace and key",
+			req:    httptest.NewRequest("GET", fmt.Sprintf("/chaos/history/%s/%s", namespaceBase64Esc, keyBase64Esc), nil),
+			status: http.StatusOK,
 			// The key isn't part of the response, but we can look for the expected value.
 			wantbody: fmt.Sprintf("\"Value\":\"%s\"", valueBase64),
 		},

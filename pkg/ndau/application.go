@@ -5,22 +5,20 @@
 package ndau
 
 import (
-	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/oneiro-ndev/chaos/pkg/genesisfile"
-	generator "github.com/oneiro-ndev/chaos_genesis/pkg/genesis.generator"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/cache"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/oneiro-ndev/system_vars/pkg/svi"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
+	"github.com/oneiro-ndev/system_vars/pkg/genesisfile"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -35,9 +33,6 @@ type App struct {
 	// from the chaos chain (or a mock as necessary), but it permits
 	// growth as requirements evolve
 	config config.Config
-
-	// cache of system variables, updated every block
-	systemCache *cache.SystemCache
 
 	// official chain time of the current block
 	blockTime math.Timestamp
@@ -61,11 +56,6 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
-	}
-
-	sc, err := cache.NewSystemCache(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "NewApp failed to create system variable cache")
 	}
 
 	initialBlockTime, err := math.TimestampFrom(time.Now())
@@ -104,45 +94,10 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	app := App{
 		metaapp,
 		config,
-		sc,
 		initialBlockTime,
 	}
 	app.App.SetChild(&app)
 	return &app, nil
-}
-
-func (app *App) updateSystemVariableCache() error {
-	// update system variable cache
-	err := app.systemCache.Update(app.Height(), app.GetLogger())
-	if err != nil {
-		app.GetLogger().WithError(err).Error(
-			"failed update of system variable cache",
-		)
-	}
-	// if err == nil, then the state is valid. Otherwise, this blocks us from
-	// returning potentially invalid information to callers.
-	app.SetStateValidity(err)
-	return err
-}
-
-// InitChain performs necessary chain initialization.
-//
-// Most of this is taken care of for us by meta.App, but we
-// still need to initialize the system variable cache ourselves
-func (app *App) InitChain(req types.RequestInitChain) (response types.ResponseInitChain) {
-	// perform basic chain init
-	response = app.App.InitChain(req)
-
-	// now wait, potentially forever, for chaos chain (and sysvars)
-	sleep := time.Second / 4
-	// exponential backoff
-	for err := app.updateSystemVariableCache(); err != nil; {
-		app.GetLogger().WithError(err).Errorf("trying again after sleep of %s", sleep)
-		time.Sleep(sleep)
-		sleep *= 2
-	}
-
-	return
 }
 
 // BeginBlock is called every time a block starts
@@ -162,7 +117,6 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (response types.Response
 		panic(err)
 	}
 	app.blockTime = blockTime
-	app.updateSystemVariableCache()
 
 	app.GetLogger().WithFields(log.Fields{
 		"height": app.Height(),
@@ -186,28 +140,10 @@ func InitMockApp() (app *App, assc generator.Associated, err error) {
 func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	app *App, assc generator.Associated, err error,
 ) {
-	var bpc []byte
 	var gfilepath, asscpath string
 
-	bpc, gfilepath, asscpath, err = generator.GenerateIn("")
+	gfilepath, asscpath, err = generator.GenerateIn("")
 	if err != nil {
-		return
-	}
-
-	// update the config with the genesisfile path and the
-	// svi location
-	var gfile genesisfile.GFile
-	gfile, err = genesisfile.Load(gfilepath)
-	if err != nil {
-		return
-	}
-	var svi *svi.Location
-	svi, err = gfile.FindSVIStub()
-	if err != nil {
-		return
-	}
-	if svi == nil {
-		err = errors.New("svi stub must exist in generated genesisfile")
 		return
 	}
 
@@ -221,28 +157,24 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	if err != nil {
 		return
 	}
-	conf.UseMock = &gfilepath
-	conf.SystemVariableIndirect = *svi
-	err = conf.Dump(configfile.Name())
-	if err != nil {
-		return
-	}
 
 	app, err = NewAppSilent("", indexAddr, indexVersion, *conf)
 	if err != nil {
 		return
 	}
 
+	gfile, err := genesisfile.Load(gfilepath)
+
+	// load the genesis state data
+	err = app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.Sysvars, err = gfile.IntoSysvars()
+		return state, err
+	})
+
 	// now load the appropriate associated data
-	var af generator.AssociatedFile
-	_, err = toml.DecodeFile(asscpath, &af)
+	_, err = toml.DecodeFile(asscpath, &assc)
 	if err != nil {
-		return
-	}
-	var ok bool
-	assc, ok = af[base64.StdEncoding.EncodeToString(bpc)]
-	if !ok {
-		err = errors.New("associated data for this bpc not found in assc file")
 		return
 	}
 
@@ -253,10 +185,7 @@ func (app *App) getDefaultSettlementDuration() math.Duration {
 	var defaultSettlementPeriod math.Duration
 	err := app.System(sv.DefaultSettlementDurationName, &defaultSettlementPeriod)
 	// app.System errors in two cases:
-	// - the system variable doesn't exist, which can mean one of two things:
-	//   - the SVI map has been updated in an invalid way
-	//   - the system cache wasn't updated this block (in which case all txs are
-	//     already rejected, so we should never actually see this)
+	// - the system variable doesn't exist: chain is in a bad state
 	// - the variable we passed to receive the sysvar is of the wrong type
 	//
 	// Given this situation, we want to fail in the most noisy way possible.

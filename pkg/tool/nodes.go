@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/oneiro-ndev/chaos/pkg/tool"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/rpc/client"
 )
@@ -26,7 +25,7 @@ func Nodes(node *client.HTTP) chan NodeResponse {
 	go func() {
 		defer wg.Done()
 		// get the node info from the node in the config
-		status, err := tool.Info(node)
+		status, err := Info(node)
 		if err != nil {
 			respCh <- NodeResponse{Err: fmt.Errorf("could not fetch node info: %v", err)}
 			return

@@ -12,7 +12,6 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
-	chquery "github.com/oneiro-ndev/chaos/pkg/chaos/query"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -215,65 +214,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
 		}))
 
-	svc.Route(svc.GET("/chaos/range/:first/:last").To(routes.HandleChaosBlockRange(cf)).
-		Operation("ChaosBlockRange").
-		Doc("Returns a sequence of block metadata starting at first and ending at last").
-		Param(boneful.PathParameter("first", "Height at which to begin retrieval of blocks.").DataType("int").Required(true)).
-		Param(boneful.PathParameter("last", "Height at which to end retrieval of blocks.").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(rpctypes.ResultBlockchainInfo{
-			LastHeight: 12345,
-			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
-		}))
-
-	svc.Route(svc.GET("/chaos/daterange/:first/:last").To(routes.HandleChaosBlockDateRange(cf)).
-		Operation("ChaosBlockDateRange").
-		Doc("Returns a sequence of block metadata starting at first date and ending at last date").
-		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
-		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get; default=0").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
-		Produces(JSON).
-		Writes(rpctypes.ResultBlockchainInfo{
-			LastHeight: 12345,
-			BlockMetas: []*tmtypes.BlockMeta{&dummyBlockMeta},
-		}))
-
-	svc.Route(svc.GET("/chaos/history/:namespace/:key").To(routes.HandleChaosHistory(cf)).
-		Operation("ChaosHistory").
-		Doc("Returns the history of changes to a value of a single chaos chain variable.").
-		Notes(`The history includes the block height and the value of each change to the variable.
-		The result is sorted chronologically.
-		Namespace and key must be URL query-escaped`).
-		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
-		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
-		Produces(JSON).
-		Writes(routes.ChaosHistoryResponse{&chquery.KeyHistoryResponse{[]chquery.HistoricalValue{{
-			Height: 12345,
-			Value:  []byte("value"),
-		}}}}))
-
-	svc.Route(svc.GET("/chaos/value/:namespace/all").To(routes.HandleChaosNamespaceAll(cf)).
-		Operation("ChaosNamespaceAll").
-		Doc("Returns the names and current values of all currently-defined variables in a given namespace on the chaos chain.").
-		Notes("Namespace must be URL query-escaped").
-		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(""))
-
-	svc.Route(svc.GET("/chaos/value/:namespace/:key").To(routes.HandleChaosNamespaceKey(cf)).
-		Operation("ChaosNamespaceKey").
-		Doc("Returns the current value of a single namespaced variable from the chaos chain.").
-		Notes("Namespace and key must be URL query-escaped").
-		Param(boneful.PathParameter("namespace", "Base-64 (std) text of the namespace, url-encoded.").DataType("string").Required(true)).
-		Param(boneful.PathParameter("key", "Base-64 (std) name of the variable.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(""))
-
 	svc.Route(svc.GET("/node/status").To(routes.GetStatus(cf)).
 		Operation("NodeStatus").
 		Doc("Returns the status of the current node.").
@@ -408,18 +348,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 			Address: dummyAddress.String(),
 			EAIRate: 60000000000,
 		}}))
-
-	svc.Route(svc.GET("/system/history/:key").To(routes.HandleSystemHistory(cf)).
-		Operation("SystemHistoryKey").
-		Doc("Returns the history of changes to a value of a system variable.").
-		Notes(`The history includes the timestamp, new value, and transaction ID of each change to the value.
-		The result is reverse sorted chronologically from the current time, and supports paging by time.
-		Key must be URL query-escaped.`).
-		Param(boneful.PathParameter("key", "Name of the system variable.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=10.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to start looking backwards; default=now.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(routes.SystemHistoryResponse{}))
 
 	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetch(cf)).
 		Doc("Returns a transaction from the blockchain given its tx hash.").

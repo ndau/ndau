@@ -329,24 +329,10 @@ func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
 	}
 }
 
-// HandleChaosBlockRange handles requests for a range of blocks
-func HandleChaosBlockRange(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockRange(w, r, cf.ChaosAddress)
-	}
-}
-
 // HandleBlockDateRange handles requests for a range of blocks
 func HandleBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handleBlockDateRange(w, r, cf.NodeAddress)
-	}
-}
-
-// HandleChaosBlockDateRange handles requests for a range of blocks
-func HandleChaosBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockDateRange(w, r, cf.ChaosAddress)
 	}
 }
 

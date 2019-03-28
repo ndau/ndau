@@ -356,7 +356,7 @@ func TestClaimGrandchildAccount(t *testing.T) {
 		)
 
 		// Make the progenitor an exchange account, to test more code paths.
-		context := makeExchangeAccountContext(app.blockTime, progenitor)
+		context := ddc(t).withExchangeAccount(progenitor)
 		dresp, _ := deliverTxContext(t, app, cca, context)
 		require.Equal(t, code.OK, code.ReturnCode(dresp.Code))
 
@@ -371,10 +371,16 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			childAcct.ValidationKeys[0].KeyBytes(),
 		)
 
-		// Since the progenitor was marked as an exchange account, so should any descendant.
-		isExchangeAccount, err := app.accountHasAttribute(child, sv.AccountAttributeExchange)
-		require.NoError(t, err)
-		require.True(t, isExchangeAccount)
+		// Since the progenitor was marked as an exchange account, so should
+		// any descendant.
+		// However, whether or not any account is an exchange account depends
+		// on the state of the sysvars; these have been changed by our context.
+		// We therefore need to get into that context.
+		context.Within(app, func() {
+			isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(child, sv.AccountAttributeExchange)
+			require.NoError(t, err)
+			require.True(t, isExchangeAccount)
+		})
 
 		return child, validationPrivate
 	}

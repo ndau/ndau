@@ -3,7 +3,6 @@ package backing
 import (
 	"fmt"
 	"reflect"
-	"sort"
 
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
@@ -41,7 +40,6 @@ func init() {
 		"Sequence",
 		"SettlementSettings",
 		"Settlements",
-		"SidechainPayments",
 		"Stake",
 		"UncreditedEAI",
 		"ValidationKeys",
@@ -261,26 +259,6 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		progenitorUnptr = nt.String(progenitorString)
 	}
 
-	// x.SidechainPayments (map[string]struct{}->*ast.MapType) is primitive: false
-
-	// template decompose: x.SidechainPayments (map[string]struct{}->*ast.MapType)
-	// template set:  x.SidechainPayments
-	sidechainPaymentsItems := make([]nt.Value, 0, len(x.SidechainPayments))
-	if len(x.SidechainPayments) > 0 {
-		// We need to iterate the set in sorted order, so build []string and sort it first
-		sidechainPaymentsSorted := make([]string, 0, len(x.SidechainPayments))
-		for sidechainPaymentsItem := range x.SidechainPayments {
-			sidechainPaymentsSorted = append(sidechainPaymentsSorted, sidechainPaymentsItem)
-		}
-		sort.Sort(sort.StringSlice(sidechainPaymentsSorted))
-		for _, sidechainPaymentsItem := range sidechainPaymentsSorted {
-			sidechainPaymentsItems = append(
-				sidechainPaymentsItems,
-				nt.String(sidechainPaymentsItem),
-			)
-		}
-	}
-
 	// x.UncreditedEAI (math.Ndau->*ast.SelectorExpr) is primitive: true
 
 	return accountDataStructTemplate.NewStruct([]nt.Value{
@@ -335,8 +313,6 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		settlementSettingsValue,
 		// x.Settlements ([]Settlement)
 		nt.NewList(vrw, settlementsItems...),
-		// x.SidechainPayments (map[string]struct{})
-		nt.NewSet(vrw, sidechainPaymentsItems...),
 		// x.Stake (*Stake)
 		stakeUnptr,
 		// x.UncreditedEAI (math.Ndau)
@@ -797,31 +773,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				}
 
 				x.Progenitor = &progenitorValue
-			// x.SidechainPayments (map[string]struct{}->*ast.MapType) is primitive: false
-			case "SidechainPayments":
-				// template u_decompose: x.SidechainPayments (map[string]struct{}->*ast.MapType)
-				// template u_set: x.SidechainPayments
-				sidechainPaymentsGoSet := make(map[string]struct{})
-				if sidechainPaymentsSet, ok := value.(nt.Set); ok {
-					sidechainPaymentsSet.Iter(func(sidechainPaymentsItem nt.Value) (stop bool) {
-						if sidechainPaymentsItemString, ok := sidechainPaymentsItem.(nt.String); ok {
-							sidechainPaymentsGoSet[string(sidechainPaymentsItemString)] = struct{}{}
-						} else {
-							err = fmt.Errorf(
-								"AccountData.AccountData.UnmarshalNoms expected SidechainPaymentsItem to be a nt.String; found %s",
-								reflect.TypeOf(value),
-							)
-						}
-						return err != nil
-					})
-				} else {
-					err = fmt.Errorf(
-						"AccountData.AccountData.UnmarshalNoms expected SidechainPayments to be a nt.Set; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.SidechainPayments = sidechainPaymentsGoSet
 			// x.UncreditedEAI (math.Ndau->*ast.SelectorExpr) is primitive: true
 			case "UncreditedEAI":
 				// template u_decompose: x.UncreditedEAI (math.Ndau->*ast.SelectorExpr)

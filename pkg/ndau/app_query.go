@@ -27,7 +27,6 @@ func init() {
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
-	meta.RegisterQueryHandler(query.SidechainTxExistsEndpoint, sidechainTxExistsQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
 	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
@@ -243,24 +242,6 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	}
 }
 
-func sidechainTxExistsQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
-	app := appI.(*App)
-
-	stxq := new(query.SidechainTxExistsQuery)
-	_, err := stxq.UnmarshalMsg(request.GetData())
-	if err != nil {
-		app.QueryError(err, response, "unmarshalling SidechainTxExistsQuery")
-		return
-	}
-
-	acct, _ := app.getAccount(stxq.Source)
-	key := sidechainPayment(stxq.SidechainID, stxq.TxHash)
-
-	_, exists := acct.SidechainPayments[key]
-
-	response.Info = fmt.Sprintf(query.SidechainTxExistsInfoFmt, exists)
-}
-
 var lastSummary query.Summary
 
 func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -306,20 +287,40 @@ func versionQuery(appI interface{}, _ abci.RequestQuery, response *abci.Response
 	response.Value = []byte(v)
 }
 
-func sysvarsQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
+func sysvarsQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
-	names := app.systemCache.GetNames()
 
-	sysvars := make(map[string][]byte)
-	for _, n := range names {
-		v := app.systemCache.GetRaw(n)
-		sysvars[n] = v
+	// decode request
+	var err error
+	var svr query.SysvarsRequest
+	if len(request.Data) > 0 {
+		_, err = svr.UnmarshalMsg(request.Data)
+		if err != nil {
+			app.QueryError(err, response, "decoding sysvars request")
+			return
+		}
 	}
-	buf, err := json.Marshal(sysvars)
+
+	// get sysvars
+	sv := app.GetState().(*backing.State).Sysvars
+
+	// apply filter as required
+	svo := make(map[string][]byte)
+	filter := []string(svr)
+	if len(filter) > 0 {
+		for _, f := range filter {
+			svo[f] = sv[f]
+		}
+	} else {
+		svo = sv
+	}
+
+	// return
+	resp := query.SysvarsResponse(svo)
+	response.Value, err = resp.MarshalMsg(nil)
 	if err != nil {
-		app.QueryError(err, response, "encoding sysvars")
+		app.QueryError(err, response, "encoding sysvars response")
 	}
-	response.Value = buf
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {

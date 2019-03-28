@@ -94,7 +94,7 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 	// exchange account.  The parent account is fully established at this point; the child account
 	// may not be.  In Apply(), the child account will be "adopted" and automatically inherit all
 	// attributes from the parent when the child's Progenitor is set.
-	isExchangeAccount, err := app.accountHasAttribute(tx.Target, sv.AccountAttributeExchange)
+	isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(tx.Target, sv.AccountAttributeExchange)
 	if err != nil {
 		return err
 	}
