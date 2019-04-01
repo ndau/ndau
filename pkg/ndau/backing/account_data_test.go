@@ -408,3 +408,76 @@ func BenchmarkUnmarshalNomsAccountData(b *testing.B) {
 		ad.UnmarshalNoms(vval)
 	}
 }
+
+func TestAccountData_IsLocked(t *testing.T) {
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	testLock := func(unlockOffset math.Duration) *Lock {
+		uo := now.Add(unlockOffset)
+		return &Lock{
+			UnlocksOn: &uo,
+		}
+	}
+
+	tests := []struct {
+		name string
+		lock *Lock
+		want bool
+	}{
+		{"nil", nil, false},
+		{"not notified", &Lock{}, true},
+		{"unlocks in future", testLock(1), true},
+		{"unlocks this moment", testLock(0), false},
+		{"unlocks in past", testLock(-1), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ad := &AccountData{
+				Lock: tt.lock,
+			}
+			if got := ad.IsLocked(now); got != tt.want {
+				t.Errorf("AccountData.IsLocked() = %v, want %v", got, tt.want)
+			}
+
+			if !tt.want {
+				// must modify the struct
+				require.Nil(t, ad.Lock)
+			}
+		})
+	}
+}
+
+func TestAccountData_IsNotified(t *testing.T) {
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	testLock := func(unlockOffset math.Duration) *Lock {
+		uo := now.Add(unlockOffset)
+		return &Lock{
+			UnlocksOn: &uo,
+		}
+	}
+
+	tests := []struct {
+		name string
+		lock *Lock
+		want bool
+	}{
+		{"nil", nil, false},
+		{"not notified", &Lock{}, false},
+		{"unlocks in future", testLock(1), true},
+		{"unlocks this moment", testLock(0), false},
+		{"unlocks in past", testLock(-1), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ad := &AccountData{
+				Lock: tt.lock,
+			}
+			if got := ad.IsNotified(now); got != tt.want {
+				t.Errorf("AccountData.IsNotified() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
