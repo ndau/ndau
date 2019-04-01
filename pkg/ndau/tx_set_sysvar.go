@@ -111,3 +111,13 @@ func (tx *SetSysvar) ExtendSignatures(sa []signature.Signature) {
 func (tx *SetSysvar) GetAccountAddresses() []string {
 	return []string{}
 }
+
+// GetKey implements KeyValueIndexable.
+func (tx *SetSysvar) GetKey() string {
+	return tx.Name
+}
+
+// GetValue implements KeyValueIndexable.
+func (tx *SetSysvar) GetValue() []byte {
+	return tx.Value
+}

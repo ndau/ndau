@@ -25,6 +25,19 @@ type QueryParams struct {
 	Hash string `json:"hash"`
 }
 
+// KeyHistoryParams is a json-friendly struct for the /sysvar/history endpoint.
+type KeyHistoryParams struct {
+	Key       string `json:"key"`
+	PageIndex int    `json:"index"`
+	PageSize  int    `json:"size"`
+}
+
+// ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
+type ValueData struct {
+	height      uint64
+	valueBase64 string
+}
+
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
 type AccountHistoryParams struct {
 	Address   string `json:"addr"`
@@ -49,6 +62,30 @@ type AccountTxValueData struct {
 // AccountHistoryResponse is the return value from the account history endpoint.
 type AccountHistoryResponse struct {
 	Txs []AccountTxValueData
+}
+
+// Marshal the value data into a search value string to index it with its search key string.
+func (valueData *ValueData) Marshal() string {
+	// To guarantee ZAdd() will keep history of same-value key entries, we prefix the value
+	// with the height.  Otherwise redis would just update the score and not add more history.
+	// Because of this, we use unsorted sets with SAdd() since sortedness isn't benefiting us.
+	return fmt.Sprintf("%d %s", valueData.height, valueData.valueBase64)
+}
+
+// Unmarshal the given search value string that was indexed with its search key string.
+func (valueData *ValueData) Unmarshal(searchValue string) error {
+	// The "value" for a key in the index is stored as "<height> <valueBase64>".
+	separator := strings.Index(searchValue, " ")
+
+	height, err := strconv.ParseUint(searchValue[:separator], 10, 64)
+	if err != nil {
+		return err
+	}
+
+	valueData.height = height
+	valueData.valueBase64 = searchValue[separator+1:]
+
+	return nil
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
