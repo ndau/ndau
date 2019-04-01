@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/oneiro-ndev/ndau/pkg/query"
 	srch "github.com/oneiro-ndev/metanode/pkg/meta/search"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
 // SearchKeyHistory returns value history for the given key using an index under the hood.

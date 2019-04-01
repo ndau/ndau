@@ -1,6 +1,9 @@
 package tool
 
 import (
+	"encoding/json"
+
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
@@ -44,4 +47,36 @@ func Sysvar(node client.ABCIClient, name string, example msgp.Unmarshaler) error
 	}
 	_, err = example.UnmarshalMsg(svb)
 	return err
+}
+
+// SysvarHistory gets the value history of the given sysvar.
+func SysvarHistory(
+	node client.ABCIClient,
+	name string,
+	pageIndex int,
+	pageSize int,
+) (*query.KeyHistoryResponse, *rpctypes.ResultABCIQuery, error) {
+	params := search.KeyHistoryParams{
+		Key:       name,
+		PageIndex: pageIndex,
+		PageSize:  pageSize,
+	}
+
+	paramsBuf, err := json.Marshal(params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	res, err := node.ABCIQuery(query.KeyHistoryEndpoint, paramsBuf)
+	if err != nil {
+		return nil, res, err
+	}
+
+	khr := new(query.KeyHistoryResponse)
+	_, err = khr.UnmarshalMsg(res.Response.Value)
+	if err != nil {
+		return nil, res, err
+	}
+
+	return khr, res, err
 }
