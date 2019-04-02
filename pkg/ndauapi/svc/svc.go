@@ -222,7 +222,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/node/health").To(routes.GetHealth(cf)).
 		Operation("NodeHealth").
-		Doc("Returns the health of the current ndau node and chaos node.").
+		Doc("Returns the health of the current node by doing a simple test for connectivity and response.").
 		Produces(JSON).
 		Writes(routes.HealthResponse{}))
 
