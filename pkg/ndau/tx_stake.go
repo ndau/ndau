@@ -81,7 +81,7 @@ func stake(app *App, targetA, stakedAccountA address.Address) error {
 
 		target.Stake = &backing.Stake{
 			Address: stakedAccountA,
-			Point:   app.blockTime,
+			Point:   app.BlockTime(),
 		}
 
 		state.Accounts[targetA.String()] = target

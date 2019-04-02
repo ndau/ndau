@@ -80,7 +80,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 	if err != nil {
 		return err
 	}
-	if isExchangeAccount && acct.IsLocked(app.blockTime) {
+	if isExchangeAccount && acct.IsLocked(app.BlockTime()) {
 		return errors.New("Cannot claim a locked exchange account")
 	}
 

@@ -345,7 +345,7 @@ func TestTransferSequenceMustIncrease(t *testing.T) {
 func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	// setup app
 	app, key, ts := initAppSettlement(t)
-	require.True(t, app.blockTime.Compare(ts) >= 0)
+	require.True(t, app.BlockTime().Compare(ts) >= 0)
 	tn := ts.Add(1 * math.Second)
 
 	// generate transfer

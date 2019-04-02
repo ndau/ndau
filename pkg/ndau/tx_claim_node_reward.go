@@ -36,12 +36,12 @@ func (tx *ClaimNodeReward) Validate(appI interface{}) error {
 
 	state := app.GetState().(*backing.State)
 
-	if app.blockTime.Compare(state.LastNodeRewardNomination.Add(timeout)) > 0 {
+	if app.BlockTime().Compare(state.LastNodeRewardNomination.Add(timeout)) > 0 {
 		return fmt.Errorf(
 			"too late: NominateNodeReward @ %s expired after %s; currently %s",
 			state.LastNodeRewardNomination,
 			timeout,
-			app.blockTime,
+			app.BlockTime(),
 		)
 	}
 
@@ -88,7 +88,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 			state.Nodes[tx.Node.String()].Costakers,
 			state.Accounts,
 			state.UnclaimedNodeReward,
-			app.blockTime,
+			app.BlockTime(),
 		)
 		// ugly nested ifs here but it's what we need to do
 		// basically, if we have an egregious error anywhere up here, we'll skip trying
@@ -171,7 +171,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				final = true
 			}
 			state.UnclaimedNodeReward -= award
-			_, err = state.PayReward(addrA, award, app.blockTime, app.getDefaultSettlementDuration(), false)
+			_, err = state.PayReward(addrA, award, app.BlockTime(), app.getDefaultSettlementDuration(), false)
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}
@@ -183,7 +183,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		// if after disbursement to costakers there remains some node reward,
 		// it goes to the node
 		if state.UnclaimedNodeReward > 0 {
-			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.blockTime, app.getDefaultSettlementDuration(), false)
+			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.BlockTime(), app.getDefaultSettlementDuration(), false)
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}
@@ -199,7 +199,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				"tx":        "ClaimNodeReward",
 				"node":      tx.Node.String(),
 				"script":    state.Nodes[tx.Node.String()].DistributionScript,
-				"blockTime": app.blockTime,
+				"blockTime": app.BlockTime(),
 			})
 			for e := range allErrs {
 				logger.WithField("text", e).Error("error during node reward payout")

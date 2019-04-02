@@ -41,7 +41,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		addr,
 		acct,
 		math.Ndau(node.TotalStake),
-		app.blockTime,
+		app.BlockTime(),
 		app.GetStats(),
 	)
 	if err != nil {

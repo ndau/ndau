@@ -82,7 +82,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
 			"tx":            "CreditEAI",
 			"node":          tx.Node.String(),
-			"blockTime":     app.blockTime,
+			"blockTime":     app.BlockTime(),
 			"unlockedTable": unlockedTable,
 		})
 
@@ -134,14 +134,14 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 
 			err = acctData.WeightedAverageAge.UpdateWeightedAverageAge(
-				app.blockTime.Since(acctData.LastWAAUpdate),
+				app.BlockTime().Since(acctData.LastWAAUpdate),
 				0,
 				acctData.Balance,
 			)
 			if handle(err) {
 				return
 			}
-			acctData.LastWAAUpdate = app.blockTime
+			acctData.LastWAAUpdate = app.BlockTime()
 
 			// Select the appropriate age/rate table to use.
 			ageTable := unlockedTable
@@ -166,7 +166,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 
 			eaiAward, err := eai.Calculate(
-				pending, app.blockTime, acctData.LastEAIUpdate,
+				pending, app.BlockTime(), acctData.LastEAIUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
 				*ageTable,
 			)
@@ -195,7 +195,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			_, err = state.PayReward(
 				addr,
 				eaiAward,
-				app.blockTime,
+				app.BlockTime(),
 				app.getDefaultSettlementDuration(),
 				true,
 			)

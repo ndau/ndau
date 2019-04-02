@@ -47,7 +47,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 		}
 
 		// dest account must not be notified
-		if targetData.IsNotified(app.blockTime) {
+		if targetData.IsNotified(app.BlockTime()) {
 			return errors.New("Destination is currently notified and may not receive new rewards until it unlocks")
 		}
 	}

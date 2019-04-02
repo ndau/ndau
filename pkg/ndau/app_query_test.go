@@ -52,9 +52,9 @@ func TestCanQueryAccountStatusDest(t *testing.T) {
 func TestQueryRunsUpdateBalance(t *testing.T) {
 	app, _, ts := initAppSettlement(t)
 	t.Log("timestamp after which escrows expire", ts)
-	t.Log("app blocktime", app.blockTime)
-	t.Log("comparison", app.blockTime.Compare(ts))
-	require.True(t, app.blockTime.Compare(ts) >= 0)
+	t.Log("app blocktime", app.BlockTime())
+	t.Log("comparison", app.BlockTime().Compare(ts))
+	require.True(t, app.BlockTime().Compare(ts) >= 0)
 
 	resp := app.Query(abci.RequestQuery{
 		Path: query.AccountEndpoint,

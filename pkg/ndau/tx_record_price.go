@@ -39,7 +39,7 @@ func (tx *RecordPrice) CalculateSIB(app *App) (sib eai.Rate, targetPrice pricecu
 	}
 
 	// compute SIB
-	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(tx.MarketPrice), app.blockTime)
+	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(tx.MarketPrice), app.BlockTime())
 	if err != nil {
 		err = errors.Wrap(err, "building vm for SIB calculation")
 		return

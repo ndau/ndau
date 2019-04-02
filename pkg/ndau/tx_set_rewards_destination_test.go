@@ -2,7 +2,6 @@ package ndau
 
 import (
 	"testing"
-	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -172,15 +171,11 @@ func TestReSetRewardsDestinationChangesAppState(t *testing.T) {
 }
 
 func TestNotifiedDestinationsAreInvalid(t *testing.T) {
-	ts, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
-
 	app, private := initAppTx(t)
-	app.blockTime = ts
 
 	// fixture: destination must be notified
 	modify(t, dest, app, func(ad *backing.AccountData) {
-		uo := math.Timestamp(ts + 1)
+		uo := math.Timestamp(app.BlockTime() + 1)
 		ad.Lock = backing.NewLock(math.Duration(2), eai.DefaultLockBonusEAI)
 		ad.Lock.UnlocksOn = &uo
 	})

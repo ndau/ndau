@@ -31,13 +31,13 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 		return err
 	}
 
-	if source.IsLocked(app.blockTime) {
+	if source.IsLocked(app.BlockTime()) {
 		return errors.New("source is locked")
 	}
 
 	dest, _ := app.getAccount(tx.Destination)
 
-	if dest.IsNotified(app.blockTime) {
+	if dest.IsNotified(app.BlockTime()) {
 		return errors.New("transfers into notified addresses are invalid")
 	}
 
@@ -56,24 +56,24 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	dest, _ := app.getAccount(tx.Destination)
 
 	err = (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
-		app.blockTime.Since(dest.LastWAAUpdate),
+		app.BlockTime().Since(dest.LastWAAUpdate),
 		tx.Qty,
 		dest.Balance,
 	)
 	if err != nil {
 		return errors.Wrap(err, "update waa")
 	}
-	dest.LastWAAUpdate = app.blockTime
+	dest.LastWAAUpdate = app.BlockTime()
 
 	dest.Balance += tx.Qty
 	if source.SettlementSettings.Period != 0 {
 		dest.Settlements = append(dest.Settlements, backing.Settlement{
 			Qty:    tx.Qty,
-			Expiry: app.blockTime.Add(source.SettlementSettings.Period),
+			Expiry: app.BlockTime().Add(source.SettlementSettings.Period),
 		})
 	}
 
-	dest.UpdateCurrencySeat(app.blockTime)
+	dest.UpdateCurrencySeat(app.BlockTime())
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)

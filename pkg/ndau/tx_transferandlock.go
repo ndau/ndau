@@ -33,7 +33,7 @@ func (tx *TransferAndLock) Validate(appInt interface{}) error {
 		return err
 	}
 
-	if source.IsLocked(app.blockTime) {
+	if source.IsLocked(app.BlockTime()) {
 		return errors.New("source is locked")
 	}
 
@@ -81,12 +81,12 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 	if source.SettlementSettings.Period != 0 {
 		dest.Settlements = append(dest.Settlements, backing.Settlement{
 			Qty:    tx.Qty,
-			Expiry: app.blockTime.Add(source.SettlementSettings.Period),
+			Expiry: app.BlockTime().Add(source.SettlementSettings.Period),
 		})
 	}
 	dest.Lock = backing.NewLock(tx.Period, lockedBonusRateTable)
 
-	dest.UpdateCurrencySeat(app.blockTime)
+	dest.UpdateCurrencySeat(app.BlockTime())
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
