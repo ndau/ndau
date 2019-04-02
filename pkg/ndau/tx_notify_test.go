@@ -2,11 +2,13 @@ package ndau
 
 import (
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -110,4 +112,29 @@ func TestNotifyDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestNotifyProperlyEndsLock(t *testing.T) {
+	// inspired by a Real Bug!
+	// https://github.com/oneiro-ndev/exchanges/blob/master/samples/btcec-secp256k1/ndau-test.sh
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
+	app, sourceKey := initAppTx(t)
+
+	// lock the source account, but it should be expired
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Lock = backing.NewLock(1, eai.DefaultLockBonusEAI)
+		ad.Lock.UnlocksOn = &now
+	})
+
+	// deliver the transfer at the very moment the source should unlock
+	tx := NewTransfer(sourceAddress, destAddress, 1*constants.NapuPerNdau, 1, sourceKey)
+	resp := deliverTxAt(t, app, tx, now)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// a side effect of noting that the account wasn't locked anymore should be
+	// clearing the lock from the account data
+	acct, _ := app.getAccount(sourceAddress)
+	require.Nil(t, acct.Lock)
 }
