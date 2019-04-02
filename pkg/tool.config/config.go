@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	homedir "github.com/mitchellh/go-homedir"
@@ -40,10 +41,9 @@ const AccountPathFormat = "/44'/20036'/%v/%v"
 
 // GetConfigPath returns the location at which configuration is stored
 func GetConfigPath() string {
-	ndauhome := os.ExpandEnv("$NDAUHOME")
+	ndauhome := strings.TrimSpace(os.ExpandEnv("$NDAUHOME"))
 	if len(ndauhome) == 0 {
-		home := os.ExpandEnv("$HOME")
-		ndauhome = path.Join(home, ".ndau")
+		ndauhome = path.Join("~", ".localnet", "data", "ndau-0")
 	}
 	// if NDAUHOME is set but contains a tilde, we have to
 	// manually expand it. We could use os/user, but that
