@@ -11,8 +11,8 @@ import (
 
 // HistoricalValue is a value, and the height at which it was set
 type HistoricalValue struct {
-	Height uint64
-	Value  []byte
+	Height uint64 `json:"height"`
+	Value  []byte `json:"value"`
 }
 
 // KeyHistoryResponse returns the history of a key over time.
@@ -20,7 +20,7 @@ type HistoricalValue struct {
 // For compactness, history is compressed, and records are only returned for those
 // blocks on which the value changed.
 type KeyHistoryResponse struct {
-	History []HistoricalValue
+	History []HistoricalValue `json:"history"`
 }
 
 // Summary is the return value from the /summary endpoint

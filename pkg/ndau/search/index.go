@@ -101,7 +101,7 @@ func formatAccountAddressToHeightSearchKey(addr string) string {
 	return accountAddressToHeightSearchKeyPrefix + addr
 }
 
-// Index a all the key-value pairs in the search's keyToValueData mapping, then clear the map.
+// Index all the key-value pairs in the search's keyToValueData mapping, then clear the map.
 // checkForDupes is used for merging any duplicate keys we find in the mapping.
 func (search *Client) onIndexingComplete(
 	checkForDupes bool,

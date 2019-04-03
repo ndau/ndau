@@ -34,8 +34,8 @@ type KeyHistoryParams struct {
 
 // ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
 type ValueData struct {
-	height      uint64
-	valueBase64 string
+	height      uint64 `json:"height"`
+	valueBase64 string `json:"value_base64"`
 }
 
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
@@ -47,8 +47,8 @@ type AccountHistoryParams struct {
 
 // TxValueData is used for storing the block height and transaction offset within the block.
 type TxValueData struct {
-	BlockHeight uint64
-	TxOffset    int
+	BlockHeight uint64 `json:"height"`
+	TxOffset    int    `json:"offset"`
 }
 
 // AccountTxValueData is like TxValueData that stores account balance at the associated block.
