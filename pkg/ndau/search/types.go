@@ -25,9 +25,9 @@ type QueryParams struct {
 	Hash string `json:"hash"`
 }
 
-// KeyHistoryParams is a json-friendly struct for the /sysvar/history endpoint.
-type KeyHistoryParams struct {
-	Key       string `json:"key"`
+// SysvarHistoryParams is a json-friendly struct for the /sysvar/history endpoint.
+type SysvarHistoryParams struct {
+	Name      string `json:"name"`
 	PageIndex int    `json:"index"`
 	PageSize  int    `json:"size"`
 }

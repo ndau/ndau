@@ -329,7 +329,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
 		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
-		Writes(query.KeyHistoryResponse{History: []query.HistoricalValue{{
+		Writes(query.SysvarHistoryResponse{History: []query.SysvarHistoricalValue{{
 			Height: 12345,
 			Value:  []byte("Value"),
 		}}}))

@@ -20,15 +20,15 @@ import (
 // NOTE: These must not conflict with dateRangeToHeightSearchKeyPrefix defined in metanode.
 const accountAddressToHeightSearchKeyPrefix = "a:"
 const blockHashToHeightSearchKeyPrefix = "b:"
-const keyToValueSearchKeyPrefix = "k:"
+const sysvarKeyToValueSearchKeyPrefix = "s:"
 const txHashToHeightSearchKeyPrefix = "t:"
 
-// KeyValueIndexable is a Transactable that has key-value data that we want to index.
-type KeyValueIndexable interface {
+// SysvarIndexable is a Transactable that has sysar data that we want to index.
+type SysvarIndexable interface {
 	metatx.Transactable
 
 	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
-	GetKey() string
+	GetName() string
 	GetValue() []byte
 }
 
@@ -44,9 +44,9 @@ type AddressIndexable interface {
 type Client struct {
 	*metasearch.Client
 
-	// Used when collecting keys to index.  In the case of initial indexing,
+	// Used when collecting sysvar keys to index.  In the case of initial indexing,
 	// this combines keys and values over possibly multiple blocks.
-	keyToValueData map[string]*ValueData
+	sysvarKeyToValueData map[string]*ValueData
 
 	// Used for getting account data to index.
 	state metastate.State
@@ -73,7 +73,7 @@ func NewClient(address string, version int) (search *Client, err error) {
 		return nil, err
 	}
 
-	search.keyToValueData = nil
+	search.sysvarKeyToValueData = nil
 	search.state = nil
 	search.txs = nil
 	search.blockTime = time.Time{}
@@ -84,9 +84,9 @@ func NewClient(address string, version int) (search *Client, err error) {
 	return search, nil
 }
 
-// Helper function for generating unique search keys within the redis database.
-func formatKeyToValueSearchKey(key string) string {
-	return keyToValueSearchKeyPrefix + key
+// Helper function for generating unique search sysvar keys within the redis database.
+func formatSysvarKeyToValueSearchKey(key string) string {
+	return sysvarKeyToValueSearchKeyPrefix + key
 }
 
 func formatBlockHashToHeightSearchKey(hash string) string {
@@ -101,7 +101,7 @@ func formatAccountAddressToHeightSearchKey(addr string) string {
 	return accountAddressToHeightSearchKeyPrefix + addr
 }
 
-// Index all the key-value pairs in the search's keyToValueData mapping, then clear the map.
+// Index all the key-value pairs in the search's sysvarKeyToValueData mapping, then clear the map.
 // checkForDupes is used for merging any duplicate keys we find in the mapping.
 func (search *Client) onIndexingComplete(
 	checkForDupes bool,
@@ -117,7 +117,7 @@ func (search *Client) onIndexingComplete(
 	// given key at its latest value.  So we index them at that point here.
 	// In the case of incremental indexing, we fill the mapping with the new/changed values and
 	// index them all here when the block is committed.
-	for searchKey, data := range search.keyToValueData {
+	for searchKey, data := range search.sysvarKeyToValueData {
 		skip := false
 
 		if checkForDupes {
@@ -177,7 +177,7 @@ func (search *Client) onIndexingComplete(
 	}
 
 	// No need to keep this data around any longer.
-	search.keyToValueData = nil
+	search.sysvarKeyToValueData = nil
 	search.state = nil
 	search.txs = nil
 	search.blockTime = time.Time{}
@@ -245,12 +245,12 @@ func (search *Client) indexState(
 	for key, value := range st.Sysvars {
 		valueBase64 := base64.StdEncoding.EncodeToString(value)
 
-		searchKey := formatKeyToValueSearchKey(key)
+		searchKey := formatSysvarKeyToValueSearchKey(key)
 
 		// Detect the first time we've encountered this key.
-		data, hasValue := search.keyToValueData[searchKey]
+		data, hasValue := search.sysvarKeyToValueData[searchKey]
 		if !hasValue {
-			search.keyToValueData[searchKey] = &ValueData{
+			search.sysvarKeyToValueData[searchKey] = &ValueData{
 				height:      search.blockHeight,
 				valueBase64: valueBase64,
 			}

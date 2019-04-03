@@ -37,7 +37,7 @@ func initAppSysvarWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 	return app, assc
 }
 
-func TestKeyHistoryIndex(t *testing.T) {
+func TestSysvarHistoryIndex(t *testing.T) {
 	// Start redis server on a non-default (test) port.  Using a non-standard port means we
 	// probably won't conflict with any other redis server currently running.  It also means we
 	// disable persistence by not loading the default redis.conf file.  That way we don't have to
@@ -62,13 +62,13 @@ func TestKeyHistoryIndex(t *testing.T) {
 	app, assc := initAppSysvarWithIndex(t, "localhost:"+port, 0)
 
 	// Test data.
-	key := "key"
+	sysvar := "sysvar"
 	value := "value"
 	height := uint64(123)
 	valueBytes := []byte(value)
 
 	// Test incremental indexing.
-	t.Run("TestKeyHistoryIncrementalIndexing", func(t *testing.T) {
+	t.Run("TestSysvarHistoryIncrementalIndexing", func(t *testing.T) {
 		// Begin a new block.
 		begin := abci.RequestBeginBlock{Header: abci.Header{
 			Time:   time.Now(),
@@ -77,10 +77,10 @@ func TestKeyHistoryIndex(t *testing.T) {
 		app.BeginBlock(begin)
 
 		// Deliver an update.
-		t.Run("TestKeyHistoryIndexingTxUpdate", func(t *testing.T) {
+		t.Run("TestSysvarHistoryIndexingTxUpdate", func(t *testing.T) {
 			privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
 			tx := NewSetSysvar(
-				key,
+				sysvar,
 				valueBytes,
 				uint64(1),
 				privateKeys[0],
@@ -108,10 +108,10 @@ func TestKeyHistoryIndex(t *testing.T) {
 	})
 
 	// Test searching.
-	t.Run("TestKeyHistorySearching", func(t *testing.T) {
+	t.Run("TestSysvarHistorySearching", func(t *testing.T) {
 		// Search for the update transaction we indexed.
-		t.Run("TestKeyHistorySearchingTxUpdate", func(t *testing.T) {
-			hkr, err := app.GetSearch().(*search.Client).SearchKeyHistory(key, 0, 0)
+		t.Run("TestSysvarHistorySearchingTxUpdate", func(t *testing.T) {
+			hkr, err := app.GetSearch().(*search.Client).SearchSysvarHistory(sysvar, 0, 0)
 			require.NoError(t, err)
 
 			// Should have one result for our test key value pair.

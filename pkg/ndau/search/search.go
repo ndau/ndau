@@ -11,14 +11,14 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
-// SearchKeyHistory returns value history for the given key using an index under the hood.
+// SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
 // The response is sorted by ascending block height, each entry is where the key's value changed.
-func (search *Client) SearchKeyHistory(
-	key string, pageIndex int, pageSize int,
-) (khr *query.KeyHistoryResponse, err error) {
-	khr = new(query.KeyHistoryResponse)
+func (search *Client) SearchSysvarHistory(
+	sysvar string, pageIndex int, pageSize int,
+) (khr *query.SysvarHistoryResponse, err error) {
+	khr = new(query.SysvarHistoryResponse)
 
-	searchKey := formatKeyToValueSearchKey(key)
+	searchKey := formatSysvarKeyToValueSearchKey(sysvar)
 
 	// We'll reuse this for unmarshaling data into it.
 	valueData := &ValueData{}
@@ -37,7 +37,7 @@ func (search *Client) SearchKeyHistory(
 			return err
 		}
 
-		khr.History = append(khr.History, query.HistoricalValue{
+		khr.History = append(khr.History, query.SysvarHistoricalValue{
 			Height: height,
 			Value:  value,
 		})

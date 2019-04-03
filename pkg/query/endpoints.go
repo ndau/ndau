@@ -7,11 +7,11 @@ const (
 	AccountListEndpoint    = "/accountlist"
 	DateRangeEndpoint      = "/daterange"
 	DelegatesEndpoint      = "/delegates"
-	KeyHistoryEndpoint     = "/keyhistory"
 	PrevalidateEndpoint    = "/prevalidate"
 	SearchEndpoint         = "/search"
 	SIBEndpoint            = "/sib"
 	SummaryEndpoint        = "/summary"
+	SysvarHistoryEndpoint  = "/sysvarhistory"
 	SysvarsEndpoint        = "/sysvars"
 	VersionEndpoint        = "/version"
 )

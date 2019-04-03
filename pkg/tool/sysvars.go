@@ -55,9 +55,9 @@ func SysvarHistory(
 	name string,
 	pageIndex int,
 	pageSize int,
-) (*query.KeyHistoryResponse, *rpctypes.ResultABCIQuery, error) {
-	params := search.KeyHistoryParams{
-		Key:       name,
+) (*query.SysvarHistoryResponse, *rpctypes.ResultABCIQuery, error) {
+	params := search.SysvarHistoryParams{
+		Name:      name,
 		PageIndex: pageIndex,
 		PageSize:  pageSize,
 	}
@@ -67,12 +67,12 @@ func SysvarHistory(
 		return nil, nil, err
 	}
 
-	res, err := node.ABCIQuery(query.KeyHistoryEndpoint, paramsBuf)
+	res, err := node.ABCIQuery(query.SysvarHistoryEndpoint, paramsBuf)
 	if err != nil {
 		return nil, res, err
 	}
 
-	khr := new(query.KeyHistoryResponse)
+	khr := new(query.SysvarHistoryResponse)
 	_, err = khr.UnmarshalMsg(res.Response.Value)
 	if err != nil {
 		return nil, res, err

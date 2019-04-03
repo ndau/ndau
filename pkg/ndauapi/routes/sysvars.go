@@ -57,7 +57,7 @@ func HandleSystemHistory(cf cfg.Cfg) http.HandlerFunc {
 
 		result, _, err := tool.SysvarHistory(node, sysvar, pageIndex, pageSize)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching key history: %s", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching sysvar history: %s", err), http.StatusInternalServerError))
 			return
 		}
 

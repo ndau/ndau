@@ -13,7 +13,7 @@ import (
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.
 func (search *Client) OnBeginBlock(height uint64, blockTime time.Time, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
-	search.keyToValueData = make(map[string]*ValueData)
+	search.sysvarKeyToValueData = make(map[string]*ValueData)
 	search.state = nil
 	search.txs = nil
 	search.blockTime = blockTime
@@ -27,23 +27,23 @@ func (search *Client) OnBeginBlock(height uint64, blockTime time.Time, tmHash st
 func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 	search.txs = append(search.txs, tx)
 
-	indexable, ok := tx.(KeyValueIndexable)
+	indexable, ok := tx.(SysvarIndexable)
 	if !ok {
 		// This transactable is not set up to be indexable, perform a successful no-op.
 		return nil
 	}
 
-	key := indexable.GetKey()
+	key := indexable.GetName()
 	valueBase64 := base64.StdEncoding.EncodeToString(indexable.GetValue())
 
-	searchKey := formatKeyToValueSearchKey(key)
-	data, hasValue := search.keyToValueData[searchKey]
+	searchKey := formatSysvarKeyToValueSearchKey(key)
+	data, hasValue := search.sysvarKeyToValueData[searchKey]
 	if hasValue {
 		// Override whatever value was there before for this block.
 		// We only want one k-v pair per block height in our index: the one for the latest value.
 		data.valueBase64 = valueBase64
 	} else {
-		search.keyToValueData[searchKey] = &ValueData{
+		search.sysvarKeyToValueData[searchKey] = &ValueData{
 			height:      search.blockHeight,
 			valueBase64: valueBase64,
 		}
@@ -62,7 +62,8 @@ func (search *Client) OnCommit(app *meta.App) error {
 	}
 
 	// We don't need to check for dupes in the new block since we filtered them out by using the
-	// keyToValueData map.  However we do need to check for dupes from values in earlier blocks.
+	// sysvarKeyToValueData map.  However we do need to check for dupes from values in earlier
+	// blocks.
 	_, _, err = search.onIndexingComplete(true)
 
 	return err

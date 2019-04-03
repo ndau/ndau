@@ -20,7 +20,7 @@ func (search *Client) IndexBlockchain(
 	insertCount = 0
 
 	// Start fresh.  It should already be zero'd out upon entry.
-	search.keyToValueData = make(map[string]*ValueData)
+	search.sysvarKeyToValueData = make(map[string]*ValueData)
 	search.state = nil
 	search.txs = nil
 	// TODO: We really should be using block time when indexing below, but we don't store block
@@ -77,7 +77,7 @@ func (search *Client) IndexBlockchain(
 			return err
 		}
 
-		// Index key-value history, which we pull from noms.
+		// Index sysvar key-value history, which we pull from noms.
 		st := stI.(*backing.State)
 		updCount, insCount, err = search.indexState(st)
 		updateCount += updCount
@@ -89,11 +89,11 @@ func (search *Client) IndexBlockchain(
 	}
 
 	// We don't need to check for dupes if this is the first initial scan (minHeightToIndex
-	// == 0) since we will have just completed indexing the entire blockchain and have
-	// filtered out all the dupes from adjacent (and within) blocks using keyToValueData map.
+	// == 0) since we will have just completed indexing the entire blockchain and have filtered
+	// out all the dupes from adjacent (and within) blocks using sysvarKeyToValueData map.
 	// We also don't need to check for dupes if we didn't index anything this time
 	// (minHeightToIndex == search.nextHeight), although that check is just for completeness
-	// since keyToValueData will be empty in that case.
+	// since sysvarKeyToValueData will be empty in that case.
 	checkForDupes := 0 < minHeightToIndex && minHeightToIndex < search.nextHeight
 	updCount, insCount, err := search.onIndexingComplete(checkForDupes)
 	updateCount += updCount

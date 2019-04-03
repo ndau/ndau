@@ -24,7 +24,7 @@ func init() {
 	meta.RegisterQueryHandler(query.AccountListEndpoint, accountListQuery)
 	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
-	meta.RegisterQueryHandler(query.KeyHistoryEndpoint, keyHistoryQuery)
+	meta.RegisterQueryHandler(query.SysvarHistoryEndpoint, sysvarHistoryQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
@@ -324,7 +324,9 @@ func sysvarsQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	}
 }
 
-func keyHistoryQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+func sysvarHistoryQuery(
+	appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery,
+) {
 	app := appI.(*App)
 
 	search := app.GetSearch()
@@ -334,7 +336,7 @@ func keyHistoryQuery(appI interface{}, request abci.RequestQuery, response *abci
 	}
 	client := search.(*srch.Client)
 
-	var params srch.KeyHistoryParams
+	var params srch.SysvarHistoryParams
 	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
@@ -342,15 +344,15 @@ func keyHistoryQuery(appI interface{}, request abci.RequestQuery, response *abci
 		return
 	}
 
-	khr, err := client.SearchKeyHistory(params.Key, params.PageIndex, params.PageSize)
+	khr, err := client.SearchSysvarHistory(params.Name, params.PageIndex, params.PageSize)
 	if err != nil {
-		app.QueryError(err, response, "key history search fail")
+		app.QueryError(err, response, "sysvar history search fail")
 		return
 	}
 
 	khBytes, err := khr.MarshalMsg(nil)
 	response.Value = khBytes
-	app.QueryError(err, response, "Key history byte serialization fail")
+	app.QueryError(err, response, "sysvar history byte serialization fail")
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {

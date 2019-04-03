@@ -112,12 +112,12 @@ func (tx *SetSysvar) GetAccountAddresses() []string {
 	return []string{}
 }
 
-// GetKey implements KeyValueIndexable.
-func (tx *SetSysvar) GetKey() string {
+// GetName implements SysvarIndexable.
+func (tx *SetSysvar) GetName() string {
 	return tx.Name
 }
 
-// GetValue implements KeyValueIndexable.
+// GetValue implements SysvarIndexable.
 func (tx *SetSysvar) GetValue() []byte {
 	return tx.Value
 }

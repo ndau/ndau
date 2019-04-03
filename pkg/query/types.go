@@ -9,18 +9,18 @@ import (
 
 //go:generate msgp
 
-// HistoricalValue is a value, and the height at which it was set
-type HistoricalValue struct {
+// SysvarHistoricalValue is a value, and the height at which it was set
+type SysvarHistoricalValue struct {
 	Height uint64 `json:"height"`
 	Value  []byte `json:"value"`
 }
 
-// KeyHistoryResponse returns the history of a key over time.
+// SysvarHistoryResponse returns the history of a key over time.
 //
 // For compactness, history is compressed, and records are only returned for those
 // blocks on which the value changed.
-type KeyHistoryResponse struct {
-	History []HistoricalValue `json:"history"`
+type SysvarHistoryResponse struct {
+	History []SysvarHistoricalValue `json:"history"`
 }
 
 // Summary is the return value from the /summary endpoint
