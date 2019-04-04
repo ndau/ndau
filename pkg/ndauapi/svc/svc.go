@@ -318,6 +318,20 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(""))
 
+	svc.Route(svc.GET("/system/history/:sysvar").To(routes.HandleSystemHistory(cf)).
+		Doc("Returns the value history of a system variable given its name.").
+		Notes(`The history includes the height and value of each change to the system variable.
+		The result is sorted chronologically.`).
+		Operation("SysvarHistory").
+		Param(boneful.PathParameter("sysvar", "The name of the system variable for which to return history").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
+		Produces(JSON).
+		Writes(query.SysvarHistoryResponse{History: []query.SysvarHistoricalValue{{
+			Height: 12345,
+			Value:  []byte("Value"),
+		}}}))
+
 	svc.Route(svc.POST("/system/eai/rate").To(routes.GetEAIRate(cf)).
 		Operation("AccountEAIRate").
 		Doc("Returns eai rates for a collection of account information.").

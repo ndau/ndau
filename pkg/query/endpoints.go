@@ -11,6 +11,7 @@ const (
 	SearchEndpoint         = "/search"
 	SIBEndpoint            = "/sib"
 	SummaryEndpoint        = "/summary"
+	SysvarHistoryEndpoint  = "/sysvarhistory"
 	SysvarsEndpoint        = "/sysvars"
 	VersionEndpoint        = "/version"
 )
