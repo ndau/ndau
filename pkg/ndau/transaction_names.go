@@ -20,11 +20,13 @@ func init() {
 	// add common abbreviations
 	txnames["rfe"] = TxIDs[3]                   // releasefromendowment
 	txnames["claim"] = TxIDs[10]                // setvalidation
-	txnames["set-validation"] = TxIDs[10]       // setvalidation
+	txnames["claimaccount"] = TxIDs[10]         // setvalidation
 	txnames["setv"] = TxIDs[10]                 // setvalidation
+	txnames["set-validation"] = TxIDs[10]       // setvalidation
 	txnames["nnr"] = TxIDs[13]                  // nominatenodereward
 	txnames["cvc"] = TxIDs[16]                  // commandvalidatorchange
 	txnames["claim-child"] = TxIDs[21]          // createchildaccount
+	txnames["claimchildaccount"] = TxIDs[21]    // createchildaccount
 	txnames["create-child"] = TxIDs[21]         // createchildaccount
 	txnames["create-child-account"] = TxIDs[21] // createchildaccount
 	txnames["record-price"] = TxIDs[22]         // recordprice
