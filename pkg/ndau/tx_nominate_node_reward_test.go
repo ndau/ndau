@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -16,6 +15,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"

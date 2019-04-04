@@ -169,7 +169,7 @@ func (search *Client) onIndexingComplete(
 
 	// Index date to height as needed.
 	updCount, insCount, err :=
-		search.Client.IndexDateToHeight(search.blockTime, search.nextHeight - 1)
+		search.Client.IndexDateToHeight(search.blockTime, search.nextHeight-1)
 	updateCount += updCount
 	insertCount += insCount
 	if err != nil {
@@ -272,7 +272,7 @@ func (search *Client) indexState(
 		if data.height == search.blockHeight {
 			continue
 		}
-		
+
 		// Index the old value and height since we just found the block where the value
 		// changed.  The caller will index the value when it was originally set.
 		updCount, insCount, err := search.indexKeyValueWithHistory(searchKey, data.Marshal())
