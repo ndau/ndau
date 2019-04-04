@@ -20,8 +20,12 @@ func (search *Client) IndexBlockchain(
 	insertCount = 0
 
 	// Start fresh.  It should already be zero'd out upon entry.
+	search.sysvarKeyToValueData = make(map[string]*ValueData)
 	search.state = nil
 	search.txs = nil
+	// TODO: We really should be using block time when indexing below, but we don't store block
+	// timestamps in noms.  So we must eventually write the external ndauindexer app.  Then we
+	// would remove this entire function since it would replace the initial indexing below.
 	search.blockTime = time.Time{}
 	search.blockHash = ""
 	search.blockHeight = 0
@@ -50,7 +54,7 @@ func (search *Client) IndexBlockchain(
 		}
 
 		// Make sure we're iterating from the head block to genesis.
-		// However, we support multiple height-0 entries for parallelism with chaos noms data.
+		// It's expected, however, to get multiple height-0 entries for system variables.
 		// And also at height 1 for unit tests.
 		if height > lastHeight || height == lastHeight && height > 1 {
 			// Indexing logic relies on this, but more importantly, this indicates
@@ -60,14 +64,22 @@ func (search *Client) IndexBlockchain(
 		}
 		lastHeight = height
 
+		// The indexing code below uses this to know the current height.
 		search.blockHeight = height
 
-		// Here's where we index data out of noms.
-		// We will get block and tx hashes to index from our external indexer application.
-		// TODO: Add something here to index.  If we don't need to index anything out of noms,
-		// then remove this entire function.
-
+		// NOTE: This is currently a no-op since we didn't pull anything out of noms to put into
+		// the search client struct before calling index().  We keep this here in case we do find
+		// more that we want to index that also can be pulled from noms before this line.
 		updCount, insCount, err := search.index()
+		updateCount += updCount
+		insertCount += insCount
+		if err != nil {
+			return err
+		}
+
+		// Index sysvar key-value history, which we pull from noms.
+		st := stI.(*backing.State)
+		updCount, insCount, err = search.indexState(st)
 		updateCount += updCount
 		insertCount += insCount
 		return err
@@ -76,7 +88,16 @@ func (search *Client) IndexBlockchain(
 		return updateCount, insertCount, err
 	}
 
-	search.onIndexingComplete()
+	// We don't need to check for dupes if this is the first initial scan (minHeightToIndex
+	// == 0) since we will have just completed indexing the entire blockchain and have filtered
+	// out all the dupes from adjacent (and within) blocks using sysvarKeyToValueData map.
+	// We also don't need to check for dupes if we didn't index anything this time
+	// (minHeightToIndex == search.nextHeight), although that check is just for completeness
+	// since sysvarKeyToValueData will be empty in that case.
+	checkForDupes := 0 < minHeightToIndex && minHeightToIndex < search.nextHeight
+	updCount, insCount, err := search.onIndexingComplete(checkForDupes)
+	updateCount += updCount
+	insertCount += insCount
 
-	return updateCount, insertCount, nil
+	return updateCount, insertCount, err
 }
