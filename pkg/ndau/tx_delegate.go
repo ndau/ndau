@@ -12,10 +12,7 @@ import (
 func (app *App) Delegate(state *backing.State, target, node address.Address) error {
 	as := target.String()
 	ds := node.String()
-	acct, hasAcct := app.getAccount(target)
-	if !hasAcct {
-		return errors.New("delegation target account does not exist")
-	}
+	acct, _ := app.getAccount(target)
 
 	// remove it from its current delegate
 	if acct.DelegationNode != nil {
@@ -64,7 +61,7 @@ func (tx *Delegate) Validate(appI interface{}) error {
 		return err
 	}
 	if !hasAccount {
-		return errors.New("Account does not exist")
+		return errors.New("delegation target account does not exist")
 	}
 
 	return nil
