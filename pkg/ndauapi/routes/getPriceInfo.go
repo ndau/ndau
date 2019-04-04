@@ -12,8 +12,8 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-// OrderChainInfo is a single instance of a rate response (it returns an array of them)
-type OrderChainInfo struct {
+// PriceInfo is a single instance of a rate response (it returns an array of them)
+type PriceInfo struct {
 	MarketPrice pricecurve.Nanocent `json:"marketPrice"`
 	TargetPrice pricecurve.Nanocent `json:"targetPrice"`
 	TotalIssued types.Ndau          `json:"totalIssued"`
@@ -22,9 +22,9 @@ type OrderChainInfo struct {
 	CurrentSIB  eai.Rate            `json:"sib"`
 }
 
-// getOCI builds the start of an OrderChainInfo object, filling in the basics
-func getOCI(cf cfg.Cfg) (OrderChainInfo, error) {
-	var oci OrderChainInfo
+// getPriceInfo builds a PriceInfo object
+func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
+	var oci PriceInfo
 	node, err := ws.Node(cf.NodeAddress)
 	if err != nil {
 		return oci, err
@@ -49,12 +49,12 @@ func getOCI(cf cfg.Cfg) (OrderChainInfo, error) {
 	return oci, err
 }
 
-// GetOrderChainData returns a block of information from the order chain
-func GetOrderChainData(cf cfg.Cfg) http.HandlerFunc {
+// GetPriceData returns a block of price information
+func GetPriceData(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		response, err := getOCI(cf)
+		response, err := getPriceInfo(cf)
 		if err != nil {
-			reqres.NewFromErr("order chain query error", err, http.StatusInternalServerError)
+			reqres.NewFromErr("price query error", err, http.StatusInternalServerError)
 			return
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(response))
