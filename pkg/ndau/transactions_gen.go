@@ -458,9 +458,9 @@ func (z *CommandValidatorChange) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *CreateChildAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 9
+	// map header, size 10
 	// string "tgt"
-	o = append(o, 0x89, 0xa3, 0x74, 0x67, 0x74)
+	o = append(o, 0x8a, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Target")
@@ -507,6 +507,13 @@ func (z *CreateChildAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "cval"
 	o = append(o, 0xa4, 0x63, 0x76, 0x61, 0x6c)
 	o = msgp.AppendBytes(o, z.ChildValidationScript)
+	// string "nod"
+	o = append(o, 0xa3, 0x6e, 0x6f, 0x64)
+	o, err = z.ChildDelegationNode.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "ChildDelegationNode")
+		return
+	}
 	// string "seq"
 	o = append(o, 0xa3, 0x73, 0x65, 0x71)
 	o = msgp.AppendUint64(o, z.Sequence)
@@ -596,6 +603,12 @@ func (z *CreateChildAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "ChildValidationScript")
 				return
 			}
+		case "nod":
+			bts, err = z.ChildDelegationNode.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ChildDelegationNode")
+				return
+			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
@@ -639,7 +652,7 @@ func (z *CreateChildAccount) Msgsize() (s int) {
 	for za0001 := range z.ChildValidationKeys {
 		s += z.ChildValidationKeys[za0001].Msgsize()
 	}
-	s += 5 + msgp.BytesPrefixSize + len(z.ChildValidationScript) + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s += 5 + msgp.BytesPrefixSize + len(z.ChildValidationScript) + 4 + z.ChildDelegationNode.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0002 := range z.Signatures {
 		s += z.Signatures[za0002].Msgsize()
 	}

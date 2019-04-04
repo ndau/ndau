@@ -456,6 +456,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		2,
 		private,
 	)

@@ -37,6 +37,7 @@ func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -73,6 +74,7 @@ func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -99,6 +101,7 @@ func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -124,6 +127,7 @@ func TestValidClaimChildAccount(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -141,6 +145,9 @@ func TestValidClaimChildAccount(t *testing.T) {
 	// Ensure the child's settlement period matches the default from the system variable.
 	child, _ := app.getAccount(childAddress)
 	require.Equal(t, app.getDefaultSettlementDuration(), child.SettlementSettings.Period)
+	// ensure we updated the delegation node
+	require.NotNil(t, child.DelegationNode)
+	require.Equal(t, cca.ChildDelegationNode, *child.DelegationNode)
 }
 
 func TestClaimChildAccountSettlementPeriod(t *testing.T) {
@@ -159,6 +166,7 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 		period,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -189,6 +197,7 @@ func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{childPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -215,6 +224,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -246,6 +256,7 @@ func TestClaimChildAccountNoValidationKeys(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -277,6 +288,7 @@ func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
 		childSettlementPeriod,
 		newKeys,
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -310,6 +322,7 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -351,6 +364,7 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			childSettlementPeriod,
 			[]signature.PublicKey{validationPublic},
 			[]byte{},
+			child,
 			parentAcct.Sequence+1,
 			parentPrivate,
 		)
@@ -406,6 +420,7 @@ func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{0x01},
+		childAddress,
 		1,
 		private,
 	)
@@ -432,6 +447,7 @@ func TestClaimChildAccountInvalidChildSignature(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
