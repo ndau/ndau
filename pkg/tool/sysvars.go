@@ -50,6 +50,7 @@ func Sysvar(node client.ABCIClient, name string, example msgp.Unmarshaler) error
 }
 
 // SysvarHistory gets the value history of the given sysvar.
+// Pass in 0,0 for the paging params to get the entire history.
 func SysvarHistory(
 	node client.ABCIClient,
 	name string,
