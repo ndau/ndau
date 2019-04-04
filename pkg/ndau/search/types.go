@@ -34,8 +34,8 @@ type SysvarHistoryParams struct {
 
 // ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
 type ValueData struct {
-	height      uint64 `json:"height"`
-	valueBase64 string `json:"value_base64"`
+	height      uint64
+	valueBase64 string
 }
 
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
