@@ -18,7 +18,6 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-var isIntegration bool
 var ndauRPC string
 var chaosRPC string
 
@@ -26,7 +25,6 @@ var chaosRPC string
 const accountAndNamespaceString = "integrationtest"
 
 func init() {
-	flag.BoolVar(&isIntegration, "integration", false, "opt into integration tests")
 	flag.StringVar(&ndauRPC, "ndaurpc", "", "ndau rpc url")
 	flag.StringVar(&chaosRPC, "chaosrpc", "", "chaos rpc url")
 	flag.Parse()
