@@ -182,6 +182,7 @@ type CreateChildAccount struct {
 	ChildSettlementPeriod math.Duration         `msg:"cper" json:"child_settlement_period"`
 	ChildValidationKeys   []signature.PublicKey `msg:"ckey" json:"child_validation_keys"`
 	ChildValidationScript []byte                `msg:"cval" json:"child_validation_script"`
+	ChildDelegationNode   address.Address       `msg:"nod"  json:"child_delegation_node"`
 	Sequence              uint64                `msg:"seq"  json:"sequence"`
 	Signatures            []signature.Signature `msg:"sig"  json:"signatures"`
 }

@@ -119,6 +119,11 @@ func (tx *CreateChildAccount) Apply(appI interface{}) error {
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
+		err := app.Delegate(st, tx.Child, tx.ChildDelegationNode)
+		if err != nil {
+			return st, err
+		}
+
 		child, _ := app.getAccount(tx.Child)
 		child.ValidationKeys = tx.ChildValidationKeys
 		child.ValidationScript = tx.ChildValidationScript

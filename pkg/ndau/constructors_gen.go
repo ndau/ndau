@@ -479,6 +479,7 @@ func NewCreateChildAccount(
 	childsettlementperiod math.Duration,
 	childvalidationkeys []signature.PublicKey,
 	childvalidationscript []byte,
+	childdelegationnode address.Address,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *CreateChildAccount {
@@ -490,6 +491,7 @@ func NewCreateChildAccount(
 		ChildSettlementPeriod: childsettlementperiod,
 		ChildValidationKeys:   childvalidationkeys,
 		ChildValidationScript: childvalidationscript,
+		ChildDelegationNode:   childdelegationnode,
 		Sequence:              sequence,
 	}
 	if len(signingKeys) > 0 {
