@@ -8,7 +8,7 @@ import (
 )
 
 // MarshalMsg implements msgp.Marshaler
-func (z *ChangeSettlementPeriod) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *ChangeRecoursePeriod) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 4
 	// string "tgt"
@@ -42,7 +42,7 @@ func (z *ChangeSettlementPeriod) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ChangeSettlementPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ChangeRecoursePeriod) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -109,7 +109,7 @@ func (z *ChangeSettlementPeriod) UnmarshalMsg(bts []byte) (o []byte, err error) 
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *ChangeSettlementPeriod) Msgsize() (s int) {
+func (z *ChangeRecoursePeriod) Msgsize() (s int) {
 	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Period.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
