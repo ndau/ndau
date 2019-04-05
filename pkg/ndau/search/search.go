@@ -13,6 +13,7 @@ import (
 
 // SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
 // The response is sorted by ascending block height, each entry is where the key's value changed.
+// Pass in 0,0 for the paging params to get the entire history.
 func (search *Client) SearchSysvarHistory(
 	sysvar string, pageIndex int, pageSize int,
 ) (khr *query.SysvarHistoryResponse, err error) {
@@ -105,6 +106,7 @@ func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
 
 // SearchAccountHistory returns an array of block height and txoffset pairs associated with the
 // given account address.
+// Pass in 0, 0 for the paging params to get the entire history.
 func (search *Client) SearchAccountHistory(
 	addr string, pageIndex int, pageSize int,
 ) (ahr *AccountHistoryResponse, err error) {

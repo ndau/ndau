@@ -9,9 +9,14 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 )
 
+// HealthStatus gives us the ability to add more status information later without messing up clients
+type HealthStatus struct {
+	Status string
+}
+
 // HealthResponse is the response from the /health endpoint.
 type HealthResponse struct {
-	Status string
+	Ndau HealthStatus
 }
 
 // GetHealth returns health indicators from Tendermint.
@@ -29,6 +34,6 @@ func GetHealth(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		reqres.RespondJSON(w, reqres.OKResponse(HealthResponse{"Ok"}))
+		reqres.RespondJSON(w, reqres.OKResponse(HealthResponse{HealthStatus{"Ok"}}))
 	}
 }

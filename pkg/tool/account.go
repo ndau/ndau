@@ -60,6 +60,7 @@ func GetAccountHistory(node client.ABCIClient, params string) (
 }
 
 // GetAccountList gets a list of account names, paged according to the params
+// Pass in 0,0 for the paging params to get the entire history.
 func GetAccountList(node client.ABCIClient, pageIndex int, pageSize int) (
 	*query.AccountListQueryResponse, *rpctypes.ResultABCIQuery, error,
 ) {

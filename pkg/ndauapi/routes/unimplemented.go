@@ -8,10 +8,10 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-// OrderHistoryRecord struct
-type OrderHistoryRecord struct {
+// PriceHistoryRecord struct
+type PriceHistoryRecord struct {
 	Timestamp math.Timestamp
-	OrderInfo OrderChainInfo
+	PriceData PriceInfo
 }
 
 // HandleNumUnconfirmedTxs func
@@ -21,29 +21,15 @@ func HandleNumUnconfirmedTxs(cf cfg.Cfg) http.HandlerFunc {
 	}
 }
 
-// HandleOrderCurrent func
-func HandleOrderCurrent(cf cfg.Cfg) http.HandlerFunc {
+// HandlePriceHeight func
+func HandlePriceHeight(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusNotImplemented))
 	}
 }
 
-// HandleOrderHash func
-func HandleOrderHash(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusNotImplemented))
-	}
-}
-
-// HandleOrderHeight func
-func HandleOrderHeight(cf cfg.Cfg) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusNotImplemented))
-	}
-}
-
-// HandleOrderHistory func
-func HandleOrderHistory(cf cfg.Cfg) http.HandlerFunc {
+// HandlePriceHistory func
+func HandlePriceHistory(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reqres.RespondJSON(w, reqres.NewAPIError("unimplemented endpoint", http.StatusNotImplemented))
 	}
