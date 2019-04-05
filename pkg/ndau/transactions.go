@@ -18,7 +18,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):  &Transfer{},
 	metatx.TxID(2):  &ChangeValidation{},
 	metatx.TxID(3):  &ReleaseFromEndowment{},
-	metatx.TxID(4):  &ChangeSettlementPeriod{},
+	metatx.TxID(4):  &ChangeRecoursePeriod{},
 	metatx.TxID(5):  &Delegate{},
 	metatx.TxID(6):  &CreditEAI{},
 	metatx.TxID(7):  &Lock{},
@@ -76,16 +76,16 @@ type ReleaseFromEndowment struct {
 
 var _ NTransactable = (*ReleaseFromEndowment)(nil)
 
-// A ChangeSettlementPeriod transaction is used to change the settlement period for
+// A ChangeRecoursePeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
-type ChangeSettlementPeriod struct {
+type ChangeRecoursePeriod struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
 	Period     math.Duration         `msg:"per" chain:"21,Tx_Period" json:"period"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
-var _ NTransactable = (*ChangeSettlementPeriod)(nil)
+var _ NTransactable = (*ChangeRecoursePeriod)(nil)
 
 // A Delegate transaction is used to delegate the node which should
 // compute EAI for the specified account.

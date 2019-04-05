@@ -119,8 +119,8 @@ func (tx *ReleaseFromEndowment) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-// SignableBytes partially implements metatx.Transactable for ChangeSettlementPeriod
-func (tx *ChangeSettlementPeriod) SignableBytes() []byte {
+// SignableBytes partially implements metatx.Transactable for ChangeRecoursePeriod
+func (tx *ChangeRecoursePeriod) SignableBytes() []byte {
 	return sbOf(tx)
 }
 

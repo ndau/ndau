@@ -86,16 +86,16 @@ func NewReleaseFromEndowment(
 	return tx
 }
 
-// NewChangeSettlementPeriod creates a new ChangeSettlementPeriod transactable
+// NewChangeRecoursePeriod creates a new ChangeRecoursePeriod transactable
 //
 // If signing keys are present, the new transactable is signed with all of them
-func NewChangeSettlementPeriod(
+func NewChangeRecoursePeriod(
 	target address.Address,
 	period math.Duration,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
-) *ChangeSettlementPeriod {
-	tx := &ChangeSettlementPeriod{
+) *ChangeRecoursePeriod {
+	tx := &ChangeRecoursePeriod{
 		Target:   target,
 		Period:   period,
 		Sequence: sequence,

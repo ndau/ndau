@@ -19,7 +19,7 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 
 	addr := sourceAddress
 
-	cep := NewChangeSettlementPeriod(addr, newDuration, acct.Sequence+1, private)
+	cep := NewChangeRecoursePeriod(addr, newDuration, acct.Sequence+1, private)
 
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {
 	const newDuration = math.Duration(1 * math.Day)
 
 	for i := 0; i < 2; i++ {
-		tx := NewChangeSettlementPeriod(
+		tx := NewChangeRecoursePeriod(
 			addr,
 			newDuration,
 			uint64(i)+1,
