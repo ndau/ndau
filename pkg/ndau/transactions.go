@@ -24,7 +24,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(7):  &Lock{},
 	metatx.TxID(8):  &Notify{},
 	metatx.TxID(9):  &SetRewardsDestination{},
-	metatx.TxID(10): &ClaimAccount{},
+	metatx.TxID(10): &SetValidation{},
 	metatx.TxID(11): &Stake{},
 	metatx.TxID(12): &RegisterNode{},
 	metatx.TxID(13): &NominateNodeReward{},
@@ -34,7 +34,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(18): &UnregisterNode{},
 	metatx.TxID(19): &Unstake{},
 	metatx.TxID(20): &Issue{},
-	metatx.TxID(21): &ClaimChildAccount{},
+	metatx.TxID(21): &CreateChildAccount{},
 	metatx.TxID(22): &RecordPrice{},
 	metatx.TxID(23): &SetSysvar{},
 }
@@ -158,10 +158,10 @@ type SetRewardsDestination struct {
 
 var _ NTransactable = (*SetRewardsDestination)(nil)
 
-// A ClaimAccount transaction is used to set the initial transfer keys for an account.
+// A SetValidation transaction is used to set the initial transfer keys for an account.
 //
 // It is the only type of transaction which may be signed with only the ownership key.
-type ClaimAccount struct {
+type SetValidation struct {
 	Target           address.Address       `msg:"tgt" json:"target"`
 	Ownership        signature.PublicKey   `msg:"own" json:"ownership"`
 	ValidationKeys   []signature.PublicKey `msg:"key" json:"validation_keys"`
@@ -170,11 +170,11 @@ type ClaimAccount struct {
 	Signature        signature.Signature   `msg:"sig" json:"signature"`
 }
 
-var _ NTransactable = (*ClaimAccount)(nil)
+var _ NTransactable = (*SetValidation)(nil)
 
-// A ClaimChildAccount transaction is used to set the initial transfer keys for a child account,
+// A CreateChildAccount transaction is used to set the initial transfer keys for a child account,
 // and link the target account as its parent.
-type ClaimChildAccount struct {
+type CreateChildAccount struct {
 	Target                address.Address       `msg:"tgt"  json:"target"`
 	Child                 address.Address       `msg:"chd"  json:"child"`
 	ChildOwnership        signature.PublicKey   `msg:"cown" json:"child_ownership"`
@@ -186,7 +186,7 @@ type ClaimChildAccount struct {
 	Signatures            []signature.Signature `msg:"sig"  json:"signatures"`
 }
 
-var _ NTransactable = (*ClaimChildAccount)(nil)
+var _ NTransactable = (*CreateChildAccount)(nil)
 
 // TransferAndLock allows a transaction where the received amount is locked
 // for a specified period. It can only be sent to accounts that did not
