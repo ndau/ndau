@@ -51,7 +51,7 @@ func (tx *Notify) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		accountData, _ := app.getAccount(tx.Target)
 
-		uo := app.blockTime.Add(accountData.Lock.NoticePeriod)
+		uo := app.BlockTime().Add(accountData.Lock.NoticePeriod)
 		accountData.Lock.UnlocksOn = &uo
 
 		state.Accounts[tx.Target.String()] = accountData

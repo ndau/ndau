@@ -44,7 +44,7 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 		if err != nil {
 			return state, err
 		}
-		acct.UpdateCurrencySeat(app.blockTime)
+		acct.UpdateCurrencySeat(app.BlockTime())
 		state.Accounts[tx.Destination.String()] = acct
 
 		// we give up overflow protection here in exchange for error-free

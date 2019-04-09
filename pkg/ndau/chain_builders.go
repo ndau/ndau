@@ -145,7 +145,7 @@ func BuildVMForTxValidation(
 	if err != nil {
 		return nil, err
 	}
-	err = ndauVM(theVM, app.blockTime, tx.SignableBytes())
+	err = ndauVM(theVM, app.BlockTime(), tx.SignableBytes())
 	if err != nil {
 		return nil, err
 	}

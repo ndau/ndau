@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
@@ -57,8 +56,6 @@ func initAppNNR(t *testing.T) (*App, generator.Associated) {
 		return state, nil
 	})
 	var err error
-	app.blockTime, err = math.TimestampFrom(time.Now())
-	require.NoError(t, err)
 
 	// fetch the NNR address system variable
 	nnrAddr := address.Address{}

@@ -134,7 +134,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		return acct, exists, sigset, err
 	}
 
-	acct.UpdateSettlements(app.blockTime)
+	acct.UpdateSettlements(app.BlockTime())
 	available, err := acct.AvailableBalance()
 	if err != nil {
 		return acct, exists, sigset, err
@@ -225,13 +225,16 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 
 	source, _ := app.getAccount(sourceA)
 
+	// if source isn't locked, resets the lock data
+	source.IsLocked(app.BlockTime())
+
 	pending, err := source.Balance.Add(source.UncreditedEAI)
 	if err != nil {
 		return errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
 	}
 
 	eai, err := eai.Calculate(
-		pending, app.blockTime, source.LastEAIUpdate,
+		pending, app.BlockTime(), source.LastEAIUpdate,
 		source.WeightedAverageAge, source.Lock,
 		*unlockedTable,
 	)
@@ -240,7 +243,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	if err != nil {
 		return errors.Wrap(err, "calculating new uncredited EAI")
 	}
-	source.LastEAIUpdate = app.blockTime
+	source.LastEAIUpdate = app.BlockTime()
 
 	withdrawal, err := fee.Add(sib)
 	if err != nil {
@@ -258,7 +261,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 		return errors.Wrap(err, "calculating new balance")
 	}
 
-	source.UpdateCurrencySeat(app.blockTime)
+	source.UpdateCurrencySeat(app.BlockTime())
 
 	source.Sequence = tx.GetSequence()
 
@@ -267,7 +270,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	// Below this point, no error values are permitted.                //
 	/////////////////////////////////////////////////////////////////////
 
-	source.UpdateSettlements(app.blockTime)
+	source.UpdateSettlements(app.BlockTime())
 
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)

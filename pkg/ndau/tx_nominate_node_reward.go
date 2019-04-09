@@ -33,11 +33,11 @@ func (tx *NominateNodeReward) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "getting min duration system variable")
 	}
-	if app.blockTime.Since(state.LastNodeRewardNomination) < minDuration {
+	if app.BlockTime().Since(state.LastNodeRewardNomination) < minDuration {
 		return fmt.Errorf(
 			"not enough time since last NNR. need %s, have %s",
 			minDuration,
-			app.blockTime.Since(state.LastNodeRewardNomination),
+			app.BlockTime().Since(state.LastNodeRewardNomination),
 		)
 	}
 
@@ -56,7 +56,7 @@ func (tx *NominateNodeReward) Apply(appI interface{}) error {
 		var err error
 		state := stateI.(*backing.State)
 
-		state.LastNodeRewardNomination = app.blockTime
+		state.LastNodeRewardNomination = app.BlockTime()
 		state.UnclaimedNodeReward = state.PendingNodeReward
 		state.PendingNodeReward = 0
 

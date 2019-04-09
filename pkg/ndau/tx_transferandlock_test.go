@@ -161,7 +161,7 @@ func TestTnLsSettlementPeriod(t *testing.T) {
 	modify(t, destAddress, app, func(dest *backing.AccountData) {
 		sourceAddress := []backing.Settlement{backing.Settlement{
 			Qty:    123 * constants.QuantaPerUnit,
-			Expiry: app.blockTime.Add(2 * math.Day),
+			Expiry: app.BlockTime().Add(2 * math.Day),
 		}}
 		require.Equal(t, sourceAddress, dest.Settlements)
 	})
@@ -287,7 +287,7 @@ func TestTnLSequenceMustIncrease(t *testing.T) {
 func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
 	// setup app
 	app, key, ts := initAppSettlement(t)
-	require.True(t, app.blockTime.Compare(ts) >= 0)
+	require.True(t, app.BlockTime().Compare(ts) >= 0)
 	tn := ts.Add(1 * math.Second)
 
 	// generate transfer
@@ -431,7 +431,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 
 	// The dest should still be locked after the TransferAndLock.
 	destAcct, _ := app.getAccount(destAddress)
-	require.True(t, destAcct.IsLocked(app.blockTime))
+	require.True(t, destAcct.IsLocked(app.BlockTime()))
 }
 
 func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
@@ -466,5 +466,5 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 
 	// The child should still be locked after the TransferAndLock.
 	childAcct, _ := app.getAccount(childAddress)
-	require.True(t, childAcct.IsLocked(app.blockTime))
+	require.True(t, childAcct.IsLocked(app.BlockTime()))
 }

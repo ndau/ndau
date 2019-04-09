@@ -18,7 +18,7 @@ func (app *App) calculateTxFee(tx metatx.Transactable) (math.Ndau, error) {
 		return 0, errors.Wrap(err, "fetching TxFeeScript system variable")
 	}
 
-	vm, err := BuildVMForTxFees(script, tx, app.blockTime)
+	vm, err := BuildVMForTxFees(script, tx, app.BlockTime())
 	if err != nil {
 		return 0, errors.Wrap(err, "couldn't build vm for tx fee script")
 	}
