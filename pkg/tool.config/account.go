@@ -79,37 +79,63 @@ func FilterK(keys []signature.PrivateKey, k int) []signature.PrivateKey {
 	return out
 }
 
-func (a *Account) highestTransferPath() (uint64, uint64) {
-	var high3, high4 uint64
+func (a *Account) highestTransferPath() (account uint64, key uint64) {
+	// given an account at /44'/20036'/100/17, its keys must all live at
+	// /44'/20036'/100/10000/17/n.
+	//
+	// We name the fields as follows:
+	// for the account: /44'/20036'/AccountListOffset/account
+	// for the validation key: /44'/20036'/AccountListOffset/ValidationKeyOffset/account/key
+
+	if a.Ownership.Path == nil {
+		return
+	}
+
+	var accountlistoffset uint64
+	n, err := fmt.Sscanf(*a.Ownership.Path, AccountPathFormat, &accountlistoffset, &account)
+	if err != nil || n != 2 || accountlistoffset != AccountListOffset {
+		// oh well, can't deal with non-standard values
+		return
+	}
+
 	for _, tr := range a.Transfer {
 		if tr.Path != nil {
-			var field3, field4 uint64
-			n, err := fmt.Sscanf(*tr.Path, AccountPathFormat, &field3, &field4)
-			if err != nil {
+			var traccount, trkey, validationkeyoffset uint64
+			n, err := fmt.Sscanf(
+				*tr.Path,
+				ValidationPathFormat,
+				&accountlistoffset,
+				&validationkeyoffset,
+				&traccount,
+				&trkey,
+			)
+			if err != nil || n != 4 || accountlistoffset != AccountListOffset || validationkeyoffset != ValidationKeyOffset || traccount != account {
 				continue
 			}
-			if n != 2 {
-				continue
-			}
-			if field3 > high3 || (field3 == high3 && field4 > high4) {
-				high3 = field3
-				high4 = field4
+
+			if trkey > key {
+				key = trkey
 			}
 		}
 	}
-	return high3, high4
+	return
 }
 
 func (a *Account) nextTransferPath() *string {
 	if a.Ownership.Path == nil {
 		return nil
 	}
-	high3, high4 := a.highestTransferPath()
-	if (high3 == 0 || high3 == AccountListOffset) && (high4 == 0 || high4 == AccountStartNumber) {
-		h := fmt.Sprintf(AccountPathFormat, TransferKeyOffset, AccountStartNumber)
-		return &h
+	account, key := a.highestTransferPath()
+	if account == 0 {
+		account = AccountStartNumber
 	}
-	h := fmt.Sprintf(AccountPathFormat, high3, high4+1)
+	h := fmt.Sprintf(
+		ValidationPathFormat,
+		AccountListOffset,
+		ValidationKeyOffset,
+		AccountStartNumber,
+		key+1,
+	)
 	return &h
 }
 
