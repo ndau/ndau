@@ -3,9 +3,9 @@ package config
 import (
 	"fmt"
 
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )

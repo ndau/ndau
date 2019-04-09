@@ -6,60 +6,47 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/p2p"
 )
 
-// ResultNodePair represents a chaos-ndau node pair.
-type ResultNodePair struct {
-	ChaosNode p2p.DefaultNodeInfo `json:"chaos"`
-	NdauNode  p2p.DefaultNodeInfo `json:"ndau"`
-}
-
 // ResultNodeList represents a list of nodes.
 type ResultNodeList struct {
-	Nodes []ResultNodePair `json:"nodes"`
+	Nodes []p2p.DefaultNodeInfo `json:"nodes"`
 }
 
-// NodePairInfo is used for sorting node pairs.
-type NodePairInfo struct {
-	Moniker    string
-	ChaosIndex int
-	NdauIndex  int
+// NodeInfo is used for sorting node pairs.
+type NodeInfo struct {
+	Moniker   string `json:"moniker"`
+	NdauIndex int    `json:"ndau_index"`
 }
 
 // GetNodeList returns a list of nodes, including this one.
 func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		chaosNodes := getNodes(cf.ChaosAddress, w, r)
 		ndauNodes := getNodes(cf.NodeAddress, w, r)
-		if chaosNodes != nil && ndauNodes != nil {
+		if ndauNodes != nil {
 			// Monikers match between chaos and ndau, so we should be able iterate the two slices
 			// in parallel.  However, for robustness, we create a map from moniker to node pair,
 			// in case there is a mismatch between the chaos and ndau nodes.
-			monikerMap := make(map[string]*NodePairInfo)
+			monikerMap := make(map[string]*NodeInfo)
 
-			// Loop over both slices, in case one is shorter than the other.
-			for i, node := range chaosNodes {
-				moniker := node.Moniker
-				monikerMap[moniker] = &NodePairInfo{Moniker: moniker, ChaosIndex: i}
-			}
 			for i, node := range ndauNodes {
 				moniker := node.Moniker
 				if info, ok := monikerMap[moniker]; ok {
 					info.NdauIndex = i
+					monikerMap[moniker] = info
 				} else {
-					monikerMap[moniker] = &NodePairInfo{Moniker: moniker, NdauIndex: i}
+					monikerMap[moniker] = &NodeInfo{Moniker: moniker, NdauIndex: i}
 				}
 			}
 
 			// Fill a slice and sort by moniker.
-			infoSlice := []*NodePairInfo{}
+			infoSlice := []*NodeInfo{}
 			for _, info := range monikerMap {
 				infoSlice = append(infoSlice, info)
 			}
@@ -68,16 +55,11 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 			})
 
 			// Convert to the desired response type.
-			rnl := ResultNodeList{[]ResultNodePair{}}
+			rnl := ResultNodeList{[]p2p.DefaultNodeInfo{}}
 			for _, info := range infoSlice {
-				rnp := ResultNodePair{}
-				if info.ChaosIndex >= 0 {
-					rnp.ChaosNode = chaosNodes[info.ChaosIndex]
-				}
 				if info.NdauIndex >= 0 {
-					rnp.NdauNode = ndauNodes[info.NdauIndex]
+					rnl.Nodes = append(rnl.Nodes, ndauNodes[info.NdauIndex])
 				}
-				rnl.Nodes = append(rnl.Nodes, rnp)
 			}
 
 			reqres.RespondJSON(w, reqres.OKResponse(rnl))

@@ -222,7 +222,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/node/health").To(routes.GetHealth(cf)).
 		Operation("NodeHealth").
-		Doc("Returns the health of the current ndau node and chaos node.").
+		Doc("Returns the health of the current node by doing a simple test for connectivity and response.").
 		Produces(JSON).
 		Writes(routes.HealthResponse{}))
 
@@ -263,21 +263,19 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(p2p.NodeInfo.NetAddress))
 
-	svc.Route(svc.GET("/order/hash/:ndauhash").To(routes.HandleOrderHash(cf)).
-		Operation("OrderHash").
-		Doc("Returns the collection of data from the order chain as of a specific ndau blockhash.").
-		Param(boneful.PathParameter("ndauhash", "Hash from the ndau chain.").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes(routes.OrderChainInfo{}))
+	svc.Route(svc.GET("/order/current").To(routes.GetPriceData(cf)).
+		Operation("DEPRECATEDOrderCurrent").
+		Doc("Please use /price/current instead").
+		Produces(JSON))
 
-	svc.Route(svc.GET("/order/height/:ndauheight").To(routes.HandleOrderHeight(cf)).
+	svc.Route(svc.GET("/price/height/:height").To(routes.HandlePriceHeight(cf)).
 		Operation("OrderHeight").
-		Doc("Returns the collection of data from the order chain as of a specific ndau block height.").
-		Param(boneful.PathParameter("ndauheight", "Height from the ndau chain.").DataType("int").Required(true)).
+		Doc("Returns the collection of price data as of a specific ndau block height.").
+		Param(boneful.PathParameter("height", "Height from the ndau chain.").DataType("int").Required(true)).
 		Produces(JSON).
-		Writes(routes.OrderChainInfo{}))
+		Writes(routes.PriceInfo{}))
 
-	svc.Route(svc.GET("/order/history").To(routes.HandleOrderHistory(cf)).
+	svc.Route(svc.GET("/price/history").To(routes.HandlePriceHistory(cf)).
 		Operation("OrderHistory").
 		Doc("Returns an array of data from the order chain at periodic intervals over time, sorted chronologically.").
 		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=100, max=1000.").DataType("string").Required(true)).
@@ -285,12 +283,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to end (exclusive); default=now.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("after", "Timestamp (ISO 8601) to start (inclusive); default=before-(limit*period).").DataType("string").Required(true)).
 		Produces(JSON).
-		Writes([]routes.OrderHistoryRecord{}))
+		Writes([]routes.PriceHistoryRecord{}))
 
-	svc.Route(svc.GET("/order/current").To(routes.GetOrderChainData(cf)).
-		Operation("OrderCurrent").
-		Doc("Returns current order chain data for key parameters.").
-		Notes(`Returns current order chain information:
+	svc.Route(svc.GET("/price/current").To(routes.GetPriceData(cf)).
+		Operation("PriceInfo").
+		Doc("Returns current price data for key parameters.").
+		Notes(`Returns current price information:
 		* Market price
 		* Target price
 		* Total ndau issued from the endowment
@@ -299,7 +297,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		* Current SIB in effect
 		`).
 		Produces(JSON).
-		Writes(routes.OrderChainInfo{
+		Writes(routes.PriceInfo{
 			MarketPrice: 1234 * 1000000000,
 			TargetPrice: 5678 * 1000000000,
 			TotalIssued: 2919000 * 100000000,
@@ -319,6 +317,20 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns the names and current values of all currently-defined system variables.").
 		Produces(JSON).
 		Writes(""))
+
+	svc.Route(svc.GET("/system/history/:sysvar").To(routes.HandleSystemHistory(cf)).
+		Doc("Returns the value history of a system variable given its name.").
+		Notes(`The history includes the height and value of each change to the system variable.
+		The result is sorted chronologically.`).
+		Operation("SysvarHistory").
+		Param(boneful.PathParameter("sysvar", "The name of the system variable for which to return history").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
+		Produces(JSON).
+		Writes(query.SysvarHistoryResponse{History: []query.SysvarHistoricalValue{{
+			Height: 12345,
+			Value:  []byte("Value"),
+		}}}))
 
 	svc.Route(svc.POST("/system/eai/rate").To(routes.GetEAIRate(cf)).
 		Operation("AccountEAIRate").

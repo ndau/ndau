@@ -3,6 +3,7 @@ package search
 // Core implementation and helper functions for indexing.
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -17,12 +18,22 @@ import (
 // want to do things like "wipe all hash-to-height keys" without affecting any other keys.  The
 // prefixes also give us some sanity, so that we completely avoid inter-index key conflicts.
 // NOTE: These must not conflict with dateRangeToHeightSearchKeyPrefix defined in metanode.
-const blockHashToHeightSearchKeyPrefix = "b:"
-const txHashToHeightSearchKeyPrefix = "t:"
 const accountAddressToHeightSearchKeyPrefix = "a:"
+const blockHashToHeightSearchKeyPrefix = "b:"
+const sysvarKeyToValueSearchKeyPrefix = "s:"
+const txHashToHeightSearchKeyPrefix = "t:"
 
-// Indexable is an indexable Transactable.
-type Indexable interface {
+// SysvarIndexable is a Transactable that has sysar data that we want to index.
+type SysvarIndexable interface {
+	metatx.Transactable
+
+	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
+	GetName() string
+	GetValue() []byte
+}
+
+// AddressIndexable is a Transactable that has addresses associated with it that we want to index.
+type AddressIndexable interface {
 	metatx.Transactable
 
 	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
@@ -33,12 +44,25 @@ type Indexable interface {
 type Client struct {
 	*metasearch.Client
 
-	state       metastate.State
-	txs         []metatx.Transactable
+	// Used when collecting sysvar keys to index.  In the case of initial indexing,
+	// this combines keys and values over possibly multiple blocks.
+	sysvarKeyToValueData map[string]*ValueData
+
+	// Used for getting account data to index.
+	state metastate.State
+
+	// Used for indexing transaction hashes.
+	txs []metatx.Transactable
+
+	// Used for indexing the block hash at the current height.
+	blockHash string
+
+	// These pertain to the current block we're indexing.
 	blockTime   time.Time
-	blockHash   string
 	blockHeight uint64
-	nextHeight  uint64
+
+	// The next height we will index after the current incremental/initial indexing completes.
+	nextHeight uint64
 }
 
 // NewClient is a factory method for Client.
@@ -49,6 +73,7 @@ func NewClient(address string, version int) (search *Client, err error) {
 		return nil, err
 	}
 
+	search.sysvarKeyToValueData = nil
 	search.state = nil
 	search.txs = nil
 	search.blockTime = time.Time{}
@@ -57,6 +82,11 @@ func NewClient(address string, version int) (search *Client, err error) {
 	search.nextHeight = 0
 
 	return search, nil
+}
+
+// Helper function for generating unique search sysvar keys within the redis database.
+func formatSysvarKeyToValueSearchKey(key string) string {
+	return sysvarKeyToValueSearchKeyPrefix + key
 }
 
 func formatBlockHashToHeightSearchKey(hash string) string {
@@ -71,8 +101,83 @@ func formatAccountAddressToHeightSearchKey(addr string) string {
 	return accountAddressToHeightSearchKeyPrefix + addr
 }
 
-func (search *Client) onIndexingComplete() {
+// Index all the key-value pairs in the search's sysvarKeyToValueData mapping, then clear the map.
+// checkForDupes is used for merging any duplicate keys we find in the mapping.
+func (search *Client) onIndexingComplete(
+	checkForDupes bool,
+) (updateCount int, insertCount int, err error) {
+	updateCount = 0
+	insertCount = 0
+
+	// We'll reuse this for unmarshaling data into it.
+	valueData := &ValueData{}
+
+	// When we initially index, we only indexed when we noticed a change in a given key's value.
+	// After we've completed the blockchain crawl, whatever's left is the first occurrence of a
+	// given key at its latest value.  So we index them at that point here.
+	// In the case of incremental indexing, we fill the mapping with the new/changed values and
+	// index them all here when the block is committed.
+	for searchKey, data := range search.sysvarKeyToValueData {
+		skip := false
+
+		if checkForDupes {
+			// Find the potential dupe value for this key in the index.
+			hasValue := false
+			dupeHeight := uint64(0)
+			dupeValueBase64 := ""
+
+			err = search.Client.SScan(searchKey,
+				func(searchValue string) error {
+					err := valueData.Unmarshal(searchValue)
+					if err != nil {
+						return err
+					}
+
+					height := valueData.height
+					valueBase64 := valueData.valueBase64
+
+					if !hasValue || dupeHeight < height && height <= data.height {
+						dupeValueBase64 = valueBase64
+						dupeHeight = height
+						hasValue = true
+						if dupeHeight == data.height {
+							// Found potential dupe at the right height.
+							// No need to iterate further.
+							return metastate.StopIteration()
+						}
+					}
+					return nil
+				})
+			if err != nil && !metastate.IsStopIteration(err) {
+				return updateCount, insertCount, err
+			}
+
+			if hasValue && dupeValueBase64 == data.valueBase64 {
+				skip = true
+			}
+		}
+
+		if !skip {
+			updCount, insCount, err := search.indexKeyValueWithHistory(searchKey, data.Marshal())
+			updateCount += updCount
+			insertCount += insCount
+			if err != nil {
+				return updateCount, insertCount, err
+			}
+		}
+	}
+
+	// Index date to height as needed.
+	updCount, insCount, err :=
+		search.Client.IndexDateToHeight(search.blockTime, search.nextHeight-1)
+	updateCount += updCount
+	insertCount += insCount
+	if err != nil {
+		return updateCount, insertCount, err
+	}
+
 	// No need to keep this data around any longer.
+	search.sysvarKeyToValueData = nil
 	search.state = nil
 	search.txs = nil
 	search.blockTime = time.Time{}
@@ -81,6 +186,8 @@ func (search *Client) onIndexingComplete() {
 
 	// Save this off so the next initial scan will only go this far.
 	search.Client.SetNextHeight(search.nextHeight)
+
+	return updateCount, insertCount, nil
 }
 
 // Index a single key-value pair.
@@ -128,7 +235,63 @@ func (search *Client) indexKeyValueWithHistory(searchKey, searchValue string) (
 	return updateCount, insertCount, nil
 }
 
-// Index everything we have in the Client.
+// Index all the sysvar key-value pairs in the given state at the current search.blockHeight.
+func (search *Client) indexState(
+	st *backing.State,
+) (updateCount int, insertCount int, err error) {
+	updateCount = 0
+	insertCount = 0
+
+	for key, value := range st.Sysvars {
+		valueBase64 := base64.StdEncoding.EncodeToString(value)
+
+		searchKey := formatSysvarKeyToValueSearchKey(key)
+
+		// Detect the first time we've encountered this key.
+		data, hasValue := search.sysvarKeyToValueData[searchKey]
+		if !hasValue {
+			search.sysvarKeyToValueData[searchKey] = &ValueData{
+				height:      search.blockHeight,
+				valueBase64: valueBase64,
+			}
+			continue
+		}
+
+		// Skip indexing adjacent blocks having the same value for the given key.
+		// This assumes we're iterating blocks in order from the head to genesis.
+		if data.valueBase64 == valueBase64 {
+			// Save off the current height of the iteration.  We do this when we're
+			// not indexing it so we eventually index with the lowest block height
+			// seen for a given search key.
+			data.height = search.blockHeight
+			continue
+		}
+
+		// This is only a sanity check.  Noms doesn't preserve any but the last-set value
+		// for a given key and height.  So we'll never encounter this case.
+		if data.height == search.blockHeight {
+			continue
+		}
+
+		// Index the old value and height since we just found the block where the value
+		// changed.  The caller will index the value when it was originally set.
+		updCount, insCount, err := search.indexKeyValueWithHistory(searchKey, data.Marshal())
+		updateCount += updCount
+		insertCount += insCount
+		if err != nil {
+			return updateCount, insertCount, err
+		}
+
+		// Save off the current value of the iteration.  We'll eventually index it at the
+		// lowest height we see for it.
+		data.height = search.blockHeight
+		data.valueBase64 = valueBase64
+	}
+
+	return updateCount, insertCount, nil
+}
+
+// Index everything we have in the Client at the current search.blockHeight.
 func (search *Client) index() (updateCount int, insertCount int, err error) {
 	updateCount = 0
 	insertCount = 0
@@ -168,7 +331,7 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		}
 
 		// Index account addresses associated with the transaction.
-		indexable, isIndexable := tx.(Indexable)
+		indexable, isIndexable := tx.(AddressIndexable)
 		if isIndexable {
 			addresses := indexable.GetAccountAddresses()
 
@@ -191,10 +354,5 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		}
 	}
 
-	// Index date to height as needed.
-	updCount, insCount, err =
-		search.Client.IndexDateToHeight(search.blockTime, search.blockHeight)
-	updateCount += updCount
-	insertCount += insCount
-	return updateCount, insertCount, err
+	return updateCount, insertCount, nil
 }

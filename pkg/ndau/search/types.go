@@ -25,6 +25,19 @@ type QueryParams struct {
 	Hash string `json:"hash"`
 }
 
+// SysvarHistoryParams is a json-friendly struct for the /sysvar/history endpoint.
+type SysvarHistoryParams struct {
+	Name      string `json:"name"`
+	PageIndex int    `json:"index"`
+	PageSize  int    `json:"size"`
+}
+
+// ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
+type ValueData struct {
+	height      uint64
+	valueBase64 string
+}
+
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
 type AccountHistoryParams struct {
 	Address   string `json:"addr"`
@@ -34,8 +47,8 @@ type AccountHistoryParams struct {
 
 // TxValueData is used for storing the block height and transaction offset within the block.
 type TxValueData struct {
-	BlockHeight uint64
-	TxOffset    int
+	BlockHeight uint64 `json:"height"`
+	TxOffset    int    `json:"offset"`
 }
 
 // AccountTxValueData is like TxValueData that stores account balance at the associated block.
@@ -49,6 +62,30 @@ type AccountTxValueData struct {
 // AccountHistoryResponse is the return value from the account history endpoint.
 type AccountHistoryResponse struct {
 	Txs []AccountTxValueData
+}
+
+// Marshal the value data into a search value string to index it with its search key string.
+func (valueData *ValueData) Marshal() string {
+	// To guarantee ZAdd() will keep history of same-value key entries, we prefix the value
+	// with the height.  Otherwise redis would just update the score and not add more history.
+	// Because of this, we use unsorted sets with SAdd() since sortedness isn't benefiting us.
+	return fmt.Sprintf("%d %s", valueData.height, valueData.valueBase64)
+}
+
+// Unmarshal the given search value string that was indexed with its search key string.
+func (valueData *ValueData) Unmarshal(searchValue string) error {
+	// The "value" for a key in the index is stored as "<height> <valueBase64>".
+	separator := strings.Index(searchValue, " ")
+
+	height, err := strconv.ParseUint(searchValue[:separator], 10, 64)
+	if err != nil {
+		return err
+	}
+
+	valueData.height = height
+	valueData.valueBase64 = searchValue[separator+1:]
+
+	return nil
 }
 
 // Marshal the value data into a search value string to index it with its search key string.

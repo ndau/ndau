@@ -24,6 +24,7 @@ func init() {
 	meta.RegisterQueryHandler(query.AccountListEndpoint, accountListQuery)
 	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
+	meta.RegisterQueryHandler(query.SysvarHistoryEndpoint, sysvarHistoryQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
@@ -321,6 +322,37 @@ func sysvarsQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 	if err != nil {
 		app.QueryError(err, response, "encoding sysvars response")
 	}
+}
+
+func sysvarHistoryQuery(
+	appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery,
+) {
+	app := appI.(*App)
+
+	search := app.GetSearch()
+	if search == nil {
+		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		return
+	}
+	client := search.(*srch.Client)
+
+	var params srch.SysvarHistoryParams
+	err := json.Unmarshal(request.GetData(), &params)
+	if err != nil {
+		app.QueryError(
+			errors.New("Cannot decode search params json"), response, "invalid search query")
+		return
+	}
+
+	khr, err := client.SearchSysvarHistory(params.Name, params.PageIndex, params.PageSize)
+	if err != nil {
+		app.QueryError(err, response, "sysvar history search fail")
+		return
+	}
+
+	khBytes, err := khr.MarshalMsg(nil)
+	response.Value = khBytes
+	app.QueryError(err, response, "sysvar history byte serialization fail")
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {

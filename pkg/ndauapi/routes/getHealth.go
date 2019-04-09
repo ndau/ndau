@@ -16,8 +16,7 @@ type HealthStatus struct {
 
 // HealthResponse is the response from the /health endpoint.
 type HealthResponse struct {
-	Chaos HealthStatus
-	Ndau  HealthStatus
+	Ndau HealthStatus
 }
 
 // GetHealth returns health indicators from Tendermint.
@@ -35,18 +34,6 @@ func GetHealth(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		chnode, err := ws.Node(cf.ChaosAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving chaos node", err, http.StatusInternalServerError))
-			return
-		}
-
-		_, err = chnode.Health()
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Could not fetch chaos node health: %v", err), http.StatusInternalServerError))
-			return
-		}
-
-		reqres.RespondJSON(w, reqres.OKResponse(HealthResponse{HealthStatus{"Ok"}, HealthStatus{"Ok"}}))
+		reqres.RespondJSON(w, reqres.OKResponse(HealthResponse{HealthStatus{"Ok"}}))
 	}
 }

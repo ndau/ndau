@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -12,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"

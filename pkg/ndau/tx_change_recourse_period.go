@@ -9,12 +9,12 @@ import (
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ChangeSettlementPeriod) GetAccountAddresses() []string {
+func (tx *ChangeRecoursePeriod) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
 }
 
 // Validate implements metatx.Transactable
-func (tx *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
+func (tx *ChangeRecoursePeriod) Validate(appI interface{}) (err error) {
 	app := appI.(*App)
 
 	if tx.Period < 0 {
@@ -29,7 +29,7 @@ func (tx *ChangeSettlementPeriod) Validate(appI interface{}) (err error) {
 }
 
 // Apply implements metatx.Transactable
-func (tx *ChangeSettlementPeriod) Apply(appI interface{}) error {
+func (tx *ChangeRecoursePeriod) Apply(appI interface{}) error {
 	app := appI.(*App)
 	err := app.applyTxDetails(tx)
 	if err != nil {
@@ -50,21 +50,21 @@ func (tx *ChangeSettlementPeriod) Apply(appI interface{}) error {
 }
 
 // GetSource implements sourcer
-func (tx *ChangeSettlementPeriod) GetSource(*App) (address.Address, error) {
+func (tx *ChangeRecoursePeriod) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
 // GetSequence implements sequencer
-func (tx *ChangeSettlementPeriod) GetSequence() uint64 {
+func (tx *ChangeRecoursePeriod) GetSequence() uint64 {
 	return tx.Sequence
 }
 
 // GetSignatures implements signeder
-func (tx *ChangeSettlementPeriod) GetSignatures() []signature.Signature {
+func (tx *ChangeRecoursePeriod) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
 // ExtendSignatures implements Signable
-func (tx *ChangeSettlementPeriod) ExtendSignatures(sa []signature.Signature) {
+func (tx *ChangeRecoursePeriod) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }

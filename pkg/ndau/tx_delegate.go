@@ -8,6 +8,37 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Delegate Target to Node
+func (app *App) Delegate(state *backing.State, target, node address.Address) error {
+	as := target.String()
+	ds := node.String()
+	acct, _ := app.getAccount(target)
+
+	// remove it from its current delegate
+	if acct.DelegationNode != nil {
+		cs := acct.DelegationNode.String()
+		currentSet, hasCurrent := state.Delegates[cs]
+		if hasCurrent {
+			delete(currentSet, as)
+			state.Delegates[cs] = currentSet
+		}
+	}
+
+	// set its delegate
+	acct.DelegationNode = &node
+	state.Accounts[as] = acct
+
+	// update the target delegate's set
+	dest := state.Delegates[ds]
+	if dest == nil {
+		dest = make(map[string]struct{})
+	}
+	dest[as] = struct{}{}
+	state.Delegates[ds] = dest
+
+	return nil
+}
+
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *Delegate) GetAccountAddresses() []string {
 	return []string{tx.Target.String(), tx.Node.String()}
@@ -30,7 +61,7 @@ func (tx *Delegate) Validate(appI interface{}) error {
 		return err
 	}
 	if !hasAccount {
-		return errors.New("Account does not exist")
+		return errors.New("delegation target account does not exist")
 	}
 
 	return nil
@@ -44,38 +75,10 @@ func (tx *Delegate) Apply(appI interface{}) error {
 		return err
 	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		state := stateI.(*backing.State)
-		as := tx.Target.String()
-		ds := tx.Node.String()
-		acct, hasAcct := app.getAccount(tx.Target)
-		if !hasAcct {
-			return state, errors.New("Account does not exist")
-		}
-
-		// remove it from its current delegate
-		if acct.DelegationNode != nil {
-			cs := acct.DelegationNode.String()
-			currentSet, hasCurrent := state.Delegates[cs]
-			if hasCurrent {
-				delete(currentSet, as)
-				state.Delegates[cs] = currentSet
-			}
-		}
-
-		// set its delegate
-		acct.DelegationNode = &tx.Node
-		state.Accounts[as] = acct
-
-		// update the target delegate's set
-		dest := state.Delegates[ds]
-		if dest == nil {
-			dest = make(map[string]struct{})
-		}
-		dest[as] = struct{}{}
-		state.Delegates[ds] = dest
-
-		return state, nil
+	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		err := app.Delegate(state, tx.Target, tx.Node)
+		return state, err
 	})
 }
 

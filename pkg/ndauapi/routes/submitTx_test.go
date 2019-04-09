@@ -3,7 +3,6 @@ package routes_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
@@ -27,8 +25,7 @@ func TestSubmitTxNoServer(t *testing.T) {
 	require.NoError(t, err)
 	addr, err := address.Generate(address.KindUser, keypub.KeyBytes())
 	require.NoError(t, err)
-	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234)
-	testLockTx.Signatures = append(testLockTx.Signatures, metatx.Sign(testLockTx, keypvt))
+	testLockTx := ndau.NewLock(addr, 30*types.Day, 1234, keypvt)
 
 	tests := []struct {
 		name    string
@@ -36,7 +33,6 @@ func TestSubmitTxNoServer(t *testing.T) {
 		status  int
 		want    routes.SubmitResult
 		wanterr string
-		skip    bool
 	}{
 		{
 			name:    "no body",
@@ -44,7 +40,6 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusBadRequest,
 			want:    routes.SubmitResult{},
 			wanterr: "did not unmarshal",
-			skip:    false,
 		},
 		{
 			name:    "valid tx but no node",
@@ -52,26 +47,18 @@ func TestSubmitTxNoServer(t *testing.T) {
 			status:  http.StatusInternalServerError,
 			want:    routes.SubmitResult{},
 			wanterr: "error retrieving node",
-			skip:    isIntegration,
 		},
 	}
 
 	// set up apparatus
 	cf, _, err := cfg.New()
-	// Integration tests must have a valid config, non-integration tests expect an invalid one.
-	if isIntegration == (err != nil) {
-		t.Errorf("Unexpected config error: %s", err)
-		return
-	}
+	require.Error(t, err)
+
 	mux := svc.New(cf).Mux()
 
 	// run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.skip {
-				t.Skip(fmt.Sprintf("isIntegration is %v", isIntegration))
-			}
-
 			w := httptest.NewRecorder()
 			var req *http.Request
 			if tt.body != nil {

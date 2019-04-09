@@ -18,13 +18,13 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(1):  &Transfer{},
 	metatx.TxID(2):  &ChangeValidation{},
 	metatx.TxID(3):  &ReleaseFromEndowment{},
-	metatx.TxID(4):  &ChangeSettlementPeriod{},
+	metatx.TxID(4):  &ChangeRecoursePeriod{},
 	metatx.TxID(5):  &Delegate{},
 	metatx.TxID(6):  &CreditEAI{},
 	metatx.TxID(7):  &Lock{},
 	metatx.TxID(8):  &Notify{},
 	metatx.TxID(9):  &SetRewardsDestination{},
-	metatx.TxID(10): &ClaimAccount{},
+	metatx.TxID(10): &SetValidation{},
 	metatx.TxID(11): &Stake{},
 	metatx.TxID(12): &RegisterNode{},
 	metatx.TxID(13): &NominateNodeReward{},
@@ -34,7 +34,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(18): &UnregisterNode{},
 	metatx.TxID(19): &Unstake{},
 	metatx.TxID(20): &Issue{},
-	metatx.TxID(21): &ClaimChildAccount{},
+	metatx.TxID(21): &CreateChildAccount{},
 	metatx.TxID(22): &RecordPrice{},
 	metatx.TxID(23): &SetSysvar{},
 }
@@ -76,16 +76,16 @@ type ReleaseFromEndowment struct {
 
 var _ NTransactable = (*ReleaseFromEndowment)(nil)
 
-// A ChangeSettlementPeriod transaction is used to change the settlement period for
+// A ChangeRecoursePeriod transaction is used to change the settlement period for
 // transactions outbound from an account.
-type ChangeSettlementPeriod struct {
+type ChangeRecoursePeriod struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
 	Period     math.Duration         `msg:"per" chain:"21,Tx_Period" json:"period"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
-var _ NTransactable = (*ChangeSettlementPeriod)(nil)
+var _ NTransactable = (*ChangeRecoursePeriod)(nil)
 
 // A Delegate transaction is used to delegate the node which should
 // compute EAI for the specified account.
@@ -158,10 +158,10 @@ type SetRewardsDestination struct {
 
 var _ NTransactable = (*SetRewardsDestination)(nil)
 
-// A ClaimAccount transaction is used to set the initial transfer keys for an account.
+// A SetValidation transaction is used to set the initial transfer keys for an account.
 //
 // It is the only type of transaction which may be signed with only the ownership key.
-type ClaimAccount struct {
+type SetValidation struct {
 	Target           address.Address       `msg:"tgt" json:"target"`
 	Ownership        signature.PublicKey   `msg:"own" json:"ownership"`
 	ValidationKeys   []signature.PublicKey `msg:"key" json:"validation_keys"`
@@ -170,11 +170,11 @@ type ClaimAccount struct {
 	Signature        signature.Signature   `msg:"sig" json:"signature"`
 }
 
-var _ NTransactable = (*ClaimAccount)(nil)
+var _ NTransactable = (*SetValidation)(nil)
 
-// A ClaimChildAccount transaction is used to set the initial transfer keys for a child account,
+// A CreateChildAccount transaction is used to set the initial transfer keys for a child account,
 // and link the target account as its parent.
-type ClaimChildAccount struct {
+type CreateChildAccount struct {
 	Target                address.Address       `msg:"tgt"  json:"target"`
 	Child                 address.Address       `msg:"chd"  json:"child"`
 	ChildOwnership        signature.PublicKey   `msg:"cown" json:"child_ownership"`
@@ -182,11 +182,12 @@ type ClaimChildAccount struct {
 	ChildSettlementPeriod math.Duration         `msg:"cper" json:"child_settlement_period"`
 	ChildValidationKeys   []signature.PublicKey `msg:"ckey" json:"child_validation_keys"`
 	ChildValidationScript []byte                `msg:"cval" json:"child_validation_script"`
+	ChildDelegationNode   address.Address       `msg:"nod"  json:"child_delegation_node"`
 	Sequence              uint64                `msg:"seq"  json:"sequence"`
 	Signatures            []signature.Signature `msg:"sig"  json:"signatures"`
 }
 
-var _ NTransactable = (*ClaimChildAccount)(nil)
+var _ NTransactable = (*CreateChildAccount)(nil)
 
 // TransferAndLock allows a transaction where the received amount is locked
 // for a specified period. It can only be sent to accounts that did not

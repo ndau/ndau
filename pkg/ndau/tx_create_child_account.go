@@ -13,12 +13,12 @@ import (
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ClaimChildAccount) GetAccountAddresses() []string {
+func (tx *CreateChildAccount) GetAccountAddresses() []string {
 	return []string{tx.Target.String(), tx.Child.String()}
 }
 
 // Validate returns nil if tx is valid, or an error
-func (tx *ClaimChildAccount) Validate(appI interface{}) error {
+func (tx *CreateChildAccount) Validate(appI interface{}) error {
 	// Ensure the target and child address are valid.
 	_, err := address.Validate(tx.Target.String())
 	if err != nil {
@@ -109,7 +109,7 @@ func (tx *ClaimChildAccount) Validate(appI interface{}) error {
 }
 
 // Apply applies this tx if no error occurs
-func (tx *ClaimChildAccount) Apply(appI interface{}) error {
+func (tx *CreateChildAccount) Apply(appI interface{}) error {
 	app := appI.(*App)
 	err := app.applyTxDetails(tx)
 	if err != nil {
@@ -118,6 +118,11 @@ func (tx *ClaimChildAccount) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
+
+		err := app.Delegate(st, tx.Child, tx.ChildDelegationNode)
+		if err != nil {
+			return st, err
+		}
 
 		child, _ := app.getAccount(tx.Child)
 		child.ValidationKeys = tx.ChildValidationKeys
@@ -144,21 +149,21 @@ func (tx *ClaimChildAccount) Apply(appI interface{}) error {
 }
 
 // GetSource implements sourcer
-func (tx *ClaimChildAccount) GetSource(*App) (address.Address, error) {
+func (tx *CreateChildAccount) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
 // GetSequence implements sequencer
-func (tx *ClaimChildAccount) GetSequence() uint64 {
+func (tx *CreateChildAccount) GetSequence() uint64 {
 	return tx.Sequence
 }
 
 // GetSignatures implements signeder
-func (tx *ClaimChildAccount) GetSignatures() []signature.Signature {
+func (tx *CreateChildAccount) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
 // ExtendSignatures implements Signable
-func (tx *ClaimChildAccount) ExtendSignatures(sa []signature.Signature) {
+func (tx *CreateChildAccount) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }

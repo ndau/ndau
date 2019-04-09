@@ -12,12 +12,12 @@ import (
 )
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ClaimAccount) GetAccountAddresses() []string {
+func (tx *SetValidation) GetAccountAddresses() []string {
 	return []string{tx.Target.String()}
 }
 
 // Validate returns nil if tx is valid, or an error
-func (tx *ClaimAccount) Validate(appI interface{}) error {
+func (tx *SetValidation) Validate(appI interface{}) error {
 	// we need to verify that the ownership key submitted actually generates
 	// the address being claimed
 	// get the address kind:
@@ -88,7 +88,7 @@ func (tx *ClaimAccount) Validate(appI interface{}) error {
 }
 
 // Apply applies this tx if no error occurs
-func (tx *ClaimAccount) Apply(appI interface{}) error {
+func (tx *SetValidation) Apply(appI interface{}) error {
 	app := appI.(*App)
 	err := app.applyTxDetails(tx)
 	if err != nil {
@@ -109,11 +109,11 @@ func (tx *ClaimAccount) Apply(appI interface{}) error {
 }
 
 // GetSource implements sourcer
-func (tx *ClaimAccount) GetSource(*App) (address.Address, error) {
+func (tx *SetValidation) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
 // GetSequence implements sequencer
-func (tx *ClaimAccount) GetSequence() uint64 {
+func (tx *SetValidation) GetSequence() uint64 {
 	return tx.Sequence
 }

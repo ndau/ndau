@@ -28,8 +28,8 @@ func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// The address is invalid, but NewClaimChildAccount doesn't validate this.
-	cca := NewClaimChildAccount(
+	// The address is invalid, but NewCreateChildAccount doesn't validate this.
+	cca := NewCreateChildAccount(
 		addr,
 		childAddress,
 		childPublic,
@@ -37,6 +37,7 @@ func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -64,8 +65,8 @@ func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// The address is invalid, but NewClaimChildAccount doesn't validate this.
-	cca := NewClaimChildAccount(
+	// The address is invalid, but NewCreateChildAccount doesn't validate this.
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		addr,
 		childPublic,
@@ -73,6 +74,7 @@ func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -91,7 +93,7 @@ func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		targetAddress,
 		childAddress,
 		childPublic,
@@ -99,6 +101,7 @@ func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -116,7 +119,7 @@ func TestValidClaimChildAccount(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -124,6 +127,7 @@ func TestValidClaimChildAccount(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -141,6 +145,9 @@ func TestValidClaimChildAccount(t *testing.T) {
 	// Ensure the child's settlement period matches the default from the system variable.
 	child, _ := app.getAccount(childAddress)
 	require.Equal(t, app.getDefaultSettlementDuration(), child.SettlementSettings.Period)
+	// ensure we updated the delegation node
+	require.NotNil(t, child.DelegationNode)
+	require.Equal(t, cca.ChildDelegationNode, *child.DelegationNode)
 }
 
 func TestClaimChildAccountSettlementPeriod(t *testing.T) {
@@ -151,7 +158,7 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 
 	period := math.Duration(1234)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -159,6 +166,7 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 		period,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -181,7 +189,7 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	app, private := initAppTx(t)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -189,6 +197,7 @@ func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{childPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -207,7 +216,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -215,6 +224,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -238,7 +248,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 func TestClaimChildAccountNoValidationKeys(t *testing.T) {
 	app, private := initAppTx(t)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -246,6 +256,7 @@ func TestClaimChildAccountNoValidationKeys(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -269,7 +280,7 @@ func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
 		newKeys = append(newKeys, key)
 	}
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -277,6 +288,7 @@ func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
 		childSettlementPeriod,
 		newKeys,
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -302,7 +314,7 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -310,6 +322,7 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)
@@ -343,7 +356,7 @@ func TestClaimGrandchildAccount(t *testing.T) {
 
 		parentAcct, _ := app.getAccount(parent)
 
-		cca := NewClaimChildAccount(
+		cca := NewCreateChildAccount(
 			parent,
 			child,
 			childPublic,
@@ -351,6 +364,7 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			childSettlementPeriod,
 			[]signature.PublicKey{validationPublic},
 			[]byte{},
+			child,
 			parentAcct.Sequence+1,
 			parentPrivate,
 		)
@@ -398,7 +412,7 @@ func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -406,6 +420,7 @@ func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{0x01},
+		childAddress,
 		1,
 		private,
 	)
@@ -424,7 +439,7 @@ func TestClaimChildAccountInvalidChildSignature(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -432,6 +447,7 @@ func TestClaimChildAccountInvalidChildSignature(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		1,
 		private,
 	)

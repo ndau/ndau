@@ -119,8 +119,8 @@ func (tx *ReleaseFromEndowment) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-// SignableBytes partially implements metatx.Transactable for ChangeSettlementPeriod
-func (tx *ChangeSettlementPeriod) SignableBytes() []byte {
+// SignableBytes partially implements metatx.Transactable for ChangeRecoursePeriod
+func (tx *ChangeRecoursePeriod) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
@@ -149,8 +149,8 @@ func (tx *SetRewardsDestination) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-// SignableBytes partially implements metatx.Transactable for ClaimAccount
-func (tx *ClaimAccount) SignableBytes() []byte {
+// SignableBytes partially implements metatx.Transactable for SetValidation
+func (tx *SetValidation) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
@@ -199,8 +199,8 @@ func (tx *Issue) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-// SignableBytes partially implements metatx.Transactable for ClaimChildAccount
-func (tx *ClaimChildAccount) SignableBytes() []byte {
+// SignableBytes partially implements metatx.Transactable for CreateChildAccount
+func (tx *CreateChildAccount) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
@@ -213,5 +213,3 @@ func (tx *RecordPrice) SignableBytes() []byte {
 func (tx *SetSysvar) SignableBytes() []byte {
 	return sbOf(tx)
 }
-
-

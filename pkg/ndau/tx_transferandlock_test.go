@@ -416,7 +416,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 	// If the dest is an exchange address, we shouldn't be able to claim the locked account.
 	context := ddc(t).withExchangeAccount(destAddress)
 
-	ca := NewClaimAccount(
+	ca := NewSetValidation(
 		destAddress,
 		destPublic,
 		[]signature.PublicKey{newPublic},
@@ -448,7 +448,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 	// If the source is an exchange address, we shouldn't be able to claim the locked child.
 	context := ddc(t).withExchangeAccount(sourceAddress)
 
-	cca := NewClaimChildAccount(
+	cca := NewCreateChildAccount(
 		sourceAddress,
 		childAddress,
 		childPublic,
@@ -456,6 +456,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 		childSettlementPeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
+		childAddress,
 		2,
 		private,
 	)
