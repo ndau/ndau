@@ -28,8 +28,8 @@ const DefaultAddress string = "http://localhost:26657"
 // AccountListOffset specifies where account addresses start.
 const AccountListOffset = 100
 
-// TransferKeyOffset specifies where transfer keys begin in the "account" part of the path.
-const TransferKeyOffset = 2000
+// ValidationKeyOffset specifies where validation keys begin in the "account" part of the path.
+const ValidationKeyOffset = 10000
 
 // AccountStartNumber is for the "change" part of the path.
 //   0 is not used,
@@ -38,6 +38,9 @@ const AccountStartNumber = 1
 
 // AccountPathFormat is a format string for making paths.
 const AccountPathFormat = "/44'/20036'/%v/%v"
+
+// ValidationPathFormat is a format string for making validation keys
+const ValidationPathFormat = AccountPathFormat + "/%v/%v"
 
 // GetConfigPath returns the location at which configuration is stored
 func GetConfigPath() string {
