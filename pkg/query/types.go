@@ -30,8 +30,7 @@ type Summary struct {
 	NumAccounts      int
 	TotalRFE         types.Ndau
 	TotalIssue       types.Ndau
-	TotalFees        types.Ndau
-	TotalSIB         types.Ndau
+	TotalBurned      types.Ndau
 	TotalCirculation types.Ndau
 }
 

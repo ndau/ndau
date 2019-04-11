@@ -33,10 +33,9 @@ func init() {
 		"SIB",
 		"Sysvars",
 		"TargetPrice",
-		"TotalFees",
+		"TotalBurned",
 		"TotalIssue",
 		"TotalRFE",
-		"TotalSIB",
 		"UnclaimedNodeReward",
 	})
 }
@@ -148,9 +147,7 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.SIB (eai.Rate->*ast.SelectorExpr) is primitive: true
 
-	// x.TotalSIB (math.Ndau->*ast.SelectorExpr) is primitive: true
-
-	// x.TotalFees (math.Ndau->*ast.SelectorExpr) is primitive: true
+	// x.TotalBurned (math.Ndau->*ast.SelectorExpr) is primitive: true
 
 	// x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
@@ -205,18 +202,15 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.TargetPrice (pricecurve.Nanocent)
 
 		util.Int(x.TargetPrice).NomsValue(),
-		// x.TotalFees (math.Ndau)
+		// x.TotalBurned (math.Ndau)
 
-		util.Int(x.TotalFees).NomsValue(),
+		util.Int(x.TotalBurned).NomsValue(),
 		// x.TotalIssue (math.Ndau)
 
 		util.Int(x.TotalIssue).NomsValue(),
 		// x.TotalRFE (math.Ndau)
 
 		util.Int(x.TotalRFE).NomsValue(),
-		// x.TotalSIB (math.Ndau)
-
-		util.Int(x.TotalSIB).NomsValue(),
 		// x.UnclaimedNodeReward (math.Ndau)
 
 		util.Int(x.UnclaimedNodeReward).NomsValue(),
@@ -480,32 +474,19 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				sIBTyped := eai.Rate(sIBValue)
 
 				x.SIB = sIBTyped
-			// x.TotalSIB (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "TotalSIB":
-				// template u_decompose: x.TotalSIB (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.TotalSIB
-				var totalSIBValue util.Int
-				totalSIBValue, err = util.IntFrom(value)
+			// x.TotalBurned (math.Ndau->*ast.SelectorExpr) is primitive: true
+			case "TotalBurned":
+				// template u_decompose: x.TotalBurned (math.Ndau->*ast.SelectorExpr)
+				// template u_primitive: x.TotalBurned
+				var totalBurnedValue util.Int
+				totalBurnedValue, err = util.IntFrom(value)
 				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->TotalSIB")
+					err = errors.Wrap(err, "State.UnmarshalNoms->TotalBurned")
 					return
 				}
-				totalSIBTyped := math.Ndau(totalSIBValue)
+				totalBurnedTyped := math.Ndau(totalBurnedValue)
 
-				x.TotalSIB = totalSIBTyped
-			// x.TotalFees (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "TotalFees":
-				// template u_decompose: x.TotalFees (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.TotalFees
-				var totalFeesValue util.Int
-				totalFeesValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->TotalFees")
-					return
-				}
-				totalFeesTyped := math.Ndau(totalFeesValue)
-
-				x.TotalFees = totalFeesTyped
+				x.TotalBurned = totalBurnedTyped
 			// x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 			case "MarketPrice":
 				// template u_decompose: x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr)

@@ -276,8 +276,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source
 		st.PendingNodeReward += fee
-		st.TotalFees += fee
-		st.TotalSIB += sib
+		st.TotalBurned += sib
 		return st, nil
 	})
 }
