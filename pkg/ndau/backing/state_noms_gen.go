@@ -475,7 +475,9 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 
 				x.SIB = sIBTyped
 			// x.TotalBurned (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "TotalBurned":
+			// we renamed TotalBurned from TotalSIB. Adding an alias here helps
+			// with data migration.
+			case "TotalBurned", "TotalSIB":
 				// template u_decompose: x.TotalBurned (math.Ndau->*ast.SelectorExpr)
 				// template u_primitive: x.TotalBurned
 				var totalBurnedValue util.Int
