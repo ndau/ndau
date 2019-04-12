@@ -318,6 +318,25 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(""))
 
+	svc.Route(svc.GET("/system/get/:sysvars").To(routes.HandleSystemGet(cf)).
+		Doc("Return the names and current values of some currently definted system variables.").
+		Param(boneful.PathParameter("sysvars", "A comma-separated list of system variables of interest.").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(""))
+
+	svc.Route(svc.POST("/system/set/:sysvar").To(routes.HandleSystemSet(cf)).
+		Doc("Returns a transaction which sets a system variable.").
+		Notes(`The body of the request accepts JSON and heuristically transforms
+		it into the data format used internally on the blockchain. Do not use any sort
+		of wrapping object. The correct structure of the object to send depends on
+		the system variable in question.
+
+		Returns the JSON encoding of a SetSysvar transaction. It is the caller's
+		responsibility to update this transaction with appropriate sequence and
+		signatures and then send it at the normal endpoint (/tx/submit/setsysvar).`).
+		Consumes(JSON).
+		Produces(JSON))
+
 	svc.Route(svc.GET("/system/history/:sysvar").To(routes.HandleSystemHistory(cf)).
 		Doc("Returns the value history of a system variable given its name.").
 		Notes(`The history includes the height and value of each change to the system variable.
