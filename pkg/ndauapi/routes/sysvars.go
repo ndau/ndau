@@ -12,14 +12,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-func getSystemVars(nodeAddr string, vars ...string) (map[string][]byte, error) {
+func getSystemVars(nodeAddr string, vars ...string) (map[string]interface{}, error) {
 	// first find a node to talk to
 	node, err := ws.Node(nodeAddr)
 	if err != nil {
-		return nil, errors.Wrap(err, "getSystemVars")
+		return nil, errors.Wrap(err, "getSystemVars: get node")
 	}
 	sv, _, err := tool.Sysvars(node, vars...)
-	return sv, err
+	if err != nil {
+		return nil, errors.Wrap(err, "getSystemVars: fetch")
+	}
+	jsv, err := tool.SysvarsAsJSON(sv)
+	if err != nil {
+		return nil, errors.Wrap(err, "getSystemVars: convert msgp -> json")
+	}
+	return jsv, err
 }
 
 // HandleSystemAll retrieves all the system keys at the current block height.
