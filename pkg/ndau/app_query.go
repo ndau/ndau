@@ -261,11 +261,10 @@ func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 		lastSummary.BlockHeight = app.Height()
 		lastSummary.TotalRFE = state.TotalRFE
 		lastSummary.TotalIssue = state.TotalIssue
-		lastSummary.TotalFees = state.TotalFees
-		lastSummary.TotalSIB = state.TotalSIB
+		lastSummary.TotalBurned = state.TotalBurned
 		// the total ndau in circulation is the total in all accounts, excluding
 		// the amount of ndau that have been released but not issued
-		lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalFees + lastSummary.TotalSIB)
+		lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalBurned)
 	}
 
 	response.Log = fmt.Sprintf("total ndau at height %d is %d, in %d accounts", lastSummary.BlockHeight, lastSummary.TotalNdau, lastSummary.NumAccounts)

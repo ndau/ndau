@@ -57,6 +57,9 @@ func (tx *NominateNodeReward) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 
 		state.LastNodeRewardNomination = app.BlockTime()
+		// if any node reward was up for claim, but in fact wasn't claimed,
+		// that reward is burned. Let's keep track of it.
+		state.TotalBurned += state.UnclaimedNodeReward
 		state.UnclaimedNodeReward = state.PendingNodeReward
 		state.PendingNodeReward = 0
 

@@ -46,10 +46,8 @@ type State struct {
 	TotalIssue math.Ndau
 	// SIB is the current burn rate applied to all transfers.
 	SIB eai.Rate
-	// TotalSIB is the sum of all burned SIB
-	TotalSIB math.Ndau
-	// TotalFees is the sum of all burned tx fees
-	TotalFees math.Ndau
+	// TotalBurned is the sum of all burned ndau
+	TotalBurned math.Ndau
 	// These prices are preserved here just to assist downstream consumers
 	// have more trust in the SIB calculations.
 	MarketPrice pricecurve.Nanocent

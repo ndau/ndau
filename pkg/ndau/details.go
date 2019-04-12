@@ -275,8 +275,8 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source
-		st.TotalFees += fee
-		st.TotalSIB += sib
+		st.PendingNodeReward += fee
+		st.TotalBurned += sib
 		return st, nil
 	})
 }

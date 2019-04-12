@@ -36,7 +36,7 @@ func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
 	}
 	oci.TotalIssued = summ.TotalIssue
 	oci.TotalNdau = summ.TotalCirculation
-	oci.TotalSIB = summ.TotalSIB
+	oci.TotalSIB = summ.TotalBurned
 
 	sib, _, err := tool.GetSIB(node)
 	if err != nil {
