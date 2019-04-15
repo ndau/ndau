@@ -56,13 +56,13 @@ func Sysvar(node client.ABCIClient, name string, example msgp.Unmarshaler) error
 func SysvarHistory(
 	node client.ABCIClient,
 	name string,
-	pageIndex int,
-	pageSize int,
+	after uint64,
+	limit int,
 ) (*query.SysvarHistoryResponse, *rpctypes.ResultABCIQuery, error) {
 	params := search.SysvarHistoryParams{
-		Name:      name,
-		PageIndex: pageIndex,
-		PageSize:  pageSize,
+		Name:        name,
+		AfterHeight: after,
+		Limit:       limit,
 	}
 
 	paramsBuf, err := json.Marshal(params)

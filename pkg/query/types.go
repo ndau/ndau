@@ -45,8 +45,8 @@ type SidechainTxExistsQuery struct {
 type AccountListQueryResponse struct {
 	NumAccounts int
 	FirstIndex  int
-	PageSize    int
-	PageIndex   int
+	After       string
+	NextAfter   string
 	Accounts    []string
 }
 

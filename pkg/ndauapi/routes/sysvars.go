@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-zoo/bone"
@@ -107,13 +108,19 @@ func HandleSystemHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		pageIndex, pageSize, errMsg, err := getPagingParams(r)
-		if errMsg != "" {
-			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+		limit, afters, err := getPagingParams(r, 1000)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("paging parm error", err, http.StatusBadRequest))
 			return
 		}
 
-		result, _, err := tool.SysvarHistory(node, sysvar, pageIndex, pageSize)
+		after, err := strconv.ParseUint(afters, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("parsing 'after'", err, http.StatusBadRequest))
+			return
+		}
+
+		result, _, err := tool.SysvarHistory(node, sysvar, after, limit)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching sysvar history: %s", err), http.StatusInternalServerError))
 			return

@@ -37,16 +37,16 @@ func (z *AccountListQueryResponse) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "FirstIndex")
 				return
 			}
-		case "PageSize":
-			z.PageSize, err = dc.ReadInt()
+		case "After":
+			z.After, err = dc.ReadString()
 			if err != nil {
-				err = msgp.WrapError(err, "PageSize")
+				err = msgp.WrapError(err, "After")
 				return
 			}
-		case "PageIndex":
-			z.PageIndex, err = dc.ReadInt()
+		case "NextAfter":
+			z.NextAfter, err = dc.ReadString()
 			if err != nil {
-				err = msgp.WrapError(err, "PageIndex")
+				err = msgp.WrapError(err, "NextAfter")
 				return
 			}
 		case "Accounts":
@@ -102,24 +102,24 @@ func (z *AccountListQueryResponse) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "FirstIndex")
 		return
 	}
-	// write "PageSize"
-	err = en.Append(0xa8, 0x50, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65)
+	// write "After"
+	err = en.Append(0xa5, 0x41, 0x66, 0x74, 0x65, 0x72)
 	if err != nil {
 		return
 	}
-	err = en.WriteInt(z.PageSize)
+	err = en.WriteString(z.After)
 	if err != nil {
-		err = msgp.WrapError(err, "PageSize")
+		err = msgp.WrapError(err, "After")
 		return
 	}
-	// write "PageIndex"
-	err = en.Append(0xa9, 0x50, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x64, 0x65, 0x78)
+	// write "NextAfter"
+	err = en.Append(0xa9, 0x4e, 0x65, 0x78, 0x74, 0x41, 0x66, 0x74, 0x65, 0x72)
 	if err != nil {
 		return
 	}
-	err = en.WriteInt(z.PageIndex)
+	err = en.WriteString(z.NextAfter)
 	if err != nil {
-		err = msgp.WrapError(err, "PageIndex")
+		err = msgp.WrapError(err, "NextAfter")
 		return
 	}
 	// write "Accounts"
@@ -152,12 +152,12 @@ func (z *AccountListQueryResponse) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "FirstIndex"
 	o = append(o, 0xaa, 0x46, 0x69, 0x72, 0x73, 0x74, 0x49, 0x6e, 0x64, 0x65, 0x78)
 	o = msgp.AppendInt(o, z.FirstIndex)
-	// string "PageSize"
-	o = append(o, 0xa8, 0x50, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65)
-	o = msgp.AppendInt(o, z.PageSize)
-	// string "PageIndex"
-	o = append(o, 0xa9, 0x50, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x64, 0x65, 0x78)
-	o = msgp.AppendInt(o, z.PageIndex)
+	// string "After"
+	o = append(o, 0xa5, 0x41, 0x66, 0x74, 0x65, 0x72)
+	o = msgp.AppendString(o, z.After)
+	// string "NextAfter"
+	o = append(o, 0xa9, 0x4e, 0x65, 0x78, 0x74, 0x41, 0x66, 0x74, 0x65, 0x72)
+	o = msgp.AppendString(o, z.NextAfter)
 	// string "Accounts"
 	o = append(o, 0xa8, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Accounts)))
@@ -197,16 +197,16 @@ func (z *AccountListQueryResponse) UnmarshalMsg(bts []byte) (o []byte, err error
 				err = msgp.WrapError(err, "FirstIndex")
 				return
 			}
-		case "PageSize":
-			z.PageSize, bts, err = msgp.ReadIntBytes(bts)
+		case "After":
+			z.After, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "PageSize")
+				err = msgp.WrapError(err, "After")
 				return
 			}
-		case "PageIndex":
-			z.PageIndex, bts, err = msgp.ReadIntBytes(bts)
+		case "NextAfter":
+			z.NextAfter, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "PageIndex")
+				err = msgp.WrapError(err, "NextAfter")
 				return
 			}
 		case "Accounts":
@@ -242,7 +242,7 @@ func (z *AccountListQueryResponse) UnmarshalMsg(bts []byte) (o []byte, err error
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *AccountListQueryResponse) Msgsize() (s int) {
-	s = 1 + 12 + msgp.IntSize + 11 + msgp.IntSize + 9 + msgp.IntSize + 10 + msgp.IntSize + 9 + msgp.ArrayHeaderSize
+	s = 1 + 12 + msgp.IntSize + 11 + msgp.IntSize + 6 + msgp.StringPrefixSize + len(z.After) + 10 + msgp.StringPrefixSize + len(z.NextAfter) + 9 + msgp.ArrayHeaderSize
 	for za0001 := range z.Accounts {
 		s += msgp.StringPrefixSize + len(z.Accounts[za0001])
 	}

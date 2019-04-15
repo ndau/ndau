@@ -78,7 +78,7 @@ func accountHistoryQuery(
 	}
 
 	// The address was already validated by the caller.
-	ahr, err := client.SearchAccountHistory(params.Address, params.PageIndex, params.PageSize)
+	ahr, err := client.SearchAccountHistory(params.Address, params.AfterHeight, params.Limit)
 	if err != nil {
 		app.QueryError(err, response, "account history search fail")
 		return
@@ -91,7 +91,7 @@ func accountHistoryQuery(
 func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	var params srch.AccountHistoryParams
+	var params srch.AccountListParams
 	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
@@ -108,21 +108,27 @@ func accountListQuery(appI interface{}, request abci.RequestQuery, response *abc
 		ix++
 	}
 	sort.Sort(sort.StringSlice(names))
-	start := params.PageIndex * params.PageSize
-	if start > len(names) {
-		start = len(names)
-	}
-	end := (params.PageIndex + 1) * params.PageSize
-	if end > len(names) {
-		end = len(names)
+	// Reduce the full results list down to the requested portion.  There is some wasted effort with
+	// this approach, but we support the worst case, which is to return all results.  In practice,
+	// getting the full list from the underlying index is fast, with tolerable sorting speed.
+	offsetStart := sort.Search(len(names), func(n int) bool {
+		return names[n] > params.After
+	})
+	names = names[offsetStart:]
+	// only specify nextafter if there are more things to query, which happens when we have
+	// to truncate the end of the list
+	nextafter := ""
+	if params.Limit > 0 && len(names) > params.Limit {
+		names = names[:params.Limit]
+		nextafter = names[len(names)-1]
 	}
 
 	retval := query.AccountListQueryResponse{
 		NumAccounts: len(names),
-		FirstIndex:  start,
-		PageSize:    params.PageSize,
-		PageIndex:   params.PageIndex,
-		Accounts:    names[start:end],
+		FirstIndex:  offsetStart,
+		After:       params.After,
+		NextAfter:   nextafter,
+		Accounts:    names,
 	}
 	rBytes, err := retval.MarshalMsg(nil)
 	if err != nil {
@@ -343,7 +349,7 @@ func sysvarHistoryQuery(
 		return
 	}
 
-	khr, err := client.SearchSysvarHistory(params.Name, params.PageIndex, params.PageSize)
+	khr, err := client.SearchSysvarHistory(params.Name, params.AfterHeight, params.Limit)
 	if err != nil {
 		app.QueryError(err, response, "sysvar history search fail")
 		return

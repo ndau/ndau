@@ -131,17 +131,23 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		pageIndex, pageSize, errMsg, err := getPagingParams(r)
-		if errMsg != "" {
-			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+		limit, afters, err := getPagingParams(r, 100)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("paging parms", err, http.StatusBadRequest))
+			return
+		}
+
+		after, err := strconv.ParseUint(afters, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("parsing 'after'", err, http.StatusBadRequest))
 			return
 		}
 
 		// Prepare search params.
 		params := search.AccountHistoryParams{
-			Address:   addr.String(),
-			PageIndex: pageIndex,
-			PageSize:  pageSize,
+			Address:     addr.String(),
+			Limit:       limit,
+			AfterHeight: after,
 		}
 		paramsBuf := &bytes.Buffer{}
 		json.NewEncoder(paramsBuf).Encode(params)
@@ -202,13 +208,13 @@ func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		pageIndex, pageSize, errMsg, err := getPagingParams(r)
-		if errMsg != "" {
-			reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+		limit, after, err := getPagingParams(r, 100)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("reading paging info", err, http.StatusBadRequest))
 			return
 		}
 
-		accts, _, err := tool.GetAccountList(node, pageIndex, pageSize)
+		accts, _, err := tool.GetAccountList(node, after, limit)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address list: %s", err), http.StatusInternalServerError))
 			return

@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 
-	srch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
@@ -15,7 +14,7 @@ import (
 // The response is sorted by ascending block height, each entry is where the key's value changed.
 // Pass in 0,0 for the paging params to get the entire history.
 func (search *Client) SearchSysvarHistory(
-	sysvar string, pageIndex int, pageSize int,
+	sysvar string, afterHeight uint64, limit int,
 ) (khr *query.SysvarHistoryResponse, err error) {
 	khr = new(query.SysvarHistoryResponse)
 
@@ -52,11 +51,16 @@ func (search *Client) SearchSysvarHistory(
 		return khr.History[i].Height < khr.History[j].Height
 	})
 
-	// Reduce the full results list down to the requested page.  There is some wasted effort with
+	// Reduce the full results list down to the requested portion.  There is some wasted effort with
 	// this approach, but we support the worst case, which is to return all results.  In practice,
 	// getting the full list from the underlying index is fast, with tolerable sorting speed.
-	offsetStart, offsetEnd := srch.GetPageOffsets(pageIndex, pageSize, len(khr.History))
-	khr.History = khr.History[offsetStart:offsetEnd]
+	offsetStart := sort.Search(len(khr.History), func(n int) bool {
+		return khr.History[n].Height > afterHeight
+	})
+	khr.History = khr.History[offsetStart:]
+	if limit > 0 && len(khr.History) > limit {
+		khr.History = khr.History[:limit]
+	}
 
 	return khr, err
 }
@@ -108,7 +112,7 @@ func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
 // given account address.
 // Pass in 0, 0 for the paging params to get the entire history.
 func (search *Client) SearchAccountHistory(
-	addr string, pageIndex int, pageSize int,
+	addr string, afterHeight uint64, limit int,
 ) (ahr *AccountHistoryResponse, err error) {
 	ahr = new(AccountHistoryResponse)
 
@@ -136,11 +140,16 @@ func (search *Client) SearchAccountHistory(
 			txi.BlockHeight == txj.BlockHeight && txi.TxOffset < txj.TxOffset
 	})
 
-	// Reduce the full results list down to the requested page.  There is some wasted effort with
+	// Reduce the full results list down to the requested portion.  There is some wasted effort with
 	// this approach, but we support the worst case, which is to return all results.  In practice,
 	// getting the full list from the underlying index is fast, with tolerable sorting speed.
-	offsetStart, offsetEnd := srch.GetPageOffsets(pageIndex, pageSize, len(ahr.Txs))
-	ahr.Txs = ahr.Txs[offsetStart:offsetEnd]
+	offsetStart := sort.Search(len(ahr.Txs), func(n int) bool {
+		return ahr.Txs[n].BlockHeight > afterHeight
+	})
+	ahr.Txs = ahr.Txs[offsetStart:]
+	if limit > 0 && len(ahr.Txs) > limit {
+		ahr.Txs = ahr.Txs[:limit]
+	}
 
 	return ahr, err
 }
