@@ -1,7 +1,9 @@
 package tool
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
@@ -80,4 +82,30 @@ func SysvarHistory(
 	}
 
 	return khr, res, err
+}
+
+// SysvarsAsJSON converts a msgp-encoded sysvar map into a json-encoded one
+//
+// Either jsvs or err will always be nil on return, but never both.
+func SysvarsAsJSON(svs map[string][]byte) (jsvs map[string]interface{}, err error) {
+	jsvs = make(map[string]interface{})
+	for name, sv := range svs {
+		var buf bytes.Buffer
+		_, err = msgp.UnmarshalAsJSON(&buf, sv)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshaling "+name)
+		}
+		var val interface{}
+		bbytes := buf.Bytes()
+		if len(bbytes) == 0 {
+			jsvs[name] = ""
+			continue
+		}
+		err = json.Unmarshal(bbytes, &val)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("converting %s to json", name))
+		}
+		jsvs[name] = val
+	}
+	return
 }
