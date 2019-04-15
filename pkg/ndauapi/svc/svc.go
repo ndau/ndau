@@ -320,6 +320,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/system/get/:sysvars").To(routes.HandleSystemGet(cf)).
 		Doc("Return the names and current values of some currently definted system variables.").
+		Operation("SysvarGet").
 		Param(boneful.PathParameter("sysvars", "A comma-separated list of system variables of interest.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
@@ -334,8 +335,11 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Returns the JSON encoding of a SetSysvar transaction. It is the caller's
 		responsibility to update this transaction with appropriate sequence and
 		signatures and then send it at the normal endpoint (/tx/submit/setsysvar).`).
+		Operation("SysvarSet").
+		Param(boneful.PathParameter("sysvar", "The name of the system variable to return").DataType("string").Required(true)).
 		Consumes(JSON).
-		Produces(JSON))
+		Produces(JSON).
+		Writes(""))
 
 	svc.Route(svc.GET("/system/history/:sysvar").To(routes.HandleSystemHistory(cf)).
 		Doc("Returns the value history of a system variable given its name.").
