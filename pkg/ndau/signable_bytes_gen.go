@@ -213,3 +213,5 @@ func (tx *RecordPrice) SignableBytes() []byte {
 func (tx *SetSysvar) SignableBytes() []byte {
 	return sbOf(tx)
 }
+
+
