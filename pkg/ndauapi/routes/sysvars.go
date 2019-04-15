@@ -76,6 +76,7 @@ func HandleSystemSet(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		mdatabuf := new(bytes.Buffer)
+		// Using nil for type hints relies on all numeric types in system vars being int64.
 		err := json2msgp.ConvertStream(r.Body, mdatabuf, nil)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("converting input data", err, http.StatusBadRequest))
