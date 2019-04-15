@@ -28,6 +28,7 @@ type AccountHistoryItem struct {
 	Balance   types.Ndau
 	Timestamp string
 	TxHash    string
+	Height    int64
 }
 
 // AccountHistoryItems is used by the account history endpoint to return balance historical data.
@@ -137,10 +138,13 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		after, err := strconv.ParseUint(afters, 10, 64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("parsing 'after'", err, http.StatusBadRequest))
-			return
+		after := uint64(0)
+		if afters != "" {
+			after, err = strconv.ParseUint(afters, 10, 64)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("parsing 'after'", err, http.StatusBadRequest))
+				return
+			}
 		}
 
 		// Prepare search params.
@@ -190,6 +194,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 				Balance:   balance,
 				Timestamp: block.Block.Header.Time.Format(time.RFC3339),
 				TxHash:    txhash,
+				Height:    blockheight,
 			}
 			result.Items = append(result.Items, item)
 		}

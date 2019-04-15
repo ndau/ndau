@@ -114,10 +114,13 @@ func HandleSystemHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		after, err := strconv.ParseUint(afters, 10, 64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("parsing 'after'", err, http.StatusBadRequest))
-			return
+		after := uint64(0)
+		if afters != "" {
+			after, err = strconv.ParseUint(afters, 10, 64)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("parsing 'after'", err, http.StatusBadRequest))
+				return
+			}
 		}
 
 		result, _, err := tool.SysvarHistory(node, sysvar, after, limit)
