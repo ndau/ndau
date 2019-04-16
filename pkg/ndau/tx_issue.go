@@ -36,7 +36,6 @@ func (tx *Issue) Apply(appI interface{}) error {
 	}
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		var err error
 		state := stateI.(*backing.State)
 
 		// we give up overflow protection here in exchange for error-free
@@ -45,7 +44,7 @@ func (tx *Issue) Apply(appI interface{}) error {
 		// so this should be fine
 		state.TotalIssue += tx.Qty
 
-		return state, err
+		return app.updatePricesAndSIB(-1)(state)
 	})
 }
 
