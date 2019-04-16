@@ -199,18 +199,25 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
-	pageIndex, pageSize, errMsg, err := getPagingParams(r)
-	if errMsg != "" {
-		reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
+	limit, after, err := getPagingParams(r, 1000)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewFromErr("paging error", err, http.StatusBadRequest))
 		return
 	}
 
-	// We sometimes support negative page index to mean "page backwards", but not here.
-	// Also, the page size has already been asserted to be positive and not exceeding the max.
-	if pageIndex < 0 {
-		errMsg = "pagesize must be non-negative"
-		reqres.RespondJSON(w, reqres.NewFromErr(errMsg, err, http.StatusBadRequest))
-		return
+	// for this query, "after" must be a timestamp
+	// we can actually use it to further constrain the "first" timestamp; the initial query
+	// can be repeated with the same timestamps, but the "after" parameter can vary
+	// to page the results.
+	if after != "" {
+		aftertime, err := time.Parse(time.RFC3339, after)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("after must be a timestamp", err, http.StatusBadRequest))
+			return
+		}
+		if aftertime.After(firstTime) {
+			firstTime = aftertime
+		}
 	}
 
 	node, err := ws.Node(nodeAddress)
@@ -284,17 +291,15 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
-	// Limit the results to the requested page.
-	pagedFirstHeight := firstHeight + uint64(pageIndex*pageSize)
-	if pagedFirstHeight > lastHeight {
-		pagedFirstHeight = lastHeight
+	// Limit the results
+	if firstHeight > lastHeight {
+		firstHeight = lastHeight
 	}
-	pagedLastHeight := pagedFirstHeight + uint64(pageSize)
+	pagedLastHeight := firstHeight + uint64(limit)
 	if pagedLastHeight > lastHeight {
 		pagedLastHeight = lastHeight
 	}
-	// Replace the first and last heights with the paged subset.
-	firstHeight = pagedFirstHeight
+	// Replace the last height with the paged subset.
 	lastHeight = pagedLastHeight
 
 	// The last height param is exclusive.  Otherwise the result could include the first block of

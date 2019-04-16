@@ -27,9 +27,9 @@ type QueryParams struct {
 
 // SysvarHistoryParams is a json-friendly struct for the /sysvar/history endpoint.
 type SysvarHistoryParams struct {
-	Name      string `json:"name"`
-	PageIndex int    `json:"index"`
-	PageSize  int    `json:"size"`
+	Name        string `json:"name"`
+	AfterHeight uint64 `json:"afterheight"`
+	Limit       int    `json:"limit"`
 }
 
 // ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
@@ -40,9 +40,16 @@ type ValueData struct {
 
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
 type AccountHistoryParams struct {
-	Address   string `json:"addr"`
-	PageIndex int    `json:"index"`
-	PageSize  int    `json:"size"`
+	Address     string `json:"addr"`
+	AfterHeight uint64 `json:"afterheight"`
+	Limit       int    `json:"limit"`
+}
+
+// AccountListParams is a json-friendly struct for the /account/list endpoint.
+type AccountListParams struct {
+	Address string `json:"addr"`
+	After   string `json:"after"`
+	Limit   int    `json:"limit"`
 }
 
 // TxValueData is used for storing the block height and transaction offset within the block.

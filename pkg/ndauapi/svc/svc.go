@@ -140,8 +140,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(query.AccountListQueryResponse{
 			NumAccounts: 1,
 			FirstIndex:  1,
-			PageIndex:   0,
-			PageSize:    1000,
+			After:       dummyAddress.String(),
+			NextAfter:   dummyAddress.String(),
 			Accounts:    []string{dummyAddress.String()},
 		}))
 
@@ -156,8 +156,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(query.AccountListQueryResponse{
 			NumAccounts: 1,
 			FirstIndex:  1,
-			PageIndex:   0,
-			PageSize:    1000,
+			After:       dummyAddress.String(),
+			NextAfter:   dummyAddress.String(),
 			Accounts:    []string{dummyAddress.String()},
 		}))
 

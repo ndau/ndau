@@ -60,15 +60,16 @@ func GetAccountHistory(node client.ABCIClient, params string) (
 }
 
 // GetAccountList gets a list of account names, paged according to the params
-// Pass in 0,0 for the paging params to get the entire history.
-func GetAccountList(node client.ABCIClient, pageIndex int, pageSize int) (
+// Pass in after = "" (which is less than all nonempty strings) and limit = 0
+// to get all results. (Note that the ndauapi will enforce a limit of 100 items.)
+func GetAccountList(node client.ABCIClient, after string, limit int) (
 	*query.AccountListQueryResponse, *rpctypes.ResultABCIQuery, error,
 ) {
 	// Prepare search params.
-	params := search.AccountHistoryParams{
-		Address:   "",
-		PageIndex: pageIndex,
-		PageSize:  pageSize,
+	params := search.AccountListParams{
+		Address: "",
+		After:   after,
+		Limit:   limit,
 	}
 	paramsBuf, err := json.Marshal(params)
 	if err != nil {
@@ -97,9 +98,9 @@ func GetAccountList(node client.ABCIClient, pageIndex int, pageSize int) (
 // visited. This is unavoidable.
 func GetAccountListBatch(node client.ABCIClient) ([]address.Address, error) {
 	var (
-		accts    = make([]string, 0)
-		index    = 0
-		pageSize = 100
+		accts = make([]string, 0)
+		after = ""
+		limit = 100
 
 		qaccts *query.AccountListQueryResponse
 		err    error
@@ -108,16 +109,17 @@ func GetAccountListBatch(node client.ABCIClient) ([]address.Address, error) {
 	getPage := func() {
 		qaccts, _, err = GetAccountList(
 			node,
-			index, pageSize,
+			after,
+			limit,
 		)
 		if err != nil {
 			err = errors.Wrap(err, fmt.Sprintf(
-				"getPage(%d)", index,
+				"getPage(%s, %d)", after, limit,
 			))
 			return
 		}
 		accts = append(accts, qaccts.Accounts...)
-		index++
+		after = qaccts.NextAfter
 	}
 
 	// prime the pump
@@ -125,7 +127,7 @@ func GetAccountListBatch(node client.ABCIClient) ([]address.Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	for len(qaccts.Accounts) == pageSize {
+	for after != "" {
 		getPage()
 		if err != nil {
 			return nil, err
