@@ -60,7 +60,8 @@ func GetAccountHistory(node client.ABCIClient, params string) (
 }
 
 // GetAccountList gets a list of account names, paged according to the params
-// Pass in 0,0 for the paging params to get the entire history.
+// Pass in after = "" (which is less than all nonempty strings) and limit = 0
+// to get all results. (Note that the ndauapi will enforce a limit of 100 items.)
 func GetAccountList(node client.ABCIClient, after string, limit int) (
 	*query.AccountListQueryResponse, *rpctypes.ResultABCIQuery, error,
 ) {
