@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
+
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -135,4 +138,45 @@ func TestIssueIsValidOnlyWithSufficientTxFee(t *testing.T) {
 			require.Equal(t, expect, code.ReturnCode(resp.Code))
 		})
 	}
+}
+
+func TestIssueDoesntAdjustMarketPrice(t *testing.T) {
+	app, assc := initAppRFE(t)
+	privateKeys := assc[rfeKeys].([]signature.PrivateKey)
+
+	oldMarketPrice := app.GetState().(*backing.State).MarketPrice
+
+	issue := NewIssue(
+		math.Ndau(1),
+		1,
+		privateKeys...,
+	)
+
+	resp := deliverTx(t, app, issue)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.Equal(t, oldMarketPrice, app.GetState().(*backing.State).MarketPrice)
+}
+
+func TestIssueAdjustsTargetAndSIB(t *testing.T) {
+	app, assc := initAppRFE(t)
+	privateKeys := assc[rfeKeys].([]signature.PrivateKey)
+
+	getVars := func() (pricecurve.Nanocent, eai.Rate) {
+		state := app.GetState().(*backing.State)
+		return state.TargetPrice, state.SIB
+	}
+	oldTargetPrice, oldSIB := getVars()
+
+	issue := NewIssue(
+		math.Ndau(1),
+		1,
+		privateKeys...,
+	)
+
+	resp := deliverTx(t, app, issue)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	targetPrice, sib := getVars()
+	require.NotEqual(t, oldTargetPrice, targetPrice)
+	require.NotEqual(t, oldSIB, sib)
 }

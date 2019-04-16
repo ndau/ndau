@@ -14,10 +14,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-// CalculateSIB calculates the SIB implied by the market price given the current app state.
+// return a function intended to be run within app.UpdateState
+//
+// special case: if the input is negative, just use the existing value
+func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI metast.State) (metast.State, error) {
+	if marketPrice < 0 {
+		marketPrice = app.GetState().(*backing.State).MarketPrice
+	}
+	return func(stateI metast.State) (metast.State, error) {
+		sib, target, err := app.calculateCurrentSIB(marketPrice)
+		if err != nil {
+			return stateI, err
+		}
+		state := stateI.(*backing.State)
+		state.SIB = sib
+		state.MarketPrice = marketPrice
+		state.TargetPrice = target
+
+		return state, err
+	}
+}
+
+// calculates the SIB implied by the market price given the current app state.
 //
 // It also returns the calculated target price.
-func (tx *RecordPrice) CalculateSIB(app *App) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
+func (app *App) calculateCurrentSIB(marketPrice pricecurve.Nanocent) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
 	// compute the current target price
 	state := app.GetState().(*backing.State)
 	targetPrice, err = pricecurve.PriceAtUnit(state.TotalIssue)
@@ -39,7 +60,7 @@ func (tx *RecordPrice) CalculateSIB(app *App) (sib eai.Rate, targetPrice pricecu
 	}
 
 	// compute SIB
-	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(tx.MarketPrice), app.BlockTime())
+	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(marketPrice), app.BlockTime())
 	if err != nil {
 		err = errors.Wrap(err, "building vm for SIB calculation")
 		return
@@ -82,18 +103,7 @@ func (tx *RecordPrice) Apply(appI interface{}) error {
 		return err
 	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		sib, target, err := tx.CalculateSIB(app)
-		if err != nil {
-			return stateI, err
-		}
-		state := stateI.(*backing.State)
-		state.SIB = sib
-		state.MarketPrice = tx.MarketPrice
-		state.TargetPrice = target
-
-		return state, err
-	})
+	return app.UpdateState(app.updatePricesAndSIB(tx.MarketPrice))
 }
 
 // GetSource implements sourcer
