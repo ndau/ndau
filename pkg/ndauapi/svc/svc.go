@@ -45,6 +45,7 @@ var dummyTxHash = "L4hD20bp7w4Hi19vpn46wQ"
 
 // var dummyPublic, dummyPrivate, _ = signature.Generate(signature.Ed25519, nil)
 var dummyAddress, _ = address.Generate(address.KindUser, dummyPublic.KeyBytes())
+var dummyAddress2, _ = address.Generate(address.KindUser, dummyPublic.KeyBytes())
 var dummyAccount = backing.AccountData{
 	Balance:            123000000,
 	ValidationKeys:     []signature.PublicKey{dummyPublic},
@@ -119,8 +120,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		The result is sorted chronologically.`).
 		Operation("AccountHistory").
 		Param(boneful.PathParameter("address", "The address of the account for which to return history").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("after", "The block height after which results should start.").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(routes.AccountHistoryItems{Items: []routes.AccountHistoryItem{{
 			Balance:   123000000,
@@ -132,16 +133,16 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns a list of account IDs.").
 		Notes(`This returns a list of every account on the blockchain, sorted
 		alphabetically. A maximum of 10000 accounts can be returned in a single
-		request.`).
+		request. The results are sorted by address.`).
 		Operation("AccountList").
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. default=0").DataType("int").Required(false)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=10000").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("after", "The address after which (sorted alphabetically) results should start.").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(query.AccountListQueryResponse{
 			NumAccounts: 1,
 			FirstIndex:  1,
 			After:       dummyAddress.String(),
-			NextAfter:   dummyAddress.String(),
+			NextAfter:   dummyAddress2.String(),
 			Accounts:    []string{dummyAddress.String()},
 		}))
 
@@ -206,8 +207,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("first", "Timestamp (ISO 3339) at which to begin (inclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.PathParameter("last", "Timestamp (ISO 3339) at which to end (exclusive) retrieval of blocks.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("noempty", "Set to nonblank value to exclude empty blocks").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get; default=0").DataType("int").Required(true)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(true)).
+		Param(boneful.QueryParameter("after", "The timestamp after which results should start (use the last value from the previous page).").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -347,8 +348,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		The result is sorted chronologically.`).
 		Operation("SysvarHistory").
 		Param(boneful.PathParameter("sysvar", "The name of the system variable for which to return history").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("pageindex", "The 0-based page index to get. Use negative page numbers for getting pages from the end (later in time); default=0").DataType("int").Required(false)).
-		Param(boneful.QueryParameter("pagesize", "The number of items to return per page. Use a positive page size, or 0 for getting max results (ignoring pageindex param); default=0, max=100").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("after", "The block height after which results should start.").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(query.SysvarHistoryResponse{History: []query.SysvarHistoricalValue{{
 			Height: 12345,
