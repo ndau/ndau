@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -98,7 +99,7 @@ func (app *App) callWinnerWebhook(tx *NominateNodeReward, winner address.Address
 		return
 	}
 
-	resp, err := http.Post(
+	resp, err := (&http.Client{Timeout: 30 * time.Second}).Post(
 		*app.config.NodeRewardWebhook,
 		"application/json",
 		buff,
