@@ -187,7 +187,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 	switch filter {
 	case "notempty", "noempty":
 		f = nonemptyFilter
-	case "":
+	case "nofilter", "":
 		// we've already set nofilter
 	default:
 		reqres.RespondJSON(w, reqres.NewAPIError("unknown filter "+filter, http.StatusBadRequest))
