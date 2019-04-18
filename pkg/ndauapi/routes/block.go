@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-zoo/bone"
@@ -23,9 +24,13 @@ import (
 )
 
 // BlockchainRequest represents a blockchain request.
+// first and last are the range of blocks to inspect, and limit is the maximum
+// number of blocks to return (which is advisory -- the actual quantity may
+// be more).
 type BlockchainRequest struct {
 	first   int64
 	last    int64
+	limit   int64
 	noempty bool
 }
 
@@ -34,6 +39,34 @@ type BlockchainDateRequest struct {
 	first   time.Time
 	last    time.Time
 	noempty bool
+}
+
+// getQueryParms returns a map of query keys converted to lowercase, to the
+// first version of any query. While url queries theoretically support multiple
+// instances of each query parameter, we're not going to do that here.
+func getQueryParms(r *http.Request) map[string]string {
+	inp := bone.GetAllQueries(r)
+	out := make(map[string]string)
+	for k, va := range inp {
+		out[strings.ToLower(k)] = va[0]
+	}
+	return out
+}
+
+// getFilter retrieves a filter from the spec in the query
+func getFilter(qp map[string]string) (func(p *tmtypes.BlockMeta) bool, error) {
+	filter := qp["filter"]
+	f := noFilter
+	// someday we might support more filters, hence the switch
+	switch filter {
+	case "notempty", "noempty", "nonempty":
+		f = nonemptyFilter
+	case "nofilter", "":
+		// we've already set nofilter
+	default:
+		return f, errors.New("unknown filter " + filter)
+	}
+	return f, nil
 }
 
 // MaximumRange is the maximum amount of blocks able to be returned.
@@ -70,7 +103,8 @@ func processBlockchainRequest(r *http.Request) (BlockchainRequest, error) {
 		return req, fmt.Errorf("%v range is larger than %v", last-first, MaximumRange)
 	}
 
-	noempty := (r.URL.Query().Get("noempty") != "")
+	qp := getQueryParms(r)
+	noempty := (qp["noempty"] != "")
 
 	return BlockchainRequest{
 		first:   first,
@@ -101,12 +135,6 @@ func nonemptyFilter(p *tmtypes.BlockMeta) bool {
 	return p.Header.NumTxs > 0
 }
 
-func hasHashOf(hash string) func(*tmtypes.BlockMeta) bool {
-	return func(p *tmtypes.BlockMeta) bool {
-		return p.BlockID.Hash.String() == hash
-	}
-}
-
 func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
 	node, err := ws.Node(cf.NodeAddress)
 	if err != nil {
@@ -119,7 +147,7 @@ func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
 	return block.Block.Height, nil
 }
 
-func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
+func getBlocksMatching(node *client.HTTP, first, last, limit int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
 	// See tendermint/rpc/core/blocks.go:BlockchainInfo() for where this constant comes from.
 	const pageSize int64 = 20
 
@@ -137,15 +165,67 @@ func getBlocksMatching(node *client.HTTP, first, last int64, filter func(*tmtype
 		if err != nil {
 			return nil, err
 		}
+		blocksPage = filterBlockchainInfo(blocksPage, filter)
 
 		if blocks == nil {
 			blocks = blocksPage
 		} else {
 			blocks.BlockMetas = append(blocks.BlockMetas, blocksPage.BlockMetas...)
 		}
+
+		// stop if we exceed the limit
+		if int64(len(blocks.BlockMetas)) > limit {
+			blocks.BlockMetas = blocks.BlockMetas[:limit]
+			break
+		}
 	}
 
-	return filterBlockchainInfo(blocks, filter), nil
+	if len(blocks.BlockMetas) > 0 {
+		blocks.LastHeight = blocks.BlockMetas[len(blocks.BlockMetas)-1].Header.Height
+	} else {
+		blocks.LastHeight = 0
+	}
+	return blocks, nil
+}
+
+func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress string) {
+	befores := bone.GetValue(r, "height")
+	before, err := strconv.ParseInt(befores, 10, 64)
+	if err != nil || before < 1 {
+		reqres.RespondJSON(w, reqres.NewFromErr("height must be a number > 1", err, http.StatusBadRequest))
+		return
+	}
+
+	qp := getQueryParms(r)
+	filter, err := getFilter(qp)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewFromErr("bad filter spec", err, http.StatusBadRequest))
+		return
+	}
+
+	limits := qp["limit"]
+	var limit int64 = MaximumRange
+	if limits != "" {
+		limit, err = strconv.ParseInt(limits, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("limit must be a number", err, http.StatusBadRequest))
+			return
+		}
+	}
+
+	node, err := ws.Node(nodeAddress)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
+		return
+	}
+
+	blocks, err := getBlocksMatching(node, 1, before, limit, filter)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
+		return
+	}
+
+	reqres.RespondJSON(w, reqres.OKResponse(blocks))
 }
 
 func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
@@ -165,7 +245,7 @@ func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string
 	if reqdata.noempty {
 		f = nonemptyFilter
 	}
-	blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, f)
+	blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, MaximumRange, f)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return
@@ -177,7 +257,8 @@ func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string
 func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
 	first := bone.GetValue(r, "first")
 	last := bone.GetValue(r, "last")
-	noempty := r.URL.Query().Get("noempty") != ""
+	qp := getQueryParms(r)
+	noempty := qp["noempty"] != ""
 
 	if first == "" {
 		reqres.RespondJSON(w, reqres.NewAPIError("first parameter required.", http.StatusBadRequest))
@@ -199,7 +280,7 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		return
 	}
 
-	limit, after, err := getPagingParams(r, 1000)
+	limit, after, err := getPagingParams(r, MaximumRange)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewFromErr("paging error", err, http.StatusBadRequest))
 		return
@@ -318,13 +399,21 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 	if noempty {
 		f = nonemptyFilter
 	}
-	blocks, err := getBlocksMatching(node, int64(firstHeight), int64(lastHeight), f)
+	blocks, err := getBlocksMatching(node, int64(firstHeight), int64(lastHeight), int64(limit), f)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return
 	}
 
 	reqres.RespondJSON(w, reqres.OKResponse(blocks))
+}
+
+// HandleBlockBefore handles requests for blocks before a given height, and
+// manages filtering better than HandleBlockRange.
+func HandleBlockBefore(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handleBlockBefore(w, r, cf.NodeAddress)
+	}
 }
 
 // HandleBlockRange handles requests for a range of blocks
