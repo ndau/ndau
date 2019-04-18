@@ -107,6 +107,7 @@ func accountListQuery(appI interface{}, request abci.RequestQuery, response *abc
 		names[ix] = k
 		ix++
 	}
+	numAccounts := len(names)
 	sort.Sort(sort.StringSlice(names))
 	// Reduce the full results list down to the requested portion.  There is some wasted effort with
 	// this approach, but we support the worst case, which is to return all results.  In practice,
@@ -124,7 +125,7 @@ func accountListQuery(appI interface{}, request abci.RequestQuery, response *abc
 	}
 
 	retval := query.AccountListQueryResponse{
-		NumAccounts: len(names),
+		NumAccounts: numAccounts,
 		FirstIndex:  offsetStart,
 		After:       params.After,
 		NextAfter:   nextafter,
