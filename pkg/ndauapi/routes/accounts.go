@@ -242,7 +242,8 @@ func HandleAccountCurrencySeats(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		limit := 3000 // the number of currency seats eligible to vote in the 2nd tier election
-		limitStr := r.URL.Query().Get("limit")
+		qp := getQueryParms(r)
+		limitStr := qp["limit"]
 		if limitStr != "" {
 			var pi int64
 			pi, err = strconv.ParseInt(limitStr, 10, 32)

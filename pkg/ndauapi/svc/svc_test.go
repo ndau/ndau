@@ -20,6 +20,7 @@ func TestRouting(t *testing.T) {
 		rt{"POST", "/account/accounts", "/account/accounts"},
 		rt{"POST", "/account/eai/rate", "/account/eai/rate"},
 		rt{"GET", "/account/history/123456", "/account/history/:address"},
+		rt{"GET", "/block/before/123", "/block/before/:height"},
 		rt{"GET", "/block/hash/abc123", "/block/hash/:blockhash"},
 		rt{"GET", "/block/height/10234", "/block/height/:height"},
 		rt{"GET", "/block/range/123/143", "/block/range/:first/:last"},

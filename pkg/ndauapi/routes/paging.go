@@ -19,8 +19,9 @@ func getPagingParams(r *http.Request, maxlimit int) (limit int, after string, er
 	// Paging is optional. Default to returning the max.
 	limit = maxlimit
 	after = ""
+	qp := getQueryParms(r)
 
-	slimit := r.URL.Query().Get("limit")
+	slimit := qp["limit"]
 	if slimit != "" {
 		n, err := strconv.Atoi(slimit)
 		if err != nil {
@@ -29,7 +30,7 @@ func getPagingParams(r *http.Request, maxlimit int) (limit int, after string, er
 		limit = n
 	}
 
-	after = r.URL.Query().Get("after")
+	after = qp["after"]
 
 	if limit <= 0 {
 		limit = maxlimit
