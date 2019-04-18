@@ -53,6 +53,22 @@ func getQueryParms(r *http.Request) map[string]string {
 	return out
 }
 
+// getFilter retrieves a filter from the spec in the query
+func getFilter(qp map[string]string) (func(p *tmtypes.BlockMeta) bool, error) {
+	filter := qp["filter"]
+	f := noFilter
+	// someday we might support more filters, hence the switch
+	switch filter {
+	case "notempty", "noempty", "nonempty":
+		f = nonemptyFilter
+	case "nofilter", "":
+		// we've already set nofilter
+	default:
+		return f, errors.New("unknown filter " + filter)
+	}
+	return f, nil
+}
+
 // MaximumRange is the maximum amount of blocks able to be returned.
 const MaximumRange = 100
 
@@ -181,16 +197,9 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 	}
 
 	qp := getQueryParms(r)
-	filter := qp["filter"]
-	f := noFilter
-	// someday we might support more filters, hence the switch
-	switch filter {
-	case "notempty", "noempty":
-		f = nonemptyFilter
-	case "nofilter", "":
-		// we've already set nofilter
-	default:
-		reqres.RespondJSON(w, reqres.NewAPIError("unknown filter "+filter, http.StatusBadRequest))
+	filter, err := getFilter(qp)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewFromErr("bad filter spec", err, http.StatusBadRequest))
 		return
 	}
 
@@ -210,7 +219,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 		return
 	}
 
-	blocks, err := getBlocksMatching(node, 1, before, limit, f)
+	blocks, err := getBlocksMatching(node, 1, before, limit, filter)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return
@@ -236,7 +245,7 @@ func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string
 	if reqdata.noempty {
 		f = nonemptyFilter
 	}
-	blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, 100, f)
+	blocks, err := getBlocksMatching(node, reqdata.first, reqdata.last, MaximumRange, f)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return
