@@ -41,6 +41,7 @@ func init() {
 		"SettlementSettings",
 		"Settlements",
 		"Stake",
+		"StakeRules",
 		"UncreditedEAI",
 		"ValidationKeys",
 		"ValidationScript",
@@ -169,6 +170,8 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 
 		stakeUnptr = stakeValue
 	}
+
+	// x.StakeRules ([]byte->*ast.ArrayType) is primitive: true
 
 	// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
 
@@ -315,6 +318,9 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		nt.NewList(vrw, settlementsItems...),
 		// x.Stake (*Stake)
 		stakeUnptr,
+		// x.StakeRules ([]byte)
+
+		nt.String(x.StakeRules),
 		// x.UncreditedEAI (math.Ndau)
 
 		util.Int(x.UncreditedEAI).NomsValue(),
@@ -578,6 +584,20 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Stake")
 
 				x.Stake = &stakeInstance
+			// x.StakeRules ([]byte->*ast.ArrayType) is primitive: true
+			case "StakeRules":
+				// template u_decompose: x.StakeRules ([]byte->*ast.ArrayType)
+				// template u_primitive: x.StakeRules
+				stakeRulesValue, ok := value.(nt.String)
+				if !ok {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+						reflect.TypeOf(value),
+					)
+				}
+				stakeRulesTyped := []byte(stakeRulesValue)
+
+				x.StakeRules = stakeRulesTyped
 			// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
 			case "LastEAIUpdate":
 				// template u_decompose: x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr)

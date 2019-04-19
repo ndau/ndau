@@ -66,6 +66,7 @@ type AccountData struct {
 	DelegationNode      *address.Address      `json:"delegationNode" chain:"65,Acct_DelegationNode"`
 	Lock                *Lock                 `json:"lock" chain:"."`
 	Stake               *Stake                `json:"stake" chain:"."`
+	StakeRules          []byte                `json:"stake_rules" chain:"75,Acct_StakeRules"`
 	LastEAIUpdate       math.Timestamp        `json:"lastEAIUpdate" chain:"66,Acct_LastEAIUpdate"`
 	LastWAAUpdate       math.Timestamp        `json:"lastWAAUpdate" chain:"67,Acct_LastWAAUpdate"`
 	WeightedAverageAge  math.Duration         `json:"weightedAverageAge" chain:"68,Acct_WeightedAverageAge"`

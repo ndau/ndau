@@ -12,9 +12,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 17
+	// map header, size 18
 	// string "Balance"
-	o = append(o, 0xde, 0x0, 0x11, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0xde, 0x0, 0x12, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Balance")
@@ -97,6 +97,9 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 			return
 		}
 	}
+	// string "StakeRules"
+	o = append(o, 0xaa, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x52, 0x75, 0x6c, 0x65, 0x73)
+	o = msgp.AppendBytes(o, z.StakeRules)
 	// string "LastEAIUpdate"
 	o = append(o, 0xad, 0x4c, 0x61, 0x73, 0x74, 0x45, 0x41, 0x49, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65)
 	o, err = z.LastEAIUpdate.MarshalMsg(o)
@@ -349,6 +352,12 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					}
 				}
 			}
+		case "StakeRules":
+			z.StakeRules, bts, err = msgp.ReadBytesBytes(bts, z.StakeRules)
+			if err != nil {
+				err = msgp.WrapError(err, "StakeRules")
+				return
+			}
 		case "LastEAIUpdate":
 			bts, err = z.LastEAIUpdate.UnmarshalMsg(bts)
 			if err != nil {
@@ -524,7 +533,7 @@ func (z *AccountData) Msgsize() (s int) {
 	} else {
 		s += 1 + 6 + z.Stake.Point.Msgsize() + 8 + z.Stake.Address.Msgsize()
 	}
-	s += 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 12 + msgp.ArrayHeaderSize
+	s += 11 + msgp.BytesPrefixSize + len(z.StakeRules) + 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 12 + msgp.ArrayHeaderSize
 	for za0003 := range z.Settlements {
 		s += 1 + 4 + z.Settlements[za0003].Qty.Msgsize() + 7 + z.Settlements[za0003].Expiry.Msgsize()
 	}

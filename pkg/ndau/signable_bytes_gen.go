@@ -214,4 +214,7 @@ func (tx *SetSysvar) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-
+// SignableBytes partially implements metatx.Transactable for SetStakeRules
+func (tx *SetStakeRules) SignableBytes() []byte {
+	return sbOf(tx)
+}
