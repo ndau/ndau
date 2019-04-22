@@ -19,8 +19,8 @@ type StakeData struct {
 
 // StakeRules keeps track of data associated with Rules accounts
 type StakeRules struct {
-	Script  []byte              `json:"script" chain:"120,StakeRules_Script"`
-	Inbound map[string]struct{} `json:"inbound" chain:"121,StakeRules_Inbound"`
+	Script  []byte            `json:"script" chain:"120,StakeRules_Script"`
+	Inbound map[string]uint64 `json:"inbound" chain:"121,StakeRules_Inbound"`
 }
 
 // HoldSum returns the sum of held ndau in this account

@@ -56,6 +56,10 @@ func (app *App) NodeStakers(node address.Address) (map[string]math.Ndau, error) 
 
 // Stake updates the state to handle staking an account to another
 //
+// It is assumed that all necessary validation has already been performed. In
+// particular, this function does not attempt to construct or run the chaincode
+// context for the rules account.
+//
 // This function returns a function suitable for calling within app.UpdateState
 func (app *App) Stake(
 	qty math.Ndau,
@@ -112,11 +116,11 @@ func (app *App) Stake(
 		targetAcct.Holds = append(targetAcct.Holds, hold)
 
 		if isPrimary {
-			rulesAcct.StakeRules.Inbound[target.String()] = struct{}{}
+			rulesAcct.StakeRules.Inbound[target.String()]++
 		} else {
 			rulesCostakers := stakeToAcct.Costakers[rules.String()]
-			if rulesCostakers == nil {
-				rulesCostakers = make(map[string]uint64)
+			if rulesCostakers != nil {
+
 			}
 			rulesCostakers[target.String()]++
 			stakeToAcct.Costakers[rules.String()] = rulesCostakers
@@ -131,9 +135,60 @@ func (app *App) Stake(
 }
 
 // Unstake updates the state to handle unstaking an account
-func (app *App) Unstake(targetA address.Address) func(metast.State) (metast.State, error) {
+//
+// It is assumed that all necessary validation has already been performed. In
+// particular, this function does not attempt to construct or run the chaincode
+// context for the rules account.
+//
+// This function returns a function suitable for calling within app.UpdateState
+func (app *App) Unstake(
+	qty math.Ndau,
+	target, stakeTo, rules address.Address,
+) func(metast.State) (metast.State, error) {
 	return func(stI metast.State) (metast.State, error) {
-		// TODO
-		return stI, errors.New("unimplemented")
+		st := stI.(*backing.State)
+
+		targetAcct, _ := app.getAccount(target)
+		stakeToAcct, _ := app.getAccount(stakeTo)
+		rulesAcct, _ := app.getAccount(rules)
+
+		// update 3 places where we keep track of rules info:
+		// - outbound stake list
+		// - rules inbounds (if primary)
+		// - costakers list (if applicable)
+		for idx, hold := range targetAcct.Holds {
+			if hold.Qty == qty && hold.Stake != nil && hold.Stake.StakeTo == stakeTo && hold.Stake.RulesAcct == rules {
+				// quickly remove this element by replacing it with the final one
+				targetAcct.Holds[idx] = targetAcct.Holds[len(targetAcct.Holds)-1]
+				targetAcct.Holds = targetAcct.Holds[:len(targetAcct.Holds)-1]
+				break
+			}
+		}
+
+		if stakeTo == rules {
+			rulesAcct.StakeRules.Inbound[target.String()]--
+			if rulesAcct.StakeRules.Inbound[target.String()] == 0 {
+				delete(rulesAcct.StakeRules.Inbound, target.String())
+			}
+		} else {
+			rulesCostakers := stakeToAcct.Costakers[rules.String()]
+			if rulesCostakers != nil {
+				rulesCostakers[target.String()]--
+				if rulesCostakers[target.String()] == 0 {
+					delete(rulesCostakers, target.String())
+				}
+				if len(rulesCostakers) == 0 {
+					delete(stakeToAcct.Costakers, rules.String())
+				} else {
+					stakeToAcct.Costakers[rules.String()] = rulesCostakers
+				}
+			}
+		}
+
+		st.Accounts[target.String()] = targetAcct
+		st.Accounts[stakeTo.String()] = stakeToAcct
+		st.Accounts[rules.String()] = rulesAcct
+
+		return st, nil
 	}
 }

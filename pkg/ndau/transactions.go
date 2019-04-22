@@ -293,6 +293,9 @@ var _ NTransactable = (*UnregisterNode)(nil)
 // An Unstake transaction stakes to a node
 type Unstake struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Rules      address.Address       `msg:"rul" chain:"8,Tx_Rules" json:"rules"`
+	StakeTo    address.Address       `msg:"sto" chain:"5,Tx_StakeTo" json:"stake_to"`
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }

@@ -203,8 +203,7 @@ func (z *StakeRules) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 			if z.Inbound == nil {
-				z.Inbound = make(map[string]struct {
-				}, zb0002)
+				z.Inbound = make(map[string]uint64, zb0002)
 			} else if len(z.Inbound) > 0 {
 				for key := range z.Inbound {
 					delete(z.Inbound, key)
@@ -213,34 +212,16 @@ func (z *StakeRules) DecodeMsg(dc *msgp.Reader) (err error) {
 			for zb0002 > 0 {
 				zb0002--
 				var za0001 string
-				var za0002 struct {
-				}
+				var za0002 uint64
 				za0001, err = dc.ReadString()
 				if err != nil {
 					err = msgp.WrapError(err, "Inbound")
 					return
 				}
-				var zb0003 uint32
-				zb0003, err = dc.ReadMapHeader()
+				za0002, err = dc.ReadUint64()
 				if err != nil {
 					err = msgp.WrapError(err, "Inbound", za0001)
 					return
-				}
-				for zb0003 > 0 {
-					zb0003--
-					field, err = dc.ReadMapKeyPtr()
-					if err != nil {
-						err = msgp.WrapError(err, "Inbound", za0001)
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					default:
-						err = dc.Skip()
-						if err != nil {
-							err = msgp.WrapError(err, "Inbound", za0001)
-							return
-						}
-					}
 				}
 				z.Inbound[za0001] = za0002
 			}
@@ -278,15 +259,15 @@ func (z *StakeRules) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "Inbound")
 		return
 	}
-	for za0001, _ := range z.Inbound {
+	for za0001, za0002 := range z.Inbound {
 		err = en.WriteString(za0001)
 		if err != nil {
 			err = msgp.WrapError(err, "Inbound")
 			return
 		}
-		// map header, size 0
-		err = en.Append(0x80)
+		err = en.WriteUint64(za0002)
 		if err != nil {
+			err = msgp.WrapError(err, "Inbound", za0001)
 			return
 		}
 	}
@@ -303,10 +284,9 @@ func (z *StakeRules) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "Inbound"
 	o = append(o, 0xa7, 0x49, 0x6e, 0x62, 0x6f, 0x75, 0x6e, 0x64)
 	o = msgp.AppendMapHeader(o, uint32(len(z.Inbound)))
-	for za0001, _ := range z.Inbound {
+	for za0001, za0002 := range z.Inbound {
 		o = msgp.AppendString(o, za0001)
-		// map header, size 0
-		o = append(o, 0x80)
+		o = msgp.AppendUint64(o, za0002)
 	}
 	return
 }
@@ -343,8 +323,7 @@ func (z *StakeRules) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if z.Inbound == nil {
-				z.Inbound = make(map[string]struct {
-				}, zb0002)
+				z.Inbound = make(map[string]uint64, zb0002)
 			} else if len(z.Inbound) > 0 {
 				for key := range z.Inbound {
 					delete(z.Inbound, key)
@@ -352,35 +331,17 @@ func (z *StakeRules) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			}
 			for zb0002 > 0 {
 				var za0001 string
-				var za0002 struct {
-				}
+				var za0002 uint64
 				zb0002--
 				za0001, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					err = msgp.WrapError(err, "Inbound")
 					return
 				}
-				var zb0003 uint32
-				zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
+				za0002, bts, err = msgp.ReadUint64Bytes(bts)
 				if err != nil {
 					err = msgp.WrapError(err, "Inbound", za0001)
 					return
-				}
-				for zb0003 > 0 {
-					zb0003--
-					field, bts, err = msgp.ReadMapKeyZC(bts)
-					if err != nil {
-						err = msgp.WrapError(err, "Inbound", za0001)
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					default:
-						bts, err = msgp.Skip(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Inbound", za0001)
-							return
-						}
-					}
 				}
 				z.Inbound[za0001] = za0002
 			}
@@ -402,7 +363,7 @@ func (z *StakeRules) Msgsize() (s int) {
 	if z.Inbound != nil {
 		for za0001, za0002 := range z.Inbound {
 			_ = za0002
-			s += msgp.StringPrefixSize + len(za0001) + 1
+			s += msgp.StringPrefixSize + len(za0001) + msgp.Uint64Size
 		}
 	}
 	return

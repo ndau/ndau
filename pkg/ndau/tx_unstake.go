@@ -27,7 +27,7 @@ func (tx *Unstake) Apply(appI interface{}) error {
 	if err != nil {
 		return err
 	}
-	return app.UpdateState(app.Unstake(tx.Target))
+	return app.UpdateState(app.Unstake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules))
 }
 
 // GetSource implements sourcer

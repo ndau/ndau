@@ -3,7 +3,6 @@ package backing
 import (
 	"fmt"
 	"reflect"
-	"sort"
 
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
@@ -145,29 +144,26 @@ func init() {
 func (x StakeRules) MarshalNoms(vrw nt.ValueReadWriter) (stakeRulesValue nt.Value, err error) {
 	// x.Script ([]byte->*ast.ArrayType) is primitive: true
 
-	// x.Inbound (map[string]struct{}->*ast.MapType) is primitive: false
+	// x.Inbound (map[string]uint64->*ast.MapType) is primitive: false
 
-	// template decompose: x.Inbound (map[string]struct{}->*ast.MapType)
-	// template set:  x.Inbound
-	inboundItems := make([]nt.Value, 0, len(x.Inbound))
-	if len(x.Inbound) > 0 {
-		// We need to iterate the set in sorted order, so build []string and sort it first
-		inboundSorted := make([]string, 0, len(x.Inbound))
-		for inboundItem := range x.Inbound {
-			inboundSorted = append(inboundSorted, inboundItem)
-		}
-		sort.Sort(sort.StringSlice(inboundSorted))
-		for _, inboundItem := range inboundSorted {
-			inboundItems = append(
-				inboundItems,
-				nt.String(inboundItem),
-			)
-		}
+	// template decompose: x.Inbound (map[string]uint64->*ast.MapType)
+	// template map: x.Inbound
+	inboundKVs := make([]nt.Value, 0, len(x.Inbound)*2)
+	for inboundKey, inboundValue := range x.Inbound {
+
+		// template decompose: inboundValue (uint64->*ast.Ident)
+
+		inboundKVs = append(
+			inboundKVs,
+			nt.String(inboundKey),
+			util.Int(inboundValue).NomsValue(),
+		)
 	}
 
 	return stakeRulesStructTemplate.NewStruct([]nt.Value{
-		// x.Inbound (map[string]struct{})
-		nt.NewSet(vrw, inboundItems...),
+		// x.Inbound (map[string]uint64)
+
+		nt.NewMap(vrw, inboundKVs...),
 		// x.Script ([]byte)
 
 		nt.String(x.Script),
@@ -210,31 +206,45 @@ func (x *StakeRules) UnmarshalNoms(value nt.Value) (err error) {
 				scriptTyped := []byte(scriptValue)
 
 				x.Script = scriptTyped
-			// x.Inbound (map[string]struct{}->*ast.MapType) is primitive: false
+			// x.Inbound (map[string]uint64->*ast.MapType) is primitive: false
 			case "Inbound":
-				// template u_decompose: x.Inbound (map[string]struct{}->*ast.MapType)
-				// template u_set: x.Inbound
-				inboundGoSet := make(map[string]struct{})
-				if inboundSet, ok := value.(nt.Set); ok {
-					inboundSet.Iter(func(inboundItem nt.Value) (stop bool) {
-						if inboundItemString, ok := inboundItem.(nt.String); ok {
-							inboundGoSet[string(inboundItemString)] = struct{}{}
-						} else {
+				// template u_decompose: x.Inbound (map[string]uint64->*ast.MapType)
+				// template u_map: x.Inbound
+				inboundGMap := make(map[string]uint64)
+				if inboundNMap, ok := value.(nt.Map); ok {
+					inboundNMap.Iter(func(inboundKey, inboundValue nt.Value) (stop bool) {
+						inboundKeyString, ok := inboundKey.(nt.String)
+						if !ok {
 							err = fmt.Errorf(
-								"StakeRules.AccountData.UnmarshalNoms expected InboundItem to be a nt.String; found %s",
-								reflect.TypeOf(value),
+								"StakeRules.UnmarshalNoms expected inboundKey to be a nt.String; found %s",
+								reflect.TypeOf(inboundKey),
 							)
+							return true
 						}
-						return err != nil
+
+						// template u_decompose: inboundValue (uint64->*ast.Ident)
+						// template u_primitive: inboundValue
+						var inboundValueValue util.Int
+						inboundValueValue, err = util.IntFrom(inboundValue)
+						if err != nil {
+							err = errors.Wrap(err, "StakeRules.UnmarshalNoms->inboundValue")
+							return
+						}
+						inboundValueTyped := uint64(inboundValueValue)
+						if err != nil {
+							return true
+						}
+						inboundGMap[string(inboundKeyString)] = inboundValueTyped
+						return false
 					})
 				} else {
 					err = fmt.Errorf(
-						"StakeRules.AccountData.UnmarshalNoms expected Inbound to be a nt.Set; found %s",
+						"StakeRules.UnmarshalNoms expected inboundGMap to be a nt.Map; found %s",
 						reflect.TypeOf(value),
 					)
 				}
 
-				x.Inbound = inboundGoSet
+				x.Inbound = inboundGMap
 			}
 		}
 	})

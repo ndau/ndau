@@ -54,7 +54,7 @@ func (tx *SetStakeRules) Apply(appI interface{}) error {
 
 		ad.StakeRules = &backing.StakeRules{
 			Script:  tx.StakeRules,
-			Inbound: make(map[string]struct{}),
+			Inbound: make(map[string]uint64),
 		}
 		if len(tx.StakeRules) == 0 {
 			ad.StakeRules = nil
