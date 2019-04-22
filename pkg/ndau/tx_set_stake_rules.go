@@ -52,7 +52,10 @@ func (tx *SetStakeRules) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		ad, _ := app.getAccount(tx.Target)
 
-		ad.StakeRules = tx.StakeRules
+		ad.StakeRules = &backing.StakeRules{
+			Script:  tx.StakeRules,
+			Inbound: make(map[string]struct{}),
+		}
 		if len(tx.StakeRules) == 0 {
 			ad.StakeRules = nil
 		}

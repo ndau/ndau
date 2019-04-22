@@ -2039,19 +2039,33 @@ func (z *SetValidation) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Stake) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 4
+	// map header, size 6
 	// string "tgt"
-	o = append(o, 0x84, 0xa3, 0x74, 0x67, 0x74)
+	o = append(o, 0x86, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Target")
 		return
 	}
-	// string "ska"
-	o = append(o, 0xa3, 0x73, 0x6b, 0x61)
-	o, err = z.StakedAccount.MarshalMsg(o)
+	// string "rul"
+	o = append(o, 0xa3, 0x72, 0x75, 0x6c)
+	o, err = z.Rules.MarshalMsg(o)
 	if err != nil {
-		err = msgp.WrapError(err, "StakedAccount")
+		err = msgp.WrapError(err, "Rules")
+		return
+	}
+	// string "sto"
+	o = append(o, 0xa3, 0x73, 0x74, 0x6f)
+	o, err = z.StakeTo.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "StakeTo")
+		return
+	}
+	// string "qty"
+	o = append(o, 0xa3, 0x71, 0x74, 0x79)
+	o, err = z.Qty.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Qty")
 		return
 	}
 	// string "seq"
@@ -2094,10 +2108,22 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Target")
 				return
 			}
-		case "ska":
-			bts, err = z.StakedAccount.UnmarshalMsg(bts)
+		case "rul":
+			bts, err = z.Rules.UnmarshalMsg(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "StakedAccount")
+				err = msgp.WrapError(err, "Rules")
+				return
+			}
+		case "sto":
+			bts, err = z.StakeTo.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "StakeTo")
+				return
+			}
+		case "qty":
+			bts, err = z.Qty.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Qty")
 				return
 			}
 		case "seq":
@@ -2139,7 +2165,7 @@ func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Stake) Msgsize() (s int) {
-	s = 1 + 4 + z.Target.Msgsize() + 4 + z.StakedAccount.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Rules.Msgsize() + 4 + z.StakeTo.Msgsize() + 4 + z.Qty.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}

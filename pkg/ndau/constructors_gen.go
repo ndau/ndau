@@ -261,14 +261,18 @@ func NewSetValidation(
 // If signing keys are present, the new transactable is signed with all of them
 func NewStake(
 	target address.Address,
-	stakedaccount address.Address,
+	rules address.Address,
+	staketo address.Address,
+	qty math.Ndau,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *Stake {
 	tx := &Stake{
-		Target:        target,
-		StakedAccount: stakedaccount,
-		Sequence:      sequence,
+		Target:   target,
+		Rules:    rules,
+		StakeTo:  staketo,
+		Qty:      qty,
+		Sequence: sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()

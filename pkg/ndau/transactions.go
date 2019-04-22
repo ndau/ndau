@@ -206,10 +206,12 @@ var _ NTransactable = (*TransferAndLock)(nil)
 
 // A Stake transaction stakes to a node
 type Stake struct {
-	Target        address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
-	StakedAccount address.Address       `msg:"ska" chain:"5,Tx_StakedAccount" json:"staked_account"`
-	Sequence      uint64                `msg:"seq" json:"sequence"`
-	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Rules      address.Address       `msg:"rul" chain:"8,Tx_Rules" json:"rules"`
+	StakeTo    address.Address       `msg:"sto" chain:"5,Tx_StakeTo" json:"stake_to"`
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Stake)(nil)

@@ -144,7 +144,7 @@ func TestValidClaimChildAccount(t *testing.T) {
 
 	// Ensure the child's settlement period matches the default from the system variable.
 	child, _ := app.getAccount(childAddress)
-	require.Equal(t, app.getDefaultSettlementDuration(), child.SettlementSettings.Period)
+	require.Equal(t, app.getDefaultSettlementDuration(), child.RecourseSettings.Period)
 	// ensure we updated the delegation node
 	require.NotNil(t, child.DelegationNode)
 	require.Equal(t, cca.ChildDelegationNode, *child.DelegationNode)
@@ -183,7 +183,7 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 
 	// Ensure the child's settlement period matches what we set it to.
 	child, _ := app.getAccount(childAddress)
-	require.Equal(t, period, child.SettlementSettings.Period)
+	require.Equal(t, period, child.RecourseSettings.Period)
 }
 
 func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {

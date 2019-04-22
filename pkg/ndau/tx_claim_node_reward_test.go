@@ -57,8 +57,6 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 		st.Nodes[eaiNode] = backing.Node{
 			Active:             true,
 			DistributionScript: script,
-			Costakers:          costakers,
-			TotalStake:         totalStake,
 		}
 
 		st.LastNodeRewardNomination = now

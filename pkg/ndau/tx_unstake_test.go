@@ -20,13 +20,6 @@ func initAppUnstake(t *testing.T) (*App, signature.PrivateKey) {
 
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
 		ad.Balance = NodeBalance
-
-		ad.Stake = &backing.Stake{
-			Address: nodeAddress,
-		}
-	})
-	modifyNode(t, eaiNode, app, func(node *backing.Node) {
-		*node = backing.NewNode(nodeAddress, NodeBalance)
 	})
 
 	return app, private
@@ -97,15 +90,15 @@ func TestUnstakeChangesAppState(t *testing.T) {
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	state := app.GetState().(*backing.State)
+	// state := app.GetState().(*backing.State)
 	// we must have updated the target's stake node
-	require.Nil(t, state.Accounts[source].Stake)
+
 	// we must have updated the stake struct
-	require.ElementsMatch(
-		t,
-		[]backing.AccountData{
-			state.Accounts[eaiNode],
-		},
-		state.GetCostakers(nodeAddress),
-	)
+	// require.ElementsMatch(
+	// 	t,
+	// 	[]backing.AccountData{
+	// 		state.Accounts[eaiNode],
+	// 	},
+	// 	state.GetCostakers(nodeAddress),
+	// )
 }

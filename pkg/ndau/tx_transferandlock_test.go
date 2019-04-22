@@ -151,7 +151,7 @@ func TestTnLsSettlementPeriod(t *testing.T) {
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	modifySource(t, app, func(src *backing.AccountData) {
-		src.SettlementSettings.Period = 2 * math.Day
+		src.RecourseSettings.Period = 2 * math.Day
 	})
 
 	tr := generateTransferAndLock(t, destAddress, 123, 888, 1, []signature.PrivateKey{private})
@@ -159,11 +159,12 @@ func TestTnLsSettlementPeriod(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	modify(t, destAddress, app, func(dest *backing.AccountData) {
-		sourceAddress := []backing.Settlement{backing.Settlement{
+		x := app.BlockTime().Add(2 * math.Day)
+		sourceAddress := []backing.Hold{backing.Hold{
 			Qty:    123 * constants.QuantaPerUnit,
-			Expiry: app.BlockTime().Add(2 * math.Day),
+			Expiry: &x,
 		}}
-		require.Equal(t, sourceAddress, dest.Settlements)
+		require.Equal(t, sourceAddress, dest.Holds)
 	})
 }
 

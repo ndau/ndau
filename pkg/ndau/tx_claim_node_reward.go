@@ -64,6 +64,11 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		return err
 	}
 
+	costakers, err := app.NodeStakers(tx.Node)
+	if err != nil {
+		return errors.Wrap(err, "ClaimNodeReward")
+	}
+
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
@@ -85,7 +90,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		avm, err := BuildVMForNodeDistribution(
 			state.Nodes[tx.Node.String()].DistributionScript,
 			tx.Node,
-			state.Nodes[tx.Node.String()].Costakers,
+			costakers,
 			state.Accounts,
 			state.UnclaimedNodeReward,
 			app.BlockTime(),
@@ -152,7 +157,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				continue
 			}
 
-			if _, ok := state.Nodes[tx.Node.String()].Costakers[addr]; !ok {
+			if _, ok := costakers[addr]; !ok {
 				allErrs["chaincode attempted to reward a non-costaker"] = xx
 				continue
 			}

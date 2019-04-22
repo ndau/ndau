@@ -1,8 +1,6 @@
 package ndau
 
 import (
-	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
@@ -29,11 +27,7 @@ func (tx *Unstake) Apply(appI interface{}) error {
 	if err != nil {
 		return err
 	}
-	return app.UpdateState(func(stI metast.State) (metast.State, error) {
-		state := stI.(*backing.State)
-		state.Unstake(tx.Target)
-		return state, nil
-	})
+	return app.UpdateState(app.Unstake(tx.Target))
 }
 
 // GetSource implements sourcer

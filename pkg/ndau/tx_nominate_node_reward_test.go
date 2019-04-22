@@ -39,17 +39,11 @@ func initAppNNR(t *testing.T) (*App, generator.Associated) {
 			require.NoError(t, err)
 
 			state.Nodes[addr.String()] = backing.Node{
-				TotalStake: math.Ndau(i + 1),
-				Costakers:  make(map[string]math.Ndau),
-				Active:     true,
+				Active: true,
 			}
 
 			state.Accounts[addr.String()] = backing.AccountData{
 				Balance: math.Ndau(i + 1),
-				Stake: &backing.Stake{
-					Address: addr,
-					Point:   math.Timestamp(0),
-				},
 			}
 		}
 

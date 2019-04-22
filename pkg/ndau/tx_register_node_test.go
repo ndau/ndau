@@ -94,9 +94,6 @@ func TestValidRegisterNode(t *testing.T) {
 
 func TestRegisterNodeMustNotBeStaked(t *testing.T) {
 	app := initAppRegisterNode(t)
-	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.Stake = &backing.Stake{}
-	})
 
 	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
@@ -114,10 +111,8 @@ func TestRegisterNodeStakesSelf(t *testing.T) {
 	resp := deliverTx(t, app, rn)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	node, exists := app.getAccount(targetAddress)
+	_, exists := app.getAccount(targetAddress)
 	require.True(t, exists)
-	require.NotNil(t, node.Stake)
-	require.Equal(t, targetAddress, node.Stake.Address)
 }
 
 func TestRegisterNodeMustBeInactive(t *testing.T) {

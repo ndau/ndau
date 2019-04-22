@@ -140,7 +140,7 @@ func (tx *CreateChildAccount) Apply(appI interface{}) error {
 		if period < 0 {
 			period = app.getDefaultSettlementDuration()
 		}
-		child.SettlementSettings.Period = period
+		child.RecourseSettings.Period = period
 
 		st.Accounts[tx.Child.String()] = child
 

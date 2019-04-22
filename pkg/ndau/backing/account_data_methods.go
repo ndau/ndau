@@ -48,34 +48,33 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 
 // UpdateSettlements settles funds whose settlement periods have expired
 func (ad *AccountData) UpdateSettlements(blockTime math.Timestamp) {
-	newSettlements := make([]Settlement, 0, len(ad.Settlements))
-	for _, settlement := range ad.Settlements {
+	newSettlements := make([]Hold, 0, len(ad.Holds))
+	for _, settlement := range ad.Holds {
 		if settlement.Expiry.Compare(blockTime) > 0 {
 			// blockTime > settlement.Expiry
 			newSettlements = append(newSettlements, settlement)
 		}
 	}
-	ad.Settlements = newSettlements
+	ad.Holds = newSettlements
 
 	// true if there exists a pending change which is less than or equal to the block time
-	if ad.SettlementSettings.ChangesAt != nil && blockTime.Compare(*ad.SettlementSettings.ChangesAt) >= 0 {
-		ad.SettlementSettings.Period = *ad.SettlementSettings.Next
-		ad.SettlementSettings.ChangesAt = nil
-		ad.SettlementSettings.Next = nil
+	if ad.RecourseSettings.ChangesAt != nil && blockTime.Compare(*ad.RecourseSettings.ChangesAt) >= 0 {
+		ad.RecourseSettings.Period = *ad.RecourseSettings.Next
+		ad.RecourseSettings.ChangesAt = nil
+		ad.RecourseSettings.Next = nil
 	}
 }
 
 // AvailableBalance computes the balance available
 //
 // Normally one would wish to call UpdateSettlements shortly before calling this
-func (ad *AccountData) AvailableBalance() (math.Ndau, error) {
-	balance := ad.Balance
+func (ad AccountData) AvailableBalance() (math.Ndau, error) {
+	held := ad.HoldSum()
 	var err error
-	for _, settlement := range ad.Settlements {
-		balance, err = balance.Sub(settlement.Qty)
-		if err != nil {
-			return math.Ndau(0), errors.Wrap(err, "available balance")
-		}
+	balance, err := ad.Balance.Sub(held)
+	if err != nil {
+		return math.Ndau(0), errors.Wrap(err, "available balance")
+
 	}
 	return balance, nil
 }

@@ -21,6 +21,7 @@ var accountDataStructTemplate nt.StructTemplate
 func init() {
 	accountDataStructTemplate = nt.MakeStructTemplate("AccountData", []string{
 		"Balance",
+		"Costakers",
 		"CurrencySeatDate",
 		"DelegationNode",
 		"HasCurrencySeatDate",
@@ -29,18 +30,17 @@ func init() {
 		"HasParent",
 		"HasProgenitor",
 		"HasRewardsTarget",
-		"HasStake",
+		"HasStakeRules",
+		"Holds",
 		"IncomingRewardsFrom",
 		"LastEAIUpdate",
 		"LastWAAUpdate",
 		"Lock",
 		"Parent",
 		"Progenitor",
+		"RecourseSettings",
 		"RewardsTarget",
 		"Sequence",
-		"SettlementSettings",
-		"Settlements",
-		"Stake",
 		"StakeRules",
 		"UncreditedEAI",
 		"ValidationKeys",
@@ -152,27 +152,6 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		lockUnptr = lockValue
 	}
 
-	// x.Stake (*Stake->*ast.StarExpr) is primitive: false
-
-	// template decompose: x.Stake (*Stake->*ast.StarExpr)
-	// template pointer:  x.Stake
-	var stakeUnptr nt.Value
-	if x.Stake == nil {
-		stakeUnptr = nt.Bool(false)
-	} else {
-
-		// template decompose: (*x.Stake) (Stake->*ast.Ident)
-		// template nomsmarshaler: (*x.Stake)
-		stakeValue, err := (*x.Stake).MarshalNoms(vrw)
-		if err != nil {
-			return nil, errors.Wrap(err, "AccountData.MarshalNoms->Stake.MarshalNoms")
-		}
-
-		stakeUnptr = stakeValue
-	}
-
-	// x.StakeRules ([]byte->*ast.ArrayType) is primitive: true
-
 	// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
 
 	// x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
@@ -181,33 +160,81 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 
 	// x.Sequence (uint64->*ast.Ident) is primitive: true
 
-	// x.Settlements ([]Settlement->*ast.ArrayType) is primitive: false
+	// x.StakeRules (*StakeRules->*ast.StarExpr) is primitive: false
 
-	// template decompose: x.Settlements ([]Settlement->*ast.ArrayType)
-	// template slice: x.Settlements
-	settlementsItems := make([]nt.Value, 0, len(x.Settlements))
-	for _, settlementsItem := range x.Settlements {
+	// template decompose: x.StakeRules (*StakeRules->*ast.StarExpr)
+	// template pointer:  x.StakeRules
+	var stakeRulesUnptr nt.Value
+	if x.StakeRules == nil {
+		stakeRulesUnptr = nt.Bool(false)
+	} else {
 
-		// template decompose: settlementsItem (Settlement->*ast.Ident)
-		// template nomsmarshaler: settlementsItem
-		settlementsItemValue, err := settlementsItem.MarshalNoms(vrw)
+		// template decompose: (*x.StakeRules) (StakeRules->*ast.Ident)
+		// template nomsmarshaler: (*x.StakeRules)
+		stakeRulesValue, err := (*x.StakeRules).MarshalNoms(vrw)
 		if err != nil {
-			return nil, errors.Wrap(err, "AccountData.MarshalNoms->settlementsItem.MarshalNoms")
+			return nil, errors.Wrap(err, "AccountData.MarshalNoms->StakeRules.MarshalNoms")
 		}
 
-		settlementsItems = append(
-			settlementsItems,
-			settlementsItemValue,
+		stakeRulesUnptr = stakeRulesValue
+	}
+
+	// x.Costakers (map[string]map[string]uint64->*ast.MapType) is primitive: false
+
+	// template decompose: x.Costakers (map[string]map[string]uint64->*ast.MapType)
+	// template map: x.Costakers
+	costakersKVs := make([]nt.Value, 0, len(x.Costakers)*2)
+	for costakersKey, costakersValue := range x.Costakers {
+
+		// template decompose: costakersValue (map[string]uint64->*ast.MapType)
+		// template map: costakersValue
+		costakersValueKVs := make([]nt.Value, 0, len(costakersValue)*2)
+		for costakersValueKey, costakersValueValue := range costakersValue {
+
+			// template decompose: costakersValueValue (uint64->*ast.Ident)
+
+			costakersValueKVs = append(
+				costakersValueKVs,
+				nt.String(costakersValueKey),
+				util.Int(costakersValueValue).NomsValue(),
+			)
+		}
+
+		costakersKVs = append(
+			costakersKVs,
+			nt.String(costakersKey),
+
+			nt.NewMap(vrw, costakersValueKVs...),
 		)
 	}
 
-	// x.SettlementSettings (SettlementSettings->*ast.Ident) is primitive: false
+	// x.Holds ([]Hold->*ast.ArrayType) is primitive: false
 
-	// template decompose: x.SettlementSettings (SettlementSettings->*ast.Ident)
-	// template nomsmarshaler: x.SettlementSettings
-	settlementSettingsValue, err := x.SettlementSettings.MarshalNoms(vrw)
+	// template decompose: x.Holds ([]Hold->*ast.ArrayType)
+	// template slice: x.Holds
+	holdsItems := make([]nt.Value, 0, len(x.Holds))
+	for _, holdsItem := range x.Holds {
+
+		// template decompose: holdsItem (Hold->*ast.Ident)
+		// template nomsmarshaler: holdsItem
+		holdsItemValue, err := holdsItem.MarshalNoms(vrw)
+		if err != nil {
+			return nil, errors.Wrap(err, "AccountData.MarshalNoms->holdsItem.MarshalNoms")
+		}
+
+		holdsItems = append(
+			holdsItems,
+			holdsItemValue,
+		)
+	}
+
+	// x.RecourseSettings (RecourseSettings->*ast.Ident) is primitive: false
+
+	// template decompose: x.RecourseSettings (RecourseSettings->*ast.Ident)
+	// template nomsmarshaler: x.RecourseSettings
+	recourseSettingsValue, err := x.RecourseSettings.MarshalNoms(vrw)
 	if err != nil {
-		return nil, errors.Wrap(err, "AccountData.MarshalNoms->SettlementSettings.MarshalNoms")
+		return nil, errors.Wrap(err, "AccountData.MarshalNoms->RecourseSettings.MarshalNoms")
 	}
 
 	// x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr) is primitive: false
@@ -268,6 +295,9 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		// x.Balance (math.Ndau)
 
 		util.Int(x.Balance).NomsValue(),
+		// x.Costakers (map[string]map[string]uint64)
+
+		nt.NewMap(vrw, costakersKVs...),
 		// x.CurrencySeatDate (*math.Timestamp)
 		currencySeatDateUnptr,
 		// x.DelegationNode (*address.Address)
@@ -290,9 +320,11 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		// x.HasRewardsTarget (bool)
 
 		nt.Bool(x.RewardsTarget != nil),
-		// x.HasStake (bool)
+		// x.HasStakeRules (bool)
 
-		nt.Bool(x.Stake != nil),
+		nt.Bool(x.StakeRules != nil),
+		// x.Holds ([]Hold)
+		nt.NewList(vrw, holdsItems...),
 		// x.IncomingRewardsFrom ([]address.Address)
 		nt.NewList(vrw, incomingRewardsFromItems...),
 		// x.LastEAIUpdate (math.Timestamp)
@@ -307,20 +339,15 @@ func (x AccountData) MarshalNoms(vrw nt.ValueReadWriter) (accountDataValue nt.Va
 		parentUnptr,
 		// x.Progenitor (*address.Address)
 		progenitorUnptr,
+		// x.RecourseSettings (RecourseSettings)
+		recourseSettingsValue,
 		// x.RewardsTarget (*address.Address)
 		rewardsTargetUnptr,
 		// x.Sequence (uint64)
 
 		util.Int(x.Sequence).NomsValue(),
-		// x.SettlementSettings (SettlementSettings)
-		settlementSettingsValue,
-		// x.Settlements ([]Settlement)
-		nt.NewList(vrw, settlementsItems...),
-		// x.Stake (*Stake)
-		stakeUnptr,
-		// x.StakeRules ([]byte)
-
-		nt.String(x.StakeRules),
+		// x.StakeRules (*StakeRules)
+		stakeRulesUnptr,
 		// x.UncreditedEAI (math.Ndau)
 
 		util.Int(x.UncreditedEAI).NomsValue(),
@@ -554,50 +581,6 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Lock")
 
 				x.Lock = &lockInstance
-			// x.Stake (*Stake->*ast.StarExpr) is primitive: false
-			case "Stake":
-				// template u_decompose: x.Stake (*Stake->*ast.StarExpr)
-				// template u_pointer:  x.Stake
-				if hasStakeValue, ok := vs.MaybeGet("HasStake"); ok {
-					if hasStake, ok := hasStakeValue.(nt.Bool); ok {
-						if !hasStake {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasStake to be a nt.Bool; found %s",
-							reflect.TypeOf(hasStakeValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->Stake is a pointer, so expected a HasStake field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Stake (Stake->*ast.Ident)
-				// template u_nomsmarshaler: x.Stake
-				var stakeInstance Stake
-				err = stakeInstance.UnmarshalNoms(value)
-				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Stake")
-
-				x.Stake = &stakeInstance
-			// x.StakeRules ([]byte->*ast.ArrayType) is primitive: true
-			case "StakeRules":
-				// template u_decompose: x.StakeRules ([]byte->*ast.ArrayType)
-				// template u_primitive: x.StakeRules
-				stakeRulesValue, ok := value.(nt.String)
-				if !ok {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				stakeRulesTyped := []byte(stakeRulesValue)
-
-				x.StakeRules = stakeRulesTyped
 			// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
 			case "LastEAIUpdate":
 				// template u_decompose: x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr)
@@ -650,24 +633,119 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 				sequenceTyped := uint64(sequenceValue)
 
 				x.Sequence = sequenceTyped
-			// x.Settlements ([]Settlement->*ast.ArrayType) is primitive: false
-			case "Settlements":
-				// template u_decompose: x.Settlements ([]Settlement->*ast.ArrayType)
-				// template u_slice: x.Settlements
-				var settlementsSlice []Settlement
-				if settlementsList, ok := value.(nt.List); ok {
-					settlementsSlice = make([]Settlement, 0, settlementsList.Len())
-					settlementsList.Iter(func(settlementsItem nt.Value, idx uint64) (stop bool) {
+			// x.StakeRules (*StakeRules->*ast.StarExpr) is primitive: false
+			case "StakeRules":
+				// template u_decompose: x.StakeRules (*StakeRules->*ast.StarExpr)
+				// template u_pointer:  x.StakeRules
+				if hasStakeRulesValue, ok := vs.MaybeGet("HasStakeRules"); ok {
+					if hasStakeRules, ok := hasStakeRulesValue.(nt.Bool); ok {
+						if !hasStakeRules {
+							return
+						}
+					} else {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected HasStakeRules to be a nt.Bool; found %s",
+							reflect.TypeOf(hasStakeRulesValue),
+						)
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms->StakeRules is a pointer, so expected a HasStakeRules field: not found",
+					)
+					return
+				}
 
-						// template u_decompose: settlementsItem (Settlement->*ast.Ident)
-						// template u_nomsmarshaler: settlementsItem
-						var settlementsItemInstance Settlement
-						err = settlementsItemInstance.UnmarshalNoms(settlementsItem)
-						err = errors.Wrap(err, "AccountData.UnmarshalNoms->settlementsItem")
+				// template u_decompose: x.StakeRules (StakeRules->*ast.Ident)
+				// template u_nomsmarshaler: x.StakeRules
+				var stakeRulesInstance StakeRules
+				err = stakeRulesInstance.UnmarshalNoms(value)
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->StakeRules")
+
+				x.StakeRules = &stakeRulesInstance
+			// x.Costakers (map[string]map[string]uint64->*ast.MapType) is primitive: false
+			case "Costakers":
+				// template u_decompose: x.Costakers (map[string]map[string]uint64->*ast.MapType)
+				// template u_map: x.Costakers
+				costakersGMap := make(map[string]map[string]uint64)
+				if costakersNMap, ok := value.(nt.Map); ok {
+					costakersNMap.Iter(func(costakersKey, costakersValue nt.Value) (stop bool) {
+						costakersKeyString, ok := costakersKey.(nt.String)
+						if !ok {
+							err = fmt.Errorf(
+								"AccountData.UnmarshalNoms expected costakersKey to be a nt.String; found %s",
+								reflect.TypeOf(costakersKey),
+							)
+							return true
+						}
+
+						// template u_decompose: costakersValue (map[string]uint64->*ast.MapType)
+						// template u_map: costakersValue
+						costakersValueGMap := make(map[string]uint64)
+						if costakersValueNMap, ok := costakersValue.(nt.Map); ok {
+							costakersValueNMap.Iter(func(costakersValueKey, costakersValueValue nt.Value) (stop bool) {
+								costakersValueKeyString, ok := costakersValueKey.(nt.String)
+								if !ok {
+									err = fmt.Errorf(
+										"AccountData.UnmarshalNoms expected costakersValueKey to be a nt.String; found %s",
+										reflect.TypeOf(costakersValueKey),
+									)
+									return true
+								}
+
+								// template u_decompose: costakersValueValue (uint64->*ast.Ident)
+								// template u_primitive: costakersValueValue
+								var costakersValueValueValue util.Int
+								costakersValueValueValue, err = util.IntFrom(costakersValueValue)
+								if err != nil {
+									err = errors.Wrap(err, "AccountData.UnmarshalNoms->costakersValueValue")
+									return
+								}
+								costakersValueValueTyped := uint64(costakersValueValueValue)
+								if err != nil {
+									return true
+								}
+								costakersValueGMap[string(costakersValueKeyString)] = costakersValueValueTyped
+								return false
+							})
+						} else {
+							err = fmt.Errorf(
+								"AccountData.UnmarshalNoms expected costakersValueGMap to be a nt.Map; found %s",
+								reflect.TypeOf(costakersValue),
+							)
+						}
 						if err != nil {
 							return true
 						}
-						settlementsSlice = append(settlementsSlice, settlementsItemInstance)
+						costakersGMap[string(costakersKeyString)] = costakersValueGMap
+						return false
+					})
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected costakersGMap to be a nt.Map; found %s",
+						reflect.TypeOf(value),
+					)
+				}
+
+				x.Costakers = costakersGMap
+			// x.Holds ([]Hold->*ast.ArrayType) is primitive: false
+			case "Holds":
+				// template u_decompose: x.Holds ([]Hold->*ast.ArrayType)
+				// template u_slice: x.Holds
+				var holdsSlice []Hold
+				if holdsList, ok := value.(nt.List); ok {
+					holdsSlice = make([]Hold, 0, holdsList.Len())
+					holdsList.Iter(func(holdsItem nt.Value, idx uint64) (stop bool) {
+
+						// template u_decompose: holdsItem (Hold->*ast.Ident)
+						// template u_nomsmarshaler: holdsItem
+						var holdsItemInstance Hold
+						err = holdsItemInstance.UnmarshalNoms(holdsItem)
+						err = errors.Wrap(err, "AccountData.UnmarshalNoms->holdsItem")
+						if err != nil {
+							return true
+						}
+						holdsSlice = append(holdsSlice, holdsItemInstance)
 						return false
 					})
 				} else {
@@ -677,16 +755,16 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 					)
 				}
 
-				x.Settlements = settlementsSlice
-			// x.SettlementSettings (SettlementSettings->*ast.Ident) is primitive: false
-			case "SettlementSettings":
-				// template u_decompose: x.SettlementSettings (SettlementSettings->*ast.Ident)
-				// template u_nomsmarshaler: x.SettlementSettings
-				var settlementSettingsInstance SettlementSettings
-				err = settlementSettingsInstance.UnmarshalNoms(value)
-				err = errors.Wrap(err, "AccountData.UnmarshalNoms->SettlementSettings")
+				x.Holds = holdsSlice
+			// x.RecourseSettings (RecourseSettings->*ast.Ident) is primitive: false
+			case "RecourseSettings":
+				// template u_decompose: x.RecourseSettings (RecourseSettings->*ast.Ident)
+				// template u_nomsmarshaler: x.RecourseSettings
+				var recourseSettingsInstance RecourseSettings
+				err = recourseSettingsInstance.UnmarshalNoms(value)
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->RecourseSettings")
 
-				x.SettlementSettings = settlementSettingsInstance
+				x.RecourseSettings = recourseSettingsInstance
 			// x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr) is primitive: false
 			case "CurrencySeatDate":
 				// template u_decompose: x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr)
@@ -814,180 +892,10 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 
 var _ marshal.Unmarshaler = (*AccountData)(nil)
 
-var stakeStructTemplate nt.StructTemplate
+var recourseSettingsStructTemplate nt.StructTemplate
 
 func init() {
-	stakeStructTemplate = nt.MakeStructTemplate("Stake", []string{
-		"Address",
-		"Point",
-	})
-}
-
-// MarshalNoms implements noms/go/marshal.Marshaler
-func (x Stake) MarshalNoms(vrw nt.ValueReadWriter) (stakeValue nt.Value, err error) {
-	// x.Point (math.Timestamp->*ast.SelectorExpr) is primitive: true
-
-	// x.Address (address.Address->*ast.SelectorExpr) is primitive: false
-
-	// template decompose: x.Address (address.Address->*ast.SelectorExpr)
-	// template textmarshaler: x.Address
-	addressString, err := x.Address.MarshalText()
-	if err != nil {
-		return nil, errors.Wrap(err, "Stake.MarshalNoms->Address.MarshalText")
-	}
-
-	return stakeStructTemplate.NewStruct([]nt.Value{
-		// x.Address (address.Address)
-		nt.String(addressString),
-		// x.Point (math.Timestamp)
-
-		util.Int(x.Point).NomsValue(),
-	}), nil
-}
-
-var _ marshal.Marshaler = (*Stake)(nil)
-
-// UnmarshalNoms implements noms/go/marshal.Unmarshaler
-//
-// This method makes no attempt to zeroize the provided struct; it simply
-// overwrites fields as they are found.
-func (x *Stake) UnmarshalNoms(value nt.Value) (err error) {
-	vs, ok := value.(nt.Struct)
-	if !ok {
-		return fmt.Errorf(
-			"Stake.UnmarshalNoms expected a nt.Value; found %s",
-			reflect.TypeOf(value),
-		)
-	}
-
-	// noms Struct.MaybeGet isn't efficient: it iterates over all fields of
-	// the struct until it finds one whose name happens to match the one sought.
-	// It's better to iterate once over the struct and set the fields of the
-	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Point (math.Timestamp->*ast.SelectorExpr) is primitive: true
-			case "Point":
-				// template u_decompose: x.Point (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.Point
-				var pointValue util.Int
-				pointValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Stake.UnmarshalNoms->Point")
-					return
-				}
-				pointTyped := math.Timestamp(pointValue)
-
-				x.Point = pointTyped
-			// x.Address (address.Address->*ast.SelectorExpr) is primitive: false
-			case "Address":
-				// template u_decompose: x.Address (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.Address
-				var addressValue address.Address
-				if addressString, ok := value.(nt.String); ok {
-					err = addressValue.UnmarshalText([]byte(addressString))
-				} else {
-					err = fmt.Errorf(
-						"Stake.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.Address = addressValue
-			}
-		}
-	})
-	return
-}
-
-var _ marshal.Unmarshaler = (*Stake)(nil)
-
-var settlementStructTemplate nt.StructTemplate
-
-func init() {
-	settlementStructTemplate = nt.MakeStructTemplate("Settlement", []string{
-		"Expiry",
-		"Qty",
-	})
-}
-
-// MarshalNoms implements noms/go/marshal.Marshaler
-func (x Settlement) MarshalNoms(vrw nt.ValueReadWriter) (settlementValue nt.Value, err error) {
-	// x.Qty (math.Ndau->*ast.SelectorExpr) is primitive: true
-
-	// x.Expiry (math.Timestamp->*ast.SelectorExpr) is primitive: true
-
-	return settlementStructTemplate.NewStruct([]nt.Value{
-		// x.Expiry (math.Timestamp)
-
-		util.Int(x.Expiry).NomsValue(),
-		// x.Qty (math.Ndau)
-
-		util.Int(x.Qty).NomsValue(),
-	}), nil
-}
-
-var _ marshal.Marshaler = (*Settlement)(nil)
-
-// UnmarshalNoms implements noms/go/marshal.Unmarshaler
-//
-// This method makes no attempt to zeroize the provided struct; it simply
-// overwrites fields as they are found.
-func (x *Settlement) UnmarshalNoms(value nt.Value) (err error) {
-	vs, ok := value.(nt.Struct)
-	if !ok {
-		return fmt.Errorf(
-			"Settlement.UnmarshalNoms expected a nt.Value; found %s",
-			reflect.TypeOf(value),
-		)
-	}
-
-	// noms Struct.MaybeGet isn't efficient: it iterates over all fields of
-	// the struct until it finds one whose name happens to match the one sought.
-	// It's better to iterate once over the struct and set the fields of the
-	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Qty (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "Qty":
-				// template u_decompose: x.Qty (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.Qty
-				var qtyValue util.Int
-				qtyValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Settlement.UnmarshalNoms->Qty")
-					return
-				}
-				qtyTyped := math.Ndau(qtyValue)
-
-				x.Qty = qtyTyped
-			// x.Expiry (math.Timestamp->*ast.SelectorExpr) is primitive: true
-			case "Expiry":
-				// template u_decompose: x.Expiry (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.Expiry
-				var expiryValue util.Int
-				expiryValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Settlement.UnmarshalNoms->Expiry")
-					return
-				}
-				expiryTyped := math.Timestamp(expiryValue)
-
-				x.Expiry = expiryTyped
-			}
-		}
-	})
-	return
-}
-
-var _ marshal.Unmarshaler = (*Settlement)(nil)
-
-var settlementSettingsStructTemplate nt.StructTemplate
-
-func init() {
-	settlementSettingsStructTemplate = nt.MakeStructTemplate("SettlementSettings", []string{
+	recourseSettingsStructTemplate = nt.MakeStructTemplate("RecourseSettings", []string{
 		"ChangesAt",
 		"HasChangesAt",
 		"HasNext",
@@ -997,7 +905,7 @@ func init() {
 }
 
 // MarshalNoms implements noms/go/marshal.Marshaler
-func (x SettlementSettings) MarshalNoms(vrw nt.ValueReadWriter) (settlementSettingsValue nt.Value, err error) {
+func (x RecourseSettings) MarshalNoms(vrw nt.ValueReadWriter) (recourseSettingsValue nt.Value, err error) {
 	// x.Period (math.Duration->*ast.SelectorExpr) is primitive: true
 
 	// x.ChangesAt (*math.Timestamp->*ast.StarExpr) is primitive: false
@@ -1028,7 +936,7 @@ func (x SettlementSettings) MarshalNoms(vrw nt.ValueReadWriter) (settlementSetti
 		nextUnptr = util.Int((*x.Next)).NomsValue()
 	}
 
-	return settlementSettingsStructTemplate.NewStruct([]nt.Value{
+	return recourseSettingsStructTemplate.NewStruct([]nt.Value{
 		// x.ChangesAt (*math.Timestamp)
 		changesAtUnptr,
 		// x.HasChangesAt (bool)
@@ -1045,17 +953,17 @@ func (x SettlementSettings) MarshalNoms(vrw nt.ValueReadWriter) (settlementSetti
 	}), nil
 }
 
-var _ marshal.Marshaler = (*SettlementSettings)(nil)
+var _ marshal.Marshaler = (*RecourseSettings)(nil)
 
 // UnmarshalNoms implements noms/go/marshal.Unmarshaler
 //
 // This method makes no attempt to zeroize the provided struct; it simply
 // overwrites fields as they are found.
-func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
+func (x *RecourseSettings) UnmarshalNoms(value nt.Value) (err error) {
 	vs, ok := value.(nt.Struct)
 	if !ok {
 		return fmt.Errorf(
-			"SettlementSettings.UnmarshalNoms expected a nt.Value; found %s",
+			"RecourseSettings.UnmarshalNoms expected a nt.Value; found %s",
 			reflect.TypeOf(value),
 		)
 	}
@@ -1074,7 +982,7 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 				var periodValue util.Int
 				periodValue, err = util.IntFrom(value)
 				if err != nil {
-					err = errors.Wrap(err, "SettlementSettings.UnmarshalNoms->Period")
+					err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->Period")
 					return
 				}
 				periodTyped := math.Duration(periodValue)
@@ -1091,14 +999,14 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 						}
 					} else {
 						err = fmt.Errorf(
-							"SettlementSettings.UnmarshalNoms expected HasChangesAt to be a nt.Bool; found %s",
+							"RecourseSettings.UnmarshalNoms expected HasChangesAt to be a nt.Bool; found %s",
 							reflect.TypeOf(hasChangesAtValue),
 						)
 						return
 					}
 				} else {
 					err = fmt.Errorf(
-						"SettlementSettings.UnmarshalNoms->ChangesAt is a pointer, so expected a HasChangesAt field: not found",
+						"RecourseSettings.UnmarshalNoms->ChangesAt is a pointer, so expected a HasChangesAt field: not found",
 					)
 					return
 				}
@@ -1108,7 +1016,7 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 				var changesAtValue util.Int
 				changesAtValue, err = util.IntFrom(value)
 				if err != nil {
-					err = errors.Wrap(err, "SettlementSettings.UnmarshalNoms->ChangesAt")
+					err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->ChangesAt")
 					return
 				}
 				changesAtTyped := math.Timestamp(changesAtValue)
@@ -1125,14 +1033,14 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 						}
 					} else {
 						err = fmt.Errorf(
-							"SettlementSettings.UnmarshalNoms expected HasNext to be a nt.Bool; found %s",
+							"RecourseSettings.UnmarshalNoms expected HasNext to be a nt.Bool; found %s",
 							reflect.TypeOf(hasNextValue),
 						)
 						return
 					}
 				} else {
 					err = fmt.Errorf(
-						"SettlementSettings.UnmarshalNoms->Next is a pointer, so expected a HasNext field: not found",
+						"RecourseSettings.UnmarshalNoms->Next is a pointer, so expected a HasNext field: not found",
 					)
 					return
 				}
@@ -1142,7 +1050,7 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 				var nextValue util.Int
 				nextValue, err = util.IntFrom(value)
 				if err != nil {
-					err = errors.Wrap(err, "SettlementSettings.UnmarshalNoms->Next")
+					err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->Next")
 					return
 				}
 				nextTyped := math.Duration(nextValue)
@@ -1154,4 +1062,4 @@ func (x *SettlementSettings) UnmarshalNoms(value nt.Value) (err error) {
 	return
 }
 
-var _ marshal.Unmarshaler = (*SettlementSettings)(nil)
+var _ marshal.Unmarshaler = (*RecourseSettings)(nil)
