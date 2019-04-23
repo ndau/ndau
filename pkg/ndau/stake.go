@@ -5,7 +5,6 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -15,15 +14,10 @@ import (
 
 // NodeStakers returns all stakers and costakers of a node and their total stake
 func (app *App) NodeStakers(node address.Address) (map[string]math.Ndau, error) {
-	var nodeRulesAccountS wkt.String
-	err := app.System(sv.NodeRulesAccountAddressName, &nodeRulesAccountS)
+	var nra address.Address
+	err := app.System(sv.NodeRulesAccountAddressName, &nra)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting node rules account address")
-	}
-
-	nra, err := address.Validate(string(nodeRulesAccountS))
-	if err != nil {
-		return nil, errors.Wrap(err, "node rules account address sysvar")
 	}
 
 	stakers := make(map[string]math.Ndau)
@@ -119,10 +113,13 @@ func (app *App) Stake(
 			rulesAcct.StakeRules.Inbound[target.String()]++
 		} else {
 			rulesCostakers := stakeToAcct.Costakers[rules.String()]
-			if rulesCostakers != nil {
-
+			if rulesCostakers == nil {
+				rulesCostakers = make(map[string]uint64)
 			}
 			rulesCostakers[target.String()]++
+			if stakeToAcct.Costakers == nil {
+				stakeToAcct.Costakers = make(map[string]map[string]uint64)
+			}
 			stakeToAcct.Costakers[rules.String()] = rulesCostakers
 		}
 

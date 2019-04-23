@@ -433,11 +433,17 @@ func NewUnregisterNode(
 // If signing keys are present, the new transactable is signed with all of them
 func NewUnstake(
 	target address.Address,
+	rules address.Address,
+	staketo address.Address,
+	qty math.Ndau,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *Unstake {
 	tx := &Unstake{
 		Target:   target,
+		Rules:    rules,
+		StakeTo:  staketo,
+		Qty:      qty,
 		Sequence: sequence,
 	}
 	if len(signingKeys) > 0 {

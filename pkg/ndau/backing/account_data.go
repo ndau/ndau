@@ -51,15 +51,15 @@ type AccountData struct {
 	RewardsTarget       *address.Address             `json:"rewardsTarget" chain:"63,Acct_RewardsTarget"`
 	IncomingRewardsFrom []address.Address            `json:"incomingRewardsFrom" chain:"64,Acct_IncomingRewardsFrom"`
 	DelegationNode      *address.Address             `json:"delegationNode" chain:"65,Acct_DelegationNode"`
-	Lock                *Lock                        `json:"lock" chain:"."`
+	Lock                *Lock                        `json:"lock" chain:"78"`
 	LastEAIUpdate       math.Timestamp               `json:"lastEAIUpdate" chain:"66,Acct_LastEAIUpdate"`
 	LastWAAUpdate       math.Timestamp               `json:"lastWAAUpdate" chain:"67,Acct_LastWAAUpdate"`
 	WeightedAverageAge  math.Duration                `json:"weightedAverageAge" chain:"68,Acct_WeightedAverageAge"`
 	Sequence            uint64                       `json:"sequence" chain:"71,Acct_Sequence"`
-	StakeRules          *StakeRules                  `json:"stake_rules" chain:"."`
+	StakeRules          *StakeRules                  `json:"stake_rules" chain:"79"`
 	Costakers           map[string]map[string]uint64 `json:"costakers" chain:"76,Acct_Costakers"`
 	Holds               []Hold                       `json:"holds" chain:"70,Acct_Holds"`
-	RecourseSettings    RecourseSettings             `json:"recourseSettings" chain:"."`
+	RecourseSettings    RecourseSettings             `json:"recourseSettings" chain:"80"`
 	CurrencySeatDate    *math.Timestamp              `json:"currencySeatDate" chain:"72,Acct_CurrencySeatDate"`
 	Parent              *address.Address             `json:"parent" chain:"73,Acct_Parent"`
 	Progenitor          *address.Address             `json:"progenitor" chain:"74,Acct_Progenitor"`
