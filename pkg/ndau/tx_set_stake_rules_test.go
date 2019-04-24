@@ -89,7 +89,11 @@ func TestSetStakeRulesValidatesChaincode(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		t.Run(fmt.Sprintf("expect %x is chaincode: %v", tt.rules, tt.valid), func(t *testing.T) {
+		negation := ""
+		if !tt.valid {
+			negation = "not "
+		}
+		t.Run(fmt.Sprintf("expect %x is %schaincode", tt.rules, negation), func(t *testing.T) {
 			cv := NewSetStakeRules(targetAddress, tt.rules, 1, transferPrivate)
 			resp := deliverTx(t, app, cv)
 			if tt.valid {
@@ -101,7 +105,7 @@ func TestSetStakeRulesValidatesChaincode(t *testing.T) {
 			if tt.valid {
 				ad, exists := app.getAccount(targetAddress)
 				require.True(t, exists)
-				require.Equal(t, tt.rules, ad.StakeRules)
+				require.Equal(t, tt.rules, ad.StakeRules.Script)
 			}
 		})
 	}

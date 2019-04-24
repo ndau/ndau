@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/chaincode/pkg/vm"
-
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -15,7 +13,6 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -55,15 +52,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	require.NoError(t, err)
 
 	// ensure rules account has actual rules
-	var nodeRules address.Address
-	err = app.System(sv.NodeRulesAccountAddressName, &nodeRules)
-	require.NoError(t, err)
-	modify(t, nodeRules.String(), app, func(ad *backing.AccountData) {
-		ad.StakeRules = &backing.StakeRules{
-			Script:  vm.MiniAsm("handler 0 zero enddef").Bytes(),
-			Inbound: make(map[string]uint64),
-		}
-	})
+	nodeRules := getRulesAccount(t, app)
 
 	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)

@@ -26,6 +26,8 @@ func initAppNNR(t *testing.T) (*App, generator.Associated) {
 	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
+	rulesAcct := getRulesAccount(t, app)
+
 	const qtyNodes = 2
 
 	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
@@ -45,15 +47,19 @@ func initAppNNR(t *testing.T) (*App, generator.Associated) {
 			state.Accounts[addr.String()] = backing.AccountData{
 				Balance: math.Ndau(i + 1),
 			}
+
+			// self-stake this node
+			stI, err = app.Stake(math.Ndau(i+1), addr, rulesAcct, rulesAcct, nil)(state)
+			state = stI.(*backing.State)
+			require.NoError(t, err)
 		}
 
 		return state, nil
 	})
-	var err error
 
 	// fetch the NNR address system variable
 	nnrAddr := address.Address{}
-	err = app.System(sv.NominateNodeRewardAddressName, &nnrAddr)
+	err := app.System(sv.NominateNodeRewardAddressName, &nnrAddr)
 	require.NoError(t, err)
 	assc[nnrKeys], err = MockSystemAccount(app, nnrAddr)
 
