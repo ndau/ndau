@@ -12,6 +12,15 @@ import (
 // ChangeSchemaExitCode is returned when the ndaunode exits due to ChangeSchema
 const ChangeSchemaExitCode = 0xdead
 
+var quit func()
+
+func init() {
+	// this is a variable for mocking for testing
+	quit = func() {
+		os.Exit(ChangeSchemaExitCode)
+	}
+}
+
 // Validate implements metatx.Transactable
 func (tx *ChangeSchema) Validate(appI interface{}) error {
 	app := appI.(*App)
@@ -30,7 +39,7 @@ func (tx *ChangeSchema) Apply(appI interface{}) error {
 	}
 
 	app.DecoratedTxLogger(tx).Warn("System going down due to ChangeSchema tx")
-	os.Exit(ChangeSchemaExitCode)
+	quit()
 	return nil
 }
 
