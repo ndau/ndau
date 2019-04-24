@@ -214,4 +214,9 @@ func (tx *SetSysvar) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
+// SignableBytes partially implements metatx.Transactable for ChangeSchema
+func (tx *ChangeSchema) SignableBytes() []byte {
+	return sbOf(tx)
+}
+
 

@@ -37,6 +37,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(21): &CreateChildAccount{},
 	metatx.TxID(22): &RecordPrice{},
 	metatx.TxID(23): &SetSysvar{},
+	metatx.TxID(30): &ChangeSchema{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -339,3 +340,11 @@ type SetSysvar struct {
 }
 
 var _ NTransactable = (*SetSysvar)(nil)
+
+// A ChangeSchema transaction triggers the ndaunode to shut down.
+//
+// This is used to enable versioning upgrades which change the noms schema.
+type ChangeSchema struct {
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
