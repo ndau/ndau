@@ -10,7 +10,7 @@ import (
 )
 
 // ChangeSchemaExitCode is returned when the ndaunode exits due to ChangeSchema
-const ChangeSchemaExitCode = 0xdead
+const ChangeSchemaExitCode = 0xdd // only 1 byte for return codes on unix
 
 var quit func()
 
