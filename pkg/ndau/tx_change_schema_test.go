@@ -7,9 +7,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
@@ -17,49 +15,56 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-const recordPriceKeys = "recordPrice private keys"
+const changeSchemaKeys = "changeSchema private keys"
 
-func initAppRecordPrice(t *testing.T) (*App, generator.Associated) {
-	return initAppRecordPriceWithIndex(t, "", -1)
+var hasQuit bool
+
+func initAppChangeSchema(t *testing.T) (*App, generator.Associated) {
+	return initAppChangeSchemaWithIndex(t, "", -1)
 }
 
-func initAppRecordPriceWithIndex(t *testing.T, indexAddr string, indexVersion int) (
+func initAppChangeSchemaWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 	*App, generator.Associated,
 ) {
 	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
 	app.InitChain(abci.RequestInitChain{})
 
-	// fetch the RecordPrice address system variable
-	recordPriceAddr := address.Address{}
-	err := app.System(sv.RecordPriceAddressName, &recordPriceAddr)
+	// fetch the ChangeSchema address system variable
+	changeSchemaAddr := address.Address{}
+	err := app.System(sv.ChangeSchemaAddressName, &changeSchemaAddr)
 	require.NoError(t, err)
-	assc[recordPriceKeys], err = MockSystemAccount(app, recordPriceAddr)
+	assc[changeSchemaKeys], err = MockSystemAccount(app, changeSchemaAddr)
 
 	// ensure special acct contains exactly 1 napu so balance test works
-	modify(t, recordPriceAddr.String(), app, func(ad *backing.AccountData) {
+	modify(t, changeSchemaAddr.String(), app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
+
+	// replace quit helper so it doesn't actually exit the test
+	hasQuit = false
+	quit = func() {
+		hasQuit = true
+	}
 
 	return app, assc
 }
 
-func TestRecordPriceIsValidWithValidSignature(t *testing.T) {
-	app, assc := initAppRecordPrice(t)
-	privateKeys := assc[recordPriceKeys].([]signature.PrivateKey)
+func TestChangeSchemaIsValidWithValidSignature(t *testing.T) {
+	app, assc := initAppChangeSchema(t)
+	privateKeys := assc[changeSchemaKeys].([]signature.PrivateKey)
 
 	for i := 0; i < len(privateKeys); i++ {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			recordPrice := NewRecordPrice(
-				pricecurve.Nanocent(1),
+			changeSchema := NewChangeSchema(
 				1,
 				private,
 			)
 
-			recordPriceBytes, err := tx.Marshal(recordPrice, TxIDs)
+			changeSchemaBytes, err := tx.Marshal(changeSchema, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(recordPriceBytes)
+			resp := app.CheckTx(changeSchemaBytes)
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -68,27 +73,26 @@ func TestRecordPriceIsValidWithValidSignature(t *testing.T) {
 	}
 }
 
-func TestRecordPriceIsInvalidWithInvalidSignature(t *testing.T) {
-	app, _ := initAppRecordPrice(t)
+func TestChangeSchemaIsInvalidWithInvalidSignature(t *testing.T) {
+	app, _ := initAppChangeSchema(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	recordPrice := NewRecordPrice(
-		pricecurve.Nanocent(1),
+	changeSchema := NewChangeSchema(
 		1,
 		private,
 	)
 
-	recordPriceBytes, err := tx.Marshal(recordPrice, TxIDs)
+	changeSchemaBytes, err := tx.Marshal(changeSchema, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(recordPriceBytes)
+	resp := app.CheckTx(changeSchemaBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestRecordPriceIsValidOnlyWithSufficientTxFee(t *testing.T) {
-	app, assc := initAppRecordPrice(t)
-	privateKeys := assc[recordPriceKeys].([]signature.PrivateKey)
+func TestChangeSchemaIsValidOnlyWithSufficientTxFee(t *testing.T) {
+	app, assc := initAppChangeSchema(t)
+	privateKeys := assc[changeSchemaKeys].([]signature.PrivateKey)
 
 	txFeeAddr := address.Address{}
 	err := app.System(sv.ReleaseFromEndowmentAddressName, &txFeeAddr)
@@ -99,17 +103,16 @@ func TestRecordPriceIsValidOnlyWithSufficientTxFee(t *testing.T) {
 		ad.Balance = 1
 	})
 
-	// our fixtures are set up with 2 recordPrice keys
+	// our fixtures are set up with 2 changeSchema keys
 	for i := 0; i < len(privateKeys); i++ {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			recordPrice := NewRecordPrice(
-				pricecurve.Nanocent(1),
+			changeSchema := NewChangeSchema(
 				uint64(i)+1,
 				private,
 			)
 
-			resp := deliverTxWithTxFee(t, app, recordPrice)
+			resp := deliverTxWithTxFee(t, app, changeSchema)
 
 			var expect code.ReturnCode
 			if i == 0 {
@@ -122,50 +125,16 @@ func TestRecordPriceIsValidOnlyWithSufficientTxFee(t *testing.T) {
 	}
 }
 
-func TestMarketPriceMustBePositive(t *testing.T) {
-	app, assc := initAppRecordPrice(t)
-	privateKeys := assc[recordPriceKeys].([]signature.PrivateKey)
+func TestChangeSchemaCallsQuitFunction(t *testing.T) {
+	app, assc := initAppChangeSchema(t)
+	privateKeys := assc[changeSchemaKeys].([]signature.PrivateKey)
 
-	recordPrice := NewRecordPrice(
-		pricecurve.Nanocent(-1),
+	changeSchema := NewChangeSchema(
 		1,
 		privateKeys...,
 	)
 
-	resp := deliverTx(t, app, recordPrice)
-	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
-	require.Contains(t, resp.Log, "RecordPrice market price may not be <= 0")
-}
-
-func TestZeroMarketPriceMustIncurSIB(t *testing.T) {
-	app, assc := initAppRecordPrice(t)
-	privateKeys := assc[recordPriceKeys].([]signature.PrivateKey)
-
-	recordPrice := NewRecordPrice(
-		pricecurve.Nanocent(1),
-		1,
-		privateKeys...,
-	)
-
-	resp := deliverTx(t, app, recordPrice)
+	resp := deliverTx(t, app, changeSchema)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	require.NotZero(t, app.GetState().(*backing.State).SIB)
-
-	t.Run("app query", func(t *testing.T) {
-		resp := app.Query(abci.RequestQuery{
-			Path: query.SIBEndpoint,
-		})
-
-		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-		require.NotEmpty(t, resp.Value)
-		require.NotEmpty(t, resp.Info) // human-readable representation of value
-
-		var sib query.SIBResponse
-		leftovers, err := sib.UnmarshalMsg(resp.Value)
-		require.NoError(t, err)
-		require.Empty(t, leftovers)
-
-		require.Equal(t, app.GetState().(*backing.State).SIB, sib.SIB)
-	})
+	require.True(t, hasQuit)
 }
