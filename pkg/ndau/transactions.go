@@ -345,6 +345,9 @@ var _ NTransactable = (*SetSysvar)(nil)
 //
 // This is used to enable versioning upgrades which change the noms schema.
 type ChangeSchema struct {
-	Sequence   uint64                `msg:"seq" json:"sequence"`
-	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+	// SchemaVersion is advisory and not checked or retained by the blockchain.
+	// It is intended to be read by humans replaying the blockchain.
+	SchemaVersion string                `msg:"sav" json:"schema_version"`
+	Sequence      uint64                `msg:"seq" json:"sequence"`
+	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
 }

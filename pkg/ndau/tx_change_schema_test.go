@@ -1,10 +1,12 @@
 package ndau
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -23,6 +25,13 @@ func initAppChangeSchema(t *testing.T) (*App, generator.Associated) {
 	return initAppChangeSchemaWithIndex(t, "", -1)
 }
 
+func getChangeSchemaAddr(t *testing.T, app *App) (addr address.Address) {
+	// fetch the ChangeSchema address system variable
+	err := app.System(sv.ChangeSchemaAddressName, &addr)
+	require.NoError(t, err)
+	return
+}
+
 func initAppChangeSchemaWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 	*App, generator.Associated,
 ) {
@@ -30,10 +39,10 @@ func initAppChangeSchemaWithIndex(t *testing.T, indexAddr string, indexVersion i
 	app.InitChain(abci.RequestInitChain{})
 
 	// fetch the ChangeSchema address system variable
-	changeSchemaAddr := address.Address{}
-	err := app.System(sv.ChangeSchemaAddressName, &changeSchemaAddr)
-	require.NoError(t, err)
+	changeSchemaAddr := getChangeSchemaAddr(t, app)
+	var err error
 	assc[changeSchemaKeys], err = MockSystemAccount(app, changeSchemaAddr)
+	require.NoError(t, err)
 
 	// ensure special acct contains exactly 1 napu so balance test works
 	modify(t, changeSchemaAddr.String(), app, func(ad *backing.AccountData) {
@@ -44,6 +53,7 @@ func initAppChangeSchemaWithIndex(t *testing.T, indexAddr string, indexVersion i
 	hasQuit = false
 	quit = func() {
 		hasQuit = true
+		app.SetStateValidity(errors.New("if we quit before commit, subsequent txs in the block fail"))
 	}
 
 	return app, assc
@@ -94,6 +104,10 @@ func TestChangeSchemaIsValidOnlyWithSufficientTxFee(t *testing.T) {
 	app, assc := initAppChangeSchema(t)
 	privateKeys := assc[changeSchemaKeys].([]signature.PrivateKey)
 
+	// this test only works if we don't actually invalidate the app state
+	// on quit
+	quit = func() {}
+
 	txFeeAddr := address.Address{}
 	err := app.System(sv.ReleaseFromEndowmentAddressName, &txFeeAddr)
 	require.NoError(t, err)
@@ -136,5 +150,41 @@ func TestChangeSchemaCallsQuitFunction(t *testing.T) {
 
 	resp := deliverTx(t, app, changeSchema)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	// quit only calls at the beginning of the next block
+	require.False(t, hasQuit)
+
+	public, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	subsequent := NewChangeValidation(getChangeSchemaAddr(t, app), []signature.PublicKey{public}, nil, 2, private)
+	resp = deliverTx(t, app, subsequent)
+	require.Equal(t, code.InvalidNodeState, code.ReturnCode(resp.Code))
+	require.True(t, hasQuit)
+}
+
+func TestChangeSchemaCallsQuitFunctionAfterNomsCommit(t *testing.T) {
+	app, assc := initAppChangeSchema(t)
+	privateKeys := assc[changeSchemaKeys].([]signature.PrivateKey)
+	csAddr := getChangeSchemaAddr(t, app)
+	csAcct, _ := app.getAccount(csAddr)
+
+	changeSchema := NewChangeSchema(
+		1,
+		privateKeys...,
+	)
+
+	public, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
+	subsequent := NewChangeValidation(csAddr, []signature.PublicKey{public}, nil, 2, privateKeys...)
+
+	resps, _ := deliverTxsContext(t, app, []metatx.Transactable{changeSchema, subsequent}, ddc(t))
+	for _, resp := range resps {
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	}
+	// we shouldn't quit until the beginning of the subsequent block
+	require.False(t, hasQuit)
+
+	subsequent = NewChangeValidation(csAddr, csAcct.ValidationKeys, nil, 3, private)
+	resp := deliverTx(t, app, subsequent)
+	require.Equal(t, code.InvalidNodeState, code.ReturnCode(resp.Code))
 	require.True(t, hasQuit)
 }

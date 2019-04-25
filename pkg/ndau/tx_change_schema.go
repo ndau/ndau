@@ -38,8 +38,8 @@ func (tx *ChangeSchema) Apply(appI interface{}) error {
 		return err
 	}
 
-	app.DecoratedTxLogger(tx).Warn("System going down due to ChangeSchema tx")
-	quit()
+	app.DecoratedTxLogger(tx).Warn("System preparing to go down due to ChangeSchema tx")
+	app.quitPending = true
 	return nil
 }
 
