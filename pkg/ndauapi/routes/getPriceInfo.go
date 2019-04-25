@@ -85,11 +85,11 @@ func GetOrderData(cf cfg.Cfg) http.HandlerFunc {
 		oci := OrderChainInfo{
 			// converting from nanocents to floating point dollars means multiplying by 10^11
 			MarketPrice: float64(pricedata.MarketPrice) / 100000000000.0,
-			TargetPrice: float64(pricedata.MarketPrice) / 100000000000.0,
-			FloorPrice:  0,
+			TargetPrice: float64(pricedata.TargetPrice) / 100000000000.0,
+			FloorPrice:  2.40,
 			TotalIssued: pricedata.TotalIssued,
 			TotalNdau:   pricedata.TotalNdau,
-			SIB:         0,
+			SIB:         1,
 			PriceUnits:  "USD",
 		}
 
