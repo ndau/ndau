@@ -275,9 +275,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(p2p.NodeInfo.NetAddress))
 
-	svc.Route(svc.GET("/order/current").To(routes.GetPriceData(cf)).
+	svc.Route(svc.GET("/order/current").To(routes.GetOrderData(cf)).
 		Operation("DEPRECATEDOrderCurrent").
-		Doc("Please use /price/current instead").
+		Doc("This is an obsolete format. Please use /price/current instead.").
 		Produces(JSON))
 
 	svc.Route(svc.GET("/price/height/:height").To(routes.HandlePriceHeight(cf)).
