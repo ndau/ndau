@@ -213,13 +213,23 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 		}
 	}
 
+	afters := qp["after"]
+	var after int64 = MaximumRange
+	if afters != "" {
+		after, err = strconv.ParseInt(afters, 10, 64)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("after must be a number", err, http.StatusBadRequest))
+			return
+		}
+	}
+
 	node, err := ws.Node(nodeAddress)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 		return
 	}
 
-	blocks, err := getBlocksMatching(node, 1, before, limit, filter)
+	blocks, err := getBlocksMatching(node, after, before, limit, filter)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return

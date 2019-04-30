@@ -167,6 +167,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns a (possibly filtered) sequence of block metadata for blocks of height less than last.").
 		Param(boneful.PathParameter("height", "Blocks of this height and greater will not be returned.").DataType("int").Required(true)).
 		Param(boneful.QueryParameter("filter", "Set to 'noempty' to exclude empty blocks.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("after", "The block height after which no more results should be returned.").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
