@@ -221,6 +221,18 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 			reqres.RespondJSON(w, reqres.NewFromErr("after must be a number", err, http.StatusBadRequest))
 			return
 		}
+		if after > before || after < 1 {
+			reqres.RespondJSON(w, reqres.NewAPIError("after must be between 0 and before", http.StatusBadRequest))
+			return
+		}
+		if after == before {
+			// don't even do the query if after == before
+			reqres.RespondJSON(w, reqres.OKResponse(rpctypes.ResultBlockchainInfo{
+				LastHeight: after,
+				BlockMetas: make([]*tmtypes.BlockMeta, 0),
+			}))
+			return
+		}
 	}
 
 	node, err := ws.Node(nodeAddress)
