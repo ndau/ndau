@@ -1702,8 +1702,8 @@ func (z *SetSysvar) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "nme"
 	o = append(o, 0x84, 0xa3, 0x6e, 0x6d, 0x65)
 	o = msgp.AppendString(o, z.Name)
-	// string "val"
-	o = append(o, 0xa3, 0x76, 0x61, 0x6c)
+	// string "vlu"
+	o = append(o, 0xa3, 0x76, 0x6c, 0x75)
 	o = msgp.AppendBytes(o, z.Value)
 	// string "seq"
 	o = append(o, 0xa3, 0x73, 0x65, 0x71)
@@ -1745,7 +1745,7 @@ func (z *SetSysvar) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Name")
 				return
 			}
-		case "val":
+		case "vlu":
 			z.Value, bts, err = msgp.ReadBytesBytes(bts, z.Value)
 			if err != nil {
 				err = msgp.WrapError(err, "Value")
