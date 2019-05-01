@@ -23,7 +23,11 @@ func (tx *Stake) Validate(appI interface{}) error {
 	}
 	_, err = address.Validate(tx.StakeTo.String())
 	if err != nil {
-		return errors.Wrap(err, "node")
+		return errors.Wrap(err, "stake_to")
+	}
+	_, err = address.Validate(tx.Rules.String())
+	if err != nil {
+		return errors.Wrap(err, "rules")
 	}
 
 	app := appI.(*App)
@@ -35,10 +39,21 @@ func (tx *Stake) Validate(appI interface{}) error {
 		return errors.New("target does not exist")
 	}
 
+	if tx.StakeTo == tx.Rules {
+		ps := target.PrimaryStake(tx.Rules)
+		if ps != nil {
+			return fmt.Errorf("stake: cannot have more than 1 primary stake to a rules account")
+		}
+	}
+
 	var minStake math.Ndau
 	err = app.System(sv.MinNodeRegistrationStakeName, &minStake)
 	if err != nil {
 		return errors.Wrap(err, "fetching MinStake system variable")
+	}
+
+	if tx.Qty < minStake {
+		return fmt.Errorf("cannot stake %s ndau: must stake at least MinStake (%s)", tx.Qty, minStake)
 	}
 
 	txFee, err := app.calculateTxFee(tx)

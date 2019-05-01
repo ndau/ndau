@@ -50,7 +50,7 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 func (ad *AccountData) UpdateSettlements(blockTime math.Timestamp) {
 	newSettlements := make([]Hold, 0, len(ad.Holds))
 	for _, settlement := range ad.Holds {
-		if settlement.Expiry.Compare(blockTime) > 0 {
+		if settlement.Expiry == nil || settlement.Expiry.Compare(blockTime) > 0 {
 			// blockTime > settlement.Expiry
 			newSettlements = append(newSettlements, settlement)
 		}
