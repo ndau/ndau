@@ -12,6 +12,14 @@ func (tx *Unstake) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "target")
 	}
+	_, err = address.Validate(tx.StakeTo.String())
+	if err != nil {
+		return errors.Wrap(err, "stake_to")
+	}
+	_, err = address.Validate(tx.Rules.String())
+	if err != nil {
+		return errors.Wrap(err, "rules")
+	}
 
 	app := appI.(*App)
 	_, _, _, err = app.getTxAccount(tx)

@@ -3,6 +3,7 @@ package ndau
 import (
 	"testing"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -18,7 +19,9 @@ func initAppStake(t *testing.T) (*App, signature.PrivateKey, address.Address) {
 
 	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
 		ad.StakeRules = &backing.StakeRules{
-			Script:  []byte{0xab, 0xcd, 0xef},
+			// push 0 to the stack and exit
+			// at quit, stack top is exit code for validation
+			Script:  vm.MiniAsm("handler 0 zero enddef").Bytes(),
 			Inbound: make(map[string]uint64),
 		}
 	})
