@@ -164,3 +164,19 @@ func TestCannotLockExchangeAccount(t *testing.T) {
 	resp, _ := deliverTxContext(t, app, lock, context)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestLockAppliesNonzeroBonus(t *testing.T) {
+	duration := math.Duration(1 * math.Year)
+	app, private := initAppTx(t)
+	lock := NewLock(sourceAddress, duration, 1, private)
+
+	acct, _ := app.getAccount(sourceAddress)
+	require.Nil(t, acct.Lock)
+
+	resp := deliverTx(t, app, lock)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	acct, _ = app.getAccount(sourceAddress)
+	require.NotNil(t, acct.Lock)
+	require.NotZero(t, acct.Lock.Bonus)
+}
