@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"fmt"
+
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -24,17 +26,16 @@ func (tx *SetStakeRules) Validate(appI interface{}) (err error) {
 		return errors.New("Stake rules must be chaincode")
 	}
 
-	if len(tx.StakeRules) == 0 {
-		// TODO: if any accounts are staked to these stake rules, it is not
-		// allowed to remove the stake rules. However, as we haven't yet
-		// implemented staking to a rules account, we can't write this feature
-		// yet.
-	}
-
 	app := appI.(*App)
-	_, _, _, err = app.getTxAccount(tx)
+	ad, _, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
+	}
+
+	if ad.StakeRules != nil && len(ad.StakeRules.Inbound) > 0 {
+		return fmt.Errorf(
+			"cannot change stake rules: %d accounts are staked to this rules account",
+			len(ad.StakeRules.Inbound))
 	}
 
 	return

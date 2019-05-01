@@ -10,6 +10,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -135,4 +136,26 @@ func TestSetStakeRulesDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestSetStakeRulesInvalidWhileOthersUseExistingRules(t *testing.T) {
+	app := initAppSetStakeRules(t)
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Balance = 1 * constants.NapuPerNdau
+	})
+	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
+		ad.StakeRules = &backing.StakeRules{
+			Script:  []byte{0xab, 0xcd},
+			Inbound: make(map[string]uint64),
+		}
+	})
+	err := app.UpdateStateImmediately(app.Stake(
+		1*constants.NapuPerNdau, sourceAddress,
+		targetAddress, targetAddress, nil))
+	require.NoError(t, err)
+
+	cv := NewSetStakeRules(targetAddress, []byte{}, 1, transferPrivate)
+	resp := deliverTx(t, app, cv)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+	require.Contains(t, resp.Log, "cannot change stake rules")
 }
