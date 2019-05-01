@@ -339,7 +339,7 @@ var _ NTransactable = (*RecordPrice)(nil)
 // the transaction fee.
 type SetSysvar struct {
 	Name       string                `msg:"nme" chain:"6,Tx_Name" json:"name"`
-	Value      []byte                `msg:"val" chain:"7,Tx_Value" json:"value"`
+	Value      []byte                `msg:"vlu" chain:"7,Tx_Value" json:"value"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }

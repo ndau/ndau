@@ -60,3 +60,39 @@ func GetPriceData(cf cfg.Cfg) http.HandlerFunc {
 		reqres.RespondJSON(w, reqres.OKResponse(response))
 	}
 }
+
+// OrderChainInfo is the old structure returned by /order/price. We only need it as long as we
+// keep the deprecated function below.
+type OrderChainInfo struct {
+	MarketPrice float64    `json:"marketPrice"`
+	TargetPrice float64    `json:"targetPrice"`
+	FloorPrice  float64    `json:"floorPrice"`
+	TotalIssued types.Ndau `json:"totalIssued"`
+	TotalNdau   types.Ndau `json:"totalNdau"`
+	SIB         float64    `json:"sib"`
+	PriceUnits  string     `json:"priceUnit"`
+}
+
+// GetOrderData returns a block of price information, but converts it to a format that is compatible
+// with the old /order/current API. This is for use while v1.8 of the wallet is still extant.
+func GetOrderData(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pricedata, err := getPriceInfo(cf)
+		if err != nil {
+			reqres.NewFromErr("price query error", err, http.StatusInternalServerError)
+			return
+		}
+		oci := OrderChainInfo{
+			// converting from nanocents to floating point dollars means multiplying by 10^11
+			MarketPrice: float64(pricedata.MarketPrice) / 100000000000.0,
+			TargetPrice: float64(pricedata.TargetPrice) / 100000000000.0,
+			FloorPrice:  2.40,
+			TotalIssued: pricedata.TotalIssued,
+			TotalNdau:   pricedata.TotalNdau,
+			SIB:         1,
+			PriceUnits:  "USD",
+		}
+
+		reqres.RespondJSON(w, reqres.OKResponse(oci))
+	}
+}

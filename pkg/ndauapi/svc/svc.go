@@ -167,6 +167,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns a (possibly filtered) sequence of block metadata for blocks of height less than last.").
 		Param(boneful.PathParameter("height", "Blocks of this height and greater will not be returned.").DataType("int").Required(true)).
 		Param(boneful.QueryParameter("filter", "Set to 'noempty' to exclude empty blocks.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("after", "The block height after which no more results should be returned.").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -275,9 +276,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(p2p.NodeInfo.NetAddress))
 
-	svc.Route(svc.GET("/order/current").To(routes.GetPriceData(cf)).
+	svc.Route(svc.GET("/order/current").To(routes.GetOrderData(cf)).
 		Operation("DEPRECATEDOrderCurrent").
-		Doc("Please use /price/current instead").
+		Doc("This is an obsolete format. Please use /price/current instead.").
 		Produces(JSON))
 
 	svc.Route(svc.GET("/price/height/:height").To(routes.HandlePriceHeight(cf)).
