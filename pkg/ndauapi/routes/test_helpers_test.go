@@ -35,9 +35,6 @@ func init() {
 	if ndauRPC != "" {
 		os.Setenv("NDAUAPI_NDAU_RPC_URL", ndauRPC)
 	}
-	if chaosRPC != "" {
-		os.Setenv("NDAUAPI_CHAOS_RPC_URL", chaosRPC)
-	}
 
 	// The config calls need the NDAUHOME env var set, as well as each chaos/ndau tool invocation.
 	ndauhome := os.ExpandEnv("$NDAUHOME")
