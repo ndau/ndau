@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
 func intbytes(i int64) []byte {
@@ -211,5 +211,10 @@ func (tx *RecordPrice) SignableBytes() []byte {
 
 // SignableBytes partially implements metatx.Transactable for SetSysvar
 func (tx *SetSysvar) SignableBytes() []byte {
+	return sbOf(tx)
+}
+
+// SignableBytes partially implements metatx.Transactable for ChangeSchema
+func (tx *ChangeSchema) SignableBytes() []byte {
 	return sbOf(tx)
 }

@@ -31,6 +31,11 @@ type App struct {
 	// from the chaos chain (or a mock as necessary), but it permits
 	// growth as requirements evolve
 	config config.Config
+
+	// quitPending is set to true when a valid ChangeSchema tx is received.
+	// It instructs the application to exit with a particular exit code
+	// before beginning the next block.
+	quitPending bool
 }
 
 // NewApp prepares a new Ndau App
@@ -84,6 +89,7 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	app := App{
 		metaapp,
 		config,
+		false,
 	}
 	app.App.SetChild(&app)
 	return &app, nil

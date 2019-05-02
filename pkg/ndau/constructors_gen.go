@@ -549,3 +549,25 @@ func NewSetSysvar(
 
 	return tx
 }
+
+// NewChangeSchema creates a new ChangeSchema transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewChangeSchema(
+	schemaversion string,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *ChangeSchema {
+	tx := &ChangeSchema{
+		SchemaVersion: schemaversion,
+		Sequence:      sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
