@@ -120,9 +120,12 @@ func (z *ChangeRecoursePeriod) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *ChangeSchema) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 2
+	// map header, size 3
+	// string "sav"
+	o = append(o, 0x83, 0xa3, 0x73, 0x61, 0x76)
+	o = msgp.AppendString(o, z.SchemaVersion)
 	// string "seq"
-	o = append(o, 0x82, 0xa3, 0x73, 0x65, 0x71)
+	o = append(o, 0xa3, 0x73, 0x65, 0x71)
 	o = msgp.AppendUint64(o, z.Sequence)
 	// string "sig"
 	o = append(o, 0xa3, 0x73, 0x69, 0x67)
@@ -155,6 +158,12 @@ func (z *ChangeSchema) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
+		case "sav":
+			z.SchemaVersion, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "SchemaVersion")
+				return
+			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
@@ -194,7 +203,7 @@ func (z *ChangeSchema) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ChangeSchema) Msgsize() (s int) {
-	s = 1 + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + msgp.StringPrefixSize + len(z.SchemaVersion) + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}

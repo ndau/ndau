@@ -67,6 +67,7 @@ func TestChangeSchemaIsValidWithValidSignature(t *testing.T) {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			changeSchema := NewChangeSchema(
+				"",
 				1,
 				private,
 			)
@@ -89,6 +90,7 @@ func TestChangeSchemaIsInvalidWithInvalidSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	changeSchema := NewChangeSchema(
+		"",
 		1,
 		private,
 	)
@@ -122,6 +124,7 @@ func TestChangeSchemaIsValidOnlyWithSufficientTxFee(t *testing.T) {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			changeSchema := NewChangeSchema(
+				"",
 				uint64(i)+1,
 				private,
 			)
@@ -144,6 +147,7 @@ func TestChangeSchemaCallsQuitFunction(t *testing.T) {
 	privateKeys := assc[changeSchemaKeys].([]signature.PrivateKey)
 
 	changeSchema := NewChangeSchema(
+		"",
 		1,
 		privateKeys...,
 	)
@@ -168,6 +172,7 @@ func TestChangeSchemaCallsQuitFunctionAfterNomsCommit(t *testing.T) {
 	csAcct, _ := app.getAccount(csAddr)
 
 	changeSchema := NewChangeSchema(
+		"",
 		1,
 		privateKeys...,
 	)

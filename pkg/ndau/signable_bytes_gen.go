@@ -218,5 +218,3 @@ func (tx *SetSysvar) SignableBytes() []byte {
 func (tx *ChangeSchema) SignableBytes() []byte {
 	return sbOf(tx)
 }
-
-
