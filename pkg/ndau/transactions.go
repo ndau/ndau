@@ -38,6 +38,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(22): &RecordPrice{},
 	metatx.TxID(23): &SetSysvar{},
 	metatx.TxID(24): &SetStakeRules{},
+	metatx.TxID(30): &ChangeSchema{},
 }
 
 // A Transfer is the fundamental transaction of the Ndau chain.
@@ -355,3 +356,14 @@ type SetStakeRules struct {
 }
 
 var _ NTransactable = (*SetStakeRules)(nil)
+
+// A ChangeSchema transaction triggers the ndaunode to shut down.
+//
+// This is used to enable versioning upgrades which change the noms schema.
+type ChangeSchema struct {
+	// SchemaVersion is advisory and not checked or retained by the blockchain.
+	// It is intended to be read by humans replaying the blockchain.
+	SchemaVersion string                `msg:"sav" json:"schema_version"`
+	Sequence      uint64                `msg:"seq" json:"sequence"`
+	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
+}

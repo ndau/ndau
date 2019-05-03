@@ -214,7 +214,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 	}
 
 	afters := qp["after"]
-	var after int64 = MaximumRange
+	var after int64 = 1
 	if afters != "" {
 		after, err = strconv.ParseInt(afters, 10, 64)
 		if err != nil {
