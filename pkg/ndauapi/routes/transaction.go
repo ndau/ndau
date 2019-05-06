@@ -24,7 +24,7 @@ type TransactionData struct {
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.
 func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// This returns the value already query-unescaped.
+		// Transaction hashes are query-escaped by default.
 		txhash := bone.GetValue(r, "txhash")
 		if txhash == "" {
 			reqres.RespondJSON(w, reqres.NewAPIError("txhash parameter required", http.StatusBadRequest))
