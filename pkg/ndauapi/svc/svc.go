@@ -399,7 +399,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetch(cf)).
 		Doc("Returns a transaction from the blockchain given its tx hash.").
-		Notes("Transaction hash must be URL query-escaped").
 		Operation("TransactionByHash").
 		Produces(JSON).
 		Writes(routes.TransactionData{}))
