@@ -10,7 +10,6 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -22,9 +21,6 @@ func initAppUnregisterNode(t *testing.T) *App {
 	// ensure the target address is self-staked at the beginning of the test
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
 		acct.ValidationKeys = []signature.PublicKey{transferPublic}
-		acct.Stake = &backing.Stake{
-			Address: targetAddress,
-		}
 		acct.Balance = 1000 * constants.NapuPerNdau
 	})
 
@@ -37,16 +33,15 @@ func initAppUnregisterNode(t *testing.T) *App {
 		}
 
 		state.Nodes[targetAddress.String()] = backing.Node{
-			Active:    true,
-			Costakers: make(map[string]math.Ndau),
+			Active: true,
 		}
 
 		return state, nil
 	})
 
 	// add a costaker: transferAddress
-	err := stake(app, transferAddress, targetAddress)
-	require.NoError(t, err)
+	//	err := app.Stake(1, targetAddress, transferAddress, nra, nil)
+	//	require.NoError(t, err)
 
 	return app
 }
@@ -105,30 +100,6 @@ func TestUnregisterNodeMustBeANode(t *testing.T) {
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
-}
-
-func TestUnregisterNodeUnstakesSelf(t *testing.T) {
-	app := initAppUnregisterNode(t)
-
-	rn := NewUnregisterNode(targetAddress, 1, transferPrivate)
-	resp := deliverTx(t, app, rn)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	node, exists := app.getAccount(targetAddress)
-	require.True(t, exists)
-	require.Nil(t, node.Stake)
-}
-
-func TestUnregisterNodeUnstakesCostakers(t *testing.T) {
-	app := initAppUnregisterNode(t)
-
-	rn := NewUnregisterNode(targetAddress, 1, transferPrivate)
-	resp := deliverTx(t, app, rn)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	cs, exists := app.getAccount(transferAddress)
-	require.True(t, exists)
-	require.Nil(t, cs.Stake)
 }
 
 func TestUnregisterNodeDeductsTxFee(t *testing.T) {

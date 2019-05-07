@@ -265,7 +265,7 @@ $ ./ndau -v account query demo
   "weightedAverageAge": 0,
   "Sequence": 1,
   "settlements": null,
-  "settlementSettings": {
+  "RecourseSettings": {
     "Period": 0,
     "ChangesAt": null,
     "Next": null
@@ -283,7 +283,7 @@ $ ./ndau -v account query demo
 
 Notes about this output:
 
-- `settlementSettings` is set to the default settlement duration, which is a system variable. It was set during the `change-transfer-key` transaction which assigned the transfer key. Whenever a CTK transaction is signed with the ownership key and the escrow duration is 0, the duration is updated to the default.
+- `RecourseSettings` is set to the default settlement duration, which is a system variable. It was set during the `change-transfer-key` transaction which assigned the transfer key. Whenever a CTK transaction is signed with the ownership key and the escrow duration is 0, the duration is updated to the default.
 
 - The second JSON object returned is present because we used the `-v` flag. It again contains the raw response from the RPC command.
 
@@ -365,7 +365,7 @@ $ ./ndau account query --address=$demo_receiver_addr
   "weightedAverageAge": 29090909,
   "Sequence": 0,
   "settlements": null,
-  "settlementSettings": {
+  "RecourseSettings": {
     "Period": 0,
     "ChangesAt": null,
     "Next": null
@@ -398,7 +398,7 @@ $ ./ndau account query demo
   "weightedAverageAge": 0,
   "Sequence": 11,
   "settlements": null,
-  "settlementSettings": {
+  "RecourseSettings": {
     "Period": 3600000000,
     "ChangesAt": null,
     "Next": null
@@ -448,7 +448,7 @@ $ ./ndau account query --address=$demo_receiver_addr
       "Expiry": 593033785000000
     }
   ],
-  "settlementSettings": {
+  "RecourseSettings": {
     "Period": 0,
     "ChangesAt": null,
     "Next": null

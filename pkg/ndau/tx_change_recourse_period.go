@@ -40,9 +40,9 @@ func (tx *ChangeRecoursePeriod) Apply(appI interface{}) error {
 		state := stateI.(*backing.State)
 		acct, _ := app.getAccount(tx.Target)
 
-		ca := app.BlockTime().Add(acct.SettlementSettings.Period)
-		acct.SettlementSettings.ChangesAt = &ca
-		acct.SettlementSettings.Next = &tx.Period
+		ca := app.BlockTime().Add(acct.RecourseSettings.Period)
+		acct.RecourseSettings.ChangesAt = &ca
+		acct.RecourseSettings.Next = &tx.Period
 
 		state.Accounts[tx.Target.String()] = acct
 		return state, nil

@@ -25,7 +25,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return 0, errors.New("no such account")
 	}
 
-	node, hasNode := state.Nodes[addrS]
+	_, hasNode := state.Nodes[addrS]
 	if !hasNode {
 		return 0, errors.New("no such node")
 	}
@@ -36,11 +36,20 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return 0, errors.Wrap(err, "getting goodness script")
 	}
 
+	totalStake := math.Ndau(0)
+	costakers, err := app.NodeStakers(addr)
+	if err != nil {
+		return 0, errors.Wrap(err, "getting node stakers")
+	}
+	for _, v := range costakers {
+		totalStake += v
+	}
+
 	vm, err := BuildVMForNodeGoodness(
 		script,
 		addr,
 		acct,
-		math.Ndau(node.TotalStake),
+		totalStake,
 		app.BlockTime(),
 		app.GetStats(),
 	)

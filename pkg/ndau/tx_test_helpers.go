@@ -11,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
@@ -340,4 +341,24 @@ func deliverTxsContext(
 	})
 
 	return resps, reb
+}
+
+func getRulesAccount(t *testing.T, app *App) (rulesAcct address.Address) {
+	err := app.System(sv.NodeRulesAccountAddressName, &rulesAcct)
+	require.NoError(t, err)
+
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		ad, _ := app.getAccount(rulesAcct)
+		ad.Balance = 10 * constants.NapuPerNdau
+		ad.StakeRules = &backing.StakeRules{
+			Script:  vm.MiniAsm("handler 0 zero enddef").Bytes(),
+			Inbound: make(map[string]uint64),
+		}
+		st.Accounts[rulesAcct.String()] = ad
+
+		return st, nil
+	})
+
+	return
 }

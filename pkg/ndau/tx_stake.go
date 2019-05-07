@@ -3,8 +3,6 @@ package ndau
 import (
 	"fmt"
 
-	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -14,7 +12,7 @@ import (
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *Stake) GetAccountAddresses() []string {
-	return []string{tx.Target.String(), tx.StakedAccount.String()}
+	return []string{tx.Target.String(), tx.StakeTo.String(), tx.Rules.String()}
 }
 
 // Validate implements metatx.Transactable
@@ -23,9 +21,13 @@ func (tx *Stake) Validate(appI interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "target")
 	}
-	_, err = address.Validate(tx.StakedAccount.String())
+	_, err = address.Validate(tx.StakeTo.String())
 	if err != nil {
-		return errors.Wrap(err, "node")
+		return errors.Wrap(err, "stake_to")
+	}
+	_, err = address.Validate(tx.Rules.String())
+	if err != nil {
+		return errors.Wrap(err, "rules")
 	}
 
 	app := appI.(*App)
@@ -37,14 +39,21 @@ func (tx *Stake) Validate(appI interface{}) error {
 		return errors.New("target does not exist")
 	}
 
-	if target.Stake != nil {
-		return errors.New("target must unstake and cooldown before re-staking")
+	if tx.StakeTo == tx.Rules {
+		ps := target.PrimaryStake(tx.Rules)
+		if ps != nil {
+			return fmt.Errorf("stake: cannot have more than 1 primary stake to a rules account")
+		}
 	}
 
 	var minStake math.Ndau
 	err = app.System(sv.MinNodeRegistrationStakeName, &minStake)
 	if err != nil {
 		return errors.Wrap(err, "fetching MinStake system variable")
+	}
+
+	if tx.Qty < minStake {
+		return fmt.Errorf("cannot stake %s ndau: must stake at least MinStake (%s)", tx.Qty, minStake)
 	}
 
 	txFee, err := app.calculateTxFee(tx)
@@ -61,34 +70,12 @@ func (tx *Stake) Validate(appI interface{}) error {
 		return fmt.Errorf("target has insufficient balance: have %s ndau, need %s", target.Balance, minStake)
 	}
 
-	node, hasNode := app.getAccount(tx.StakedAccount)
+	_, hasNode := app.getAccount(tx.StakeTo)
 	if !hasNode {
 		return errors.New("Node does not exist")
 	}
-	if tx.StakedAccount != tx.Target {
-		if node.Stake == nil || node.Stake.Address != tx.StakedAccount {
-			return errors.New("Node is not self-staked")
-		}
-	}
 
 	return nil
-}
-
-func stake(app *App, targetA, stakedAccountA address.Address) error {
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		state := stateI.(*backing.State)
-		target, _ := app.getAccount(targetA)
-
-		target.Stake = &backing.Stake{
-			Address: stakedAccountA,
-			Point:   app.BlockTime(),
-		}
-
-		state.Accounts[targetA.String()] = target
-		err := state.Stake(targetA, stakedAccountA)
-
-		return state, err
-	})
 }
 
 // Apply implements metatx.Transactable
@@ -100,11 +87,7 @@ func (tx *Stake) Apply(appI interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = stake(app, tx.Target, tx.StakedAccount)
-	if err != nil {
-		return err
-	}
-	return err
+	return app.UpdateState(app.Stake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules, tx))
 }
 
 // GetSource implements sourcer

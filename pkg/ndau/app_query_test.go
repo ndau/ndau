@@ -65,7 +65,7 @@ func TestQueryRunsUpdateBalance(t *testing.T) {
 	_, err := accountData.UnmarshalMsg(resp.Value)
 	require.NoError(t, err)
 	require.NotEqual(t, math.Ndau(0), accountData.Balance)
-	require.Equal(t, 0, len(accountData.Settlements))
+	require.Equal(t, 0, len(accountData.Holds))
 }
 
 func TestCanQuerySummary1(t *testing.T) {

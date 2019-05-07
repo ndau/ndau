@@ -7,7 +7,6 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	"github.com/pkg/errors"
 )
 
 // State is primarily a set of accounts
@@ -20,7 +19,7 @@ type State struct {
 	// the values are the addresses of the accounts which those nodes must
 	// compute
 	Delegates map[string]map[string]struct{}
-	// Nodes keeps track of the validator and verifier node stakes.
+	// Nodes keeps track of the validator and verifier nodes.
 	// The key is the node address. The value is a Node struct.
 	Nodes map[string]Node
 	// The last node reward nomination is necessary in state because this
@@ -86,70 +85,6 @@ func (s *State) GetAccount(
 		data = NewAccountData(blockTime, defaultSettlementPeriod)
 	}
 	return data, hasAccount
-}
-
-// Stake updates the state to handle staking an account to another
-func (s *State) Stake(targetA, nodeA address.Address) error {
-	nodeS := nodeA.String()
-	node, isNode := s.Nodes[nodeS]
-	// logically, the operation I want in this if is nxor, but go doesn't
-	// define that for booleans, because reasons
-	if (targetA == nodeA) == isNode {
-		if isNode {
-			return errors.New("cannot re-self-stake")
-		}
-		return errors.New("node is not already a node; can't stake to it")
-	}
-
-	target := s.Accounts[targetA.String()]
-	if isNode {
-		// targetA != nodeA
-		node.Costake(targetA, target.Balance)
-	} else {
-		// targetA == nodeA
-		node = NewNode(targetA, target.Balance)
-	}
-
-	s.Nodes[nodeS] = node
-	return nil
-}
-
-// Unstake updates the state to handle unstaking an account
-func (s *State) Unstake(targetA address.Address) {
-	target, exists := s.Accounts[targetA.String()]
-	if !exists {
-		return
-	}
-	if target.Stake == nil {
-		return
-	}
-	nodeA := target.Stake.Address
-	target.Stake = nil
-	s.Accounts[targetA.String()] = target
-
-	node, isNode := s.Nodes[nodeA.String()]
-	if isNode {
-		// targetA != nodeA
-		node.Unstake(targetA)
-		s.Nodes[nodeA.String()] = node
-	}
-}
-
-// GetCostakers returns the list of costakers associated with a node
-func (s *State) GetCostakers(nodeA address.Address) []AccountData {
-	node, isNode := s.Nodes[nodeA.String()]
-	if !isNode {
-		return nil
-	}
-
-	out := make([]AccountData, 0, len(node.Costakers))
-	for costaker := range node.Costakers {
-		ad, hasAccount := s.Accounts[costaker]
-		if hasAccount {
-			out = append(out, ad)
-		}
-	}
-	return out
 }
 
 // PayReward updates the state of the target address to add the given qty of ndau, following

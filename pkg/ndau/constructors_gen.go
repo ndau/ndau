@@ -261,14 +261,18 @@ func NewSetValidation(
 // If signing keys are present, the new transactable is signed with all of them
 func NewStake(
 	target address.Address,
-	stakedaccount address.Address,
+	rules address.Address,
+	staketo address.Address,
+	qty math.Ndau,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *Stake {
 	tx := &Stake{
-		Target:        target,
-		StakedAccount: stakedaccount,
-		Sequence:      sequence,
+		Target:   target,
+		Rules:    rules,
+		StakeTo:  staketo,
+		Qty:      qty,
+		Sequence: sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()
@@ -429,11 +433,17 @@ func NewUnregisterNode(
 // If signing keys are present, the new transactable is signed with all of them
 func NewUnstake(
 	target address.Address,
+	rules address.Address,
+	staketo address.Address,
+	qty math.Ndau,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *Unstake {
 	tx := &Unstake{
 		Target:   target,
+		Rules:    rules,
+		StakeTo:  staketo,
+		Qty:      qty,
 		Sequence: sequence,
 	}
 	if len(signingKeys) > 0 {
@@ -539,6 +549,30 @@ func NewSetSysvar(
 		Name:     name,
 		Value:    value,
 		Sequence: sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
+// NewSetStakeRules creates a new SetStakeRules transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewSetStakeRules(
+	target address.Address,
+	stakerules []byte,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *SetStakeRules {
+	tx := &SetStakeRules{
+		Target:     target,
+		StakeRules: stakerules,
+		Sequence:   sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()

@@ -37,26 +37,7 @@ func (tx *UnregisterNode) Apply(appI interface{}) error {
 
 	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-
-		node, ok := state.Nodes[tx.Node.String()]
-		if !ok {
-			// empty node, no costakers
-			return state, nil
-		}
-
-		for costaker := range node.Costakers {
-			csA, err := address.Validate(costaker)
-			if err != nil {
-				// whatever, don't hang around dealing with this
-				continue
-			}
-			state.Unstake(csA)
-		}
-
-		// don't just deactivate but delete this node
 		delete(state.Nodes, tx.Node.String())
-		state.Unstake(tx.Node)
-
 		return state, err
 	})
 }

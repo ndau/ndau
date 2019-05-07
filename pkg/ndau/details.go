@@ -143,13 +143,13 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	if available.Compare(fee) < 0 {
 		var errb []byte
 		errb, err = json.Marshal(map[string]interface{}{
-			"balance":                 acct.Balance,
-			"available balance":       available,
-			"address":                 address,
-			"tx cost":                 fee,
-			"msg":                     "insufficient available balance to pay for tx",
-			"tx hash":                 metatx.Hash(tx),
-			"qty pending settlements": len(acct.Settlements),
+			"balance":           acct.Balance,
+			"available balance": available,
+			"address":           address,
+			"tx cost":           fee,
+			"msg":               "insufficient available balance to pay for tx",
+			"tx hash":           metatx.Hash(tx),
+			"qty holds":         len(acct.Holds),
 		})
 		if err == nil {
 			err = errors.New(string(errb))

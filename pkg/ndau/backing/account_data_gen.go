@@ -12,9 +12,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 17
+	// map header, size 18
 	// string "Balance"
-	o = append(o, 0xde, 0x0, 0x11, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
+	o = append(o, 0xde, 0x0, 0x12, 0xa7, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65)
 	o, err = z.Balance.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Balance")
@@ -76,27 +76,6 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 			return
 		}
 	}
-	// string "Stake"
-	o = append(o, 0xa5, 0x53, 0x74, 0x61, 0x6b, 0x65)
-	if z.Stake == nil {
-		o = msgp.AppendNil(o)
-	} else {
-		// map header, size 2
-		// string "Point"
-		o = append(o, 0x82, 0xa5, 0x50, 0x6f, 0x69, 0x6e, 0x74)
-		o, err = z.Stake.Point.MarshalMsg(o)
-		if err != nil {
-			err = msgp.WrapError(err, "Stake", "Point")
-			return
-		}
-		// string "Address"
-		o = append(o, 0xa7, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73)
-		o, err = z.Stake.Address.MarshalMsg(o)
-		if err != nil {
-			err = msgp.WrapError(err, "Stake", "Address")
-			return
-		}
-	}
 	// string "LastEAIUpdate"
 	o = append(o, 0xad, 0x4c, 0x61, 0x73, 0x74, 0x45, 0x41, 0x49, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65)
 	o, err = z.LastEAIUpdate.MarshalMsg(o)
@@ -121,31 +100,43 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "Sequence"
 	o = append(o, 0xa8, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65)
 	o = msgp.AppendUint64(o, z.Sequence)
-	// string "Settlements"
-	o = append(o, 0xab, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x73)
-	o = msgp.AppendArrayHeader(o, uint32(len(z.Settlements)))
-	for za0003 := range z.Settlements {
-		// map header, size 2
-		// string "Qty"
-		o = append(o, 0x82, 0xa3, 0x51, 0x74, 0x79)
-		o, err = z.Settlements[za0003].Qty.MarshalMsg(o)
+	// string "StakeRules"
+	o = append(o, 0xaa, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x52, 0x75, 0x6c, 0x65, 0x73)
+	if z.StakeRules == nil {
+		o = msgp.AppendNil(o)
+	} else {
+		o, err = z.StakeRules.MarshalMsg(o)
 		if err != nil {
-			err = msgp.WrapError(err, "Settlements", za0003, "Qty")
-			return
-		}
-		// string "Expiry"
-		o = append(o, 0xa6, 0x45, 0x78, 0x70, 0x69, 0x72, 0x79)
-		o, err = z.Settlements[za0003].Expiry.MarshalMsg(o)
-		if err != nil {
-			err = msgp.WrapError(err, "Settlements", za0003, "Expiry")
+			err = msgp.WrapError(err, "StakeRules")
 			return
 		}
 	}
-	// string "SettlementSettings"
-	o = append(o, 0xb2, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73)
-	o, err = z.SettlementSettings.MarshalMsg(o)
+	// string "Costakers"
+	o = append(o, 0xa9, 0x43, 0x6f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x72, 0x73)
+	o = msgp.AppendMapHeader(o, uint32(len(z.Costakers)))
+	for za0003, za0004 := range z.Costakers {
+		o = msgp.AppendString(o, za0003)
+		o = msgp.AppendMapHeader(o, uint32(len(za0004)))
+		for za0005, za0006 := range za0004 {
+			o = msgp.AppendString(o, za0005)
+			o = msgp.AppendUint64(o, za0006)
+		}
+	}
+	// string "Holds"
+	o = append(o, 0xa5, 0x48, 0x6f, 0x6c, 0x64, 0x73)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Holds)))
+	for za0007 := range z.Holds {
+		o, err = z.Holds[za0007].MarshalMsg(o)
+		if err != nil {
+			err = msgp.WrapError(err, "Holds", za0007)
+			return
+		}
+	}
+	// string "RecourseSettings"
+	o = append(o, 0xb0, 0x52, 0x65, 0x63, 0x6f, 0x75, 0x72, 0x73, 0x65, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73)
+	o, err = z.RecourseSettings.MarshalMsg(o)
 	if err != nil {
-		err = msgp.WrapError(err, "SettlementSettings")
+		err = msgp.WrapError(err, "RecourseSettings")
 		return
 	}
 	// string "CurrencySeatDate"
@@ -303,52 +294,6 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 			}
-		case "Stake":
-			if msgp.IsNil(bts) {
-				bts, err = msgp.ReadNilBytes(bts)
-				if err != nil {
-					return
-				}
-				z.Stake = nil
-			} else {
-				if z.Stake == nil {
-					z.Stake = new(Stake)
-				}
-				var zb0004 uint32
-				zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
-				if err != nil {
-					err = msgp.WrapError(err, "Stake")
-					return
-				}
-				for zb0004 > 0 {
-					zb0004--
-					field, bts, err = msgp.ReadMapKeyZC(bts)
-					if err != nil {
-						err = msgp.WrapError(err, "Stake")
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					case "Point":
-						bts, err = z.Stake.Point.UnmarshalMsg(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Stake", "Point")
-							return
-						}
-					case "Address":
-						bts, err = z.Stake.Address.UnmarshalMsg(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Stake", "Address")
-							return
-						}
-					default:
-						bts, err = msgp.Skip(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Stake")
-							return
-						}
-					}
-				}
-			}
 		case "LastEAIUpdate":
 			bts, err = z.LastEAIUpdate.UnmarshalMsg(bts)
 			if err != nil {
@@ -373,58 +318,100 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Sequence")
 				return
 			}
-		case "Settlements":
-			var zb0005 uint32
-			zb0005, bts, err = msgp.ReadArrayHeaderBytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Settlements")
-				return
-			}
-			if cap(z.Settlements) >= int(zb0005) {
-				z.Settlements = (z.Settlements)[:zb0005]
-			} else {
-				z.Settlements = make([]Settlement, zb0005)
-			}
-			for za0003 := range z.Settlements {
-				var zb0006 uint32
-				zb0006, bts, err = msgp.ReadMapHeaderBytes(bts)
+		case "StakeRules":
+			if msgp.IsNil(bts) {
+				bts, err = msgp.ReadNilBytes(bts)
 				if err != nil {
-					err = msgp.WrapError(err, "Settlements", za0003)
 					return
 				}
-				for zb0006 > 0 {
-					zb0006--
-					field, bts, err = msgp.ReadMapKeyZC(bts)
-					if err != nil {
-						err = msgp.WrapError(err, "Settlements", za0003)
-						return
-					}
-					switch msgp.UnsafeString(field) {
-					case "Qty":
-						bts, err = z.Settlements[za0003].Qty.UnmarshalMsg(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Settlements", za0003, "Qty")
-							return
-						}
-					case "Expiry":
-						bts, err = z.Settlements[za0003].Expiry.UnmarshalMsg(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Settlements", za0003, "Expiry")
-							return
-						}
-					default:
-						bts, err = msgp.Skip(bts)
-						if err != nil {
-							err = msgp.WrapError(err, "Settlements", za0003)
-							return
-						}
-					}
+				z.StakeRules = nil
+			} else {
+				if z.StakeRules == nil {
+					z.StakeRules = new(StakeRules)
+				}
+				bts, err = z.StakeRules.UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "StakeRules")
+					return
 				}
 			}
-		case "SettlementSettings":
-			bts, err = z.SettlementSettings.UnmarshalMsg(bts)
+		case "Costakers":
+			var zb0004 uint32
+			zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "SettlementSettings")
+				err = msgp.WrapError(err, "Costakers")
+				return
+			}
+			if z.Costakers == nil {
+				z.Costakers = make(map[string]map[string]uint64, zb0004)
+			} else if len(z.Costakers) > 0 {
+				for key := range z.Costakers {
+					delete(z.Costakers, key)
+				}
+			}
+			for zb0004 > 0 {
+				var za0003 string
+				var za0004 map[string]uint64
+				zb0004--
+				za0003, bts, err = msgp.ReadStringBytes(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Costakers")
+					return
+				}
+				var zb0005 uint32
+				zb0005, bts, err = msgp.ReadMapHeaderBytes(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Costakers", za0003)
+					return
+				}
+				if za0004 == nil {
+					za0004 = make(map[string]uint64, zb0005)
+				} else if len(za0004) > 0 {
+					for key := range za0004 {
+						delete(za0004, key)
+					}
+				}
+				for zb0005 > 0 {
+					var za0005 string
+					var za0006 uint64
+					zb0005--
+					za0005, bts, err = msgp.ReadStringBytes(bts)
+					if err != nil {
+						err = msgp.WrapError(err, "Costakers", za0003)
+						return
+					}
+					za0006, bts, err = msgp.ReadUint64Bytes(bts)
+					if err != nil {
+						err = msgp.WrapError(err, "Costakers", za0003, za0005)
+						return
+					}
+					za0004[za0005] = za0006
+				}
+				z.Costakers[za0003] = za0004
+			}
+		case "Holds":
+			var zb0006 uint32
+			zb0006, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Holds")
+				return
+			}
+			if cap(z.Holds) >= int(zb0006) {
+				z.Holds = (z.Holds)[:zb0006]
+			} else {
+				z.Holds = make([]Hold, zb0006)
+			}
+			for za0007 := range z.Holds {
+				bts, err = z.Holds[za0007].UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Holds", za0007)
+					return
+				}
+			}
+		case "RecourseSettings":
+			bts, err = z.RecourseSettings.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "RecourseSettings")
 				return
 			}
 		case "CurrencySeatDate":
@@ -518,17 +505,30 @@ func (z *AccountData) Msgsize() (s int) {
 	} else {
 		s += z.Lock.Msgsize()
 	}
-	s += 6
-	if z.Stake == nil {
+	s += 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 11
+	if z.StakeRules == nil {
 		s += msgp.NilSize
 	} else {
-		s += 1 + 6 + z.Stake.Point.Msgsize() + 8 + z.Stake.Address.Msgsize()
+		s += z.StakeRules.Msgsize()
 	}
-	s += 14 + z.LastEAIUpdate.Msgsize() + 14 + z.LastWAAUpdate.Msgsize() + 19 + z.WeightedAverageAge.Msgsize() + 9 + msgp.Uint64Size + 12 + msgp.ArrayHeaderSize
-	for za0003 := range z.Settlements {
-		s += 1 + 4 + z.Settlements[za0003].Qty.Msgsize() + 7 + z.Settlements[za0003].Expiry.Msgsize()
+	s += 10 + msgp.MapHeaderSize
+	if z.Costakers != nil {
+		for za0003, za0004 := range z.Costakers {
+			_ = za0004
+			s += msgp.StringPrefixSize + len(za0003) + msgp.MapHeaderSize
+			if za0004 != nil {
+				for za0005, za0006 := range za0004 {
+					_ = za0006
+					s += msgp.StringPrefixSize + len(za0005) + msgp.Uint64Size
+				}
+			}
+		}
 	}
-	s += 19 + z.SettlementSettings.Msgsize() + 17
+	s += 6 + msgp.ArrayHeaderSize
+	for za0007 := range z.Holds {
+		s += z.Holds[za0007].Msgsize()
+	}
+	s += 17 + z.RecourseSettings.Msgsize() + 17
 	if z.CurrencySeatDate == nil {
 		s += msgp.NilSize
 	} else {
@@ -550,76 +550,7 @@ func (z *AccountData) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *Settlement) MarshalMsg(b []byte) (o []byte, err error) {
-	o = msgp.Require(b, z.Msgsize())
-	// map header, size 2
-	// string "Qty"
-	o = append(o, 0x82, 0xa3, 0x51, 0x74, 0x79)
-	o, err = z.Qty.MarshalMsg(o)
-	if err != nil {
-		err = msgp.WrapError(err, "Qty")
-		return
-	}
-	// string "Expiry"
-	o = append(o, 0xa6, 0x45, 0x78, 0x70, 0x69, 0x72, 0x79)
-	o, err = z.Expiry.MarshalMsg(o)
-	if err != nil {
-		err = msgp.WrapError(err, "Expiry")
-		return
-	}
-	return
-}
-
-// UnmarshalMsg implements msgp.Unmarshaler
-func (z *Settlement) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var field []byte
-	_ = field
-	var zb0001 uint32
-	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		err = msgp.WrapError(err)
-		return
-	}
-	for zb0001 > 0 {
-		zb0001--
-		field, bts, err = msgp.ReadMapKeyZC(bts)
-		if err != nil {
-			err = msgp.WrapError(err)
-			return
-		}
-		switch msgp.UnsafeString(field) {
-		case "Qty":
-			bts, err = z.Qty.UnmarshalMsg(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Qty")
-				return
-			}
-		case "Expiry":
-			bts, err = z.Expiry.UnmarshalMsg(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Expiry")
-				return
-			}
-		default:
-			bts, err = msgp.Skip(bts)
-			if err != nil {
-				err = msgp.WrapError(err)
-				return
-			}
-		}
-	}
-	o = bts
-	return
-}
-
-// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *Settlement) Msgsize() (s int) {
-	s = 1 + 4 + z.Qty.Msgsize() + 7 + z.Expiry.Msgsize()
-	return
-}
-
-// MarshalMsg implements msgp.Marshaler
-func (z *SettlementSettings) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *RecourseSettings) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
 	// string "Period"
@@ -655,7 +586,7 @@ func (z *SettlementSettings) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *SettlementSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *RecourseSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -725,7 +656,7 @@ func (z *SettlementSettings) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *SettlementSettings) Msgsize() (s int) {
+func (z *RecourseSettings) Msgsize() (s int) {
 	s = 1 + 7 + z.Period.Msgsize() + 10
 	if z.ChangesAt == nil {
 		s += msgp.NilSize
@@ -738,74 +669,5 @@ func (z *SettlementSettings) Msgsize() (s int) {
 	} else {
 		s += z.Next.Msgsize()
 	}
-	return
-}
-
-// MarshalMsg implements msgp.Marshaler
-func (z *Stake) MarshalMsg(b []byte) (o []byte, err error) {
-	o = msgp.Require(b, z.Msgsize())
-	// map header, size 2
-	// string "Point"
-	o = append(o, 0x82, 0xa5, 0x50, 0x6f, 0x69, 0x6e, 0x74)
-	o, err = z.Point.MarshalMsg(o)
-	if err != nil {
-		err = msgp.WrapError(err, "Point")
-		return
-	}
-	// string "Address"
-	o = append(o, 0xa7, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73)
-	o, err = z.Address.MarshalMsg(o)
-	if err != nil {
-		err = msgp.WrapError(err, "Address")
-		return
-	}
-	return
-}
-
-// UnmarshalMsg implements msgp.Unmarshaler
-func (z *Stake) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var field []byte
-	_ = field
-	var zb0001 uint32
-	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		err = msgp.WrapError(err)
-		return
-	}
-	for zb0001 > 0 {
-		zb0001--
-		field, bts, err = msgp.ReadMapKeyZC(bts)
-		if err != nil {
-			err = msgp.WrapError(err)
-			return
-		}
-		switch msgp.UnsafeString(field) {
-		case "Point":
-			bts, err = z.Point.UnmarshalMsg(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Point")
-				return
-			}
-		case "Address":
-			bts, err = z.Address.UnmarshalMsg(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Address")
-				return
-			}
-		default:
-			bts, err = msgp.Skip(bts)
-			if err != nil {
-				err = msgp.WrapError(err)
-				return
-			}
-		}
-	}
-	o = bts
-	return
-}
-
-// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *Stake) Msgsize() (s int) {
-	s = 1 + 6 + z.Point.Msgsize() + 8 + z.Address.Msgsize()
 	return
 }

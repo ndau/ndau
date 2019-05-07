@@ -51,14 +51,23 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	eA := nodeAddress
 	require.NoError(t, err)
 
+	// ensure rules account has actual rules
+	nodeRules := getRulesAccount(t, app)
+
 	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
 		st.Nodes[eaiNode] = backing.Node{
 			Active:             true,
 			DistributionScript: script,
-			Costakers:          costakers,
-			TotalStake:         totalStake,
+		}
+
+		for costaker, qty := range costakers {
+			costakerAddr, err := address.Validate(costaker)
+			require.NoError(t, err)
+			stI, err = app.Stake(qty, costakerAddr, nodeAddress, nodeRules, nil)(st)
+			require.NoError(t, err)
+			st = stI.(*backing.State)
 		}
 
 		st.LastNodeRewardNomination = now

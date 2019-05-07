@@ -58,9 +58,10 @@ func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp
 		// of the uncleared settlements
 		for i := 1; i < qtyEscrows; i++ {
 			acct.Balance += math.Ndau(i * constants.QuantaPerUnit)
-			acct.Settlements = append(acct.Settlements, backing.Settlement{
+			x := ts.Sub(math.Duration(i))
+			acct.Holds = append(acct.Holds, backing.Hold{
 				Qty:    math.Ndau(i * constants.QuantaPerUnit),
-				Expiry: ts.Sub(math.Duration(i)),
+				Expiry: &x,
 			})
 		}
 		acct.ValidationKeys = []signature.PublicKey{public}

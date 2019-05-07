@@ -37,6 +37,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(21): &CreateChildAccount{},
 	metatx.TxID(22): &RecordPrice{},
 	metatx.TxID(23): &SetSysvar{},
+	metatx.TxID(24): &SetStakeRules{},
 	metatx.TxID(30): &ChangeSchema{},
 }
 
@@ -206,10 +207,12 @@ var _ NTransactable = (*TransferAndLock)(nil)
 
 // A Stake transaction stakes to a node
 type Stake struct {
-	Target        address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
-	StakedAccount address.Address       `msg:"ska" chain:"5,Tx_StakedAccount" json:"staked_account"`
-	Sequence      uint64                `msg:"seq" json:"sequence"`
-	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Rules      address.Address       `msg:"rul" chain:"8,Tx_Rules" json:"rules"`
+	StakeTo    address.Address       `msg:"sto" chain:"5,Tx_StakeTo" json:"stake_to"`
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
 
 var _ NTransactable = (*Stake)(nil)
@@ -291,6 +294,9 @@ var _ NTransactable = (*UnregisterNode)(nil)
 // An Unstake transaction stakes to a node
 type Unstake struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Rules      address.Address       `msg:"rul" chain:"8,Tx_Rules" json:"rules"`
+	StakeTo    address.Address       `msg:"sto" chain:"5,Tx_StakeTo" json:"stake_to"`
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
@@ -340,6 +346,16 @@ type SetSysvar struct {
 }
 
 var _ NTransactable = (*SetSysvar)(nil)
+
+// A SetStakeRules transaction is used to set or remove stake rules from an account
+type SetStakeRules struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	StakeRules []byte                `msg:"krs" chain:"35,Tx_StakeRules" json:"stake_rules"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*SetStakeRules)(nil)
 
 // A ChangeSchema transaction triggers the ndaunode to shut down.
 //

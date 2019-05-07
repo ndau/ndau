@@ -16,29 +16,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func generateRandomAddr(t *testing.T) string {
+func generateRandomAddr(t *testing.T) address.Address {
 	seed, err := key.GenerateSeed(32)
 	require.NoError(t, err)
 	k, err := key.NewMaster(seed)
 	require.NoError(t, err)
 	a, err := address.Generate(address.KindUser, k.PubKeyBytes())
 	require.NoError(t, err)
-	return a.String()
+	return a
 }
 
-func generateTransferAndLock(t *testing.T, destaddr string, qty int64, period math.Duration, seq uint64, keys []signature.PrivateKey) *TransferAndLock {
-	if destaddr == "" {
-		destaddr = dest
-	}
-	destAddr, err := address.Validate(destaddr)
-	require.NoError(t, err)
+func generateTransferAndLock(t *testing.T, destaddr address.Address, qty int64, period math.Duration, seq uint64, keys []signature.PrivateKey) *TransferAndLock {
 	tr := NewTransferAndLock(
-		sourceAddress, destAddr,
+		sourceAddress, destaddr,
 		math.Ndau(qty*constants.QuantaPerUnit),
 		period,
 		seq, keys...,
 	)
-	require.NoError(t, err)
 	return tr
 }
 
@@ -124,7 +118,7 @@ func TestTnLsAddBalanceToDest(t *testing.T) {
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, destAddress, app, func(dest *backing.AccountData) {
+	modify(t, destAddress.String(), app, func(dest *backing.AccountData) {
 		require.Equal(t, deltaNapu, int64(dest.Balance))
 	})
 }
@@ -139,7 +133,7 @@ func TestTnLsSetLockOnDest(t *testing.T) {
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, destAddress, app, func(dest *backing.AccountData) {
+	modify(t, destAddress.String(), app, func(dest *backing.AccountData) {
 		require.Equal(t, math.Duration(90*math.Day), dest.Lock.GetNoticePeriod())
 	})
 }
@@ -151,20 +145,19 @@ func TestTnLsSettlementPeriod(t *testing.T) {
 	const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	modifySource(t, app, func(src *backing.AccountData) {
-		src.SettlementSettings.Period = 2 * math.Day
+		src.RecourseSettings.Period = 2 * math.Day
 	})
 
 	tr := generateTransferAndLock(t, destAddress, 123, 888, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, destAddress, app, func(dest *backing.AccountData) {
-		sourceAddress := []backing.Settlement{backing.Settlement{
-			Qty:    123 * constants.QuantaPerUnit,
-			Expiry: app.BlockTime().Add(2 * math.Day),
-		}}
-		require.Equal(t, sourceAddress, dest.Settlements)
-	})
+	// can't require equality because we don't care about the tx hash etc
+	dest, _ := app.getAccount(destAddress)
+	require.Equal(t, len(dest.Holds), 1)
+	require.Equal(t, math.Ndau(123*constants.QuantaPerUnit), dest.Holds[0].Qty)
+	require.NotNil(t, dest.Holds[0].Expiry)
+	require.Equal(t, app.BlockTime().Add(2*math.Day), *dest.Holds[0].Expiry)
 }
 
 func TestTnLsFailForExistingDest(t *testing.T) {
@@ -177,7 +170,7 @@ func TestTnLsFailForExistingDest(t *testing.T) {
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	modify(t, destAddress, app, func(dest *backing.AccountData) {
+	modify(t, destAddress.String(), app, func(dest *backing.AccountData) {
 		require.Equal(t, deltaNapu, int64(dest.Balance))
 	})
 
@@ -245,7 +238,7 @@ func TestInvalidTnLTransactionDoesntAffectAnyBalance(t *testing.T) {
 	})
 
 	// invalid: sequence 0
-	tr := generateTransferAndLock(t, "", 1, 0, 999, []signature.PrivateKey{private})
+	tr := generateTransferAndLock(t, destAddress, 1, 0, 999, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
@@ -406,7 +399,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	tr := generateTransferAndLock(
-		t, destAddress.String(), 123, 888, 1, []signature.PrivateKey{private})
+		t, destAddress, 123, 888, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -438,7 +431,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 	app, private := initAppTx(t)
 
 	tr := generateTransferAndLock(
-		t, childAddress.String(), 123, 888, 1, []signature.PrivateKey{private})
+		t, childAddress, 123, 888, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 

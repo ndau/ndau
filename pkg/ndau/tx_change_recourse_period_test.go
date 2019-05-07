@@ -13,7 +13,7 @@ import (
 func TestCSPStoresPendingEscrowChange(t *testing.T) {
 	app, private := initAppTx(t)
 	acct := app.GetState().(*backing.State).Accounts[source]
-	require.Equal(t, math.Duration(0), acct.SettlementSettings.Period)
+	require.Equal(t, math.Duration(0), acct.RecourseSettings.Period)
 
 	const newDuration = math.Duration(1 * math.Day)
 
@@ -36,9 +36,9 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 	acct = app.GetState().(*backing.State).Accounts[source]
 	acct.UpdateSettlements(ts)
 
-	require.Equal(t, newDuration, acct.SettlementSettings.Period)
-	require.Nil(t, acct.SettlementSettings.Next)
-	require.Nil(t, acct.SettlementSettings.ChangesAt)
+	require.Equal(t, newDuration, acct.RecourseSettings.Period)
+	require.Nil(t, acct.RecourseSettings.Next)
+	require.Nil(t, acct.RecourseSettings.ChangesAt)
 }
 
 func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {

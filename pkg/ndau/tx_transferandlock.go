@@ -2,6 +2,7 @@ package ndau
 
 import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -78,10 +79,12 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 	// we know dest is a new account so WAA, WAA update and EAI update times are set properly
 	dest, _ := app.getAccount(tx.Destination)
 	dest.Balance = tx.Qty
-	if source.SettlementSettings.Period != 0 {
-		dest.Settlements = append(dest.Settlements, backing.Settlement{
+	if source.RecourseSettings.Period != 0 {
+		x := app.BlockTime().Add(source.RecourseSettings.Period)
+		dest.Holds = append(dest.Holds, backing.Hold{
 			Qty:    tx.Qty,
-			Expiry: app.BlockTime().Add(source.SettlementSettings.Period),
+			Expiry: &x,
+			Txhash: metatx.Hash(tx),
 		})
 	}
 	dest.Lock = backing.NewLock(tx.Period, lockedBonusRateTable)
