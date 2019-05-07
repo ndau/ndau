@@ -69,11 +69,10 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	dest.Balance += tx.Qty
 	if source.RecourseSettings.Period != 0 {
 		x := app.BlockTime().Add(source.RecourseSettings.Period)
-		txh := metatx.Hash(tx)
 		dest.Holds = append(dest.Holds, backing.Hold{
 			Qty:    tx.Qty,
 			Expiry: &x,
-			Txhash: &txh,
+			Txhash: metatx.Hash(tx),
 		})
 	}
 

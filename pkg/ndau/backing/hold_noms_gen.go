@@ -21,7 +21,6 @@ func init() {
 		"Expiry",
 		"HasExpiry",
 		"HasStake",
-		"HasTxhash",
 		"Qty",
 		"Stake",
 		"Txhash",
@@ -46,19 +45,7 @@ func (x Hold) MarshalNoms(vrw nt.ValueReadWriter) (holdValue nt.Value, err error
 		expiryUnptr = util.Int((*x.Expiry)).NomsValue()
 	}
 
-	// x.Txhash (*string->*ast.StarExpr) is primitive: false
-
-	// template decompose: x.Txhash (*string->*ast.StarExpr)
-	// template pointer:  x.Txhash
-	var txhashUnptr nt.Value
-	if x.Txhash == nil {
-		txhashUnptr = nt.String("")
-	} else {
-
-		// template decompose: (*x.Txhash) (string->*ast.Ident)
-
-		txhashUnptr = nt.String((*x.Txhash))
-	}
+	// x.Txhash (string->*ast.Ident) is primitive: true
 
 	// x.Stake (*StakeData->*ast.StarExpr) is primitive: false
 
@@ -88,16 +75,14 @@ func (x Hold) MarshalNoms(vrw nt.ValueReadWriter) (holdValue nt.Value, err error
 		// x.HasStake (bool)
 
 		nt.Bool(x.Stake != nil),
-		// x.HasTxhash (bool)
-
-		nt.Bool(x.Txhash != nil),
 		// x.Qty (math.Ndau)
 
 		util.Int(x.Qty).NomsValue(),
 		// x.Stake (*StakeData)
 		stakeUnptr,
-		// x.Txhash (*string)
-		txhashUnptr,
+		// x.Txhash (string)
+
+		nt.String(x.Txhash),
 	}), nil
 }
 
@@ -170,29 +155,8 @@ func (x *Hold) UnmarshalNoms(value nt.Value) (err error) {
 				expiryTyped := math.Timestamp(expiryValue)
 
 				x.Expiry = &expiryTyped
-			// x.Txhash (*string->*ast.StarExpr) is primitive: false
+			// x.Txhash (string->*ast.Ident) is primitive: true
 			case "Txhash":
-				// template u_decompose: x.Txhash (*string->*ast.StarExpr)
-				// template u_pointer:  x.Txhash
-				if hasTxhashValue, ok := vs.MaybeGet("HasTxhash"); ok {
-					if hasTxhash, ok := hasTxhashValue.(nt.Bool); ok {
-						if !hasTxhash {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"Hold.UnmarshalNoms expected HasTxhash to be a nt.Bool; found %s",
-							reflect.TypeOf(hasTxhashValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"Hold.UnmarshalNoms->Txhash is a pointer, so expected a HasTxhash field: not found",
-					)
-					return
-				}
-
 				// template u_decompose: x.Txhash (string->*ast.Ident)
 				// template u_primitive: x.Txhash
 				txhashValue, ok := value.(nt.String)
@@ -204,7 +168,7 @@ func (x *Hold) UnmarshalNoms(value nt.Value) (err error) {
 				}
 				txhashTyped := string(txhashValue)
 
-				x.Txhash = &txhashTyped
+				x.Txhash = txhashTyped
 			// x.Stake (*StakeData->*ast.StarExpr) is primitive: false
 			case "Stake":
 				// template u_decompose: x.Stake (*StakeData->*ast.StarExpr)

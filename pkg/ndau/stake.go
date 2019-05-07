@@ -104,8 +104,7 @@ func (app *App) Stake(
 			},
 		}
 		if tx != nil {
-			txh := metatx.Hash(tx)
-			hold.Txhash = &txh
+			hold.Txhash = metatx.Hash(tx)
 		}
 		targetAcct.Holds = append(targetAcct.Holds, hold)
 

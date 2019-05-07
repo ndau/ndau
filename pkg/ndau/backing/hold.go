@@ -16,6 +16,6 @@ import math "github.com/oneiro-ndev/ndaumath/pkg/types"
 type Hold struct {
 	Qty    math.Ndau       `json:"qty" chain:"81,Hold_Quantity"`
 	Expiry *math.Timestamp `json:"expiry" chain:"82,Hold_Expiry"`
-	Txhash *string         `json:"tx_hash" chain:"83,Hold_TxHash"`
+	Txhash string          `json:"tx_hash" chain:"83,Hold_TxHash"`
 	Stake  *StakeData      `json:"stake" chain:"84,Hold_Stake"`
 }

@@ -31,11 +31,7 @@ func (z *Hold) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	// string "Txhash"
 	o = append(o, 0xa6, 0x54, 0x78, 0x68, 0x61, 0x73, 0x68)
-	if z.Txhash == nil {
-		o = msgp.AppendNil(o)
-	} else {
-		o = msgp.AppendString(o, *z.Txhash)
-	}
+	o = msgp.AppendString(o, z.Txhash)
 	// string "Stake"
 	o = append(o, 0xa5, 0x53, 0x74, 0x61, 0x6b, 0x65)
 	if z.Stake == nil {
@@ -92,21 +88,10 @@ func (z *Hold) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 			}
 		case "Txhash":
-			if msgp.IsNil(bts) {
-				bts, err = msgp.ReadNilBytes(bts)
-				if err != nil {
-					return
-				}
-				z.Txhash = nil
-			} else {
-				if z.Txhash == nil {
-					z.Txhash = new(string)
-				}
-				*z.Txhash, bts, err = msgp.ReadStringBytes(bts)
-				if err != nil {
-					err = msgp.WrapError(err, "Txhash")
-					return
-				}
+			z.Txhash, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Txhash")
+				return
 			}
 		case "Stake":
 			if msgp.IsNil(bts) {
@@ -145,13 +130,7 @@ func (z *Hold) Msgsize() (s int) {
 	} else {
 		s += z.Expiry.Msgsize()
 	}
-	s += 7
-	if z.Txhash == nil {
-		s += msgp.NilSize
-	} else {
-		s += msgp.StringPrefixSize + len(*z.Txhash)
-	}
-	s += 6
+	s += 7 + msgp.StringPrefixSize + len(z.Txhash) + 6
 	if z.Stake == nil {
 		s += msgp.NilSize
 	} else {
