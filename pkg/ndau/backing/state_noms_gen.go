@@ -24,6 +24,7 @@ func init() {
 	stateStructTemplate = nt.MakeStructTemplate("State", []string{
 		"Accounts",
 		"Delegates",
+		"EndowmentNAV",
 		"HasNodeRewardWinner",
 		"LastNodeRewardNomination",
 		"MarketPrice",
@@ -153,6 +154,8 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
+	// x.EndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+
 	// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
 
 	// template decompose: x.Sysvars (map[string][]byte->*ast.MapType)
@@ -176,6 +179,9 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.Delegates (map[string]map[string]struct{})
 
 		nt.NewMap(vrw, delegatesKVs...),
+		// x.EndowmentNAV (pricecurve.Nanocent)
+
+		util.Int(x.EndowmentNAV).NomsValue(),
 		// x.HasNodeRewardWinner (bool)
 
 		nt.Bool(x.NodeRewardWinner != nil),
@@ -513,6 +519,19 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
 
 				x.TargetPrice = targetPriceTyped
+			// x.EndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+			case "EndowmentNAV":
+				// template u_decompose: x.EndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
+				// template u_primitive: x.EndowmentNAV
+				var endowmentNAVValue util.Int
+				endowmentNAVValue, err = util.IntFrom(value)
+				if err != nil {
+					err = errors.Wrap(err, "State.UnmarshalNoms->EndowmentNAV")
+					return
+				}
+				endowmentNAVTyped := pricecurve.Nanocent(endowmentNAVValue)
+
+				x.EndowmentNAV = endowmentNAVTyped
 			// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
 			case "Sysvars":
 				// template u_decompose: x.Sysvars (map[string][]byte->*ast.MapType)

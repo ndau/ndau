@@ -252,12 +252,10 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 
 var lastSummary query.Summary
 
-func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
-	app := appI.(*App)
-	state := app.GetState().(*backing.State)
-
+func getLastSummary(app *App) query.Summary {
 	// cache the last-read value for the duration of a block in case we get multiple queries
 	if lastSummary.BlockHeight != app.Height() {
+		state := app.GetState().(*backing.State)
 
 		var total types.Ndau
 		for _, acct := range state.Accounts {
@@ -273,9 +271,16 @@ func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 		// the amount of ndau that have been released but not issued
 		lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalBurned)
 	}
+	return lastSummary
+}
 
-	response.Log = fmt.Sprintf("total ndau at height %d is %d, in %d accounts", lastSummary.BlockHeight, lastSummary.TotalNdau, lastSummary.NumAccounts)
-	lsBytes, err := lastSummary.MarshalMsg(nil)
+func summaryQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+
+	ls := getLastSummary(app)
+	response.Log = fmt.Sprintf("total ndau at height %d is %d, in %d accounts", ls.BlockHeight, ls.TotalNdau, ls.NumAccounts)
+
+	lsBytes, err := ls.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "serializing summary data")
 		return

@@ -411,7 +411,7 @@ func BuildVMForNodeDistribution(
 // All that needs to happen after this is to call Run().
 func BuildVMForSIB(
 	code []byte,
-	target, market uint64,
+	target, market, floor uint64,
 	ts math.Timestamp,
 ) (*vm.ChaincodeVM, error) {
 	targetV, err := chain.ToValue(target)
@@ -421,6 +421,10 @@ func BuildVMForSIB(
 	marketV, err := chain.ToValue(market)
 	if err != nil {
 		return nil, errors.Wrap(err, "market")
+	}
+	floorV, err := chain.ToValue(floor)
+	if err != nil {
+		return nil, errors.Wrap(err, "floor")
 	}
 
 	bin := buildBinary(code, "calculate SIB", fmt.Sprintf("market %d; target %d", market, target))
@@ -435,6 +439,6 @@ func BuildVMForSIB(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, marketV, targetV)
+	err = theVM.Init(0, floorV, marketV, targetV)
 	return theVM, err
 }

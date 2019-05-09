@@ -584,6 +584,28 @@ func NewSetStakeRules(
 	return tx
 }
 
+// NewRecordEndowmentNAV creates a new RecordEndowmentNAV transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewRecordEndowmentNAV(
+	nav pricecurve.Nanocent,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *RecordEndowmentNAV {
+	tx := &RecordEndowmentNAV{
+		NAV:      nav,
+		Sequence: sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
 // NewChangeSchema creates a new ChangeSchema transactable
 //
 // If signing keys are present, the new transactable is signed with all of them
