@@ -21,11 +21,14 @@ import (
 // special case: if the input is negative, just use the existing value
 func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI metast.State) (metast.State, error) {
 	return func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
+		if marketPrice < 0 {
+			marketPrice = state.MarketPrice
+		}
 		sib, target, err := app.calculateCurrentSIB(marketPrice, -1)
 		if err != nil {
 			return stateI, err
 		}
-		state := stateI.(*backing.State)
 		state.SIB = sib
 		state.MarketPrice = marketPrice
 		state.TargetPrice = target
@@ -59,16 +62,19 @@ func (app *App) calculateCurrentSIB(marketPrice, nav pricecurve.Nanocent) (sib e
 	// price and target price (nanocents per ndau), and also small enough that
 	// we'd likely see non-trivial rounding errors. Using a muldiv here gives us
 	// nanocents per ndau without overflow.
-	var floorPriceI int64
-	floorPriceI, err = signed.MulDiv(
-		int64(nav),
-		constants.NapuPerNdau,
-		int64(summary.TotalCirculation*2))
-	if err != nil {
-		err = errors.Wrap(err, "computing floor price")
-		return
+	var floorPrice pricecurve.Nanocent // default zero: avoid divide by 0 errors
+	if summary.TotalCirculation != 0 {
+		var floorPriceI int64
+		floorPriceI, err = signed.MulDiv(
+			int64(nav),
+			constants.NapuPerNdau,
+			int64(summary.TotalCirculation*2))
+		if err != nil {
+			err = errors.Wrap(err, "computing floor price")
+			return
+		}
+		floorPrice = pricecurve.Nanocent(floorPriceI)
 	}
-	floorPrice := pricecurve.Nanocent(floorPriceI)
 
 	// get the script used to perform the calculation
 	var sibScript wkt.Bytes
