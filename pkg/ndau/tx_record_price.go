@@ -25,7 +25,7 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 		if marketPrice < 0 {
 			marketPrice = state.MarketPrice
 		}
-		sib, target, err := app.calculateCurrentSIB(marketPrice, -1)
+		sib, target, err := app.calculateCurrentSIB(state, marketPrice, -1)
 		if err != nil {
 			return stateI, err
 		}
@@ -40,9 +40,7 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 // calculates the SIB implied by the market price given the current app state.
 //
 // It also returns the calculated target price.
-func (app *App) calculateCurrentSIB(marketPrice, nav pricecurve.Nanocent) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
-	// compute the current target price
-	state := app.GetState().(*backing.State)
+func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav pricecurve.Nanocent) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
 	if marketPrice < 0 {
 		marketPrice = state.MarketPrice
 	}
@@ -50,6 +48,7 @@ func (app *App) calculateCurrentSIB(marketPrice, nav pricecurve.Nanocent) (sib e
 		nav = state.EndowmentNAV
 	}
 
+	// compute the current target price
 	targetPrice, err = pricecurve.PriceAtUnit(state.TotalIssue)
 	if err != nil {
 		err = errors.Wrap(err, "computing target price")
