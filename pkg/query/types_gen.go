@@ -674,6 +674,12 @@ func (z *SIBResponse) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "MarketPrice")
 				return
 			}
+		case "FloorPrice":
+			err = z.FloorPrice.DecodeMsg(dc)
+			if err != nil {
+				err = msgp.WrapError(err, "FloorPrice")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -687,9 +693,9 @@ func (z *SIBResponse) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *SIBResponse) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 3
+	// map header, size 4
 	// write "SIB"
-	err = en.Append(0x83, 0xa3, 0x53, 0x49, 0x42)
+	err = en.Append(0x84, 0xa3, 0x53, 0x49, 0x42)
 	if err != nil {
 		return
 	}
@@ -718,15 +724,25 @@ func (z *SIBResponse) EncodeMsg(en *msgp.Writer) (err error) {
 		err = msgp.WrapError(err, "MarketPrice")
 		return
 	}
+	// write "FloorPrice"
+	err = en.Append(0xaa, 0x46, 0x6c, 0x6f, 0x6f, 0x72, 0x50, 0x72, 0x69, 0x63, 0x65)
+	if err != nil {
+		return
+	}
+	err = z.FloorPrice.EncodeMsg(en)
+	if err != nil {
+		err = msgp.WrapError(err, "FloorPrice")
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *SIBResponse) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 3
+	// map header, size 4
 	// string "SIB"
-	o = append(o, 0x83, 0xa3, 0x53, 0x49, 0x42)
+	o = append(o, 0x84, 0xa3, 0x53, 0x49, 0x42)
 	o, err = z.SIB.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "SIB")
@@ -744,6 +760,13 @@ func (z *SIBResponse) MarshalMsg(b []byte) (o []byte, err error) {
 	o, err = z.MarketPrice.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "MarketPrice")
+		return
+	}
+	// string "FloorPrice"
+	o = append(o, 0xaa, 0x46, 0x6c, 0x6f, 0x6f, 0x72, 0x50, 0x72, 0x69, 0x63, 0x65)
+	o, err = z.FloorPrice.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "FloorPrice")
 		return
 	}
 	return
@@ -785,6 +808,12 @@ func (z *SIBResponse) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "MarketPrice")
 				return
 			}
+		case "FloorPrice":
+			bts, err = z.FloorPrice.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "FloorPrice")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -799,7 +828,7 @@ func (z *SIBResponse) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *SIBResponse) Msgsize() (s int) {
-	s = 1 + 4 + z.SIB.Msgsize() + 12 + z.TargetPrice.Msgsize() + 12 + z.MarketPrice.Msgsize()
+	s = 1 + 4 + z.SIB.Msgsize() + 12 + z.TargetPrice.Msgsize() + 12 + z.MarketPrice.Msgsize() + 11 + z.FloorPrice.Msgsize()
 	return
 }
 

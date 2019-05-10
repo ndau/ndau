@@ -37,6 +37,30 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 	}
 }
 
+func floorPrice(app *App, nav pricecurve.Nanocent) (fp pricecurve.Nanocent, err error) {
+	summary := getLastSummary(app)
+	// just dividing NAV (denominated in nanocents) by TotalCirculation (denominated
+	// in napu) gives us nanocents per napu, which is inconsistent with market
+	// price and target price (nanocents per ndau), and also small enough that
+	// we'd likely see non-trivial rounding errors. Using a muldiv here gives us
+	// nanocents per ndau without overflow.
+
+	// default zero: avoid divide by 0 errors
+	if summary.TotalCirculation != 0 {
+		var floorPriceI int64
+		floorPriceI, err = signed.MulDiv(
+			int64(nav),
+			constants.NapuPerNdau,
+			int64(summary.TotalCirculation*2))
+		if err != nil {
+			err = errors.Wrap(err, "computing floor price")
+			return
+		}
+		fp = pricecurve.Nanocent(floorPriceI)
+	}
+	return
+}
+
 // calculates the SIB implied by the market price given the current app state.
 //
 // It also returns the calculated target price.
@@ -55,25 +79,8 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 		return
 	}
 
-	summary := getLastSummary(app)
-	// just dividing NAV (denominated in nanocents) by TotalCirculation (denominated
-	// in napu) gives us nanocents per napu, which is inconsistent with market
-	// price and target price (nanocents per ndau), and also small enough that
-	// we'd likely see non-trivial rounding errors. Using a muldiv here gives us
-	// nanocents per ndau without overflow.
-	var floorPrice pricecurve.Nanocent // default zero: avoid divide by 0 errors
-	if summary.TotalCirculation != 0 {
-		var floorPriceI int64
-		floorPriceI, err = signed.MulDiv(
-			int64(nav),
-			constants.NapuPerNdau,
-			int64(summary.TotalCirculation*2))
-		if err != nil {
-			err = errors.Wrap(err, "computing floor price")
-			return
-		}
-		floorPrice = pricecurve.Nanocent(floorPriceI)
-	}
+	var fp pricecurve.Nanocent
+	fp, err = floorPrice(app, nav)
 
 	// get the script used to perform the calculation
 	var sibScript wkt.Bytes
@@ -88,7 +95,7 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 	}
 
 	// compute SIB
-	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(marketPrice), uint64(floorPrice), app.BlockTime())
+	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(marketPrice), uint64(fp), app.BlockTime())
 	if err != nil {
 		err = errors.Wrap(err, "building vm for SIB calculation")
 		return

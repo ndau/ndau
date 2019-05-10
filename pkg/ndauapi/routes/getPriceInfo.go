@@ -12,10 +12,11 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-// PriceInfo is a single instance of a rate response (it returns an array of them)
+// PriceInfo returns data about some direct and derived quantities of ndau price information.
 type PriceInfo struct {
 	MarketPrice pricecurve.Nanocent `json:"marketPrice"`
 	TargetPrice pricecurve.Nanocent `json:"targetPrice"`
+	FloorPrice  pricecurve.Nanocent `json:"floorPrice"`
 	TotalIssued types.Ndau          `json:"totalIssued"`
 	TotalNdau   types.Ndau          `json:"totalNdau"`
 	TotalSIB    types.Ndau          `json:"totalSIB"`
@@ -46,6 +47,7 @@ func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
 	oci.CurrentSIB = sib.SIB
 	oci.TargetPrice = sib.TargetPrice
 	oci.MarketPrice = sib.MarketPrice
+	oci.FloorPrice = sib.FloorPrice
 	return oci, err
 }
 
