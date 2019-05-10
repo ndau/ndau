@@ -15,6 +15,7 @@ import (
 // return a function intended to be run within app.UpdateState
 //
 // special case: if the input is negative, just use the existing value
+// this is used to allow updating market price without affecting NAV
 func (app *App) updateNAVAndSIB(nav pricecurve.Nanocent) func(stateI metast.State) (metast.State, error) {
 	return func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)

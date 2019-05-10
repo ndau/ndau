@@ -369,7 +369,7 @@ type ChangeSchema struct {
 	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
 }
 
-// A RecordEndowmentNAV transaction records the current NAV of the ndau endowment.
+// A RecordEndowmentNAV transaction records the current Net Asset Value of the ndau endowment.
 //
 // This data is used to calculate the current SIB in effect.
 //
