@@ -219,6 +219,11 @@ func (tx *SetStakeRules) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
+// SignableBytes partially implements metatx.Transactable for RecordEndowmentNAV
+func (tx *RecordEndowmentNAV) SignableBytes() []byte {
+	return sbOf(tx)
+}
+
 // SignableBytes partially implements metatx.Transactable for ChangeSchema
 func (tx *ChangeSchema) SignableBytes() []byte {
 	return sbOf(tx)

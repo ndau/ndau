@@ -69,6 +69,7 @@ type SIBResponse struct {
 	SIB         eai.Rate
 	TargetPrice pricecurve.Nanocent
 	MarketPrice pricecurve.Nanocent
+	FloorPrice  pricecurve.Nanocent
 }
 
 // SysvarsRequest is the request value for the /sysvars endpoint

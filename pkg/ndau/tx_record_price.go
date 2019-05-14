@@ -7,9 +7,11 @@ import (
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
@@ -18,15 +20,15 @@ import (
 //
 // special case: if the input is negative, just use the existing value
 func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI metast.State) (metast.State, error) {
-	if marketPrice < 0 {
-		marketPrice = app.GetState().(*backing.State).MarketPrice
-	}
 	return func(stateI metast.State) (metast.State, error) {
-		sib, target, err := app.calculateCurrentSIB(marketPrice)
+		state := stateI.(*backing.State)
+		if marketPrice < 0 {
+			marketPrice = state.MarketPrice
+		}
+		sib, target, err := app.calculateCurrentSIB(state, marketPrice, -1)
 		if err != nil {
 			return stateI, err
 		}
-		state := stateI.(*backing.State)
 		state.SIB = sib
 		state.MarketPrice = marketPrice
 		state.TargetPrice = target
@@ -35,17 +37,50 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 	}
 }
 
+func floorPrice(app *App, nav pricecurve.Nanocent) (fp pricecurve.Nanocent, err error) {
+	summary := getLastSummary(app)
+	// just dividing NAV (denominated in nanocents) by TotalCirculation (denominated
+	// in napu) gives us nanocents per napu, which is inconsistent with market
+	// price and target price (nanocents per ndau), and also small enough that
+	// we'd likely see non-trivial rounding errors. Using a muldiv here gives us
+	// nanocents per ndau without overflow.
+
+	// default zero: avoid divide by 0 errors
+	if summary.TotalCirculation != 0 {
+		var floorPriceI int64
+		floorPriceI, err = signed.MulDiv(
+			int64(nav),
+			constants.NapuPerNdau,
+			int64(summary.TotalCirculation*2))
+		if err != nil {
+			err = errors.Wrap(err, "computing floor price")
+			return
+		}
+		fp = pricecurve.Nanocent(floorPriceI)
+	}
+	return
+}
+
 // calculates the SIB implied by the market price given the current app state.
 //
 // It also returns the calculated target price.
-func (app *App) calculateCurrentSIB(marketPrice pricecurve.Nanocent) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
+func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav pricecurve.Nanocent) (sib eai.Rate, targetPrice pricecurve.Nanocent, err error) {
+	if marketPrice < 0 {
+		marketPrice = state.MarketPrice
+	}
+	if nav < 0 {
+		nav = state.EndowmentNAV
+	}
+
 	// compute the current target price
-	state := app.GetState().(*backing.State)
 	targetPrice, err = pricecurve.PriceAtUnit(state.TotalIssue)
 	if err != nil {
 		err = errors.Wrap(err, "computing target price")
 		return
 	}
+
+	var fp pricecurve.Nanocent
+	fp, err = floorPrice(app, nav)
 
 	// get the script used to perform the calculation
 	var sibScript wkt.Bytes
@@ -60,7 +95,7 @@ func (app *App) calculateCurrentSIB(marketPrice pricecurve.Nanocent) (sib eai.Ra
 	}
 
 	// compute SIB
-	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(marketPrice), app.BlockTime())
+	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(marketPrice), uint64(fp), app.BlockTime())
 	if err != nil {
 		err = errors.Wrap(err, "building vm for SIB calculation")
 		return

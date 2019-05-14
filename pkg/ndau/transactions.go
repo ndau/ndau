@@ -38,6 +38,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(22): &RecordPrice{},
 	metatx.TxID(23): &SetSysvar{},
 	metatx.TxID(24): &SetStakeRules{},
+	metatx.TxID(25): &RecordEndowmentNAV{},
 	metatx.TxID(30): &ChangeSchema{},
 }
 
@@ -366,4 +367,17 @@ type ChangeSchema struct {
 	SchemaVersion string                `msg:"sav" json:"schema_version"`
 	Sequence      uint64                `msg:"seq" json:"sequence"`
 	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+// A RecordEndowmentNAV transaction records the current Net Asset Value of the ndau endowment.
+//
+// This data is used to calculate the current SIB in effect.
+//
+// Its signatures are checked against an account specified by the
+// RecordEndowmentNAVAddress system variable. That account also specifies the
+// validation script, and pays the transaction fee.
+type RecordEndowmentNAV struct {
+	NAV        pricecurve.Nanocent   `msg:"nav" chain:"11,Tx_Quantity" json:"nav"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }

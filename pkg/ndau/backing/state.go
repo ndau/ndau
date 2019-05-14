@@ -49,8 +49,9 @@ type State struct {
 	TotalBurned math.Ndau
 	// These prices are preserved here just to assist downstream consumers
 	// have more trust in the SIB calculations.
-	MarketPrice pricecurve.Nanocent
-	TargetPrice pricecurve.Nanocent
+	MarketPrice  pricecurve.Nanocent
+	TargetPrice  pricecurve.Nanocent
+	EndowmentNAV pricecurve.Nanocent
 	// System variables are all stored here. A system variable is a named
 	// msgp-encoded object. It is safe to assume that all keys are valid utf-8.
 	Sysvars map[string][]byte
