@@ -453,3 +453,7 @@ func TestTransferDeductsTxFee(t *testing.T) {
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
 }
+
+func TestTransferToExchangeAddressHasNoRecoursePeriod(t *testing.T) {
+	app, private := initAppTx(t)
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -67,7 +68,13 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	dest.LastWAAUpdate = app.BlockTime()
 
 	dest.Balance += tx.Qty
-	if source.RecourseSettings.Period != 0 {
+
+	isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(tx.Destination, sv.AccountAttributeExchange)
+	if err != nil {
+		return errors.New("dest account exchange attribute can't be retrieved")
+	}
+
+	if source.RecourseSettings.Period != 0 && !isExchangeAccount {
 		x := app.BlockTime().Add(source.RecourseSettings.Period)
 		dest.Holds = append(dest.Holds, backing.Hold{
 			Qty:    tx.Qty,
