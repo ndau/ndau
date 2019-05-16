@@ -69,12 +69,12 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 
 	dest.Balance += tx.Qty
 
-	isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(tx.Destination, sv.AccountAttributeExchange)
+	destIsExchange, err := app.GetState().(*backing.State).AccountHasAttribute(tx.Destination, sv.AccountAttributeExchange)
 	if err != nil {
 		return errors.New("dest account exchange attribute can't be retrieved")
 	}
 
-	if source.RecourseSettings.Period != 0 && !isExchangeAccount {
+	if source.RecourseSettings.Period != 0 && !destIsExchange {
 		x := app.BlockTime().Add(source.RecourseSettings.Period)
 		dest.Holds = append(dest.Holds, backing.Hold{
 			Qty:    tx.Qty,
