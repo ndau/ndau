@@ -455,5 +455,34 @@ func TestTransferDeductsTxFee(t *testing.T) {
 }
 
 func TestTransferToExchangeAddressHasNoRecoursePeriod(t *testing.T) {
+	// Make the dest an exchange account
+	context := ddc(t).withExchangeAccount(destAddress)
 	app, private := initAppTx(t)
+
+	// first, ensure that the source account has non-0 recourse settings
+	sourceAcct, _ := app.getAccount(sourceAddress)
+	if sourceAcct.RecourseSettings.Period == 0 {
+		modifySource(t, app, func(ad *backing.AccountData) {
+			ad.RecourseSettings.Period = math.Day
+		})
+	}
+
+	// refresh and check
+	sourceAcct, _ = app.getAccount(sourceAddress)
+	require.NotZero(t, sourceAcct.RecourseSettings.Period)
+
+	// ensure there are no existing holds and no balance in the destination account
+	destAcct, _ := app.getAccount(destAddress)
+	require.Zero(t, destAcct.Balance)
+	require.Empty(t, destAcct.Holds)
+
+	// perform the transfer
+	tx := NewTransfer(sourceAddress, destAddress, 1*constants.NapuPerNdau, 1, private)
+	resp, _ := deliverTxContext(t, app, tx, context)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// the transfer must have arrived in the balance without creating a hold
+	destAcct, _ = app.getAccount(destAddress)
+	require.NotZero(t, destAcct.Balance)
+	require.Empty(t, destAcct.Holds)
 }
