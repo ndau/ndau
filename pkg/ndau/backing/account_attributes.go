@@ -23,15 +23,9 @@ func (s *State) AccountHasAttribute(addr address.Address, attr string) (bool, er
 		return false, errors.Wrap(err, "could not get AccountAttributes system variable")
 	}
 
+	progenitor := &addr
 	acct, exists := s.Accounts[addr.String()]
-	if !exists {
-		return false, nil
-	}
-
-	var progenitor *address.Address
-	if acct.Progenitor == nil {
-		progenitor = &addr
-	} else {
+	if exists && acct.Progenitor != nil {
 		progenitor = acct.Progenitor
 	}
 
