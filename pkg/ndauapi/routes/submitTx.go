@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-zoo/bone"
@@ -51,7 +50,7 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		// Check if the tx has already been indexed.
 		blockheight, _, err := searchTxHash(node, txhash)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("txhash search failed: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
 		}
 
