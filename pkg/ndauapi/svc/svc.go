@@ -67,10 +67,15 @@ var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 
 var dummySubmitResult = routes.SubmitResult{
 	TxHash: "123abc34099f",
+	Msg:    "only set if additional information is available",
 }
 var dummyPrevalidateResult = routes.PrevalidateResult{
-	FeeNapu: 10,
-	Err:     "only set if an error occurred",
+	FeeNapu: 100,
+	SibNapu: 10,
+	Err:     "Err and ErrCode are only set if an error occurred",
+	ErrCode: 0,
+	TxHash:  "123abc34099f",
+	Msg:     "only set if additional information is available",
 }
 
 // New returns a new boneful Service with routes.

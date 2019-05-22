@@ -13,12 +13,39 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tinylib/msgp/msgp"
 )
 
 // TransactionData is the format we use when writing the result of the transaction route.
 type TransactionData struct {
 	Tx *metatx.Transaction
+}
+
+func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset int, err error) {
+	// Prepare search params.
+	params := search.QueryParams{
+		Command: search.HeightByTxHashCommand,
+		Hash:    txhash,
+	}
+	paramsBuf := &bytes.Buffer{}
+	json.NewEncoder(paramsBuf).Encode(params)
+	paramsString := paramsBuf.String()
+
+	searchValue, err := tool.GetSearchResults(node, paramsString)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	valueData := search.TxValueData{}
+	err = valueData.Unmarshal(searchValue)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	blockheight = int64(valueData.BlockHeight)
+	txoffset = valueData.TxOffset
+	return blockheight, txoffset, nil
 }
 
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.
@@ -37,29 +64,12 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// Prepare search params.
-		params := search.QueryParams{
-			Command: search.HeightByTxHashCommand,
-			Hash:    txhash,
-		}
-		paramsBuf := &bytes.Buffer{}
-		json.NewEncoder(paramsBuf).Encode(params)
-		paramsString := paramsBuf.String()
-
-		searchValue, err := tool.GetSearchResults(node, paramsString)
+		blockheight, txoffset, err := searchTxHash(node, txhash)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("txhash search failed: %v", err), http.StatusInternalServerError))
 			return
 		}
 
-		valueData := search.TxValueData{}
-		err = valueData.Unmarshal(searchValue)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
-			return
-		}
-
-		blockheight := int64(valueData.BlockHeight)
 		if blockheight <= 0 {
 			// The search was valid, but there were no results.
 			reqres.RespondJSON(w, reqres.OKResponse(nil))
@@ -72,7 +82,6 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		txoffset := valueData.TxOffset
 		if txoffset >= len(block.Block.Data.Txs) {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("tx offset out of range: %d >= %d", txoffset, len(block.Block.Data.Txs)), http.StatusInternalServerError))
 			return
