@@ -22,7 +22,7 @@ type TransactionData struct {
 	Tx *metatx.Transaction
 }
 
-func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset int, error err) {
+func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset int, err error) {
 	// Prepare search params.
 	params := search.QueryParams{
 		Command: search.HeightByTxHashCommand,
@@ -34,18 +34,18 @@ func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset
 
 	searchValue, err := tool.GetSearchResults(node, paramsString)
 	if err != nil {
-		return err, 0, 0
+		return 0, 0, err
 	}
 
 	valueData := search.TxValueData{}
 	err = valueData.Unmarshal(searchValue)
 	if err != nil {
-		return err, 0, 0
+		return 0, 0, err
 	}
 
 	blockheight = int64(valueData.BlockHeight)
 	txoffset = valueData.TxOffset
-	return nil, blockheight, txoffset
+	return blockheight, txoffset, nil
 }
 
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.
