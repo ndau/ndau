@@ -55,6 +55,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		// If we've got the tx indexed, it must already be on the blockchain; succeed by default.
 		if blockheight > 0 {
 			result.Msg = "tx already committed"
+			code = http.StatusAccepted
 		} else {
 			// run the prevalidation query
 			fee, sib, _, err := tool.Prevalidate(node, tx)
