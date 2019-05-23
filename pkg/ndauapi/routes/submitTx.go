@@ -55,13 +55,15 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		result := SubmitResult{TxHash: txhash}
-		code := http.StatusOK // if we ever do this without synchronous commit, change to StatusAccepted
+		code := http.StatusOK
 
 		// If we've got the tx indexed, it must already be on the blockchain; succeed by default.
 		if blockheight > 0 {
 			result.Msg = "tx already committed"
+			code = http.StatusAccepted
 		} else {
-			// commit it synchronously
+			// commit it synchronously; if we ever want to do this asynchronously, we'll need a
+			// new endpoint in part because we already use code http.StatusAccepted (202) above.
 			cr, err := tool.SendCommit(node, tx)
 			if err != nil {
 				// chances are high that if this fails, it's the user's fault, so let's
