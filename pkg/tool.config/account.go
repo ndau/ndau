@@ -145,7 +145,7 @@ func (a *Account) nextTransferPath() *string {
 // by errors further on.
 func (a *Account) MakeTransferKey(path *string) (newKeys *Keypair, err error) {
 	newKeys = &Keypair{}
-	if a.Ownership.Path == nil {
+	if a.Root == nil {
 		// it's probably a non-hd key, so just proceed on that assumption
 		newKeys.Public, newKeys.Private, err = signature.Generate(signature.Ed25519, nil)
 		if err != nil {
@@ -153,7 +153,7 @@ func (a *Account) MakeTransferKey(path *string) (newKeys *Keypair, err error) {
 		}
 	} else {
 		// probably HD
-		ekey, err := key.FromSignatureKey(&a.Ownership.Private)
+		ekey, err := key.FromSignatureKey(&a.Root.Private)
 		if err != nil {
 			return nil, errors.Wrap(err, "extracting hd ownership key")
 		}
