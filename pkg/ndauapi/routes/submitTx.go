@@ -24,6 +24,7 @@ import (
 type SubmitResult struct {
 	TxHash string `json:"hash"`
 	Msg    string `json:"msg,omitempty"`
+	Code   int    `json:"code"`
 }
 
 // HandleSubmitTx generates a handler that implements the /tx/submit endpoint
@@ -54,12 +55,13 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result := SubmitResult{TxHash: txhash}
+		result := SubmitResult{TxHash: txhash, Code: EndpointResultOK}
 		code := http.StatusOK
 
 		// If we've got the tx indexed, it must already be on the blockchain; succeed by default.
 		if blockheight > 0 {
 			result.Msg = "tx already committed"
+			result.Code = EndpointResultTxAlreadyCommitted
 			code = http.StatusAccepted
 		} else {
 			// commit it synchronously; if we ever want to do this asynchronously, we'll need a

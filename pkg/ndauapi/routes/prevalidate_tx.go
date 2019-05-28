@@ -20,6 +20,7 @@ type PrevalidateResult struct {
 	ErrCode int    `json:"err_code,omitempty"`
 	TxHash  string `json:"hash"`
 	Msg     string `json:"msg,omitempty"`
+	Code    int    `json:"code"`
 }
 
 // HandlePrevalidateTx generates a handler that implements the /tx/prevalidate endpoint
@@ -49,12 +50,13 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result := PrevalidateResult{TxHash: txhash}
+		result := PrevalidateResult{TxHash: txhash, Code: EndpointResultOK}
 		code := http.StatusOK
 
 		// If we've got the tx indexed, it must already be on the blockchain; succeed by default.
 		if blockheight > 0 {
 			result.Msg = "tx already committed"
+			result.Code = EndpointResultTxAlreadyCommitted
 			code = http.StatusAccepted
 		} else {
 			// run the prevalidation query
@@ -64,6 +66,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			if err != nil {
 				result.Err = err.Error()
 				result.ErrCode = -1
+				result.Code = EndpointResultFail
 				code = http.StatusBadRequest
 			}
 		}
