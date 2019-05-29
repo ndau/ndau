@@ -66,8 +66,8 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 		return err
 	}
 
-	if len(acct.ValidationKeys) > 1 {
-		return errors.New("claim account is not valid if there are 2 or more transfer keys")
+	if len(acct.ValidationKeys) > 0 {
+		return errors.New("SetValidation only works when 0 validation keys are set")
 	}
 
 	// Prevent claiming of locked exchange accounts.  If this fails, it means we've been working
