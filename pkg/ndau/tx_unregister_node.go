@@ -42,17 +42,17 @@ func (tx *UnregisterNode) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *UnregisterNode) GetSource(*App) (address.Address, error) {
 	return tx.Node, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *UnregisterNode) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *UnregisterNode) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

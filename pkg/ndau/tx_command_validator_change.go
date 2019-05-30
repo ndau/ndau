@@ -62,18 +62,18 @@ func (tx *CommandValidatorChange) Apply(appI interface{}) error {
 	return nil
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *CommandValidatorChange) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.CommandValidatorChangeAddressName, &addr)
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *CommandValidatorChange) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *CommandValidatorChange) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

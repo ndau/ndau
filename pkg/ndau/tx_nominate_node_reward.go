@@ -113,18 +113,18 @@ func (app *App) callWinnerWebhook(tx *NominateNodeReward, winner address.Address
 	logger.Info("successfully posted node reward winner to webhook")
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *NominateNodeReward) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.NominateNodeRewardAddressName, &addr)
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *NominateNodeReward) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *NominateNodeReward) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
