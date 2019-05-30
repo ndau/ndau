@@ -140,27 +140,6 @@ func TestClaimAccountTooManyValidationKeys(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimAccountOverwritesOneTransferKey(t *testing.T) {
-	app := initAppClaimAccount(t)
-
-	existing, _, err := signature.Generate(signature.Ed25519, nil)
-	require.NoError(t, err)
-	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.ValidationKeys = []signature.PublicKey{existing}
-	})
-
-	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
-	require.NoError(t, err)
-
-	ca := NewSetValidation(targetAddress, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
-	ctkBytes, err := tx.Marshal(ca, TxIDs)
-	require.NoError(t, err)
-
-	resp := app.CheckTx(ctkBytes)
-	t.Log(resp.Log)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-}
-
 func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
 	app := initAppClaimAccount(t)
 
