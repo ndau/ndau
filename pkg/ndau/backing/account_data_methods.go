@@ -93,11 +93,12 @@ func (ad AccountData) AvailableBalance() (math.Ndau, error) {
 // If validation was not successful, `1` elements are elements from `signatures`
 // which failed to validate.
 func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Signature) (bool, *bitset256.Bitset256) {
-	if len(signatures) < 1 || len(signatures) > MaxKeysInAccount {
-		return false, nil
-	}
 	signatureSet := bitset256.New()
 	invalidSignatures := bitset256.New()
+
+	if len(signatures) < 1 || len(signatures) > MaxKeysInAccount {
+		return false, signatureSet
+	}
 
 	// we could get fancy, making a map from each transfer key to its index,
 	// using that to update the bitset, so that we could minimize the number

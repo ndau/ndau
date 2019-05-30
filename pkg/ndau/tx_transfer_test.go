@@ -486,3 +486,13 @@ func TestTransferToExchangeAddressHasNoRecoursePeriod(t *testing.T) {
 	require.NotZero(t, destAcct.Balance)
 	require.Empty(t, destAcct.Holds)
 }
+
+func TestAppSurvivesEmptySignatureTransfer(t *testing.T) {
+	app, _ := initAppTx(t)
+
+	tx := NewTransfer(sourceAddress, destAddress, 1, 1)
+
+	resp := deliverTx(t, app, tx)
+	// must be invalid because no signatures
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
