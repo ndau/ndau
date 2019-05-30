@@ -101,22 +101,22 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *TransferAndLock) GetSource(*App) (address.Address, error) {
 	return tx.Source, nil
 }
 
-// Withdrawal implements withdrawer
+// Withdrawal implements Withdrawer
 func (tx *TransferAndLock) Withdrawal() math.Ndau {
 	return tx.Qty
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *TransferAndLock) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *TransferAndLock) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

@@ -83,17 +83,17 @@ func (tx *ChangeValidation) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *ChangeValidation) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *ChangeValidation) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *ChangeValidation) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

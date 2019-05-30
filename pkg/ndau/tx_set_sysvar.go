@@ -76,7 +76,7 @@ func (tx *SetSysvar) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *SetSysvar) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.SetSysvarAddressName, &addr)
 	if err != nil {
@@ -92,12 +92,12 @@ func (tx *SetSysvar) GetSource(app *App) (addr address.Address, err error) {
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *SetSysvar) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *SetSysvar) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

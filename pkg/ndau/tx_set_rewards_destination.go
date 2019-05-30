@@ -96,17 +96,17 @@ func (tx *SetRewardsDestination) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *SetRewardsDestination) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *SetRewardsDestination) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *SetRewardsDestination) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

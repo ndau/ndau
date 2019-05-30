@@ -36,7 +36,7 @@ func (app *App) calculateTxFee(tx metatx.Transactable) (math.Ndau, error) {
 }
 
 func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
-	if w, ok := tx.(withdrawer); ok {
+	if w, ok := tx.(Withdrawer); ok {
 		sibRate := app.GetState().(*backing.State).SIB
 		if sibRate > 0 {
 			source, err := tx.GetSource(app)

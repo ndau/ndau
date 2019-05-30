@@ -255,17 +255,17 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *CreditEAI) GetSource(*App) (address.Address, error) {
 	return tx.Node, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *CreditEAI) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *CreditEAI) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

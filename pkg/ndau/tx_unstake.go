@@ -38,17 +38,17 @@ func (tx *Unstake) Apply(appI interface{}) error {
 	return app.UpdateState(app.Unstake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules))
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *Unstake) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *Unstake) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *Unstake) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
