@@ -16,25 +16,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-type sourcer interface {
+// A Sourcer is a transaction with a source from which tx fees are withdrawn,
+// whose sequence number is checked, etc.
+type Sourcer interface {
 	// return the address which is considered the transaction's source
 	// this address is used to check the sequence number, provides the tx
 	// fees, etc.
 	GetSource(*App) (address.Address, error)
 }
 
-type sequencer interface {
+// A Sequencer is a transaction with a sequence number.
+type Sequencer interface {
 	// return the sequence number of this transaction
 	GetSequence() uint64
 }
 
-type withdrawer interface {
+// A Withdrawer is a transaction which withdraws some amount from the source
+// in addition to the normal tx fees.
+type Withdrawer interface {
 	// return the amount withdrawn from the source by this transaction.
 	// Does not include tx fee or SIB.
 	Withdrawal() math.Ndau
 }
 
-type signeder interface {
+// A Signeder is a transaction which has some number of signatures.
+type Signeder interface {
 	// return the signatures of this transaction
 	GetSignatures() []signature.Signature
 }
@@ -50,8 +56,8 @@ type Signable interface {
 // Transactable.
 type NTransactable interface {
 	metatx.Transactable
-	sourcer
-	sequencer
+	Sourcer
+	Sequencer
 }
 
 // getTxAccount gets and validates an account for a transactable
@@ -61,9 +67,9 @@ type NTransactable interface {
 //  - account contains enough available ndau to pay the transaction fee
 //  - if validation script set:
 //       validation script passes
-//  - if tx implements signeder:
+//  - if tx implements Signeder:
 //       1 of N signature validation passes
-//  - if tx implements withdrawer:
+//  - if tx implements Withdrawer:
 //       account contains enough available ndau to pay the withdrawal + tx fee
 func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bitset256.Bitset256, error) {
 	validateScript := func(acct backing.AccountData, sigset *bitset256.Bitset256) error {
@@ -98,7 +104,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	}
 
 	var sigset *bitset256.Bitset256
-	if signed, isSigned := tx.(signeder); isSigned {
+	if signed, isSigned := tx.(Signeder); isSigned {
 		var validates bool
 		validates, sigset = acct.ValidateSignatures(
 			tx.SignableBytes(),
@@ -118,7 +124,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	if err != nil {
 		return acct, exists, sigset, err
 	}
-	if w, isWithdrawer := tx.(withdrawer); isWithdrawer {
+	if w, isWithdrawer := tx.(Withdrawer); isWithdrawer {
 		fee, err = fee.Add(w.Withdrawal())
 		if err != nil {
 			return acct, exists, sigset, err
@@ -249,7 +255,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	if err != nil {
 		return errors.Wrap(err, "adding fee and sib")
 	}
-	if w, isWithdrawer := tx.(withdrawer); isWithdrawer {
+	if w, isWithdrawer := tx.(Withdrawer); isWithdrawer {
 		withdrawal, err = withdrawal.Add(w.Withdrawal())
 		if err != nil {
 			return errors.Wrap(err, "adding withdrawal qty to fees")

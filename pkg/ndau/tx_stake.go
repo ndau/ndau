@@ -90,17 +90,17 @@ func (tx *Stake) Apply(appI interface{}) error {
 	return app.UpdateState(app.Stake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules, tx))
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *Stake) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *Stake) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *Stake) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

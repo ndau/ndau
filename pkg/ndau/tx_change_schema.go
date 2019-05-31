@@ -43,7 +43,7 @@ func (tx *ChangeSchema) Apply(appI interface{}) error {
 	return nil
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *ChangeSchema) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.ChangeSchemaAddressName, &addr)
 	if err != nil {
@@ -59,12 +59,12 @@ func (tx *ChangeSchema) GetSource(app *App) (addr address.Address, err error) {
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *ChangeSchema) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *ChangeSchema) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

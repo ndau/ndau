@@ -48,18 +48,18 @@ func (tx *Issue) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *Issue) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.ReleaseFromEndowmentAddressName, &addr)
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *Issue) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *Issue) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

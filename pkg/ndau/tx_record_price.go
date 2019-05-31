@@ -141,7 +141,7 @@ func (tx *RecordPrice) Apply(appI interface{}) error {
 	return app.UpdateState(app.updatePricesAndSIB(tx.MarketPrice))
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *RecordPrice) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.RecordPriceAddressName, &addr)
 	if err != nil {
@@ -157,12 +157,12 @@ func (tx *RecordPrice) GetSource(app *App) (addr address.Address, err error) {
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *RecordPrice) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *RecordPrice) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

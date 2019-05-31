@@ -216,17 +216,17 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *ClaimNodeReward) GetSource(*App) (address.Address, error) {
 	return tx.Node, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *ClaimNodeReward) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *ClaimNodeReward) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

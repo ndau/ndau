@@ -55,7 +55,7 @@ func (tx *RecordEndowmentNAV) Apply(appI interface{}) error {
 	return app.UpdateState(app.updateNAVAndSIB(tx.NAV))
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *RecordEndowmentNAV) GetSource(app *App) (addr address.Address, err error) {
 	err = app.System(sv.RecordEndowmentNAVAddressName, &addr)
 	if err != nil {
@@ -71,12 +71,12 @@ func (tx *RecordEndowmentNAV) GetSource(app *App) (addr address.Address, err err
 	return
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *RecordEndowmentNAV) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *RecordEndowmentNAV) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

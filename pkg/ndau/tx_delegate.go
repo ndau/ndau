@@ -82,17 +82,17 @@ func (tx *Delegate) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *Delegate) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *Delegate) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *Delegate) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }

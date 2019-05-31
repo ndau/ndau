@@ -81,17 +81,17 @@ func (tx *Lock) Apply(appI interface{}) error {
 	})
 }
 
-// GetSource implements sourcer
+// GetSource implements Sourcer
 func (tx *Lock) GetSource(*App) (address.Address, error) {
 	return tx.Target, nil
 }
 
-// GetSequence implements sequencer
+// GetSequence implements Sequencer
 func (tx *Lock) GetSequence() uint64 {
 	return tx.Sequence
 }
 
-// GetSignatures implements signeder
+// GetSignatures implements Signeder
 func (tx *Lock) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
