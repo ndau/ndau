@@ -19,7 +19,9 @@ import (
 
 // TransactionData is the format we use when writing the result of the transaction route.
 type TransactionData struct {
-	Tx *metatx.Transaction
+	BlockHeight int64
+	TxOffset    int
+	Tx          *metatx.Transaction
 }
 
 func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset int, err error) {
@@ -100,7 +102,11 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result := TransactionData{tx}
+		result := TransactionData{
+			BlockHeight: blockheight;
+			TxOffset:    txoffset,
+			Tx:          tx,
+		}
 		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }
