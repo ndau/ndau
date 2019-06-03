@@ -103,7 +103,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		result := TransactionData{
-			BlockHeight: blockheight;
+			BlockHeight: blockheight,
 			TxOffset:    txoffset,
 			Tx:          tx,
 		}
