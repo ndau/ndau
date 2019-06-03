@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -64,6 +65,12 @@ func dummyParsedTimestamp() types.Timestamp {
 }
 
 var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
+
+var dummyTransactionResult = routes.TransactionData{
+	BlockHeight: 1234,
+	TxOffset: 3,
+	Tx: metatx.Transaction{},
+}
 
 var dummySubmitResult = routes.SubmitResult{
 	TxHash: "123abc34099f",
@@ -406,7 +413,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns a transaction from the blockchain given its tx hash.").
 		Operation("TransactionByHash").
 		Produces(JSON).
-		Writes(routes.TransactionData{}))
+		Writes(dummyTransactionResult))
 
 	svc.Route(svc.POST("/tx/prevalidate/:txtype").To(routes.HandlePrevalidateTx(cf)).
 		Doc("Prevalidates a transaction (tells if it would be accepted and what the transaction fee will be.").

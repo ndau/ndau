@@ -19,7 +19,9 @@ import (
 
 // TransactionData is the format we use when writing the result of the transaction route.
 type TransactionData struct {
-	Tx *metatx.Transaction
+	BlockHeight int64
+	TxOffset    int
+	Tx          metatx.Transaction
 }
 
 func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset int, err error) {
@@ -91,7 +93,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 
 		// Use this approach to get the Transaction instead of metatx.Unmarshal() with
 		// metatx.AsTransaction() so that we get the same Nonce every time.
-		tx := &metatx.Transaction{}
+		tx := metatx.Transaction{}
 		bytesReader := bytes.NewReader(txBytes)
 		msgpReader := msgp.NewReader(bytesReader)
 		err = tx.DecodeMsg(msgpReader)
@@ -100,7 +102,11 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result := TransactionData{tx}
+		result := TransactionData{
+			BlockHeight: blockheight,
+			TxOffset:    txoffset,
+			Tx:          tx,
+		}
 		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }
