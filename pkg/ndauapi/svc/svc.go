@@ -4,19 +4,17 @@ import (
 	"net/http"
 	"strings"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -69,7 +67,7 @@ var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 var dummyTransactionResult = routes.TransactionData{
 	BlockHeight: 1234,
 	TxOffset: 3,
-	Tx: metatx.Transaction{},
+	// Assigning to Tx here causes the doc generator to fail, so we leave it nil.
 }
 
 var dummySubmitResult = routes.SubmitResult{
