@@ -437,8 +437,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(routes.VersionResult{
 			NdauVersion: "v1.2.3",
-			NdauSha:     "3123abc35",
-			Network:     "ndau mainnet",
+			NdauSha:     "23abc35",
+			Network:     "mainnet",
 		}))
 	return svc
 }
