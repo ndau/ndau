@@ -29,17 +29,16 @@ func (x Node) MarshalNoms(vrw nt.ValueReadWriter) (nodeValue nt.Value, err error
 
 	// x.RPCAddress (string->*ast.Ident) is primitive: true
 
-	return nodeStructTemplate.NewStruct([]nt.Value{
+	values := []nt.Value{
 		// x.Active (bool)
-
 		nt.Bool(x.Active),
 		// x.DistributionScript ([]byte)
-
 		nt.String(x.DistributionScript),
 		// x.RPCAddress (string)
-
 		nt.String(x.RPCAddress),
-	}), nil
+	}
+
+	return nodeStructTemplate.NewStruct(values), nil
 }
 
 var _ marshal.Marshaler = (*Node)(nil)

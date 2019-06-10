@@ -31,34 +31,30 @@ func (x Lock) MarshalNoms(vrw nt.ValueReadWriter) (lockValue nt.Value, err error
 	// x.NoticePeriod (math.Duration->*ast.SelectorExpr) is primitive: true
 
 	// x.UnlocksOn (*math.Timestamp->*ast.StarExpr) is primitive: false
-
 	// template decompose: x.UnlocksOn (*math.Timestamp->*ast.StarExpr)
 	// template pointer:  x.UnlocksOn
 	var unlocksOnUnptr nt.Value
 	if x.UnlocksOn == nil {
 		unlocksOnUnptr = util.Int(0).NomsValue()
 	} else {
-
 		// template decompose: (*x.UnlocksOn) (math.Timestamp->*ast.SelectorExpr)
-
 		unlocksOnUnptr = util.Int((*x.UnlocksOn)).NomsValue()
 	}
 
 	// x.Bonus (eai.Rate->*ast.SelectorExpr) is primitive: true
 
-	return lockStructTemplate.NewStruct([]nt.Value{
+	values := []nt.Value{
 		// x.Bonus (eai.Rate)
-
 		util.Int(x.Bonus).NomsValue(),
 		// x.HasUnlocksOn (bool)
-
 		nt.Bool(x.UnlocksOn != nil),
 		// x.NoticePeriod (math.Duration)
-
 		util.Int(x.NoticePeriod).NomsValue(),
 		// x.UnlocksOn (*math.Timestamp)
 		unlocksOnUnptr,
-	}), nil
+	}
+
+	return lockStructTemplate.NewStruct(values), nil
 }
 
 var _ marshal.Marshaler = (*Lock)(nil)

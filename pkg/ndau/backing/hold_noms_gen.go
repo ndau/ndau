@@ -32,58 +32,50 @@ func (x Hold) MarshalNoms(vrw nt.ValueReadWriter) (holdValue nt.Value, err error
 	// x.Qty (math.Ndau->*ast.SelectorExpr) is primitive: true
 
 	// x.Expiry (*math.Timestamp->*ast.StarExpr) is primitive: false
-
 	// template decompose: x.Expiry (*math.Timestamp->*ast.StarExpr)
 	// template pointer:  x.Expiry
 	var expiryUnptr nt.Value
 	if x.Expiry == nil {
 		expiryUnptr = util.Int(0).NomsValue()
 	} else {
-
 		// template decompose: (*x.Expiry) (math.Timestamp->*ast.SelectorExpr)
-
 		expiryUnptr = util.Int((*x.Expiry)).NomsValue()
 	}
 
 	// x.Txhash (string->*ast.Ident) is primitive: true
 
 	// x.Stake (*StakeData->*ast.StarExpr) is primitive: false
-
 	// template decompose: x.Stake (*StakeData->*ast.StarExpr)
 	// template pointer:  x.Stake
 	var stakeUnptr nt.Value
 	if x.Stake == nil {
 		stakeUnptr = nt.Bool(false)
 	} else {
-
 		// template decompose: (*x.Stake) (StakeData->*ast.Ident)
 		// template nomsmarshaler: (*x.Stake)
 		stakeValue, err := (*x.Stake).MarshalNoms(vrw)
 		if err != nil {
 			return nil, errors.Wrap(err, "Hold.MarshalNoms->Stake.MarshalNoms")
 		}
-
 		stakeUnptr = stakeValue
 	}
 
-	return holdStructTemplate.NewStruct([]nt.Value{
+	values := []nt.Value{
 		// x.Expiry (*math.Timestamp)
 		expiryUnptr,
 		// x.HasExpiry (bool)
-
 		nt.Bool(x.Expiry != nil),
 		// x.HasStake (bool)
-
 		nt.Bool(x.Stake != nil),
 		// x.Qty (math.Ndau)
-
 		util.Int(x.Qty).NomsValue(),
 		// x.Stake (*StakeData)
 		stakeUnptr,
 		// x.Txhash (string)
-
 		nt.String(x.Txhash),
-	}), nil
+	}
+
+	return holdStructTemplate.NewStruct(values), nil
 }
 
 var _ marshal.Marshaler = (*Hold)(nil)

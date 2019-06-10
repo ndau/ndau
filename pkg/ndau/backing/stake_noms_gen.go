@@ -30,7 +30,6 @@ func (x StakeData) MarshalNoms(vrw nt.ValueReadWriter) (stakeDataValue nt.Value,
 	// x.Point (math.Timestamp->*ast.SelectorExpr) is primitive: true
 
 	// x.RulesAcct (address.Address->*ast.SelectorExpr) is primitive: false
-
 	// template decompose: x.RulesAcct (address.Address->*ast.SelectorExpr)
 	// template textmarshaler: x.RulesAcct
 	rulesAcctString, err := x.RulesAcct.MarshalText()
@@ -39,7 +38,6 @@ func (x StakeData) MarshalNoms(vrw nt.ValueReadWriter) (stakeDataValue nt.Value,
 	}
 
 	// x.StakeTo (address.Address->*ast.SelectorExpr) is primitive: false
-
 	// template decompose: x.StakeTo (address.Address->*ast.SelectorExpr)
 	// template textmarshaler: x.StakeTo
 	stakeToString, err := x.StakeTo.MarshalText()
@@ -47,15 +45,16 @@ func (x StakeData) MarshalNoms(vrw nt.ValueReadWriter) (stakeDataValue nt.Value,
 		return nil, errors.Wrap(err, "StakeData.MarshalNoms->StakeTo.MarshalText")
 	}
 
-	return stakeDataStructTemplate.NewStruct([]nt.Value{
+	values := []nt.Value{
 		// x.Point (math.Timestamp)
-
 		util.Int(x.Point).NomsValue(),
 		// x.RulesAcct (address.Address)
 		nt.String(rulesAcctString),
 		// x.StakeTo (address.Address)
 		nt.String(stakeToString),
-	}), nil
+	}
+
+	return stakeDataStructTemplate.NewStruct(values), nil
 }
 
 var _ marshal.Marshaler = (*StakeData)(nil)
@@ -145,14 +144,11 @@ func (x StakeRules) MarshalNoms(vrw nt.ValueReadWriter) (stakeRulesValue nt.Valu
 	// x.Script ([]byte->*ast.ArrayType) is primitive: true
 
 	// x.Inbound (map[string]uint64->*ast.MapType) is primitive: false
-
 	// template decompose: x.Inbound (map[string]uint64->*ast.MapType)
 	// template map: x.Inbound
 	inboundKVs := make([]nt.Value, 0, len(x.Inbound)*2)
 	for inboundKey, inboundValue := range x.Inbound {
-
 		// template decompose: inboundValue (uint64->*ast.Ident)
-
 		inboundKVs = append(
 			inboundKVs,
 			nt.String(inboundKey),
@@ -160,14 +156,14 @@ func (x StakeRules) MarshalNoms(vrw nt.ValueReadWriter) (stakeRulesValue nt.Valu
 		)
 	}
 
-	return stakeRulesStructTemplate.NewStruct([]nt.Value{
+	values := []nt.Value{
 		// x.Inbound (map[string]uint64)
-
 		nt.NewMap(vrw, inboundKVs...),
 		// x.Script ([]byte)
-
 		nt.String(x.Script),
-	}), nil
+	}
+
+	return stakeRulesStructTemplate.NewStruct(values), nil
 }
 
 var _ marshal.Marshaler = (*StakeRules)(nil)

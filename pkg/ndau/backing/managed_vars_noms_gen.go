@@ -19,8 +19,9 @@ func init() {
 
 // MarshalNoms implements noms/go/marshal.Marshaler
 func (x ManagedVarsMap) MarshalNoms(vrw nt.ValueReadWriter) (managedVarsMapValue nt.Value, err error) {
+	values := []nt.Value{}
 
-	return managedVarsMapStructTemplate.NewStruct([]nt.Value{}), nil
+	return managedVarsMapStructTemplate.NewStruct(values), nil
 }
 
 var _ marshal.Marshaler = (*ManagedVarsMap)(nil)
