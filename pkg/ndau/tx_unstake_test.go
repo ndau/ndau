@@ -17,6 +17,7 @@ import (
 const (
 	nodePrivate   = "node private"
 	sourcePrivate = "souce private"
+	rulesPrivate  = "rules private"
 )
 
 func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) {
@@ -27,7 +28,8 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 	// node account is costaked with source account to rules account
 	// source account is primary staked to rules account
 
-	rulesAcct := getRulesAccount(t, app)
+	rulesAcct, rulesPrivateK := getRulesAccount(t, app)
+	assc[rulesPrivate] = rulesPrivateK
 	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
 		ad.StakeRules = &backing.StakeRules{
 			// push 0, 0 to the stack and exit

@@ -52,7 +52,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	require.NoError(t, err)
 
 	// ensure rules account has actual rules
-	nodeRules := getRulesAccount(t, app)
+	nodeRules, _ := getRulesAccount(t, app)
 
 	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)

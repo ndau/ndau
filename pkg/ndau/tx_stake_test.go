@@ -15,7 +15,7 @@ import (
 
 func initAppStake(t *testing.T) (*App, signature.PrivateKey, address.Address) {
 	app, private := initAppTx(t)
-	rulesAcct := getRulesAccount(t, app)
+	rulesAcct, _ := getRulesAccount(t, app)
 
 	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
 		ad.StakeRules = &backing.StakeRules{

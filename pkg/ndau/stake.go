@@ -3,6 +3,8 @@ package ndau
 import (
 	"fmt"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
+
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -87,7 +89,7 @@ func (app *App) Stake(
 		if isPrimary {
 			ps := targetAcct.PrimaryStake(rules)
 			if ps != nil {
-				return st, fmt.Errorf("stake: cannot have more than 1 primary stake to a rules account")
+				return st, fmt.Errorf("stake: target cannot have more than 1 primary stake to a rules account")
 			}
 		}
 
@@ -141,6 +143,22 @@ func (app *App) Unstake(
 	qty math.Ndau,
 	target, stakeTo, rules address.Address,
 ) func(metast.State) (metast.State, error) {
+	return app.UnstakeAndBurn(qty, 0, target, stakeTo, rules, false)
+}
+
+// UnstakeAndBurn updates the state to handle unstaking an account with some
+// amount burned. Burn is expressed as a fraction.
+//
+// It is assumed that all necessary validation has already been performed. In
+// particular, this function does not attempt to construct or run the chaincode
+// context for the rules account.
+//
+// This function returns a function suitable for calling within app.UpdateState
+func (app *App) UnstakeAndBurn(
+	qty math.Ndau, burn uint8,
+	target, stakeTo, rules address.Address,
+	recursive bool,
+) func(metast.State) (metast.State, error) {
 	return func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
@@ -152,22 +170,58 @@ func (app *App) Unstake(
 		// - outbound stake list
 		// - rules inbounds (if primary)
 		// - costakers list (if applicable)
+		lh := len(targetAcct.Holds)
 		for idx, hold := range targetAcct.Holds {
-			if hold.Qty == qty && hold.Stake != nil && hold.Stake.StakeTo == stakeTo && hold.Stake.RulesAcct == rules {
+			if (recursive || hold.Qty == qty) &&
+				hold.Stake != nil &&
+				hold.Stake.RulesAcct == rules &&
+				// If the staker we're looking at right now is the
+				// target, then StakeTo must be the Rules account to match.
+				// Otherwise, it must be what we're staking to.
+				(target == stakeTo &&
+					hold.Stake.StakeTo == rules ||
+					hold.Stake.StakeTo == stakeTo) {
 				// quickly remove this element by replacing it with the final one
 				targetAcct.Holds[idx] = targetAcct.Holds[len(targetAcct.Holds)-1]
 				targetAcct.Holds = targetAcct.Holds[:len(targetAcct.Holds)-1]
-				break
+
+				burned, err := signed.MulDiv(int64(hold.Qty), int64(burn), resolveStakeDenominator)
+				if err != nil {
+					return nil, errors.Wrap(err, "computing burned qty for "+target.String())
+				}
+				nburned := math.Ndau(burned)
+				targetAcct.Balance -= nburned
+				st.TotalBurned += nburned
+
+				if !recursive {
+					break
+				}
 			}
 		}
+		if lh == len(targetAcct.Holds) {
+			// didn't discover a matching hold
+			return nil, errors.New("No matching hold found in " + target.String())
+		}
 
-		if stakeTo == rules {
+		rulesCostakers := stakeToAcct.Costakers[rules.String()]
+		if stakeTo == rules || target == stakeTo {
 			rulesAcct.StakeRules.Inbound[target.String()]--
 			if rulesAcct.StakeRules.Inbound[target.String()] == 0 {
 				delete(rulesAcct.StakeRules.Inbound, target.String())
 			}
+			if recursive {
+				for costakerS := range rulesCostakers {
+					costaker, err := address.Validate(costakerS)
+					if err != nil {
+						return nil, errors.Wrap(err, fmt.Sprintf("invalid costaker %s for primary %s", costakerS, target))
+					}
+					stI, err = app.UnstakeAndBurn(qty, burn, costaker, stakeTo, rules, true)(st)
+					if err != nil {
+						return nil, errors.Wrap(err, fmt.Sprintf("unstaking costaker %s for primary %s", costakerS, target))
+					}
+				}
+			}
 		} else {
-			rulesCostakers := stakeToAcct.Costakers[rules.String()]
 			if rulesCostakers != nil {
 				rulesCostakers[target.String()]--
 				if rulesCostakers[target.String()] == 0 {
