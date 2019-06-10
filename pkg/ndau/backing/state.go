@@ -12,6 +12,10 @@ import (
 // State is primarily a set of accounts
 //nomsify State
 type State struct {
+	// ManagedVars is map that allows us to hide new fields from noms until they're first set.
+	// All new variables must start with "ManagedVar" and have Get/Set accessors defined.
+	ManagedVars ManagedVarsMap
+	// Accounts is a map of all accounts that exist on the blockchain.
 	Accounts map[string]AccountData
 	// Delegates is a map of strings to a set of strings
 	// All strings are addresses
@@ -49,9 +53,9 @@ type State struct {
 	TotalBurned math.Ndau
 	// These prices are preserved here just to assist downstream consumers
 	// have more trust in the SIB calculations.
-	MarketPrice  pricecurve.Nanocent
-	TargetPrice  pricecurve.Nanocent
-	EndowmentNAV pricecurve.Nanocent
+	MarketPrice            pricecurve.Nanocent
+	TargetPrice            pricecurve.Nanocent
+	ManagedVarEndowmentNAV pricecurve.Nanocent
 	// System variables are all stored here. A system variable is a named
 	// msgp-encoded object. It is safe to assume that all keys are valid utf-8.
 	Sysvars map[string][]byte
@@ -65,6 +69,17 @@ func (s *State) Init(nt.ValueReadWriter) {
 	s.Accounts = make(map[string]AccountData)
 	s.Delegates = make(map[string]map[string]struct{})
 	s.Nodes = make(map[string]Node)
+}
+
+// GetEndowmentNAV returns the state's ManagedVarEndowmentNAV value.
+func (s *State) GetEndowmentNAV() pricecurve.Nanocent {
+	return s.ManagedVarEndowmentNAV
+}
+
+// SetEndowmentNAV sets the state's ManagedVarEndowmentNAV value.
+func (s *State) SetEndowmentNAV(nav pricecurve.Nanocent) {
+	s.ManagedVars.ensureManagedVar("EndowmentNAV")
+	s.ManagedVarEndowmentNAV = nav
 }
 
 // GetAccount returns the account at the requested address.

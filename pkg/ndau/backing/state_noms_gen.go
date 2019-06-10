@@ -24,9 +24,10 @@ func init() {
 	stateStructTemplate = nt.MakeStructTemplate("State", []string{
 		"Accounts",
 		"Delegates",
-		"EndowmentNAV",
 		"HasNodeRewardWinner",
 		"LastNodeRewardNomination",
+		"ManagedVarEndowmentNAV",
+		"ManagedVars",
 		"MarketPrice",
 		"NodeRewardWinner",
 		"Nodes",
@@ -43,6 +44,15 @@ func init() {
 
 // MarshalNoms implements noms/go/marshal.Marshaler
 func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err error) {
+	// x.ManagedVars (ManagedVarsMap->*ast.Ident) is primitive: false
+
+	// template decompose: x.ManagedVars (ManagedVarsMap->*ast.Ident)
+	// template nomsmarshaler: x.ManagedVars
+	managedVarsValue, err := x.ManagedVars.MarshalNoms(vrw)
+	if err != nil {
+		return nil, errors.Wrap(err, "State.MarshalNoms->ManagedVars.MarshalNoms")
+	}
+
 	// x.Accounts (map[string]AccountData->*ast.MapType) is primitive: false
 
 	// template decompose: x.Accounts (map[string]AccountData->*ast.MapType)
@@ -154,7 +164,7 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
-	// x.EndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+	// x.ManagedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
 	// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
 
@@ -179,15 +189,17 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 		// x.Delegates (map[string]map[string]struct{})
 
 		nt.NewMap(vrw, delegatesKVs...),
-		// x.EndowmentNAV (pricecurve.Nanocent)
-
-		util.Int(x.EndowmentNAV).NomsValue(),
 		// x.HasNodeRewardWinner (bool)
 
 		nt.Bool(x.NodeRewardWinner != nil),
 		// x.LastNodeRewardNomination (math.Timestamp)
 
 		util.Int(x.LastNodeRewardNomination).NomsValue(),
+		// x.ManagedVarEndowmentNAV (pricecurve.Nanocent)
+
+		util.Int(x.ManagedVarEndowmentNAV).NomsValue(),
+		// x.ManagedVars (ManagedVarsMap)
+		managedVarsValue,
 		// x.MarketPrice (pricecurve.Nanocent)
 
 		util.Int(x.MarketPrice).NomsValue(),
@@ -245,6 +257,15 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 	vs.IterFields(func(name string, value nt.Value) {
 		if err == nil {
 			switch name {
+			// x.ManagedVars (ManagedVarsMap->*ast.Ident) is primitive: false
+			case "ManagedVars":
+				// template u_decompose: x.ManagedVars (ManagedVarsMap->*ast.Ident)
+				// template u_nomsmarshaler: x.ManagedVars
+				var managedVarsInstance ManagedVarsMap
+				err = managedVarsInstance.UnmarshalNoms(value)
+				err = errors.Wrap(err, "State.UnmarshalNoms->ManagedVars")
+
+				x.ManagedVars = managedVarsInstance
 			// x.Accounts (map[string]AccountData->*ast.MapType) is primitive: false
 			case "Accounts":
 				// template u_decompose: x.Accounts (map[string]AccountData->*ast.MapType)
@@ -519,19 +540,19 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
 
 				x.TargetPrice = targetPriceTyped
-			// x.EndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
-			case "EndowmentNAV":
-				// template u_decompose: x.EndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
-				// template u_primitive: x.EndowmentNAV
-				var endowmentNAVValue util.Int
-				endowmentNAVValue, err = util.IntFrom(value)
+			// x.ManagedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+			case "ManagedVarEndowmentNAV":
+				// template u_decompose: x.ManagedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
+				// template u_primitive: x.ManagedVarEndowmentNAV
+				var managedVarEndowmentNAVValue util.Int
+				managedVarEndowmentNAVValue, err = util.IntFrom(value)
 				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->EndowmentNAV")
+					err = errors.Wrap(err, "State.UnmarshalNoms->ManagedVarEndowmentNAV")
 					return
 				}
-				endowmentNAVTyped := pricecurve.Nanocent(endowmentNAVValue)
+				managedVarEndowmentNAVTyped := pricecurve.Nanocent(managedVarEndowmentNAVValue)
 
-				x.EndowmentNAV = endowmentNAVTyped
+				x.ManagedVarEndowmentNAV = managedVarEndowmentNAVTyped
 			// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
 			case "Sysvars":
 				// template u_decompose: x.Sysvars (map[string][]byte->*ast.MapType)

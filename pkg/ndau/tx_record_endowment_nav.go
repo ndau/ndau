@@ -19,7 +19,7 @@ import (
 func (app *App) updateNAVAndSIB(nav pricecurve.Nanocent) func(stateI metast.State) (metast.State, error) {
 	return func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
-		state.EndowmentNAV = nav
+		state.SetEndowmentNAV(nav)
 		sib, target, err := app.calculateCurrentSIB(state, -1, nav)
 		if err != nil {
 			return stateI, err

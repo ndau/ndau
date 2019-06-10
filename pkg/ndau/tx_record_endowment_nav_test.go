@@ -163,7 +163,7 @@ func TestNAVMustChangeSIB(t *testing.T) {
 		state.SIB = initialSIB
 		state.MarketPrice = market
 		state.TargetPrice = target
-		state.EndowmentNAV = initialNAV
+		state.SetEndowmentNAV(initialNAV)
 		return state, nil
 	})
 	require.NoError(t, err)
