@@ -3,12 +3,11 @@ package ndau
 import (
 	"fmt"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/signed"
-
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
@@ -66,8 +65,6 @@ func (app *App) Stake(
 		st := stI.(*backing.State)
 
 		targetAcct, _ := app.getAccount(target)
-		stakeToAcct, _ := app.getAccount(stakeTo)
-		rulesAcct, _ := app.getAccount(rules)
 
 		targetAcct.UpdateSettlements(app.BlockTime())
 
@@ -80,6 +77,7 @@ func (app *App) Stake(
 			return st, fmt.Errorf("stake: insufficient target available balance: have %d, need %d", ab, qty)
 		}
 
+		rulesAcct, _ := app.getAccount(rules)
 		if rulesAcct.StakeRules == nil {
 			return st, fmt.Errorf("stake: rules must be a rules account")
 		}
@@ -109,10 +107,14 @@ func (app *App) Stake(
 			hold.Txhash = metatx.Hash(tx)
 		}
 		targetAcct.Holds = append(targetAcct.Holds, hold)
+		st.Accounts[target.String()] = targetAcct
 
 		if isPrimary {
+			rulesAcct, _ := app.getAccount(rules)
 			rulesAcct.StakeRules.Inbound[target.String()]++
+			st.Accounts[rules.String()] = rulesAcct
 		} else {
+			stakeToAcct, _ := app.getAccount(stakeTo)
 			rulesCostakers := stakeToAcct.Costakers[rules.String()]
 			if rulesCostakers == nil {
 				rulesCostakers = make(map[string]uint64)
@@ -122,11 +124,8 @@ func (app *App) Stake(
 				stakeToAcct.Costakers = make(map[string]map[string]uint64)
 			}
 			stakeToAcct.Costakers[rules.String()] = rulesCostakers
+			st.Accounts[stakeTo.String()] = stakeToAcct
 		}
-
-		st.Accounts[target.String()] = targetAcct
-		st.Accounts[stakeTo.String()] = stakeToAcct
-		st.Accounts[rules.String()] = rulesAcct
 
 		return st, nil
 	}
@@ -163,8 +162,6 @@ func (app *App) UnstakeAndBurn(
 		st := stI.(*backing.State)
 
 		targetAcct, _ := app.getAccount(target)
-		stakeToAcct, _ := app.getAccount(stakeTo)
-		rulesAcct, _ := app.getAccount(rules)
 
 		// update 3 places where we keep track of rules info:
 		// - outbound stake list
@@ -202,7 +199,10 @@ func (app *App) UnstakeAndBurn(
 			// didn't discover a matching hold
 			return nil, errors.New("No matching hold found in " + target.String())
 		}
+		st.Accounts[target.String()] = targetAcct
 
+		rulesAcct, _ := app.getAccount(rules)
+		stakeToAcct, _ := app.getAccount(stakeTo)
 		rulesCostakers := stakeToAcct.Costakers[rules.String()]
 		if stakeTo == rules || target == stakeTo {
 			rulesAcct.StakeRules.Inbound[target.String()]--
@@ -236,7 +236,6 @@ func (app *App) UnstakeAndBurn(
 		}
 
 		st.Accounts[stakeTo.String()] = stakeToAcct
-		st.Accounts[target.String()] = targetAcct
 		st.Accounts[rules.String()] = rulesAcct
 
 		return st, nil

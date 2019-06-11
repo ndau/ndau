@@ -167,7 +167,7 @@ func TestClaimNodeRewardDeductsTxFee(t *testing.T) {
 	// tx with no reward that cost 1 napu. The first should succeed
 	// and the second should fail
 	modify(t, eaiNode, app, func(ad *backing.AccountData) {
-		ad.Balance = 1
+		ad.Balance = 1 + 1000*constants.NapuPerNdau
 	})
 	app.GetState().(*backing.State).UnclaimedNodeReward = 0
 
