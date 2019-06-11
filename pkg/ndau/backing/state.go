@@ -14,7 +14,7 @@ import (
 type State struct {
 	// ManagedVars is map that allows us to hide new fields from noms until they're first set.
 	// All new variables must start with "ManagedVar" and have Get/Set accessors defined.
-	ManagedVars ManagedVarsMap
+	ManagedVars map[string]struct{}
 	// Accounts is a map of all accounts that exist on the blockchain.
 	Accounts map[string]AccountData
 	// Delegates is a map of strings to a set of strings
@@ -78,7 +78,7 @@ func (s *State) GetEndowmentNAV() pricecurve.Nanocent {
 
 // SetEndowmentNAV sets the state's ManagedVarEndowmentNAV value.
 func (s *State) SetEndowmentNAV(nav pricecurve.Nanocent) {
-	s.ManagedVars.ensureManagedVar("EndowmentNAV")
+	s.ManagedVars.ensureManagedVar("ManagedVarEndowmentNAV")
 	s.ManagedVarEndowmentNAV = nav
 }
 
