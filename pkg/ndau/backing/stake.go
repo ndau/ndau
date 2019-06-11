@@ -94,6 +94,25 @@ func (s State) AggregateStake(target, rules address.Address) (ps *Hold) {
 	return
 }
 
+// TotalStake returns the total stake from a target account to a rules account
+//
+// Because any account may stake multiple times to the same rules account via
+// various primary stakes, this function requires that you pass in the primary
+// stake of interest.
+func (s State) TotalStake(target, primary, rules address.Address) (qty math.Ndau) {
+	a := s.Accounts[target.String()]
+	a.VisitStakesOutbound(func(h Hold) (stop bool) {
+		if h.Stake.RulesAcct == rules &&
+			(target == primary &&
+				h.Stake.StakeTo == rules ||
+				h.Stake.StakeTo == primary) {
+			qty += h.Qty
+		}
+		return false
+	})
+	return
+}
+
 // IsSelfStakedTo is true when the target is self-staked to the rules account
 func (a AccountData) IsSelfStakedTo(rules address.Address) bool {
 	return a.PrimaryStake(rules) != nil
