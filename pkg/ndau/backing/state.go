@@ -78,7 +78,7 @@ func (s *State) GetEndowmentNAV() pricecurve.Nanocent {
 
 // SetEndowmentNAV sets the state's ManagedVarEndowmentNAV value.
 func (s *State) SetEndowmentNAV(nav pricecurve.Nanocent) {
-	s.ManagedVars.ensureManagedVar("ManagedVarEndowmentNAV")
+	ensureManagedVar(&s.ManagedVars, "ManagedVarEndowmentNAV")
 	s.ManagedVarEndowmentNAV = nav
 }
 
