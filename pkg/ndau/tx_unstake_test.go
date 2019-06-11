@@ -77,6 +77,21 @@ func TestValidUnstakeTxIsValid(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
+func TestCannotReverseTargetAndStakeTo(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	private := assc[sourcePrivate].(signature.PrivateKey)
+	tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be valid
+	resp := deliverTx(t, app, tx)
+	rc := code.ReturnCode(resp.Code)
+	require.True(
+		t,
+		rc == code.InvalidTransaction || rc == code.ErrorApplyingTransaction,
+		"doesn't matter when we catch this as long as it's caught",
+	)
+}
+
 func TestUnstakeTargetValidates(t *testing.T) {
 	app, assc, rulesAcct := initAppUnstake(t)
 	private := assc[sourcePrivate].(signature.PrivateKey)
