@@ -235,8 +235,8 @@ func (app *App) UnstakeAndBurn(
 			}
 		}
 
-		st.Accounts[target.String()] = targetAcct
 		st.Accounts[stakeTo.String()] = stakeToAcct
+		st.Accounts[target.String()] = targetAcct
 		st.Accounts[rules.String()] = rulesAcct
 
 		return st, nil

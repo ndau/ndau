@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
@@ -10,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/stretchr/testify/require"
 )
@@ -67,13 +69,12 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 }
 func TestValidUnstakeTxIsValid(t *testing.T) {
 	app, assc, rulesAcct := initAppUnstake(t)
-	private := assc[sourcePrivate].(signature.PrivateKey)
-	tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
+	private := assc[nodePrivate].(signature.PrivateKey)
+	tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1, private)
 
 	// tx must be valid
 	resp := deliverTx(t, app, tx)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
 }
 
 func TestUnstakeTargetValidates(t *testing.T) {
@@ -197,24 +198,26 @@ func TestPrimaryUnstakeChangesAppState(t *testing.T) {
 }
 
 func TestUnstakeDeductsTxFee(t *testing.T) {
-	app, assc, rulesAcct := initAppUnstake(t)
-	private := assc[sourcePrivate].(signature.PrivateKey)
-
-	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.Balance = (1000 * constants.NapuPerNdau) + 1
-	})
-
 	for i := 0; i < 2; i++ {
-		tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1+uint64(i), private)
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			app, assc, rulesAcct := initAppUnstake(t)
+			private := assc[nodePrivate].(signature.PrivateKey)
 
-		resp := deliverTxWithTxFee(t, app, tx)
+			modify(t, nodeAddress.String(), app, func(ad *backing.AccountData) {
+				ad.Balance = math.Ndau(i) + 1000*constants.NapuPerNdau
+			})
 
-		var expect code.ReturnCode
-		if i == 0 {
-			expect = code.OK
-		} else {
-			expect = code.InvalidTransaction
-		}
-		require.Equal(t, expect, code.ReturnCode(resp.Code))
+			tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1+uint64(i), private)
+
+			resp := deliverTxWithTxFee(t, app, tx)
+
+			var expect code.ReturnCode
+			if i == 0 {
+				expect = code.InvalidTransaction
+			} else {
+				expect = code.OK
+			}
+			require.Equal(t, expect, code.ReturnCode(resp.Code))
+		})
 	}
 }
