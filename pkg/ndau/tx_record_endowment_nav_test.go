@@ -207,11 +207,9 @@ func TestNAVChangesState(t *testing.T) {
 		require.Nil(t, state.ManagedVars)
 		state.SetEndowmentNAV(initialNAV)
 		require.NotNil(t, state.ManagedVars)
-		require.Equal(t, 2, len(state.ManagedVars))
-		_, ok1 := state.ManagedVars["ManagedVars"]
-		require.True(t, ok1)
-		_, ok2 := state.ManagedVars["ManagedVarEndowmentNAV"]
-		require.True(t, ok2)
+		require.Equal(t, 1, len(state.ManagedVars))
+		_, hasEndowmentNAV := state.ManagedVars["ManagedVarEndowmentNAV"]
+		require.True(t, hasEndowmentNAV)
 		require.Equal(t, pricecurve.Nanocent(initialNAV), state.GetEndowmentNAV())
 
 		return state, nil
@@ -228,10 +226,8 @@ func TestNAVChangesState(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	require.NotNil(t, state.ManagedVars)
-	require.Equal(t, 2, len(state.ManagedVars))
-	_, ok1 := state.ManagedVars["ManagedVars"]
-	require.True(t, ok1)
-	_, ok2 := state.ManagedVars["ManagedVarEndowmentNAV"]
-	require.True(t, ok2)
+	require.Equal(t, 1, len(state.ManagedVars))
+	_, hasEndowmentNAV := state.ManagedVars["ManagedVarEndowmentNAV"]
+	require.True(t, hasEndowmentNAV)
 	require.Equal(t, pricecurve.Nanocent(finalNAV), state.GetEndowmentNAV())
 }
