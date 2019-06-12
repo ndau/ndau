@@ -3,6 +3,7 @@ package ndau
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
@@ -235,4 +236,50 @@ func TestUnstakeDeductsTxFee(t *testing.T) {
 			require.Equal(t, expect, code.ReturnCode(resp.Code))
 		})
 	}
+}
+
+func TestRulesAccountValidatesUnstake(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// this time, the rules account forbids the tx
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		// unconditionally fail
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 fail enddef").Bytes()
+	})
+	private := assc[nodePrivate].(signature.PrivateKey)
+	tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be invalid
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestRulesAccountSpecifiesUnstakeDuration(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// this time, the rules account allows the tx, with a cooldown of 1
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		// unconditionally fail
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 one zero enddef").Bytes()
+	})
+	private := assc[nodePrivate].(signature.PrivateKey)
+	tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// we know it's going to have a cooldown of 1, so let's figure out when we
+	// expect the hold to unlock
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	expectUnlock := now + 1
+
+	// tx must be valid
+	resp := deliverTxAt(t, app, tx, now)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	state := app.GetState().(*backing.State)
+
+	// must have updated outbound stake list
+	nodeData := state.Accounts[nodeAddress.String()]
+	require.NotNil(t, nodeData.Holds)
+	require.NotEmpty(t, nodeData.Holds)
+	require.Nil(t, nodeData.Holds[0].Stake, "hold must no longer be a stake")
+	require.NotNil(t, nodeData.Holds[0].Expiry, "hold must have an expiry in the future")
+	require.Equal(t, &expectUnlock, nodeData.Holds[0].Expiry)
 }

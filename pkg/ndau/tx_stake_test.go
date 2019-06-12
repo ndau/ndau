@@ -206,7 +206,7 @@ func TestRulesAccountValidatesStake(t *testing.T) {
 
 	tx := NewStake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
 
-	// tx must be valid
+	// tx must be invalid
 	resp := deliverTx(t, app, tx)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

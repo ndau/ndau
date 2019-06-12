@@ -69,7 +69,7 @@ func (tx *ResolveStake) Apply(appI interface{}) error {
 
 	// all state changes get applied or none do
 	// UnstakeAndBurn ignores
-	return app.UpdateState(app.UnstakeAndBurn(0, tx.Burn, tx.Target, tx.Target, tx.Rules, true))
+	return app.UpdateState(app.UnstakeAndBurn(0, tx.Burn, tx.Target, tx.Target, tx.Rules, 0, true))
 }
 
 // GetSource implements Sourcer

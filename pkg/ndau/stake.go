@@ -141,8 +141,9 @@ func (app *App) Stake(
 func (app *App) Unstake(
 	qty math.Ndau,
 	target, stakeTo, rules address.Address,
+	retainFor math.Duration,
 ) func(metast.State) (metast.State, error) {
-	return app.UnstakeAndBurn(qty, 0, target, stakeTo, rules, false)
+	return app.UnstakeAndBurn(qty, 0, target, stakeTo, rules, retainFor, false)
 }
 
 // UnstakeAndBurn updates the state to handle unstaking an account with some
@@ -156,6 +157,7 @@ func (app *App) Unstake(
 func (app *App) UnstakeAndBurn(
 	qty math.Ndau, burn uint8,
 	target, stakeTo, rules address.Address,
+	retainFor math.Duration,
 	recursive bool,
 ) func(metast.State) (metast.State, error) {
 	return func(stI metast.State) (metast.State, error) {
@@ -167,7 +169,7 @@ func (app *App) UnstakeAndBurn(
 		// - outbound stake list
 		// - rules inbounds (if primary)
 		// - costakers list (if applicable)
-		lh := len(targetAcct.Holds)
+		found := 0
 		for idx, hold := range targetAcct.Holds {
 			if (recursive || hold.Qty == qty) &&
 				hold.Stake != nil &&
@@ -178,9 +180,8 @@ func (app *App) UnstakeAndBurn(
 				(target == stakeTo &&
 					hold.Stake.StakeTo == rules ||
 					hold.Stake.StakeTo == stakeTo) {
-				// quickly remove this element by replacing it with the final one
-				targetAcct.Holds[idx] = targetAcct.Holds[len(targetAcct.Holds)-1]
-				targetAcct.Holds = targetAcct.Holds[:len(targetAcct.Holds)-1]
+
+				found++
 
 				burned, err := signed.MulDiv(int64(hold.Qty), int64(burn), resolveStakeDenominator)
 				if err != nil {
@@ -190,12 +191,27 @@ func (app *App) UnstakeAndBurn(
 				targetAcct.Balance -= nburned
 				st.TotalBurned += nburned
 
+				if retainFor == 0 {
+					// quickly remove this element by replacing it with the final one
+					targetAcct.Holds[idx] = targetAcct.Holds[len(targetAcct.Holds)-1]
+					targetAcct.Holds = targetAcct.Holds[:len(targetAcct.Holds)-1]
+				} else {
+					// convert this stake hold into a normal hold with an appropriate
+					// retention period
+					hold.Stake = nil
+					uo := app.BlockTime().Add(retainFor)
+					hold.Expiry = &uo
+					// reduce the qty by the amount burned
+					hold.Qty -= nburned
+					targetAcct.Holds[idx] = hold
+				}
+
 				if !recursive {
 					break
 				}
 			}
 		}
-		if lh == len(targetAcct.Holds) {
+		if found == 0 {
 			// didn't discover a matching hold
 			return nil, errors.New("No matching hold found in " + target.String())
 		}
@@ -215,7 +231,7 @@ func (app *App) UnstakeAndBurn(
 					if err != nil {
 						return nil, errors.Wrap(err, fmt.Sprintf("invalid costaker %s for primary %s", costakerS, target))
 					}
-					stI, err = app.UnstakeAndBurn(qty, burn, costaker, stakeTo, rules, true)(st)
+					stI, err = app.UnstakeAndBurn(qty, burn, costaker, stakeTo, rules, retainFor, true)(st)
 					if err != nil {
 						return nil, errors.Wrap(err, fmt.Sprintf("unstaking costaker %s for primary %s", costakerS, target))
 					}
