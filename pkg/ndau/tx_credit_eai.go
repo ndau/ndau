@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"fmt"
+	"sort"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -208,10 +209,20 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}).Info("awarded EAI")
 		}
 
+		// for determinism, we must iterate the account list in a defined order
+		// so we walk the map, record all the IDs, sort them, and then iterate that
+		accountList := make([]string, 0, len(delegatedAccounts))
 		for acct := range delegatedAccounts {
+			accountList = append(accountList, acct)
+		}
+		sort.Sort(sort.StringSlice(accountList))
+
+		// now iterate the account list deterministically
+		for _, acct := range accountList {
 			calc(acct, true)
 		}
 
+		// and finally do the postponed ones (in deterministic order as well)
 		logger.WithField("len(postponed)", len(postponed)).Info("calculating postponed accounts")
 		for _, acct := range postponed {
 			calc(acct, false)
