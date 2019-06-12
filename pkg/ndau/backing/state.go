@@ -71,17 +71,6 @@ func (s *State) Init(nt.ValueReadWriter) {
 	s.Nodes = make(map[string]Node)
 }
 
-// GetEndowmentNAV returns the state's ManagedVarEndowmentNAV value.
-func (s *State) GetEndowmentNAV() pricecurve.Nanocent {
-	return s.ManagedVarEndowmentNAV
-}
-
-// SetEndowmentNAV sets the state's ManagedVarEndowmentNAV value.
-func (s *State) SetEndowmentNAV(nav pricecurve.Nanocent) {
-	ensureManagedVar(&s.ManagedVars, "ManagedVarEndowmentNAV")
-	s.ManagedVarEndowmentNAV = nav
-}
-
 // GetAccount returns the account at the requested address.
 //
 // If the account does not already exist, a fresh one is created.

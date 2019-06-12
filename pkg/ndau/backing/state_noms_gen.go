@@ -72,6 +72,17 @@ func needStateStructTemplateInit(managedFields []string) bool {
 	return i != iLimit
 }
 
+// GetEndowmentNAV returns the struct's ManagedVarEndowmentNAV value.
+func (x *State) GetEndowmentNAV() pricecurve.Nanocent {
+	return x.ManagedVarEndowmentNAV
+}
+
+// SetEndowmentNAV sets the struct's ManagedVarEndowmentNAV value.
+func (x *State) SetEndowmentNAV(val pricecurve.Nanocent) {
+	ensureManagedVar(&x.ManagedVars, "ManagedVarEndowmentNAV")
+	x.ManagedVarEndowmentNAV = val
+}
+
 // MarshalNoms implements noms/go/marshal.Marshaler
 func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err error) {
 	// x.ManagedVars (map[string]struct{}->*ast.MapType) is primitive: false
