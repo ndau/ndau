@@ -74,25 +74,16 @@ func (tx *ResolveStake) Apply(appI interface{}) error {
 	// UnstakeAndBurn ignores
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
-		vm, err := BuildVMForRulesValidation(tx, st)
+		npayment, err := tx.calculatePayment(st)
 		if err != nil {
-			return st, errors.Wrap(err, "building rules validation vm")
+			return st, err
 		}
-		err = vm.Run(nil)
-		if err != nil {
-			return st, errors.Wrap(err, "running rules validation vm")
-		}
-		payment, err := vm.Stack().PopAsInt64()
-		if err != nil {
-			return st, errors.Wrap(err, "getting return code from rules validation vm")
-		}
-		npayment := math.Ndau(payment)
 
 		target := st.Accounts[tx.Target.String()]
 		if npayment > target.Balance {
 			return st, fmt.Errorf(
 				"invalid rules validation chaincode: payment (%d) exceeds balance (%d) for %s",
-				payment, target.Balance, tx.Target,
+				npayment, target.Balance, tx.Target,
 			)
 		}
 
@@ -151,4 +142,20 @@ func (tx *ResolveStake) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *ResolveStake) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+func (tx *ResolveStake) calculatePayment(st *backing.State) (math.Ndau, error) {
+	vm, err := BuildVMForRulesValidation(tx, st)
+	if err != nil {
+		return 0, errors.Wrap(err, "building rules validation vm")
+	}
+	err = vm.Run(nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "running rules validation vm")
+	}
+	payment, err := vm.Stack().PopAsInt64()
+	if err != nil {
+		return 0, errors.Wrap(err, "getting return code from rules validation vm")
+	}
+	return math.Ndau(payment), nil
 }

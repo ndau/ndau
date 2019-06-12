@@ -14,13 +14,14 @@ import (
 // PrevalidateResult returns the prevalidation status of a transaction without
 // attempting to commit it.
 type PrevalidateResult struct {
-	FeeNapu int64  `json:"fee_napu"`
-	SibNapu int64  `json:"sib_napu"`
-	Err     string `json:"err,omitempty"`
-	ErrCode int    `json:"err_code,omitempty"`
-	TxHash  string `json:"hash"`
-	Msg     string `json:"msg,omitempty"`
-	Code    int    `json:"code"`
+	FeeNapu          int64  `json:"fee_napu"`
+	SibNapu          int64  `json:"sib_napu"`
+	ResolveStakeNapu int64  `json:"resolve_stake_napu,omitempty"`
+	Err              string `json:"err,omitempty"`
+	ErrCode          int    `json:"err_code,omitempty"`
+	TxHash           string `json:"hash"`
+	Msg              string `json:"msg,omitempty"`
+	Code             int    `json:"code"`
 }
 
 // HandlePrevalidateTx generates a handler that implements the /tx/prevalidate endpoint
@@ -60,9 +61,10 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			code = http.StatusAccepted
 		} else {
 			// run the prevalidation query
-			fee, sib, _, err := tool.Prevalidate(node, tx)
+			fee, sib, resolveStakeCost, _, err := tool.Prevalidate(node, tx)
 			result.FeeNapu = int64(fee)
 			result.SibNapu = int64(sib)
+			result.ResolveStakeNapu = int64(resolveStakeCost)
 			if err != nil {
 				result.Err = err.Error()
 				result.ErrCode = -1

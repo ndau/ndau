@@ -146,11 +146,9 @@ func TestPrevalidateValidTx(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Info)
 
-	var fee math.Ndau
-	var sib math.Ndau
-	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
+	var fee, sib, resolvestakecost math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
 	require.NoError(t, err)
-	require.Equal(t, 2, n)
 }
 
 func TestPrevalidateInvalidTx(t *testing.T) {
@@ -167,9 +165,7 @@ func TestPrevalidateInvalidTx(t *testing.T) {
 	require.Equal(t, code.QueryError, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Info)
 
-	var fee math.Ndau
-	var sib math.Ndau
-	n, err := fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
+	var fee, sib, resolvestakecost math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
 	require.NoError(t, err)
-	require.Equal(t, 2, n)
 }
