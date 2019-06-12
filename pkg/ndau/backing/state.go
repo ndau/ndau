@@ -108,6 +108,11 @@ func (s *State) PayReward(
 	var err error
 	srcAccount, _ := s.GetAccount(srcAddress, blockTime, defaultSettlementPeriod)
 
+	if isEAI {
+		// the uncredited EAI is being accounted for, so reset it
+		srcAccount.UncreditedEAI = 0
+	}
+
 	if srcAccount.RewardsTarget != nil {
 		// rewards are being redirected, so get the target account
 		tgtAddress := *(srcAccount.RewardsTarget)
