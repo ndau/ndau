@@ -13,7 +13,7 @@ import (
 //nomsify State
 type State struct {
 	// ManagedVars is map that allows us to hide new fields from noms until they're first set.
-	// All new variables must start with "ManagedVar" and have Get/Set accessors defined.
+	// All new variables must start with "ManagedVar"; nomsify will generate Get/Set accessors.
 	ManagedVars map[string]struct{}
 	// Accounts is a map of all accounts that exist on the blockchain.
 	Accounts map[string]AccountData
