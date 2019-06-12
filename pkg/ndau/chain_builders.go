@@ -465,7 +465,6 @@ func BuildVMForSIB(
 // and the resulting value is used as the expiry date for the hold, which is
 // retained. Otherwise, the hold is discarded immediately.
 func BuildVMForRulesValidation(
-	code []byte,
 	tx metatx.Transactable,
 	state *backing.State,
 ) (*vm.ChaincodeVM, error) {
@@ -542,7 +541,15 @@ func BuildVMForRulesValidation(
 		return nil, errors.Wrap(err, "rules")
 	}
 
-	bin := buildBinary(code, "Rules validation", "")
+	rulesAcctData, ok := state.Accounts[rules.String()]
+	if !ok {
+		return nil, errors.New("rules account does not exist")
+	}
+	if rulesAcctData.StakeRules == nil {
+		return nil, errors.New("rules account has no stake rules")
+	}
+
+	bin := buildBinary(rulesAcctData.StakeRules.Script, "Rules validation", "")
 	theVM, err := vm.New(*bin)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vm")
