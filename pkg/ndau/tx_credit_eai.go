@@ -180,9 +180,6 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				return
 			}
 
-			// the uncredited EAI has now been accounted for in eaiAward, so reset it
-			acctData.UncreditedEAI = 0
-
 			// add the total EAI credited BEFORE reducing it
 			totalEAICredited += uint64(eaiAward)
 
