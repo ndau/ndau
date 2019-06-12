@@ -195,3 +195,18 @@ func TestStakeDeductsTxFee(t *testing.T) {
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
 }
+
+func TestRulesAccountValidatesStake(t *testing.T) {
+	app, private, rulesAcct := initAppStake(t)
+	// this time, the rules account forbids the tx
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		// unconditionally fail
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 fail enddef").Bytes()
+	})
+
+	tx := NewStake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be valid
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
