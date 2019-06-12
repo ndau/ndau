@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -152,4 +153,31 @@ func TestResolveStakeChangesAppState(t *testing.T) {
 	require.NotZero(t, rulesData) // must exist
 	require.NotNil(t, rulesData.StakeRules)
 	require.Empty(t, rulesData.StakeRules.Inbound)
+}
+
+func TestResolveTransfersPayment(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// modify the rules acct chaincode to return one napu payment due
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 one enddef").Bytes()
+	})
+	private := assc[rulesPrivate].(signature.PrivateKey)
+
+	state := app.GetState().(*backing.State)
+	oldsrc := state.Accounts[source]
+	oldrules := state.Accounts[rulesAcct.String()]
+
+	tx := NewResolveStake(sourceAddress, rulesAcct, 0, 1, private)
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	state = app.GetState().(*backing.State)
+
+	// source is a primary staker; this stake must have been resolved
+	sourceData := state.Accounts[source]
+	require.Equal(t, oldsrc.Balance-1, sourceData.Balance, "source must pay 1")
+
+	// must have updated inbound stake list
+	rulesData := state.Accounts[rulesAcct.String()]
+	require.Equal(t, oldrules.Balance+1, rulesData.Balance, "rules must receive 1")
 }

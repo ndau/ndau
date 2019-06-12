@@ -3,8 +3,11 @@ package ndau
 import (
 	"fmt"
 
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -69,7 +72,65 @@ func (tx *ResolveStake) Apply(appI interface{}) error {
 
 	// all state changes get applied or none do
 	// UnstakeAndBurn ignores
-	return app.UpdateState(app.UnstakeAndBurn(0, tx.Burn, tx.Target, tx.Target, tx.Rules, 0, true))
+	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		vm, err := BuildVMForRulesValidation(tx, st)
+		if err != nil {
+			return st, errors.Wrap(err, "building rules validation vm")
+		}
+		err = vm.Run(nil)
+		if err != nil {
+			return st, errors.Wrap(err, "running rules validation vm")
+		}
+		payment, err := vm.Stack().PopAsInt64()
+		if err != nil {
+			return st, errors.Wrap(err, "getting return code from rules validation vm")
+		}
+		npayment := math.Ndau(payment)
+
+		target := st.Accounts[tx.Target.String()]
+		if npayment > target.Balance {
+			return st, fmt.Errorf(
+				"invalid rules validation chaincode: payment (%d) exceeds balance (%d) for %s",
+				payment, target.Balance, tx.Target,
+			)
+		}
+
+		rules := st.Accounts[tx.Rules.String()]
+		rules.Balance += npayment
+		st.Accounts[tx.Rules.String()] = rules
+
+		// payment must come out of staked holds before U&B
+		holdsFound := 0
+		for idx, hold := range target.Holds {
+			if hold.Stake != nil &&
+				hold.Stake.RulesAcct == tx.Rules &&
+				(hold.Stake.StakeTo == tx.Rules || hold.Stake.StakeTo == tx.Target) {
+				holdsFound++
+				if hold.Qty >= npayment {
+					hold.Qty -= npayment
+					target.Balance -= npayment
+					npayment = 0
+					break
+				} else {
+					hold.Qty = 0
+					target.Balance -= hold.Qty
+					npayment -= hold.Qty
+				}
+				target.Holds[idx] = hold
+			}
+		}
+		if npayment > 0 {
+			return st, fmt.Errorf(
+				"in %d holds found, insufficient held ndau for payment from %s; %d remaining",
+				holdsFound, tx.Target, npayment,
+			)
+		}
+
+		st.Accounts[tx.Target.String()] = target
+
+		return app.UnstakeAndBurn(0, tx.Burn, tx.Target, tx.Target, tx.Rules, 0, true)(st)
+	})
 }
 
 // GetSource implements Sourcer
