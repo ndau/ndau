@@ -227,10 +227,8 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 	}
 	// x.ManagedVars (map[string]struct{})
 	if x.ManagedVars != nil {
-		if _, ok := x.ManagedVars["ManagedVars"]; ok {
-			managedFields = append(managedFields, "ManagedVars")
-			values = append(values, nt.NewSet(vrw, managedVarsItems...))
-		}
+		managedFields = append(managedFields, "ManagedVars")
+		values = append(values, nt.NewSet(vrw, managedVarsItems...))
 	}
 	// x.MarketPrice (pricecurve.Nanocent)
 	values = append(values, util.Int(x.MarketPrice).NomsValue())

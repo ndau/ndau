@@ -13,9 +13,4 @@ func ensureManagedVar(m *map[string]struct{}, name string) {
 	if _, ok := (*m)[name]; !ok {
 		(*m)[name] = struct{}{}
 	}
-	// To make our nomsified code simpler, include the map itself.
-	name = "ManagedVars"
-	if _, ok := (*m)[name]; !ok {
-		(*m)[name] = struct{}{}
-	}
 }
