@@ -604,7 +604,7 @@ func TestCreditEAIClearsUncreditedEAI(t *testing.T) {
 		ad.UncreditedEAI = 12345
 	})
 	tx := NewCreditEAI(nodeAddress, 1, private)
-	resp := deliverTx(t, app, tx)
+	resp := deliverTxAt(t, app, tx, 45*math.Day)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	sourceData := app.GetState().(*backing.State).Accounts[source]
