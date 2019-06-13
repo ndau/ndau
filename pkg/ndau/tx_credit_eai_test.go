@@ -597,3 +597,16 @@ func TestCreditEAIIsDeterministic2(t *testing.T) {
 		checkState()
 	}
 }
+
+func TestCreditEAIClearsUncreditedEAI(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.UncreditedEAI = 12345
+	})
+	tx := NewCreditEAI(nodeAddress, 1, private)
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	sourceData := app.GetState().(*backing.State).Accounts[source]
+	require.Zero(t, sourceData.UncreditedEAI)
+}
