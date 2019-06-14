@@ -57,7 +57,7 @@ func needStateStructTemplateInit(managedFields []string) bool {
 	i := 0
 	iLimit := len(managedFields)
 	for _, fieldName := range stateFieldNames {
-		if strings.Contains(fieldName, "ManagedVar") {
+		if strings.HasPrefix(fieldName, "managedVar") || strings.HasPrefix(fieldName, "HasmanagedVar") {
 			if i == iLimit || managedFields[i] != fieldName {
 				// We found a managed var in the full list that wasn't in the given list,
 				// or the managed field name in sorted order doesn't match; re-init.
@@ -72,27 +72,33 @@ func needStateStructTemplateInit(managedFields []string) bool {
 	return i != iLimit
 }
 
-// GetEndowmentNAV returns the struct's ManagedVarEndowmentNAV value.
-func (x *State) GetEndowmentNAV() pricecurve.Nanocent {
-	return x.ManagedVarEndowmentNAV
+// IsManagedVarSet returns whether the given managed var has ever been set in the State.
+// Useful for unit testing.  Not intended to be needed by release code.
+func (x *State) IsManagedVarSet(name string) bool {
+	return isManagedVarSet(x.managedVars, name)
 }
 
-// SetEndowmentNAV sets the struct's ManagedVarEndowmentNAV value.
+// GetEndowmentNAV returns the struct's managedVarEndowmentNAV value.
+func (x *State) GetEndowmentNAV() pricecurve.Nanocent {
+	return x.managedVarEndowmentNAV
+}
+
+// SetEndowmentNAV sets the struct's managedVarEndowmentNAV value.
 func (x *State) SetEndowmentNAV(val pricecurve.Nanocent) {
-	ensureManagedVar(&x.ManagedVars, "ManagedVarEndowmentNAV")
-	x.ManagedVarEndowmentNAV = val
+	ensureManagedVar(&x.managedVars, "EndowmentNAV")
+	x.managedVarEndowmentNAV = val
 }
 
 // MarshalNoms implements noms/go/marshal.Marshaler
 func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err error) {
-	// x.ManagedVars (map[string]struct{}->*ast.MapType) is primitive: false
-	// template decompose: x.ManagedVars (map[string]struct{}->*ast.MapType)
-	// template set:  x.ManagedVars
-	managedVarsItems := make([]nt.Value, 0, len(x.ManagedVars))
-	if len(x.ManagedVars) > 0 {
+	// x.managedVars (map[string]struct{}->*ast.MapType) is primitive: false
+	// template decompose: x.managedVars (map[string]struct{}->*ast.MapType)
+	// template set:  x.managedVars
+	managedVarsItems := make([]nt.Value, 0, len(x.managedVars))
+	if len(x.managedVars) > 0 {
 		// We need to iterate the set in sorted order, so build []string and sort it first
-		managedVarsSorted := make([]string, 0, len(x.ManagedVars))
-		for managedVarsItem := range x.ManagedVars {
+		managedVarsSorted := make([]string, 0, len(x.managedVars))
+		for managedVarsItem := range x.managedVars {
 			managedVarsSorted = append(managedVarsSorted, managedVarsItem)
 		}
 		sort.Sort(sort.StringSlice(managedVarsSorted))
@@ -203,7 +209,7 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 
 	// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
-	// x.ManagedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+	// x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
 
 	// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
 	// template decompose: x.Sysvars (map[string][]byte->*ast.MapType)
@@ -229,18 +235,6 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 	values = append(values, nt.Bool(x.NodeRewardWinner != nil))
 	// x.LastNodeRewardNomination (math.Timestamp)
 	values = append(values, util.Int(x.LastNodeRewardNomination).NomsValue())
-	// x.ManagedVarEndowmentNAV (pricecurve.Nanocent)
-	if x.ManagedVars != nil {
-		if _, ok := x.ManagedVars["ManagedVarEndowmentNAV"]; ok {
-			managedFields = append(managedFields, "ManagedVarEndowmentNAV")
-			values = append(values, util.Int(x.ManagedVarEndowmentNAV).NomsValue())
-		}
-	}
-	// x.ManagedVars (map[string]struct{})
-	if x.ManagedVars != nil {
-		managedFields = append(managedFields, "ManagedVars")
-		values = append(values, nt.NewSet(vrw, managedVarsItems...))
-	}
 	// x.MarketPrice (pricecurve.Nanocent)
 	values = append(values, util.Int(x.MarketPrice).NomsValue())
 	// x.NodeRewardWinner (*address.Address)
@@ -263,6 +257,18 @@ func (x State) MarshalNoms(vrw nt.ValueReadWriter) (stateValue nt.Value, err err
 	values = append(values, util.Int(x.TotalRFE).NomsValue())
 	// x.UnclaimedNodeReward (math.Ndau)
 	values = append(values, util.Int(x.UnclaimedNodeReward).NomsValue())
+	// x.managedVarEndowmentNAV (pricecurve.Nanocent)
+	if x.managedVars != nil {
+		if _, ok := x.managedVars["EndowmentNAV"]; ok {
+			managedFields = append(managedFields, "managedVarEndowmentNAV")
+			values = append(values, util.Int(x.managedVarEndowmentNAV).NomsValue())
+		}
+	}
+	// x.managedVars (map[string]struct{})
+	if x.managedVars != nil {
+		managedFields = append(managedFields, "managedVars")
+		values = append(values, nt.NewSet(vrw, managedVarsItems...))
+	}
 
 	if needStateStructTemplateInit(managedFields) {
 		initStateStructTemplate(managedFields)
@@ -293,10 +299,10 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 	vs.IterFields(func(name string, value nt.Value) {
 		if err == nil {
 			switch name {
-			// x.ManagedVars (map[string]struct{}->*ast.MapType) is primitive: false
-			case "ManagedVars":
-				// template u_decompose: x.ManagedVars (map[string]struct{}->*ast.MapType)
-				// template u_set: x.ManagedVars
+			// x.managedVars (map[string]struct{}->*ast.MapType) is primitive: false
+			case "managedVars":
+				// template u_decompose: x.managedVars (map[string]struct{}->*ast.MapType)
+				// template u_set: x.managedVars
 				managedVarsGoSet := make(map[string]struct{})
 				if managedVarsSet, ok := value.(nt.Set); ok {
 					managedVarsSet.Iter(func(managedVarsItem nt.Value) (stop bool) {
@@ -304,7 +310,7 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 							managedVarsGoSet[string(managedVarsItemString)] = struct{}{}
 						} else {
 							err = fmt.Errorf(
-								"State.AccountData.UnmarshalNoms expected ManagedVarsItem to be a nt.String; found %s",
+								"State.AccountData.UnmarshalNoms expected managedVarsItem to be a nt.String; found %s",
 								reflect.TypeOf(value),
 							)
 						}
@@ -312,12 +318,12 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 					})
 				} else {
 					err = fmt.Errorf(
-						"State.AccountData.UnmarshalNoms expected ManagedVars to be a nt.Set; found %s",
+						"State.AccountData.UnmarshalNoms expected managedVars to be a nt.Set; found %s",
 						reflect.TypeOf(value),
 					)
 				}
 
-				x.ManagedVars = managedVarsGoSet
+				x.managedVars = managedVarsGoSet
 			// x.Accounts (map[string]AccountData->*ast.MapType) is primitive: false
 			case "Accounts":
 				// template u_decompose: x.Accounts (map[string]AccountData->*ast.MapType)
@@ -592,19 +598,19 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 				targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
 
 				x.TargetPrice = targetPriceTyped
-			// x.ManagedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
-			case "ManagedVarEndowmentNAV":
-				// template u_decompose: x.ManagedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
-				// template u_primitive: x.ManagedVarEndowmentNAV
+			// x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+			case "managedVarEndowmentNAV":
+				// template u_decompose: x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
+				// template u_primitive: x.managedVarEndowmentNAV
 				var managedVarEndowmentNAVValue util.Int
 				managedVarEndowmentNAVValue, err = util.IntFrom(value)
 				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->ManagedVarEndowmentNAV")
+					err = errors.Wrap(err, "State.UnmarshalNoms->managedVarEndowmentNAV")
 					return
 				}
 				managedVarEndowmentNAVTyped := pricecurve.Nanocent(managedVarEndowmentNAVValue)
 
-				x.ManagedVarEndowmentNAV = managedVarEndowmentNAVTyped
+				x.managedVarEndowmentNAV = managedVarEndowmentNAVTyped
 			// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
 			case "Sysvars":
 				// template u_decompose: x.Sysvars (map[string][]byte->*ast.MapType)

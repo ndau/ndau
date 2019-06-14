@@ -12,9 +12,9 @@ import (
 // State is primarily a set of accounts
 //nomsify State
 type State struct {
-	// ManagedVars is map that allows us to hide new fields from noms until they're first set.
-	// All new variables must start with "ManagedVar"; nomsify will generate Get/Set accessors.
-	ManagedVars map[string]struct{}
+	// managedVars is map that allows us to hide new fields from noms until they're first set.
+	// All new variables must start with "managedVar"; nomsify will generate Get/Set accessors.
+	managedVars map[string]struct{}
 	// Accounts is a map of all accounts that exist on the blockchain.
 	Accounts map[string]AccountData
 	// Delegates is a map of strings to a set of strings
@@ -55,7 +55,7 @@ type State struct {
 	// have more trust in the SIB calculations.
 	MarketPrice            pricecurve.Nanocent
 	TargetPrice            pricecurve.Nanocent
-	ManagedVarEndowmentNAV pricecurve.Nanocent
+	managedVarEndowmentNAV pricecurve.Nanocent
 	// System variables are all stored here. A system variable is a named
 	// msgp-encoded object. It is safe to assume that all keys are valid utf-8.
 	Sysvars map[string][]byte

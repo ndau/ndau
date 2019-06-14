@@ -196,7 +196,7 @@ func TestNAVChangesState(t *testing.T) {
 	)
 
 	state := app.GetState().(*backing.State)
-	require.Nil(t, state.ManagedVars)
+	require.False(t, state.IsManagedVarSet("EndowmentNAV"))
 	require.Equal(t, pricecurve.Nanocent(0), state.GetEndowmentNAV())
 
 	err := app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
@@ -204,12 +204,10 @@ func TestNAVChangesState(t *testing.T) {
 		state.TotalIssue = issue
 		state.MarketPrice = market
 
-		require.Nil(t, state.ManagedVars)
+		require.False(t, state.IsManagedVarSet("EndowmentNAV"))
+		require.Equal(t, pricecurve.Nanocent(0), state.GetEndowmentNAV())
 		state.SetEndowmentNAV(initialNAV)
-		require.NotNil(t, state.ManagedVars)
-		require.Equal(t, 1, len(state.ManagedVars))
-		_, hasEndowmentNAV := state.ManagedVars["ManagedVarEndowmentNAV"]
-		require.True(t, hasEndowmentNAV)
+		require.True(t, state.IsManagedVarSet("EndowmentNAV"))
 		require.Equal(t, pricecurve.Nanocent(initialNAV), state.GetEndowmentNAV())
 
 		return state, nil
@@ -225,9 +223,6 @@ func TestNAVChangesState(t *testing.T) {
 	resp := deliverTx(t, app, recordEndowmentNAV)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	require.NotNil(t, state.ManagedVars)
-	require.Equal(t, 1, len(state.ManagedVars))
-	_, hasEndowmentNAV := state.ManagedVars["ManagedVarEndowmentNAV"]
-	require.True(t, hasEndowmentNAV)
+	require.True(t, state.IsManagedVarSet("EndowmentNAV"))
 	require.Equal(t, pricecurve.Nanocent(finalNAV), state.GetEndowmentNAV())
 }
