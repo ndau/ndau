@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/pkg/errors"
@@ -23,6 +24,11 @@ func (tx *Unstake) Validate(appI interface{}) error {
 
 	app := appI.(*App)
 	_, _, _, err = app.getTxAccount(tx)
+
+	if node, ok := app.GetState().(*backing.State).Nodes[tx.Target.String()]; ok && node.Active {
+		return errors.New("may not unstake an active node")
+	}
+
 	return err
 }
 
