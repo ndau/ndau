@@ -163,7 +163,7 @@ func TestNAVMustChangeSIB(t *testing.T) {
 		state.SIB = initialSIB
 		state.MarketPrice = market
 		state.TargetPrice = target
-		state.EndowmentNAV = initialNAV
+		state.SetEndowmentNAV(initialNAV)
 		return state, nil
 	})
 	require.NoError(t, err)
@@ -180,4 +180,49 @@ func TestNAVMustChangeSIB(t *testing.T) {
 
 	require.NotZero(t, app.GetState().(*backing.State).SIB)
 	require.NotEqual(t, initialSIB, app.GetState().(*backing.State).SIB)
+}
+
+func TestNAVChangesState(t *testing.T) {
+	app, assc := initAppRecordEndowmentNAV(t)
+	privateKeys := assc[recordEndowmentNAVKeys].([]signature.PrivateKey)
+
+	// set nonzero market price and nav
+	const (
+		issue      = 5 * 1000000 * constants.NapuPerNdau
+		dollar     = 100000000000 // nanocent
+		market     = 12 * dollar  // intentionally low, to incur SIB
+		initialNAV = 15 * 1000000 * dollar
+		finalNAV   = 20 * 1000000 * dollar
+	)
+
+	state := app.GetState().(*backing.State)
+	require.False(t, state.IsManagedVarSet("EndowmentNAV"))
+	require.Equal(t, pricecurve.Nanocent(0), state.GetEndowmentNAV())
+
+	err := app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.TotalIssue = issue
+		state.MarketPrice = market
+
+		require.False(t, state.IsManagedVarSet("EndowmentNAV"))
+		require.Equal(t, pricecurve.Nanocent(0), state.GetEndowmentNAV())
+		state.SetEndowmentNAV(initialNAV)
+		require.True(t, state.IsManagedVarSet("EndowmentNAV"))
+		require.Equal(t, pricecurve.Nanocent(initialNAV), state.GetEndowmentNAV())
+
+		return state, nil
+	})
+	require.NoError(t, err)
+
+	recordEndowmentNAV := NewRecordEndowmentNAV(
+		finalNAV,
+		1,
+		privateKeys...,
+	)
+
+	resp := deliverTx(t, app, recordEndowmentNAV)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	require.True(t, state.IsManagedVarSet("EndowmentNAV"))
+	require.Equal(t, pricecurve.Nanocent(finalNAV), state.GetEndowmentNAV())
 }
