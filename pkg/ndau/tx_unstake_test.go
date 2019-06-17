@@ -63,6 +63,7 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 
 	return app, assc, rulesAcct
 }
+
 func TestValidUnstakeTxIsValid(t *testing.T) {
 	app, assc, rulesAcct := initAppUnstake(t)
 	private := assc[sourcePrivate].(signature.PrivateKey)
@@ -71,7 +72,6 @@ func TestValidUnstakeTxIsValid(t *testing.T) {
 	// tx must be valid
 	resp := deliverTx(t, app, tx)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
 }
 
 func TestUnstakeTargetValidates(t *testing.T) {
@@ -215,4 +215,22 @@ func TestUnstakeDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestCannotUnstakeActiveNode(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// make the source an active node
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		s := stI.(*backing.State)
+		s.Nodes[source] = backing.Node{
+			Active: true,
+		}
+		return s, nil
+	})
+	private := assc[sourcePrivate].(signature.PrivateKey)
+	tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be valid
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
