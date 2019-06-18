@@ -68,6 +68,7 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 
 	return app, assc, rulesAcct
 }
+
 func TestValidUnstakeTxIsValid(t *testing.T) {
 	app, assc, rulesAcct := initAppUnstake(t)
 	private := assc[nodePrivate].(signature.PrivateKey)
@@ -282,4 +283,22 @@ func TestRulesAccountSpecifiesUnstakeDuration(t *testing.T) {
 	require.Nil(t, nodeData.Holds[0].Stake, "hold must no longer be a stake")
 	require.NotNil(t, nodeData.Holds[0].Expiry, "hold must have an expiry in the future")
 	require.Equal(t, &expectUnlock, nodeData.Holds[0].Expiry)
+}
+
+func TestCannotUnstakeActiveNode(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// make the source an active node
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		s := stI.(*backing.State)
+		s.Nodes[source] = backing.Node{
+			Active: true,
+		}
+		return s, nil
+	})
+	private := assc[sourcePrivate].(signature.PrivateKey)
+	tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be valid
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

@@ -69,7 +69,7 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 		marketPrice = state.MarketPrice
 	}
 	if nav < 0 {
-		nav = state.EndowmentNAV
+		nav = state.GetEndowmentNAV()
 	}
 
 	// compute the current target price

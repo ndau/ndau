@@ -421,7 +421,7 @@ func sibQuery(appI interface{}, request abci.RequestQuery, response *abci.Respon
 	var err error
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
-	fp, err := floorPrice(app, state.EndowmentNAV)
+	fp, err := floorPrice(app, state.GetEndowmentNAV())
 	if err != nil {
 		app.QueryError(err, response, "calculating floor price")
 		return

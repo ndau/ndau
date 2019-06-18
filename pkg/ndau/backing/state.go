@@ -12,6 +12,10 @@ import (
 // State is primarily a set of accounts
 //nomsify State
 type State struct {
+	// managedVars is map that allows us to hide new fields from noms until they're first set.
+	// All new variables must start with "managedVar"; nomsify will generate Get/Set accessors.
+	managedVars map[string]struct{}
+	// Accounts is a map of all accounts that exist on the blockchain.
 	Accounts map[string]AccountData
 	// Delegates is a map of strings to a set of strings
 	// All strings are addresses
@@ -49,9 +53,9 @@ type State struct {
 	TotalBurned math.Ndau
 	// These prices are preserved here just to assist downstream consumers
 	// have more trust in the SIB calculations.
-	MarketPrice  pricecurve.Nanocent
-	TargetPrice  pricecurve.Nanocent
-	EndowmentNAV pricecurve.Nanocent
+	MarketPrice            pricecurve.Nanocent
+	TargetPrice            pricecurve.Nanocent
+	managedVarEndowmentNAV pricecurve.Nanocent
 	// System variables are all stored here. A system variable is a named
 	// msgp-encoded object. It is safe to assume that all keys are valid utf-8.
 	Sysvars map[string][]byte
@@ -107,6 +111,11 @@ func (s *State) PayReward(
 ) ([]address.Address, error) {
 	var err error
 	srcAccount, _ := s.GetAccount(srcAddress, blockTime, defaultSettlementPeriod)
+
+	if isEAI {
+		// the uncredited EAI is being accounted for, so reset it
+		srcAccount.UncreditedEAI = 0
+	}
 
 	if srcAccount.RewardsTarget != nil {
 		// rewards are being redirected, so get the target account
