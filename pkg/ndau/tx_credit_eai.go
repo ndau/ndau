@@ -32,7 +32,12 @@ func (tx *CreditEAI) Validate(appI interface{}) error {
 	}
 
 	if !hasNode {
-		return errors.New("No such node")
+		return errors.New("no such node")
+	}
+
+	// EAI node must be active
+	if !app.GetState().(*backing.State).IsActiveNode(tx.Node) {
+		return errors.New("node must be active and is not")
 	}
 
 	return nil
