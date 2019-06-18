@@ -20,16 +20,16 @@ import (
 )
 
 func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 
 	// delegate source to eaiNode
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 	resp := deliverTx(t, app, d)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.LastEAIUpdate = 0
 		ad.LastWAAUpdate = 0
 	})
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// create a keypair for the node
 	public, private, err := signature.Generate(signature.Ed25519, nil)
@@ -37,14 +37,6 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	// assign this keypair
 	modify(t, eaiNode, app, func(data *backing.AccountData) {
 		data.ValidationKeys = []signature.PublicKey{public}
-	})
-	// ensure the eai node is active
-	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
-		st := stI.(*backing.State)
-		st.Nodes[eaiNode] = backing.Node{
-			Active: true,
-		}
-		return st, nil
 	})
 	return app, private
 }
