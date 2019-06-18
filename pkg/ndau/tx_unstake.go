@@ -47,7 +47,7 @@ func (tx *Unstake) Validate(appI interface{}) error {
 		return fmt.Errorf("rules validation script returned code %d", returncode)
 	}
 
-	if node, ok := app.GetState().(*backing.State).Nodes[tx.Target.String()]; ok && node.Active {
+	if app.GetState().(*backing.State).IsActiveNode(tx.Target) {
 		return errors.New("may not unstake an active node")
 	}
 

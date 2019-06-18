@@ -34,7 +34,7 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 		return err
 	}
 
-	if state.Nodes[tx.Node.String()].Active {
+	if state.IsActiveNode(tx.Node) {
 		return errors.New("node is already active")
 	}
 
