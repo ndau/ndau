@@ -25,9 +25,9 @@ const (
 // code changes and rebuild/stage/test/etc when choosing this height at mainnet upgrade time.
 // It's hard to choose such a height at dev time, since it sometimes takes weeks to land, and in
 // the mean time, mainnet keeps growing.  However, to minimize the pain of setting up a node,
-// we specify the environment variable inside `image/docker-procmon.toml` so that, although
-// that still requires a rebuild, it's not as cumbersome as a code rebuild, as that involves
-// re-tagging followed by a `dep ensure` update.
+// we specify the environment variable inside `commands/docker/image/docker-procmon.toml` so that,
+// although that still requires a rebuild, it's not as cumbersome as a code rebuild, as that
+// involves re-tagging followed by a `dep ensure` update.
 func assignFeatureHeights(futureHeight uint64) map[meta.Feature]uint64 {
 	features := make(map[meta.Feature]uint64)
 
