@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
+
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -144,7 +146,7 @@ func TestRegisterNodeMustBeInactive(t *testing.T) {
 func TestRegisterNodeDeductsTxFee(t *testing.T) {
 	app := initAppRegisterNode(t)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.Balance += 1
+		ad.Balance++
 	})
 
 	for i := 0; i < 2; i++ {
@@ -178,6 +180,21 @@ func TestRegisterNodeTargetMustBePrimaryStakerToRulesAccount(t *testing.T) {
 	))
 	require.NoError(t, err)
 
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
+	ctkBytes, err := tx.Marshal(rn, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestRulesAccountMustApproveRegisterNode(t *testing.T) {
+	app := initAppRegisterNode(t)
+	rulesAcct, _ := getRulesAccount(t, app)
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 fail enddef").Bytes()
+	})
 	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)

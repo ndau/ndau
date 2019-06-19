@@ -1,6 +1,8 @@
 package ndau
 
 import (
+	"fmt"
+
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -75,6 +77,22 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 
 	if state.IsActiveNode(tx.Node) {
 		return errors.New("node is already active")
+	}
+
+	vm, err := BuildVMForRulesValidation(tx, state, noderules)
+	if err != nil {
+		return errors.Wrap(err, "building rules validation vm")
+	}
+	err = vm.Run(nil)
+	if err != nil {
+		return errors.Wrap(err, "running rules validation vm")
+	}
+	returncode, err := vm.Stack().PopAsInt64()
+	if err != nil {
+		return errors.Wrap(err, "getting return code from rules validation vm")
+	}
+	if returncode != 0 {
+		return fmt.Errorf("rules validation script returned code %d", returncode)
 	}
 
 	return nil
