@@ -51,8 +51,8 @@ type Features struct {
 	features map[meta.Feature]uint64
 }
 
-// NewFeatures initializes and returns a new Features object.
-func NewFeatures(app *App) *Features {
+// InitFeatures sets up a new Features object with the given app.
+func (app *App) InitFeatures() {
 	// This environment variable
 	newFeatureHeight := os.Getenv("NEW_FEATURE_HEIGHT")
 	maxHeight, err := strconv.ParseUint(newFeatureHeight, 10, 64)
@@ -73,10 +73,12 @@ func NewFeatures(app *App) *Features {
 		}
 	}
 
-	return &Features{
-		app:      app,
-		features: features,
-	}
+	app.SetFeatures(
+		&Features{
+			app:      app,
+			features: features,
+		},
+	)
 }
 
 // IsActive returns whether the given feature is currently active in the app.
