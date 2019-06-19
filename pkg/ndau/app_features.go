@@ -24,18 +24,23 @@ const (
 // that have been implemented since the last upgrade of mainnet.  This avoids having to make
 // code changes and rebuild/stage/test/etc when choosing this height at mainnet upgrade time.
 // It's hard to choose such a height at dev time, since it sometimes takes weeks to land, and in
-// the mean time, mainnet keeps growing.
+// the mean time, mainnet keeps growing.  However, to minimize the pain of setting up a node,
+// we specify the environment variable inside `image/docker-env.sh` so that, although that still
+// requires a rebuild, it's not as cumbersome as a code rebuild, as that involves re-tagging
+// followed by a `dep ensure` update.
 func assignFeatureHeights(futureHeight uint64) map[meta.Feature]uint64 {
+	features := make(map[meta.Feature]uint64)
+
 	// How to modify the existing heights (and add new heights) below:
 	//
 	// When we add more features, we need to replace all features gated by futureHeight below
 	// with the value we used in the environment variable the last time we upgraded mainnet.
 	// Then the new features can be gated by the new futureHeight.  We'll then update the
 	// environment vairable when we're ready to upgrade mainnet again.
-	features := make(map[meta.Feature]uint64)
 	features[NoExchangeHoldsOnTransfer]     = futureHeight
 	features[NoKeysOnSetValidation]         = futureHeight
 	features[ResetUncreditedEAIOnCreditEAI] = futureHeight
+
 	return features
 }
 
