@@ -9,6 +9,7 @@ import (
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -20,8 +21,18 @@ func initAppRegisterNode(t *testing.T) *App {
 
 	// this ensures the target address exists
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+		acct.Balance = 1000 * constants.NapuPerNdau
 		acct.ValidationKeys = []signature.PublicKey{transferPublic}
 	})
+
+	// ensure node is primary staker to node rules account
+	noderules, _ := getRulesAccount(t, app)
+	err := app.UpdateStateImmediately(app.Stake(
+		1000*constants.NapuPerNdau,
+		targetAddress, noderules, noderules,
+		nil,
+	))
+	require.NoError(t, err)
 
 	return app
 }
@@ -133,7 +144,7 @@ func TestRegisterNodeMustBeInactive(t *testing.T) {
 func TestRegisterNodeDeductsTxFee(t *testing.T) {
 	app := initAppRegisterNode(t)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
-		ad.Balance = 1
+		ad.Balance += 1
 	})
 
 	for i := 0; i < 2; i++ {
@@ -154,4 +165,24 @@ func TestRegisterNodeDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestRegisterNodeTargetMustBePrimaryStakerToRulesAccount(t *testing.T) {
+	app := initAppRegisterNode(t)
+	rulesAcct, _ := getRulesAccount(t, app)
+	// unstake the target to set up proper conditions for this test
+	err := app.UpdateStateImmediately(app.Unstake(
+		1000*constants.NapuPerNdau,
+		targetAddress, rulesAcct, rulesAcct,
+		0,
+	))
+	require.NoError(t, err)
+
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
+	ctkBytes, err := tx.Marshal(rn, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(ctkBytes)
+	t.Log(resp.Log)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	tc "github.com/tendermint/tendermint/crypto"
 	ted "github.com/tendermint/tendermint/crypto/ed25519"
@@ -44,9 +45,19 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 	app := appI.(*App)
 	state := app.GetState().(*backing.State)
 
-	_, _, _, err := app.getTxAccount(tx)
+	target, _, _, err := app.getTxAccount(tx)
 	if err != nil {
 		return err
+	}
+
+	var noderules address.Address
+	err = app.System(sv.NodeRulesAccountAddressName, &noderules)
+	if err != nil {
+		return errors.Wrap(err, "getting node rules sysvar")
+	}
+
+	if target.PrimaryStake(noderules) == nil {
+		return errors.New("target must be primary staker to node rules account")
 	}
 
 	genAddr, err := address.Generate(tx.Node.Kind(), tx.Ownership.KeyBytes())
