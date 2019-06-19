@@ -1564,9 +1564,13 @@ func (z *RegisterNode) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "dis"
 	o = append(o, 0xa3, 0x64, 0x69, 0x73)
 	o = msgp.AppendBytes(o, z.DistributionScript)
-	// string "rpc"
-	o = append(o, 0xa3, 0x72, 0x70, 0x63)
-	o = msgp.AppendString(o, z.RPCAddress)
+	// string "own"
+	o = append(o, 0xa3, 0x6f, 0x77, 0x6e)
+	o, err = z.Ownership.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Ownership")
+		return
+	}
 	// string "seq"
 	o = append(o, 0xa3, 0x73, 0x65, 0x71)
 	o = msgp.AppendUint64(o, z.Sequence)
@@ -1613,10 +1617,10 @@ func (z *RegisterNode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "DistributionScript")
 				return
 			}
-		case "rpc":
-			z.RPCAddress, bts, err = msgp.ReadStringBytes(bts)
+		case "own":
+			bts, err = z.Ownership.UnmarshalMsg(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "RPCAddress")
+				err = msgp.WrapError(err, "Ownership")
 				return
 			}
 		case "seq":
@@ -1658,7 +1662,7 @@ func (z *RegisterNode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *RegisterNode) Msgsize() (s int) {
-	s = 1 + 4 + z.Node.Msgsize() + 4 + msgp.BytesPrefixSize + len(z.DistributionScript) + 4 + msgp.StringPrefixSize + len(z.RPCAddress) + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Node.Msgsize() + 4 + msgp.BytesPrefixSize + len(z.DistributionScript) + 4 + z.Ownership.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}

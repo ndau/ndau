@@ -15,7 +15,7 @@ import (
 type Node struct {
 	Active             bool
 	DistributionScript []byte
-	RPCAddress         string
+	TMAddress          string
 }
 
 // IsActiveNode is true when the provided address is an active node

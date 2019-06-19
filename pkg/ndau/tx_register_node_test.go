@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
@@ -25,6 +26,15 @@ func initAppRegisterNode(t *testing.T) *App {
 	return app
 }
 
+func ensureTargetAddressSyncd(t *testing.T) {
+	t.Log("target address", targetAddress)
+	t.Log("target public", targetPublic)
+	addr, err := address.Generate(targetAddress.Kind(), targetPublic.KeyBytes())
+	require.NoError(t, err)
+	t.Log("generated address", addr)
+	require.Equal(t, targetAddress, addr)
+}
+
 func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	// flip the bits of the last byte so the address is no longer correct
 	addrBytes := []byte(targetAddress.String())
@@ -36,7 +46,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	require.Error(t, err)
 
 	// the address is invalid, but NewRegisterNode doesn't validate this
-	rn := NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
+	rn := NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
 
 	// However, the resultant transaction must not be valid
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
@@ -49,7 +59,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	// what about an address which is valid but doesn't already exist?
 	fakeTarget, err := address.Generate(address.KindUser, addrBytes)
 	require.NoError(t, err)
-	rn = NewRegisterNode(fakeTarget, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
+	rn = NewRegisterNode(fakeTarget, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
 	ctkBytes, err = tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 	resp = app.CheckTx(ctkBytes)
@@ -59,7 +69,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 func TestRegisterNodeInvalidScript(t *testing.T) {
 	app := initAppRegisterNode(t)
 
-	rn := NewRegisterNode(targetAddress, []byte{}, "http://1.2.3.4:56789", 1, transferPrivate)
+	rn := NewRegisterNode(targetAddress, []byte{}, targetPublic, 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -68,22 +78,30 @@ func TestRegisterNodeInvalidScript(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestRegisterNodeInvalidRPC(t *testing.T) {
+func TestRegisterNodeInvalidPubKey(t *testing.T) {
 	app := initAppRegisterNode(t)
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "foo bar.baz", 1, transferPrivate)
-	ctkBytes, err := tx.Marshal(rn, TxIDs)
+	// flip one bit of pub key
+	pkb := make([]byte, targetPublic.Algorithm().PublicKeySize())
+	copy(pkb, targetPublic.KeyBytes())
+	byteIdx := rand.Intn(len(pkb))
+	flipBit := byte(1 << uint(rand.Intn(8)))
+	pkb[byteIdx] = pkb[byteIdx] ^ flipBit
+	pubKey, err := signature.RawPublicKey(targetPublic.Algorithm(), pkb, targetPublic.ExtraBytes())
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
-	t.Log(resp.Log)
+	ensureTargetAddressSyncd(t)
+
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, *pubKey, 1, transferPrivate)
+	resp := deliverTx(t, app, rn)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
 func TestValidRegisterNode(t *testing.T) {
+	ensureTargetAddressSyncd(t)
 	app := initAppRegisterNode(t)
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -104,7 +122,7 @@ func TestRegisterNodeMustBeInactive(t *testing.T) {
 		return st, nil
 	})
 
-	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789", 1, transferPrivate)
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
@@ -121,7 +139,7 @@ func TestRegisterNodeDeductsTxFee(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		rn := NewRegisterNode(
 			targetAddress,
-			[]byte{0xa0, 0x00, 0x88}, "http://1.2.3.4:56789",
+			[]byte{0xa0, 0x00, 0x88}, targetPublic,
 			uint64(i)+1,
 			transferPrivate,
 		)

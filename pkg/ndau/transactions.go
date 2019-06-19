@@ -223,7 +223,7 @@ var _ NTransactable = (*Stake)(nil)
 type RegisterNode struct {
 	Node               address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
 	DistributionScript []byte                `msg:"dis" chain:"33,Tx_DistributionScript" json:"distribution_script"`
-	RPCAddress         string                `msg:"rpc" chain:"34,Tx_RPCAddress" json:"rpc_address"`
+	Ownership          signature.PublicKey   `msg:"own" chain:"34,Tx_Ownership" json:"ownership"`
 	Sequence           uint64                `msg:"seq" json:"sequence"`
 	Signatures         []signature.Signature `msg:"sig" json:"signatures"`
 }

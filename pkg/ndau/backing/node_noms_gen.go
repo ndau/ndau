@@ -33,7 +33,7 @@ func init() {
 	nodeStructTemplate = nt.MakeStructTemplate("Node", []string{
 		"Active",
 		"DistributionScript",
-		"RPCAddress",
+		"TMAddress",
 	})
 }
 
@@ -43,15 +43,15 @@ func (x Node) MarshalNoms(vrw nt.ValueReadWriter) (nodeValue nt.Value, err error
 
 	// x.DistributionScript ([]byte->*ast.ArrayType) is primitive: true
 
-	// x.RPCAddress (string->*ast.Ident) is primitive: true
+	// x.TMAddress (string->*ast.Ident) is primitive: true
 
 	values := []nt.Value{
 		// x.Active (bool)
 		nt.Bool(x.Active),
 		// x.DistributionScript ([]byte)
 		nt.String(x.DistributionScript),
-		// x.RPCAddress (string)
-		nt.String(x.RPCAddress),
+		// x.TMAddress (string)
+		nt.String(x.TMAddress),
 	}
 
 	return nodeStructTemplate.NewStruct(values), nil
@@ -107,20 +107,20 @@ func (x *Node) UnmarshalNoms(value nt.Value) (err error) {
 				distributionScriptTyped := []byte(distributionScriptValue)
 
 				x.DistributionScript = distributionScriptTyped
-			// x.RPCAddress (string->*ast.Ident) is primitive: true
-			case "RPCAddress":
-				// template u_decompose: x.RPCAddress (string->*ast.Ident)
-				// template u_primitive: x.RPCAddress
-				rPCAddressValue, ok := value.(nt.String)
+			// x.TMAddress (string->*ast.Ident) is primitive: true
+			case "TMAddress":
+				// template u_decompose: x.TMAddress (string->*ast.Ident)
+				// template u_primitive: x.TMAddress
+				tMAddressValue, ok := value.(nt.String)
 				if !ok {
 					err = fmt.Errorf(
 						"Node.UnmarshalNoms expected value to be a nt.String; found %s",
 						reflect.TypeOf(value),
 					)
 				}
-				rPCAddressTyped := string(rPCAddressValue)
+				tMAddressTyped := string(tMAddressValue)
 
-				x.RPCAddress = rPCAddressTyped
+				x.TMAddress = tMAddressTyped
 			}
 		}
 	})
