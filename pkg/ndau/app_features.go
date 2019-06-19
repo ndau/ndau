@@ -47,13 +47,13 @@ type Features struct {
 	app *App
 
 	// Map whose keys are features,
-	// and values are the mainnet block height at which the feature becomes active.
+	// and whose values are the mainnet block height at which the feature becomes active.
 	features map[meta.Feature]uint64
 }
 
 // InitFeatures sets up a new Features object with the given app.
 func (app *App) InitFeatures() {
-	// This environment variable
+	// We set this environment variable at deploy-time to a height in the future.
 	newFeatureHeight := os.Getenv("NEW_FEATURE_HEIGHT")
 	maxHeight, err := strconv.ParseUint(newFeatureHeight, 10, 64)
 	if err != nil {
