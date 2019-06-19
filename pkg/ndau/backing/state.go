@@ -98,6 +98,7 @@ func (s *State) GetAccount(
 // Note that if the reward is redirected, it is still the original account whose lastEAIUpdate time
 // is changed.
 // If isEAI we change WAA only if it's not the same account (per the rules of EAI).
+// If isEAI and resetUncreditedEAI we set the source account's UncreditedEAI to 0.
 // If it's redirected we change WAA for the target account and do nothing to the source.
 // If it's not redirected we change WAA only if it's not EAI.
 // After updating the balance in an account, this also updates currency seat
@@ -108,11 +109,12 @@ func (s *State) PayReward(
 	blockTime math.Timestamp,
 	defaultSettlementPeriod math.Duration,
 	isEAI bool,
+	resetUncreditedEAI bool,
 ) ([]address.Address, error) {
 	var err error
 	srcAccount, _ := s.GetAccount(srcAddress, blockTime, defaultSettlementPeriod)
 
-	if isEAI {
+	if isEAI && resetUncreditedEAI {
 		// the uncredited EAI is being accounted for, so reset it
 		srcAccount.UncreditedEAI = 0
 	}

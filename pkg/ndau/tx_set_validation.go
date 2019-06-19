@@ -66,8 +66,13 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 		return err
 	}
 
-	if len(acct.ValidationKeys) > 0 {
-		return errors.New("SetValidation only works when 0 validation keys are set")
+	maxKeys := 1
+	if app.IsFeatureActive("NoKeysOnSetValidation") {
+		maxKeys = 0
+	}
+	if len(acct.ValidationKeys) > maxKeys {
+		return fmt.Errorf("SetValidation only works when at most %d validation keys are set",
+			maxKeys)
 	}
 
 	// Prevent claiming of locked exchange accounts.  If this fails, it means we've been working
