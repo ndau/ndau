@@ -40,7 +40,7 @@ type App struct {
 
 // NewApp prepares a new Ndau App
 func NewApp(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
-	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, nil, nil)
+	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, nil)
 }
 
 // NewAppSilent prepares a new Ndau App which doesn't log
@@ -48,19 +48,12 @@ func NewAppSilent(dbSpec string, indexAddr string, indexVersion int, config conf
 	logger := log.New()
 	logger.Out = ioutil.Discard
 
-	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, logger, nil)
+	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, logger)
 }
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
-func NewAppWithLogger(
-	dbSpec string,
-	indexAddr string,
-	indexVersion int,
-	config config.Config,
-	logger log.FieldLogger,
-	features meta.Features,
-) (*App, error) {
-	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger, features)
+func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config config.Config, logger log.FieldLogger) (*App, error) {
+	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
 	}
