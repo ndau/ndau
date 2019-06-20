@@ -67,7 +67,7 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 	}
 
 	maxKeys := 1
-	if app.IsFeatureActive(NoKeysOnSetValidation) {
+	if app.IsFeatureActive("NoKeysOnSetValidation") {
 		maxKeys = 0
 	}
 	if len(acct.ValidationKeys) > maxKeys {

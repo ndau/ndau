@@ -70,7 +70,7 @@ func (tx *Transfer) Apply(appInt interface{}) error {
 	dest.Balance += tx.Qty
 
 	destIsExchange := false
-	if app.IsFeatureActive(NoExchangeHoldsOnTransfer) {
+	if app.IsFeatureActive("NoExchangeHoldsOnTransfer") {
 		destIsExchange, err = app.GetState().(*backing.State).AccountHasAttribute(tx.Destination, sv.AccountAttributeExchange)
 		if err != nil {
 			return errors.New("dest account exchange attribute can't be retrieved")
