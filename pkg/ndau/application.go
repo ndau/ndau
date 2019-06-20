@@ -92,6 +92,13 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 		false,
 	}
 	app.App.SetChild(&app)
+
+	// We set this environment variable on our devnet nodes to disable feature height gating.
+	// The devnet blockchain starts from scratch, so all features are enabled at genesis.
+	if os.Getenv("USE_ZERO_HEIGHT_FEATURES") == "1" {
+		app.config.Features = nil
+	}
+
 	return &app, nil
 }
 
@@ -167,4 +174,61 @@ func (app *App) getDefaultSettlementDuration() math.Duration {
 
 func (app *App) getAccount(addr address.Address) (backing.AccountData, bool) {
 	return app.GetState().(*backing.State).GetAccount(addr, app.BlockTime(), app.getDefaultSettlementDuration())
+}
+
+// IsFeatureActive returns whether the given feature is currently active.
+//
+// Once a feature becomes "active", it never becomes "inactive".  We can handle this when
+// we add more features that override previous features by checking the newest features first.
+//
+// For example, say we have a feature in some transaction validation code that rounds a qty:
+//
+//   qty := math.Round(tx.Qty)
+//
+// Then later we decided to round to the nearest tenth instead, we would write:
+//
+//   qty := tx.Qty
+//   if app.IsFeatureActive("RoundToTenths") {
+//       qty = math.Round(qty*10)/10
+//   } else {
+//       qty = math.Round(qty)
+//   }
+//
+// Then even later we decide to round to the nearest hundredth, we would write:
+//
+//   qty := tx.Qty
+//   if app.IsFeatureActive("RoundToHundredths") {
+//       qty = math.Round(qty*100)/100
+//   } else if app.IsFeatureActive("RoundToTenths") {
+//       qty = math.Round(qty*10)/10
+//   } else {
+//       qty = math.Round(qty)
+//   }
+//
+// That way we remain backward compatible until the new rules become active as the app's
+// state (i.e. block height) increases.
+//
+//   height:        0          120               300
+//                  |           |                 |
+//   blockchain:    |--x---x----+---y------y------+--z--z-------z---...
+//                  |           |                 |
+//   feature:    genesis   RoundToTenths   RoundToHundredths
+//
+// A transaction "x" that occurs prior to block 120 gets the default handling since genesis.
+// A transaction "y" with height in [120, 300) gets the rounding-by-tenths handling.
+// A transaction "z" on or after block height 300 gets the rounding-by-hundredths handling.
+func (app *App) IsFeatureActive(feature string) bool {
+	// If features is nil, it means that all features are active all the time.
+	if app.config.Features == nil {
+		return true
+	}
+
+	gateHeight, ok := app.config.Features[feature]
+
+	// Unknown or unconfigured features are always active by default.
+	if !ok {
+		return true
+	}
+
+	return app.Height() >= gateHeight
 }
