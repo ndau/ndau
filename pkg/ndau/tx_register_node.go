@@ -98,6 +98,31 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 	return nil
 }
 
+func (app *App) registerNode(
+	nodeA address.Address,
+	distributionScript []byte,
+	ownership signature.PublicKey,
+) func(stateI metast.State) (metast.State, error) {
+	return func(stateI metast.State) (metast.State, error) {
+		tma, err := TMAddress(ownership)
+		if err != nil {
+			return stateI, errors.Wrap(err, "generating TM address from ownership key")
+		}
+
+		state := stateI.(*backing.State)
+		node := state.Nodes[nodeA.String()]
+
+		node.Active = true
+		node.DistributionScript = distributionScript
+		node.TMAddress = tma
+		node.Key = ownership
+
+		state.Nodes[nodeA.String()] = node
+
+		return state, nil
+	}
+}
+
 // Apply implements metatx.Transactable
 func (tx *RegisterNode) Apply(appI interface{}) error {
 	app := appI.(*App)
@@ -105,23 +130,8 @@ func (tx *RegisterNode) Apply(appI interface{}) error {
 	if err != nil {
 		return err
 	}
-	tma, err := TMAddress(tx.Ownership)
-	if err != nil {
-		return errors.Wrap(err, "generating TM address from ownership key")
-	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		state := stateI.(*backing.State)
-		node := state.Nodes[tx.Node.String()]
-
-		node.Active = true
-		node.DistributionScript = tx.DistributionScript
-		node.TMAddress = tma
-
-		state.Nodes[tx.Node.String()] = node
-
-		return state, nil
-	})
+	return app.UpdateState(app.registerNode(tx.Node, tx.DistributionScript, tx.Ownership))
 }
 
 // GetSource implements Sourcer

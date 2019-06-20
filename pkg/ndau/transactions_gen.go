@@ -450,9 +450,13 @@ func (z *ClaimNodeReward) Msgsize() (s int) {
 func (z *CommandValidatorChange) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 4
-	// string "tm_pk"
-	o = append(o, 0x84, 0xa5, 0x74, 0x6d, 0x5f, 0x70, 0x6b)
-	o = msgp.AppendBytes(o, z.PublicKey)
+	// string "nod"
+	o = append(o, 0x84, 0xa3, 0x6e, 0x6f, 0x64)
+	o, err = z.Node.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "Node")
+		return
+	}
 	// string "pow"
 	o = append(o, 0xa3, 0x70, 0x6f, 0x77)
 	o = msgp.AppendInt64(o, z.Power)
@@ -490,10 +494,10 @@ func (z *CommandValidatorChange) UnmarshalMsg(bts []byte) (o []byte, err error) 
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "tm_pk":
-			z.PublicKey, bts, err = msgp.ReadBytesBytes(bts, z.PublicKey)
+		case "nod":
+			bts, err = z.Node.UnmarshalMsg(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "PublicKey")
+				err = msgp.WrapError(err, "Node")
 				return
 			}
 		case "pow":
@@ -541,7 +545,7 @@ func (z *CommandValidatorChange) UnmarshalMsg(bts []byte) (o []byte, err error) 
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *CommandValidatorChange) Msgsize() (s int) {
-	s = 1 + 6 + msgp.BytesPrefixSize + len(z.PublicKey) + 4 + msgp.Int64Size + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Node.Msgsize() + 4 + msgp.Int64Size + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}

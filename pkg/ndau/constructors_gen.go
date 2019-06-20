@@ -386,15 +386,15 @@ func NewTransferAndLock(
 //
 // If signing keys are present, the new transactable is signed with all of them
 func NewCommandValidatorChange(
-	publickey []byte,
+	node address.Address,
 	power int64,
 	sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *CommandValidatorChange {
 	tx := &CommandValidatorChange{
-		PublicKey: publickey,
-		Power:     power,
-		Sequence:  sequence,
+		Node:     node,
+		Power:    power,
+		Sequence: sequence,
 	}
 	if len(signingKeys) > 0 {
 		bytes := tx.SignableBytes()
