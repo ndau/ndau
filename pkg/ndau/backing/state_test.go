@@ -94,7 +94,7 @@ func TestState_PayReward(t *testing.T) {
 				wantids = []string{addr.String(), (*s.Accounts[addr.String()].RewardsTarget).String()}
 			}
 			blockTime := randTimestamp()
-			got, err := s.PayReward(addr, tt.reward, blockTime, 0, tt.eai)
+			got, err := s.PayReward(addr, tt.reward, blockTime, 0, tt.eai, tt.eai)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("State.PayReward() error = %v, wantErr %v", err, tt.wantErr)
 				return

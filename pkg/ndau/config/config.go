@@ -41,6 +41,10 @@ type Config struct {
 	// This allows node operators to respond appropriately when their own node
 	// wins, so they can create a `ClaimNodeReward` transaction.
 	NodeRewardWebhook *string
+
+	// Map whose keys are features,
+	// and whose values are the mainnet block height at which the feature becomes active.
+	Features map[string]uint64
 }
 
 // DefaultConfig creates a new config object with sensible defaults
