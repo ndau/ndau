@@ -36,7 +36,7 @@ func (tx *CreditEAI) Validate(appI interface{}) error {
 	}
 
 	// EAI node must be active
-	if !app.GetState().(*backing.State).IsActiveNode(tx.Node) {
+	if app.IsFeatureActive("NodeActiveCheck") && !app.GetState().(*backing.State).IsActiveNode(tx.Node) {
 		return errors.New("node must be active and is not")
 	}
 
