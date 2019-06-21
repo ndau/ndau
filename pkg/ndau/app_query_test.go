@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/version"
@@ -13,6 +16,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -168,4 +172,90 @@ func TestPrevalidateInvalidTx(t *testing.T) {
 	var fee, sib, resolvestakecost math.Ndau
 	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
 	require.NoError(t, err)
+}
+
+func TestPrevalidateReportsCorrectFee(t *testing.T) {
+	app, private := initAppTx(t)
+	tr := generateTransfer(t, 50, 1, []signature.PrivateKey{private})
+	trb, err := metatx.Marshal(tr, TxIDs)
+	require.NoError(t, err)
+
+	// set up a delivery context where a tx has a known fee
+	dc := ddc(t).with(func(sysvars map[string][]byte) {
+		script := vm.MiniAsm("handler 0 one enddef").Bytes()
+		msgp, err := wkt.Bytes(script).MarshalMsg(nil)
+		require.NoError(t, err)
+		sysvars[sv.TxFeeScriptName] = msgp
+	})
+	var resp abci.ResponseQuery
+	dc.Within(app, func() {
+		resp = app.Query(abci.RequestQuery{
+			Path: query.PrevalidateEndpoint,
+			Data: trb,
+		})
+	})
+
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, resp.Info)
+
+	var fee, sib, resolvestakecost math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	require.NoError(t, err)
+	require.Equal(t, math.Ndau(1), fee)
+}
+
+func TestPrevalidateReportsCorrectSIB(t *testing.T) {
+	app, private := initAppTx(t)
+	tr := NewTransfer(sourceAddress, destAddress, 2*constants.NapuPerNdau, 1, private)
+	trb, err := metatx.Marshal(tr, TxIDs)
+	require.NoError(t, err)
+
+	// set 50% SIB
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.SIB = constants.RateDenominator / 2
+		return state, nil
+	})
+
+	resp := app.Query(abci.RequestQuery{
+		Path: query.PrevalidateEndpoint,
+		Data: trb,
+	})
+
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, resp.Info)
+
+	var fee, sib, resolvestakecost math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	require.NoError(t, err)
+	require.Equal(t, math.Ndau(constants.NapuPerNdau), sib)
+}
+
+func TestPrevalidateReportsCorrectResolveStakeCost(t *testing.T) {
+	app, private := initAppTx(t)
+
+	// set up the rules account to charge 1 napu resolve stake fee
+	rulesaccount, _ := getRulesAccount(t, app)
+	modify(t, rulesaccount.String(), app, func(acct *backing.AccountData) {
+		require.NotNil(t, acct.StakeRules)
+		acct.StakeRules.Script = vm.MiniAsm("handler 0 zero enddef handler 1 1a one enddef").Bytes()
+	})
+
+	// the resolve stake fee is only ever non-0 for a Stake tx
+	tx := NewStake(sourceAddress, rulesaccount, rulesaccount, 1000*constants.NapuPerNdau, 1, private)
+	trb, err := metatx.Marshal(tx, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.Query(abci.RequestQuery{
+		Path: query.PrevalidateEndpoint,
+		Data: trb,
+	})
+
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, resp.Info)
+
+	var fee, sib, resolvestakecost math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	require.NoError(t, err)
+	require.Equal(t, math.Ndau(1), resolvestakecost)
 }
