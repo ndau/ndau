@@ -343,8 +343,12 @@ func deliverTxsContext(
 	return resps, reb
 }
 
-func getRulesAccount(t *testing.T, app *App) (rulesAcct address.Address) {
+func getRulesAccount(t *testing.T, app *App) (rulesAcct address.Address, private signature.PrivateKey) {
 	err := app.System(sv.NodeRulesAccountAddressName, &rulesAcct)
+	require.NoError(t, err)
+
+	var public signature.PublicKey
+	public, private, err = signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
 	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
@@ -355,6 +359,7 @@ func getRulesAccount(t *testing.T, app *App) (rulesAcct address.Address) {
 			Script:  vm.MiniAsm("handler 0 zero enddef").Bytes(),
 			Inbound: make(map[string]uint64),
 		}
+		ad.ValidationKeys = []signature.PublicKey{public}
 		st.Accounts[rulesAcct.String()] = ad
 
 		return st, nil

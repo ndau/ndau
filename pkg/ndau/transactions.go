@@ -39,6 +39,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(23): &SetSysvar{},
 	metatx.TxID(24): &SetStakeRules{},
 	metatx.TxID(25): &RecordEndowmentNAV{},
+	metatx.TxID(26): &ResolveStake{},
 	metatx.TxID(30): &ChangeSchema{},
 }
 
@@ -369,6 +370,8 @@ type ChangeSchema struct {
 	Signatures    []signature.Signature `msg:"sig" json:"signatures"`
 }
 
+var _ NTransactable = (*ChangeSchema)(nil)
+
 // A RecordEndowmentNAV transaction records the current Net Asset Value of the ndau endowment.
 //
 // This data is used to calculate the current SIB in effect.
@@ -381,3 +384,23 @@ type RecordEndowmentNAV struct {
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
+
+var _ NTransactable = (*RecordEndowmentNAV)(nil)
+
+// A ResolveStake transaction is submitted by a stake rules account to resolve a stake.
+//
+// Most of the time this will not be required: stakers will eventually `Unstake`, be
+// subject to some delay, and then have their staked balance automatically return to
+// spendable status.
+//
+// ResolveStake is not for those transactions. It is for those times when an account
+// or group of accounts must have its stake slashed, and for dispute resolution.
+type ResolveStake struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"` // primary staker
+	Rules      address.Address       `msg:"rul" chain:"8,Tx_Rules" json:"rules"`
+	Burn       uint8                 `msg:"brn" chain:"12,Tx_Burn" json:"burn"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*ResolveStake)(nil)

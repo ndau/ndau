@@ -7,6 +7,7 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
@@ -64,8 +65,6 @@ func (app *App) Stake(
 		st := stI.(*backing.State)
 
 		targetAcct, _ := app.getAccount(target)
-		stakeToAcct, _ := app.getAccount(stakeTo)
-		rulesAcct, _ := app.getAccount(rules)
 
 		targetAcct.UpdateSettlements(app.BlockTime())
 
@@ -78,6 +77,7 @@ func (app *App) Stake(
 			return st, fmt.Errorf("stake: insufficient target available balance: have %d, need %d", ab, qty)
 		}
 
+		rulesAcct, _ := app.getAccount(rules)
 		if rulesAcct.StakeRules == nil {
 			return st, fmt.Errorf("stake: rules must be a rules account")
 		}
@@ -87,7 +87,7 @@ func (app *App) Stake(
 		if isPrimary {
 			ps := targetAcct.PrimaryStake(rules)
 			if ps != nil {
-				return st, fmt.Errorf("stake: cannot have more than 1 primary stake to a rules account")
+				return st, fmt.Errorf("stake: target cannot have more than 1 primary stake to a rules account")
 			}
 		}
 
@@ -107,10 +107,14 @@ func (app *App) Stake(
 			hold.Txhash = metatx.Hash(tx)
 		}
 		targetAcct.Holds = append(targetAcct.Holds, hold)
+		st.Accounts[target.String()] = targetAcct
 
 		if isPrimary {
+			rulesAcct, _ := app.getAccount(rules)
 			rulesAcct.StakeRules.Inbound[target.String()]++
+			st.Accounts[rules.String()] = rulesAcct
 		} else {
+			stakeToAcct, _ := app.getAccount(stakeTo)
 			rulesCostakers := stakeToAcct.Costakers[rules.String()]
 			if rulesCostakers == nil {
 				rulesCostakers = make(map[string]uint64)
@@ -120,11 +124,8 @@ func (app *App) Stake(
 				stakeToAcct.Costakers = make(map[string]map[string]uint64)
 			}
 			stakeToAcct.Costakers[rules.String()] = rulesCostakers
+			st.Accounts[stakeTo.String()] = stakeToAcct
 		}
-
-		st.Accounts[target.String()] = targetAcct
-		st.Accounts[stakeTo.String()] = stakeToAcct
-		st.Accounts[rules.String()] = rulesAcct
 
 		return st, nil
 	}
@@ -140,34 +141,103 @@ func (app *App) Stake(
 func (app *App) Unstake(
 	qty math.Ndau,
 	target, stakeTo, rules address.Address,
+	retainFor math.Duration,
+) func(metast.State) (metast.State, error) {
+	return app.UnstakeAndBurn(qty, 0, target, stakeTo, rules, retainFor, false)
+}
+
+// UnstakeAndBurn updates the state to handle unstaking an account with some
+// amount burned. Burn is expressed as a fraction.
+//
+// It is assumed that all necessary validation has already been performed. In
+// particular, this function does not attempt to construct or run the chaincode
+// context for the rules account.
+//
+// This function returns a function suitable for calling within app.UpdateState
+func (app *App) UnstakeAndBurn(
+	qty math.Ndau, burn uint8,
+	target, stakeTo, rules address.Address,
+	retainFor math.Duration,
+	recursive bool,
 ) func(metast.State) (metast.State, error) {
 	return func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
 		targetAcct, _ := app.getAccount(target)
-		stakeToAcct, _ := app.getAccount(stakeTo)
-		rulesAcct, _ := app.getAccount(rules)
 
 		// update 3 places where we keep track of rules info:
 		// - outbound stake list
 		// - rules inbounds (if primary)
 		// - costakers list (if applicable)
+		found := 0
 		for idx, hold := range targetAcct.Holds {
-			if hold.Qty == qty && hold.Stake != nil && hold.Stake.StakeTo == stakeTo && hold.Stake.RulesAcct == rules {
-				// quickly remove this element by replacing it with the final one
-				targetAcct.Holds[idx] = targetAcct.Holds[len(targetAcct.Holds)-1]
-				targetAcct.Holds = targetAcct.Holds[:len(targetAcct.Holds)-1]
-				break
+			if (recursive || hold.Qty == qty) &&
+				hold.Stake != nil &&
+				hold.Stake.RulesAcct == rules &&
+				// If the staker we're looking at right now is the
+				// target, then StakeTo must be the Rules account to match.
+				// Otherwise, it must be what we're staking to.
+				(target == stakeTo &&
+					hold.Stake.StakeTo == rules ||
+					hold.Stake.StakeTo == stakeTo) {
+
+				found++
+
+				burned, err := signed.MulDiv(int64(hold.Qty), int64(burn), resolveStakeDenominator)
+				if err != nil {
+					return nil, errors.Wrap(err, "computing burned qty for "+target.String())
+				}
+				nburned := math.Ndau(burned)
+				targetAcct.Balance -= nburned
+				st.TotalBurned += nburned
+
+				if retainFor == 0 {
+					// quickly remove this element by replacing it with the final one
+					targetAcct.Holds[idx] = targetAcct.Holds[len(targetAcct.Holds)-1]
+					targetAcct.Holds = targetAcct.Holds[:len(targetAcct.Holds)-1]
+				} else {
+					// convert this stake hold into a normal hold with an appropriate
+					// retention period
+					hold.Stake = nil
+					uo := app.BlockTime().Add(retainFor)
+					hold.Expiry = &uo
+					// reduce the qty by the amount burned
+					hold.Qty -= nburned
+					targetAcct.Holds[idx] = hold
+				}
+
+				if !recursive {
+					break
+				}
 			}
 		}
+		if found == 0 {
+			// didn't discover a matching hold
+			return nil, errors.New("No matching hold found in " + target.String())
+		}
+		st.Accounts[target.String()] = targetAcct
 
-		if stakeTo == rules {
+		rulesAcct, _ := app.getAccount(rules)
+		stakeToAcct, _ := app.getAccount(stakeTo)
+		rulesCostakers := stakeToAcct.Costakers[rules.String()]
+		if stakeTo == rules || target == stakeTo {
 			rulesAcct.StakeRules.Inbound[target.String()]--
 			if rulesAcct.StakeRules.Inbound[target.String()] == 0 {
 				delete(rulesAcct.StakeRules.Inbound, target.String())
 			}
+			if recursive {
+				for costakerS := range rulesCostakers {
+					costaker, err := address.Validate(costakerS)
+					if err != nil {
+						return nil, errors.Wrap(err, fmt.Sprintf("invalid costaker %s for primary %s", costakerS, target))
+					}
+					stI, err = app.UnstakeAndBurn(qty, burn, costaker, stakeTo, rules, retainFor, true)(st)
+					if err != nil {
+						return nil, errors.Wrap(err, fmt.Sprintf("unstaking costaker %s for primary %s", costakerS, target))
+					}
+				}
+			}
 		} else {
-			rulesCostakers := stakeToAcct.Costakers[rules.String()]
 			if rulesCostakers != nil {
 				rulesCostakers[target.String()]--
 				if rulesCostakers[target.String()] == 0 {
@@ -181,7 +251,6 @@ func (app *App) Unstake(
 			}
 		}
 
-		st.Accounts[target.String()] = targetAcct
 		st.Accounts[stakeTo.String()] = stakeToAcct
 		st.Accounts[rules.String()] = rulesAcct
 

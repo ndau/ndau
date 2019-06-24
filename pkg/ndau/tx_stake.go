@@ -3,6 +3,7 @@ package ndau
 import (
 	"fmt"
 
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -73,6 +74,22 @@ func (tx *Stake) Validate(appI interface{}) error {
 	_, hasNode := app.getAccount(tx.StakeTo)
 	if !hasNode {
 		return errors.New("Node does not exist")
+	}
+
+	vm, err := BuildVMForRulesValidation(tx, app.GetState().(*backing.State))
+	if err != nil {
+		return errors.Wrap(err, "building rules validation vm")
+	}
+	err = vm.Run(nil)
+	if err != nil {
+		return errors.Wrap(err, "running rules validation vm")
+	}
+	returncode, err := vm.Stack().PopAsInt64()
+	if err != nil {
+		return errors.Wrap(err, "getting return code from rules validation vm")
+	}
+	if returncode != 0 {
+		return fmt.Errorf("rules validation script returned code %d", returncode)
 	}
 
 	return nil

@@ -442,3 +442,128 @@ func BuildVMForSIB(
 	err = theVM.Init(0, floorV, marketV, targetV)
 	return theVM, err
 }
+
+// BuildVMForRulesValidation builds a VM for rules validation.
+//
+// Rules validation governs Stake and Unstake transactions. The VM is built
+// and run during tx validation to impose additional rules about whether these
+// particular transactions are valid. Storing these rules is half the purpose
+// of the rules account.
+//
+// Stack within the VM at init, from top to bottom:
+// - total current stake from target staker
+// - total current stake from primary staker (0 if no primary stake yet)
+// - aggregate stake from primary staker and all costakers (0 if no primary stake)
+// - tx
+// - target account data
+// - stakeTo account data
+// - rules account data
+//
+// Expected output: 0 on top of stack if tx is valid, otherwise non-0
+// Additionally, for Unstake: if the second item on the stack is a number
+// and non-0, it is interpreted as a math.Duration, added to the block time,
+// and the resulting value is used as the expiry date for the hold, which is
+// retained. Otherwise, the hold is discarded immediately.
+func BuildVMForRulesValidation(
+	tx metatx.Transactable,
+	state *backing.State,
+) (*vm.ChaincodeVM, error) {
+	id, err := metatx.TxIDOf(tx, TxIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "tx id")
+	}
+
+	var target, stakeTo, rules, primary address.Address
+	switch t := tx.(type) {
+	case *Stake:
+		target = t.Target
+		stakeTo = t.StakeTo
+		rules = t.Rules
+		if stakeTo == rules {
+			primary = target
+		} else {
+			primary = stakeTo
+		}
+	case *Unstake:
+		target = t.Target
+		stakeTo = t.StakeTo
+		rules = t.Rules
+		if stakeTo == rules {
+			primary = target
+		} else {
+			primary = stakeTo
+		}
+	case *ResolveStake:
+		target = t.Target
+		rules = t.Rules
+		primary = t.Target
+	default:
+		return nil, fmt.Errorf("Rules Validation VM should not be constructed for %T", tx)
+	}
+
+	var aggregateQ, primaryTotalQ, targetTotalQ math.Ndau
+
+	targetTotalQ = state.TotalStake(target, primary, rules)
+	targetTotalV, err := chain.ToValue(targetTotalQ)
+	if err != nil {
+		return nil, errors.Wrap(err, "target total")
+	}
+
+	primaryTotalQ = state.TotalStake(primary, primary, rules)
+	primaryTotalV, err := chain.ToValue(primaryTotalQ)
+	if err != nil {
+		return nil, errors.Wrap(err, "primary total")
+	}
+
+	aggregate := state.AggregateStake(primary, rules)
+	if aggregate != nil {
+		aggregateQ = aggregate.Qty
+	}
+	aggregateV, err := chain.ToValue(aggregateQ)
+	if err != nil {
+		return nil, errors.Wrap(err, "aggregate from primary")
+	}
+
+	txV, err := chain.ToValue(tx)
+	if err != nil {
+		return nil, errors.Wrap(err, "tx")
+	}
+	targetV, err := chain.ToValue(target)
+	if err != nil {
+		return nil, errors.Wrap(err, "target")
+	}
+	stakeToV, err := chain.ToValue(stakeTo)
+	if err != nil {
+		return nil, errors.Wrap(err, "stakeTo")
+	}
+	rulesV, err := chain.ToValue(rules)
+	if err != nil {
+		return nil, errors.Wrap(err, "rules")
+	}
+
+	rulesAcctData, ok := state.Accounts[rules.String()]
+	if !ok {
+		return nil, errors.New("rules account does not exist")
+	}
+	if rulesAcctData.StakeRules == nil {
+		return nil, errors.New("rules account has no stake rules")
+	}
+
+	bin := buildBinary(rulesAcctData.StakeRules.Script, "Rules validation", "")
+	theVM, err := vm.New(*bin)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating vm")
+	}
+
+	err = theVM.Init(
+		byte(id),
+		rulesV, stakeToV, targetV,
+		txV,
+		aggregateV, primaryTotalV, targetTotalV,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "initializing vm")
+	}
+
+	return theVM, nil
+}

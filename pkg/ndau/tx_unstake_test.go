@@ -1,7 +1,9 @@
 package ndau
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
@@ -10,6 +12,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	"github.com/stretchr/testify/require"
 )
@@ -17,6 +20,7 @@ import (
 const (
 	nodePrivate   = "node private"
 	sourcePrivate = "souce private"
+	rulesPrivate  = "rules private"
 )
 
 func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) {
@@ -27,7 +31,8 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 	// node account is costaked with source account to rules account
 	// source account is primary staked to rules account
 
-	rulesAcct := getRulesAccount(t, app)
+	rulesAcct, rulesPrivateK := getRulesAccount(t, app)
+	assc[rulesPrivate] = rulesPrivateK
 	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
 		ad.StakeRules = &backing.StakeRules{
 			// push 0, 0 to the stack and exit
@@ -66,12 +71,27 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 
 func TestValidUnstakeTxIsValid(t *testing.T) {
 	app, assc, rulesAcct := initAppUnstake(t)
+	private := assc[nodePrivate].(signature.PrivateKey)
+	tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be valid
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestCannotReverseTargetAndStakeTo(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
 	private := assc[sourcePrivate].(signature.PrivateKey)
 	tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1, private)
 
 	// tx must be valid
 	resp := deliverTx(t, app, tx)
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	rc := code.ReturnCode(resp.Code)
+	require.True(
+		t,
+		rc == code.InvalidTransaction || rc == code.ErrorApplyingTransaction,
+		"doesn't matter when we catch this as long as it's caught",
+	)
 }
 
 func TestUnstakeTargetValidates(t *testing.T) {
@@ -195,26 +215,74 @@ func TestPrimaryUnstakeChangesAppState(t *testing.T) {
 }
 
 func TestUnstakeDeductsTxFee(t *testing.T) {
-	app, assc, rulesAcct := initAppUnstake(t)
-	private := assc[sourcePrivate].(signature.PrivateKey)
-
-	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.Balance = (1000 * constants.NapuPerNdau) + 1
-	})
-
 	for i := 0; i < 2; i++ {
-		tx := NewUnstake(sourceAddress, rulesAcct, nodeAddress, 1000*constants.NapuPerNdau, 1+uint64(i), private)
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			app, assc, rulesAcct := initAppUnstake(t)
+			private := assc[nodePrivate].(signature.PrivateKey)
 
-		resp := deliverTxWithTxFee(t, app, tx)
+			modify(t, nodeAddress.String(), app, func(ad *backing.AccountData) {
+				ad.Balance = math.Ndau(i) + 1000*constants.NapuPerNdau
+			})
 
-		var expect code.ReturnCode
-		if i == 0 {
-			expect = code.OK
-		} else {
-			expect = code.InvalidTransaction
-		}
-		require.Equal(t, expect, code.ReturnCode(resp.Code))
+			tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1+uint64(i), private)
+
+			resp := deliverTxWithTxFee(t, app, tx)
+
+			var expect code.ReturnCode
+			if i == 0 {
+				expect = code.InvalidTransaction
+			} else {
+				expect = code.OK
+			}
+			require.Equal(t, expect, code.ReturnCode(resp.Code))
+		})
 	}
+}
+
+func TestRulesAccountValidatesUnstake(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// this time, the rules account forbids the tx
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		// unconditionally fail
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 fail enddef").Bytes()
+	})
+	private := assc[nodePrivate].(signature.PrivateKey)
+	tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// tx must be invalid
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestRulesAccountSpecifiesUnstakeDuration(t *testing.T) {
+	app, assc, rulesAcct := initAppUnstake(t)
+	// this time, the rules account allows the tx, with a cooldown of 1
+	modify(t, rulesAcct.String(), app, func(ad *backing.AccountData) {
+		// unconditionally fail
+		ad.StakeRules.Script = vm.MiniAsm("handler 0 one zero enddef").Bytes()
+	})
+	private := assc[nodePrivate].(signature.PrivateKey)
+	tx := NewUnstake(nodeAddress, rulesAcct, sourceAddress, 1000*constants.NapuPerNdau, 1, private)
+
+	// we know it's going to have a cooldown of 1, so let's figure out when we
+	// expect the hold to unlock
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	expectUnlock := now + 1
+
+	// tx must be valid
+	resp := deliverTxAt(t, app, tx, now)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	state := app.GetState().(*backing.State)
+
+	// must have updated outbound stake list
+	nodeData := state.Accounts[nodeAddress.String()]
+	require.NotNil(t, nodeData.Holds)
+	require.NotEmpty(t, nodeData.Holds)
+	require.Nil(t, nodeData.Holds[0].Stake, "hold must no longer be a stake")
+	require.NotNil(t, nodeData.Holds[0].Expiry, "hold must have an expiry in the future")
+	require.Equal(t, &expectUnlock, nodeData.Holds[0].Expiry)
 }
 
 func TestCannotUnstakeActiveNode(t *testing.T) {

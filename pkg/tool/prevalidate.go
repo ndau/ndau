@@ -15,7 +15,8 @@ import (
 
 // Prevalidate prevalidates the provided transactable
 func Prevalidate(node client.ABCIClient, tx metatx.Transactable) (
-	fee math.Ndau, sib math.Ndau, resp *rpctypes.ResultABCIQuery, err error,
+	fee math.Ndau, sib math.Ndau, resolveStakeCost math.Ndau,
+	resp *rpctypes.ResultABCIQuery, err error,
 ) {
 	txb, err := metatx.Marshal(tx, ndau.TxIDs)
 	if err != nil {
@@ -29,7 +30,7 @@ func Prevalidate(node client.ABCIClient, tx metatx.Transactable) (
 	}
 
 	// parse the response
-	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee, &sib)
+	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolveStakeCost)
 	if err != nil {
 		return
 	}

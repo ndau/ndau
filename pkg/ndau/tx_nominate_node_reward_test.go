@@ -26,7 +26,7 @@ func initAppNNR(t *testing.T) (*App, generator.Associated) {
 	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
-	rulesAcct := getRulesAccount(t, app)
+	rulesAcct, _ := getRulesAccount(t, app)
 
 	const qtyNodes = 2
 
