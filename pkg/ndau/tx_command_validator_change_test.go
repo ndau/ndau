@@ -9,13 +9,13 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 const cvcKeys = "cvc private keys"
@@ -30,14 +30,23 @@ func initAppCVC(t *testing.T) (*App, generator.Associated) {
 	require.NoError(t, err)
 	assc[cvcKeys], err = MockSystemAccount(app, cvcAddr)
 
+	// we require that a node be previously registered
+	modify(t, nodeAddress.String(), app, func(acct *backing.AccountData) {
+		acct.Balance = 1000 * constants.NapuPerNdau
+		acct.ValidationKeys = []signature.PublicKey{nodePublic}
+	})
+	err = app.UpdateStateImmediately(app.registerNode(nodeAddress, nil, nodePublic))
+	require.NoError(t, err)
+
+	// ensure node is primary staker to node rules account
+	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+		acct.Balance = 1000 * constants.NapuPerNdau
+	})
+	require.NoError(t, err)
+
 	return app, assc
 }
 
-// construct a new tendermint representation of an ed25519 key
-func makepub() []byte {
-	pk := ed25519.GenPrivKey().PubKey().(ed25519.PubKeyEd25519)
-	return []byte(pk[:])
-}
 func TestCVCIsValidWithValidSignature(t *testing.T) {
 	app, assc := initAppCVC(t)
 	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
@@ -46,7 +55,7 @@ func TestCVCIsValidWithValidSignature(t *testing.T) {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			cvc := NewCommandValidatorChange(
-				makepub(),
+				nodeAddress,
 				1,
 				1,
 				private,
@@ -64,69 +73,12 @@ func TestCVCIsValidWithValidSignature(t *testing.T) {
 	}
 }
 
-func TestCVCPublicKeyMustNotBeEmpty(t *testing.T) {
-	app, assc := initAppCVC(t)
-	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
-	private := privateKeys[0]
-
-	for _, zv := range []struct {
-		name string
-		zero []byte
-	}{
-		{"nil", nil},
-		{"empty", []byte{}},
-	} {
-		t.Run(zv.name, func(t *testing.T) {
-			cvc := NewCommandValidatorChange(
-				zv.zero,
-				1,
-				1,
-				private,
-			)
-
-			cvcBytes, err := metatx.Marshal(cvc, TxIDs)
-			require.NoError(t, err)
-
-			resp := app.CheckTx(cvcBytes)
-			t.Log(resp.Log)
-			require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
-		})
-	}
-}
-
-func TestCVCPublicKeyMustBeCorrectSize(t *testing.T) {
-	app, assc := initAppCVC(t)
-	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
-	private := privateKeys[0]
-
-	// public keys must be exactly 32 bytes long
-	for i := 30; i < 35; i++ {
-		if i != ed25519.PubKeyEd25519Size {
-			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-				cvc := NewCommandValidatorChange(
-					make([]byte, i),
-					1,
-					1,
-					private,
-				)
-
-				cvcBytes, err := metatx.Marshal(cvc, TxIDs)
-				require.NoError(t, err)
-
-				resp := app.CheckTx(cvcBytes)
-				t.Log(resp.Log)
-				require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
-			})
-		}
-	}
-}
-
 func TestCVCIsInvalidWithInvalidSignature(t *testing.T) {
 	app, _ := initAppCVC(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
 
 	cvc := NewCommandValidatorChange(
-		makepub(),
+		nodeAddress,
 		1,
 		1,
 		private,
@@ -157,7 +109,7 @@ func TestCVCIsValidOnlyWithSufficientTxFee(t *testing.T) {
 		private := privateKeys[i]
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			cvc := NewCommandValidatorChange(
-				makepub(),
+				nodeAddress,
 				1,
 				uint64(i)+1,
 				private,
@@ -187,18 +139,22 @@ func TestCVCIsValidOnlyWithSufficientTxFee(t *testing.T) {
 //
 // Those tests live below, along with some test helpers to make them work.
 
-// convert a list of cvcs into a list of validators
-func toVals(cvcs []CommandValidatorChange) (vals []abci.ValidatorUpdate) {
+func toVals(t *testing.T, app *App, cvcs []CommandValidatorChange) []abci.ValidatorUpdate {
+	state := app.GetState().(*backing.State)
+	vus := make([]abci.ValidatorUpdate, 0, len(cvcs))
 	for _, cvc := range cvcs {
-		vals = append(vals, cvc.ToValidator())
+		vup, err := cvc.ToValidator(state)
+		require.NoError(t, err)
+		require.NotNil(t, vup)
+		vus = append(vus, *vup)
 	}
-	return
+	return vus
 }
 
 // send every update in the list of validator changes to the metanode,
 // and ensure that the metanode has kept track of it and returns it in
 // the EndBlock transaction
-func updateValidators(t *testing.T, app *App, updates []CommandValidatorChange) {
+func updateValidators(t *testing.T, app *App, updates ...CommandValidatorChange) {
 	metatxs := make([]metatx.Transactable, len(updates))
 	for i := 0; i < len(updates); i++ {
 		metatxs[i] = metatx.Transactable(&updates[i])
@@ -209,10 +165,14 @@ func updateValidators(t *testing.T, app *App, updates []CommandValidatorChange) 
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	}
 
+	state := app.GetState().(*backing.State)
 	actual := ebResp.GetValidatorUpdates()
 	expect := make([]types.ValidatorUpdate, len(updates))
 	for i := 0; i < len(updates); i++ {
-		expect[i] = updates[i].ToValidator()
+		vup, err := updates[i].ToValidator(state)
+		require.NoError(t, err)
+		require.NotNil(t, vup)
+		expect[i] = *vup
 	}
 
 	t.Logf("expect: %q", expect)
@@ -227,19 +187,36 @@ func initAppCVCValidators(
 	valQty int,
 ) (app *App, ma generator.Associated, vcs []CommandValidatorChange) {
 	app, ma = initAppCVC(t)
+	state := app.GetState().(*backing.State)
 
 	vcs = make([]CommandValidatorChange, 0, valQty)
 	validators := make([]abci.ValidatorUpdate, 0, valQty)
 
 	for i := 0; i < valQty; i++ {
+		// generate a node
+		pub, pvt, err := signature.Generate(signature.Ed25519, nil)
+		require.NoError(t, err)
+		addr, err := address.Generate(address.KindUser, pub.KeyBytes())
+		require.NoError(t, err)
+		// we require that a node be previously registered
+		modify(t, addr.String(), app, func(acct *backing.AccountData) {
+			acct.Balance = 1000 * constants.NapuPerNdau
+			acct.ValidationKeys = []signature.PublicKey{pub}
+		})
+		err = app.UpdateStateImmediately(app.registerNode(addr, nil, pub))
+		require.NoError(t, err)
+
 		cvc := NewCommandValidatorChange(
-			makepub(),
-			1,
+			addr,
+			1+int64(i),
 			uint64(i)+1,
-			ma[cvcKeys].([]signature.PrivateKey)...,
+			pvt,
 		)
 		vcs = append(vcs, *cvc)
-		validators = append(validators, cvc.ToValidator())
+		vup, err := cvc.ToValidator(state)
+		require.NoError(t, err)
+		require.NotNil(t, vup)
+		validators = append(validators, *vup)
 	}
 
 	// set up these validators as the initial ones on the chain
@@ -260,7 +237,7 @@ func TestCommandValidatorChangeInitChain(t *testing.T) {
 	require.NoError(t, err)
 	metast.ValidatorsAreEquivalent(
 		t,
-		metast.ValUpdatesToVals(t, toVals(cvcs)),
+		metast.ValUpdatesToVals(t, toVals(t, app, cvcs)),
 		actualValidators,
 	)
 }
@@ -271,20 +248,20 @@ func TestCommandValidatorChangeAddValidator(t *testing.T) {
 
 	// add a validator
 	newCVC := NewCommandValidatorChange(
-		makepub(),
+		nodeAddress,
 		1,
 		qtyVals+1,
 		ma[cvcKeys].([]signature.PrivateKey)...,
 	)
 	require.NotNil(t, newCVC)
 	cvcs = append(cvcs, *newCVC)
-	updateValidators(t, app, []CommandValidatorChange{*newCVC})
+	updateValidators(t, app, *newCVC)
 
 	actualValidators, err := app.Validators()
 	require.NoError(t, err)
 	metast.ValidatorsAreEquivalent(
 		t,
-		metast.ValUpdatesToVals(t, toVals(cvcs)),
+		metast.ValUpdatesToVals(t, toVals(t, app, cvcs)),
 		actualValidators,
 	)
 }
@@ -303,13 +280,52 @@ func TestCommandValidatorChangeRemoveValidator(t *testing.T) {
 	cvc.Signatures = []signature.Signature{cvcKeys[0].Sign(cvc.SignableBytes())}
 
 	cvcs = cvcs[1:]
-	updateValidators(t, app, []CommandValidatorChange{cvc})
+	updateValidators(t, app, cvc)
 
 	actualValidators, err := app.Validators()
 	require.NoError(t, err)
 	metast.ValidatorsAreEquivalent(
 		t,
-		metast.ValUpdatesToVals(t, toVals(cvcs)),
+		metast.ValUpdatesToVals(t, toVals(t, app, cvcs)),
 		actualValidators,
 	)
+}
+
+func TestValidCVCIsValid(t *testing.T) {
+	app, assc := initAppCVC(t)
+	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
+
+	cvc := NewCommandValidatorChange(
+		nodeAddress,
+		1,
+		1,
+		privateKeys...,
+	)
+
+	resp := deliverTx(t, app, cvc)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+}
+
+func TestCVCNodeMustBeActive(t *testing.T) {
+	app, assc := initAppCVC(t)
+	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
+
+	// deactivate the node
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		node := state.Nodes[nodeAddress.String()]
+		node.Active = false
+		state.Nodes[nodeAddress.String()] = node
+		return state, nil
+	})
+
+	cvc := NewCommandValidatorChange(
+		nodeAddress,
+		1,
+		1,
+		privateKeys...,
+	)
+
+	resp := deliverTx(t, app, cvc)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

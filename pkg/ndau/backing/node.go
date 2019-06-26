@@ -1,5 +1,10 @@
 package backing
 
+import (
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+)
+
 // Node keeps track of nodes in the validator and verifier sets
 //
 // Types here are noms-compatible for ease of marshalling and unmarshalling;
@@ -11,5 +16,12 @@ package backing
 type Node struct {
 	Active             bool
 	DistributionScript []byte
-	RPCAddress         string
+	TMAddress          string
+	Key                signature.PublicKey
+}
+
+// IsActiveNode is true when the provided address is an active node
+func (s State) IsActiveNode(node address.Address) bool {
+	n, ok := s.Nodes[node.String()]
+	return ok && n.Active
 }

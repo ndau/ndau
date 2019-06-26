@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -19,16 +20,16 @@ import (
 )
 
 func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 
 	// delegate source to eaiNode
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 	resp := deliverTx(t, app, d)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.LastEAIUpdate = 0
 		ad.LastWAAUpdate = 0
 	})
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// create a keypair for the node
 	public, private, err := signature.Generate(signature.Ed25519, nil)
@@ -391,6 +392,13 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 	setup(c, 100, nil)
 	setup(d, 1000, &c)
 	setup(node, 10, nil)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		st.Nodes[node.address.String()] = backing.Node{
+			Active: true,
+		}
+		return st, nil
+	})
 
 	resps, _ := deliverTxsContext(t, app, txs, ddc(t))
 	for _, resp := range resps {
@@ -539,6 +547,13 @@ func TestCreditEAIIsDeterministic2(t *testing.T) {
 	setup(a, 1000, &b)
 	setup(d, 1000, &c)
 	setup(node, 10, nil)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		st.Nodes[node.address.String()] = backing.Node{
+			Active: true,
+		}
+		return st, nil
+	})
 
 	resps, _ := deliverTxsContext(t, app, txs, ddc(t))
 	for _, resp := range resps {
@@ -609,4 +624,19 @@ func TestCreditEAIClearsUncreditedEAI(t *testing.T) {
 
 	sourceData := app.GetState().(*backing.State).Accounts[source]
 	require.Zero(t, sourceData.UncreditedEAI)
+}
+
+func TestCreditEAICanOnlyBeSubmittedByActiveNode(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	// ensure node is not active, for testing purposes
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		node := st.Nodes[nodeAddress.String()]
+		node.Active = false
+		st.Nodes[eaiNode] = node
+		return st, nil
+	})
+	tx := NewCreditEAI(nodeAddress, 1, private)
+	resp := deliverTxAt(t, app, tx, 45*math.Day)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

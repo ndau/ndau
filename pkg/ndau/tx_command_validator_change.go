@@ -1,32 +1,29 @@
 package ndau
 
 import (
-	"fmt"
-
-	"github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 // Validate implements metatx.Transactable
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	if len(tx.PublicKey) == 0 {
-		return errors.New("cvc must have non-empty public key")
+	err := tx.Node.Revalidate()
+	if err != nil {
+		return errors.Wrap(err, "node address")
 	}
 
-	if len(tx.PublicKey) != ed25519.PubKeyEd25519Size {
-		return fmt.Errorf(
-			"Wrong length for Ed25519 public key: want %d, have %d",
-			ed25519.PubKeyEd25519Size,
-			len(tx.PublicKey),
-		)
+	state := app.GetState().(*backing.State)
+	node, ok := state.Nodes[tx.Node.String()]
+	if !ok || !node.Active {
+		return errors.New("node must be active")
 	}
 
 	_, exists, signatures, err := app.getTxAccount(tx)
@@ -58,7 +55,11 @@ func (tx *CommandValidatorChange) Apply(appI interface{}) error {
 	// unusually, we don't actually directly touch app state in this tx
 	// instead, we call UpdateValidator, which updates the metastate
 	// appropriately.
-	app.UpdateValidator(tx.ToValidator())
+	vu, err := tx.ToValidator(app.GetState().(*backing.State))
+	if err != nil {
+		return errors.Wrap(err, "constructing TM ValidatorUpdate")
+	}
+	app.UpdateValidator(*vu)
 	return nil
 }
 
@@ -78,9 +79,17 @@ func (tx *CommandValidatorChange) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// ToValidator converts this struct into a ValidatorUpdate
-func (tx *CommandValidatorChange) ToValidator() abci.ValidatorUpdate {
-	return abci.Ed25519ValidatorUpdate(tx.PublicKey, tx.Power)
+// ToValidator converts this tx into a TM-style ValidatorUpdate struct
+func (tx *CommandValidatorChange) ToValidator(state *backing.State) (*abci.ValidatorUpdate, error) {
+	node, ok := state.Nodes[tx.Node.String()]
+	if !ok || !node.Active {
+		return nil, errors.New("node must be active")
+	}
+	if !signature.SameAlgorithm(node.Key.Algorithm(), signature.Ed25519) {
+		return nil, errors.New("node key must be an Ed25519")
+	}
+	vu := abci.Ed25519ValidatorUpdate(node.Key.KeyBytes(), tx.Power)
+	return &vu, nil
 }
 
 // ExtendSignatures implements Signable

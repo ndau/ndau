@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -11,8 +12,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidDelegateTxIsValid(t *testing.T) {
+func initAppDelegate(t *testing.T) (*App, signature.PrivateKey) {
 	app, private := initAppTx(t)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		st.Nodes[eaiNode] = backing.Node{
+			Active: true,
+		}
+		return st, nil
+	})
+	return app, private
+}
+
+func TestValidDelegateTxIsValid(t *testing.T) {
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 
 	// d must be valid
@@ -24,7 +37,7 @@ func TestValidDelegateTxIsValid(t *testing.T) {
 }
 
 func TestDelegateAccountValidates(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 
 	// make the account field invalid
@@ -39,7 +52,7 @@ func TestDelegateAccountValidates(t *testing.T) {
 }
 
 func TestDelegateDelegateValidates(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 
 	// make the account field invalid
@@ -54,7 +67,7 @@ func TestDelegateDelegateValidates(t *testing.T) {
 }
 
 func TestDelegateSequenceValidates(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 0, private)
 
 	// d must be invalid
@@ -65,7 +78,7 @@ func TestDelegateSequenceValidates(t *testing.T) {
 }
 
 func TestDelegateSignatureValidates(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 
 	// flip a single bit in the signature
@@ -83,7 +96,7 @@ func TestDelegateSignatureValidates(t *testing.T) {
 }
 
 func TestDelegateChangesAppState(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 
 	resp := deliverTx(t, app, d)
@@ -99,13 +112,21 @@ func TestDelegateChangesAppState(t *testing.T) {
 }
 
 func TestDelegateRemovesPreviousDelegation(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	// now create a new delegation transaction
+	// (ensure the new delegate is also an active node)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		st.Nodes[dest] = backing.Node{
+			Active: true,
+		}
+		return st, nil
+	})
 	d = NewDelegate(sourceAddress, destAddress, 2, private)
 	resp = deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -124,7 +145,7 @@ func TestDelegateRemovesPreviousDelegation(t *testing.T) {
 }
 
 func TestDelegateDeductsTxFee(t *testing.T) {
-	app, private := initAppTx(t)
+	app, private := initAppDelegate(t)
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1
@@ -143,4 +164,24 @@ func TestDelegateDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestDelegateNodeMustBeActive(t *testing.T) {
+	app, private := initAppDelegate(t)
+	// ensure the node isn't active
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		st.Nodes[eaiNode] = backing.Node{
+			Active: false,
+		}
+		return st, nil
+	})
+
+	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
+
+	// d must be valid
+	bytes, err := tx.Marshal(d, TxIDs)
+	require.NoError(t, err)
+	resp := app.CheckTx(bytes)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

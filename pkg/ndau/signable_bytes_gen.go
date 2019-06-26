@@ -233,5 +233,3 @@ func (tx *ResolveStake) SignableBytes() []byte {
 func (tx *ChangeSchema) SignableBytes() []byte {
 	return sbOf(tx)
 }
-
-

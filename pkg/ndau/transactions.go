@@ -223,7 +223,7 @@ var _ NTransactable = (*Stake)(nil)
 type RegisterNode struct {
 	Node               address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
 	DistributionScript []byte                `msg:"dis" chain:"33,Tx_DistributionScript" json:"distribution_script"`
-	RPCAddress         string                `msg:"rpc" chain:"34,Tx_RPCAddress" json:"rpc_address"`
+	Ownership          signature.PublicKey   `msg:"own" chain:"34,Tx_Ownership" json:"ownership"`
 	Sequence           uint64                `msg:"seq" json:"sequence"`
 	Signatures         []signature.Signature `msg:"sig" json:"signatures"`
 }
@@ -264,13 +264,8 @@ var _ NTransactable = (*ClaimNodeReward)(nil)
 // This transaction replaces GTValidatorChange, which was too insecure
 // to ever actually deploy with.
 type CommandValidatorChange struct {
-	// PublicKey is a Tendermint Ed25519 PubKey object, serialized to bytes.
-	//
-	// See https://godoc.org/github.com/tendermint/tendermint/crypto#PubKey
-	// and its Bytes() method.
-	//
-	// See https://godoc.org/github.com/tendermint/tendermint/crypto/ed25519#PubKeyEd25519
-	PublicKey []byte `msg:"tm_pk" chain:"16,Tx_PublicKey" json:"public_key"`
+	// Node must previously have been registered with RegisterNode
+	Node address.Address `msg:"nod" chain:"4,Tx_Node" json:"node"`
 
 	// Power is an arbitrary integer with no intrinsic
 	// meaning; during the Global Trust period, it

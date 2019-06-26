@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -55,7 +56,9 @@ var (
 
 	sourceAddress address.Address
 	destAddress   address.Address
-	nodeAddress   address.Address
+
+	nodeAddress address.Address
+	nodePublic  signature.PublicKey
 )
 
 func init() {
@@ -119,6 +122,25 @@ func init() {
 	nodeAddress, err = address.Validate(eaiNode)
 	if err != nil {
 		panic(err)
+	}
+
+	npb, err := hex.DecodeString("d17516973974aced03ca0ebef33b3798719c596b01a065a0de74e999670e1be5")
+	if err != nil {
+		panic(err)
+	}
+	np, err := signature.RawPublicKey(signature.Ed25519, npb, nil)
+	if err != nil {
+		panic(err)
+	}
+	nodePublic = *np
+
+	// stay in sync
+	npa, err := address.Generate(address.KindUser, nodePublic.KeyBytes())
+	if err != nil {
+		panic(err)
+	}
+	if npa != nodeAddress {
+		panic("node public key did not generate node address")
 	}
 }
 

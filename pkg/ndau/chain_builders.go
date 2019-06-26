@@ -467,6 +467,7 @@ func BuildVMForSIB(
 func BuildVMForRulesValidation(
 	tx metatx.Transactable,
 	state *backing.State,
+	rulesAcct ...address.Address,
 ) (*vm.ChaincodeVM, error) {
 	id, err := metatx.TxIDOf(tx, TxIDs)
 	if err != nil {
@@ -497,6 +498,13 @@ func BuildVMForRulesValidation(
 		target = t.Target
 		rules = t.Rules
 		primary = t.Target
+	case *RegisterNode:
+		if len(rulesAcct) != 1 {
+			return nil, fmt.Errorf("expect 1 rules account; got %d", len(rulesAcct))
+		}
+		target = t.Node
+		primary = t.Node
+		rules = rulesAcct[0]
 	default:
 		return nil, fmt.Errorf("Rules Validation VM should not be constructed for %T", tx)
 	}

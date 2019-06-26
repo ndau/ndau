@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
-
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"

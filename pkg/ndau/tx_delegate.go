@@ -63,6 +63,10 @@ func (tx *Delegate) Validate(appI interface{}) error {
 	if !hasAccount {
 		return errors.New("delegation target account does not exist")
 	}
+	// delegated node must be active
+	if app.IsFeatureActive("NodeActiveCheck") && !app.GetState().(*backing.State).IsActiveNode(tx.Node) {
+		return errors.New("node must be active and is not")
+	}
 
 	return nil
 }
