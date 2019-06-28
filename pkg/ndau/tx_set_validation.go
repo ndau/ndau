@@ -95,12 +95,8 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 // Apply applies this tx if no error occurs
 func (tx *SetValidation) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
-	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
 		acct, _ := app.getAccount(tx.Target)

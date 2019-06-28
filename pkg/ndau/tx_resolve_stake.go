@@ -64,15 +64,8 @@ func (tx *ResolveStake) Validate(appI interface{}) error {
 func (tx *ResolveStake) Apply(appI interface{}) error {
 	app := appI.(*App)
 
-	var err error
-	err = app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
-
 	// all state changes get applied or none do
-	// UnstakeAndBurn ignores
-	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 		npayment, err := tx.calculatePayment(st)
 		if err != nil {

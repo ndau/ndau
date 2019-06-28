@@ -111,12 +111,8 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 // Apply applies this tx if no error occurs
 func (tx *CreateChildAccount) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
-	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 
 		err := app.Delegate(st, tx.Child, tx.ChildDelegationNode)

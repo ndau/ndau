@@ -59,17 +59,13 @@ func (tx *ClaimNodeReward) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
 	costakers, err := app.NodeStakers(tx.Node)
 	if err != nil {
 		return errors.Wrap(err, "ClaimNodeReward")
 	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
 		// We never want this tx to fail because we want all node payouts to be paid to someone.

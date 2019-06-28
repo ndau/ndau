@@ -64,34 +64,30 @@ func (tx *TransferAndLock) Validate(appInt interface{}) error {
 // Apply satisfies metatx.Transactable
 func (tx *TransferAndLock) Apply(appInt interface{}) error {
 	app := appInt.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
 	lockedBonusRateTable := eai.RateTable{}
-	err = app.System(sv.LockedRateTableName, &lockedBonusRateTable)
+	err := app.System(sv.LockedRateTableName, &lockedBonusRateTable)
 	if err != nil {
 		return err
 	}
 
-	source, _ := app.getAccount(tx.Source)
-	// we know dest is a new account so WAA, WAA update and EAI update times are set properly
-	dest, _ := app.getAccount(tx.Destination)
-	dest.Balance = tx.Qty
-	if source.RecourseSettings.Period != 0 {
-		x := app.BlockTime().Add(source.RecourseSettings.Period)
-		dest.Holds = append(dest.Holds, backing.Hold{
-			Qty:    tx.Qty,
-			Expiry: &x,
-			Txhash: metatx.Hash(tx),
-		})
-	}
-	dest.Lock = backing.NewLock(tx.Period, lockedBonusRateTable)
+	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
+		source, _ := app.getAccount(tx.Source)
+		// we know dest is a new account so WAA, WAA update and EAI update times are set properly
+		dest, _ := app.getAccount(tx.Destination)
+		dest.Balance = tx.Qty
+		if source.RecourseSettings.Period != 0 {
+			x := app.BlockTime().Add(source.RecourseSettings.Period)
+			dest.Holds = append(dest.Holds, backing.Hold{
+				Qty:    tx.Qty,
+				Expiry: &x,
+				Txhash: metatx.Hash(tx),
+			})
+		}
+		dest.Lock = backing.NewLock(tx.Period, lockedBonusRateTable)
 
-	dest.UpdateCurrencySeat(app.BlockTime())
+		dest.UpdateCurrencySeat(app.BlockTime())
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 
 		state.Accounts[tx.Destination.String()] = dest

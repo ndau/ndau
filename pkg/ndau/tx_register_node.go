@@ -126,12 +126,9 @@ func (app *App) registerNode(
 // Apply implements metatx.Transactable
 func (tx *RegisterNode) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
-
-	return app.UpdateState(app.registerNode(tx.Node, tx.DistributionScript, tx.Ownership))
+	return app.UpdateState(
+		app.applyTxDetails(tx),
+		app.registerNode(tx.Node, tx.DistributionScript, tx.Ownership))
 }
 
 // GetSource implements Sourcer

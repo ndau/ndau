@@ -33,7 +33,7 @@ func (tx *ChangeSchema) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *ChangeSchema) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
+	_, err := app.applyTxDetails(tx)(app.GetState())
 	if err != nil {
 		return err
 	}

@@ -47,12 +47,8 @@ func (tx *RecordEndowmentNAV) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *RecordEndowmentNAV) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
-	return app.UpdateState(app.updateNAVAndSIB(tx.NAV))
+	return app.UpdateState(app.applyTxDetails(tx), app.updateNAVAndSIB(tx.NAV))
 }
 
 // GetSource implements Sourcer
