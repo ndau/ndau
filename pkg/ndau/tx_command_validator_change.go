@@ -47,7 +47,7 @@ func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 // Apply this CVC to the node state
 func (tx *CommandValidatorChange) Apply(appI interface{}) error {
 	app := appI.(*App)
-	_, err := app.applyTxDetails(tx)(app.GetState())
+	err := app.UpdateState(app.applyTxDetails(tx))
 	if err != nil {
 		return err
 	}
