@@ -30,22 +30,21 @@ func (tx *Issue) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Issue) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
-		state := stateI.(*backing.State)
+	return app.UpdateState(
+		app.applyTxDetails(tx),
+		func(stateI metast.State) (metast.State, error) {
+			state := stateI.(*backing.State)
 
-		// we give up overflow protection here in exchange for error-free
-		// operation; we have external constraints that we will never issue
-		// more than (30 million) * (100 million) napu, or 0.03% of 64-bits,
-		// so this should be fine
-		state.TotalIssue += tx.Qty
-
-		return app.updatePricesAndSIB(-1)(state)
-	})
+			// we give up overflow protection here in exchange for error-free
+			// operation; we have external constraints that we will never issue
+			// more than (30 million) * (100 million) napu, or 0.03% of 64-bits,
+			// so this should be fine
+			state.TotalIssue += tx.Qty
+			return state, nil
+		},
+		app.updatePricesAndSIB(-1),
+	)
 }
 
 // GetSource implements Sourcer

@@ -191,98 +191,102 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 // Of course, most transactions will imply more modifications than these, but
 // this at least provides a standard template for taking care of the basics.
 //
-// If the return value is not nil, this function guarantees that it will not
-// have modified the app state.
+// This function returns a closure encapsulating these updates. It is such that
+// if a tx has no other effects on state, it can be embedded directly into a
+// UpdateState function call. Otherwise, it can be run within such a call's
+// embedded closure.
 //
-// This function should only be called in Apply implementations; it assumes
-// that all necessary validation (such as occurs in getTxAccount) has already
-// been performed.
-func (app *App) applyTxDetails(tx NTransactable) error {
-	if tx == nil {
-		return errors.New("nil transactable")
-	}
-
-	fee, err := app.calculateTxFee(tx)
-	if err != nil {
-		return errors.Wrap(err, "calculating tx fee")
-	}
-
-	sib, err := app.calculateSIB(tx)
-	if err != nil {
-		return errors.Wrap(err, "calculating SIB")
-	}
-
-	sourceA, err := tx.GetSource(app)
-	if err != nil {
-		return errors.Wrap(err, "getting tx source")
-	}
-	sourceS := sourceA.String()
-
-	unlockedTable := new(eai.RateTable)
-	err = app.System(sv.UnlockedRateTableName, unlockedTable)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
-	}
-	lockedTable := new(eai.RateTable)
-	err = app.System(sv.LockedRateTableName, lockedTable)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
-	}
-
-	source, _ := app.getAccount(sourceA)
-
-	// if source isn't locked, resets the lock data
-	source.IsLocked(app.BlockTime())
-
-	pending, err := source.Balance.Add(source.UncreditedEAI)
-	if err != nil {
-		return errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
-	}
-
-	eai, err := eai.Calculate(
-		pending, app.BlockTime(), source.LastEAIUpdate,
-		source.WeightedAverageAge, source.Lock,
-		*unlockedTable,
-	)
-
-	source.UncreditedEAI, err = source.UncreditedEAI.Add(eai)
-	if err != nil {
-		return errors.Wrap(err, "calculating new uncredited EAI")
-	}
-	source.LastEAIUpdate = app.BlockTime()
-
-	withdrawal, err := fee.Add(sib)
-	if err != nil {
-		return errors.Wrap(err, "adding fee and sib")
-	}
-	if w, isWithdrawer := tx.(Withdrawer); isWithdrawer {
-		withdrawal, err = withdrawal.Add(w.Withdrawal())
-		if err != nil {
-			return errors.Wrap(err, "adding withdrawal qty to fees")
+// The motivation for this design is to prevent a half-applied tx. If a tx's
+// Apply method calls UpdateState more than once, then there exists the
+// potential for a partially applied transaction, if it errors out in between
+// the first call and the second. Therefore, it is important that each
+// transaction's Apply method calls UpdateState either 0 or 1 times. Therefore,
+// in order to apply the work we desire in this tx, we must return a closure
+// instead of directly updating the state ourselves.
+//
+// This function assumes that all necessary validation (such as occurs in
+// getTxAccount) has already been performed.
+func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.State, error) {
+	return func(stI metast.State) (metast.State, error) {
+		if tx == nil {
+			return stI, errors.New("nil transactable")
 		}
-	}
 
-	source.Balance, err = source.Balance.Sub(withdrawal)
-	if err != nil {
-		return errors.Wrap(err, "calculating new balance")
-	}
+		fee, err := app.calculateTxFee(tx)
+		if err != nil {
+			return stI, errors.Wrap(err, "calculating tx fee")
+		}
 
-	source.UpdateCurrencySeat(app.BlockTime())
+		sib, err := app.calculateSIB(tx)
+		if err != nil {
+			return stI, errors.Wrap(err, "calculating SIB")
+		}
 
-	source.Sequence = tx.GetSequence()
+		sourceA, err := tx.GetSource(app)
+		if err != nil {
+			return stI, errors.Wrap(err, "getting tx source")
+		}
+		sourceS := sourceA.String()
 
-	/////////////////////////////////////////////////////////////////////
-	// Everything which may return an error must go above this line.   //
-	// Below this point, no error values are permitted.                //
-	/////////////////////////////////////////////////////////////////////
+		unlockedTable := new(eai.RateTable)
+		err = app.System(sv.UnlockedRateTableName, unlockedTable)
+		if err != nil {
+			return stI, errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
+		}
+		lockedTable := new(eai.RateTable)
+		err = app.System(sv.LockedRateTableName, lockedTable)
+		if err != nil {
+			return stI, errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in applyTxDetails", sv.UnlockedRateTableName))
+		}
 
-	source.UpdateSettlements(app.BlockTime())
+		source, _ := app.getAccount(sourceA)
 
-	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+		// if source isn't locked, resets the lock data
+		source.IsLocked(app.BlockTime())
+
+		pending, err := source.Balance.Add(source.UncreditedEAI)
+		if err != nil {
+			return stI, errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
+		}
+
+		eai, err := eai.Calculate(
+			pending, app.BlockTime(), source.LastEAIUpdate,
+			source.WeightedAverageAge, source.Lock,
+			*unlockedTable,
+		)
+
+		source.UncreditedEAI, err = source.UncreditedEAI.Add(eai)
+		if err != nil {
+			return stI, errors.Wrap(err, "calculating new uncredited EAI")
+		}
+		source.LastEAIUpdate = app.BlockTime()
+
+		withdrawal, err := fee.Add(sib)
+		if err != nil {
+			return stI, errors.Wrap(err, "adding fee and sib")
+		}
+		if w, isWithdrawer := tx.(Withdrawer); isWithdrawer {
+			withdrawal, err = withdrawal.Add(w.Withdrawal())
+			if err != nil {
+				return stI, errors.Wrap(err, "adding withdrawal qty to fees")
+			}
+		}
+
+		source.Balance, err = source.Balance.Sub(withdrawal)
+		if err != nil {
+			return stI, errors.Wrap(err, "calculating new balance")
+		}
+
+		source.UpdateCurrencySeat(app.BlockTime())
+
+		source.Sequence = tx.GetSequence()
+
+		source.UpdateSettlements(app.BlockTime())
+
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source
 		st.PendingNodeReward += fee
 		st.TotalBurned += sib
 		return st, nil
-	})
+	}
 }

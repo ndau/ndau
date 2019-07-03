@@ -44,12 +44,8 @@ func (tx *SetStakeRules) Validate(appI interface{}) (err error) {
 // Apply implements metatx.Transactable
 func (tx *SetStakeRules) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		ad, _ := app.getAccount(tx.Target)
 

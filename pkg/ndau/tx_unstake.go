@@ -58,12 +58,6 @@ func (tx *Unstake) Validate(appI interface{}) error {
 func (tx *Unstake) Apply(appI interface{}) error {
 	app := appI.(*App)
 
-	var err error
-	err = app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
-
 	// recalculate the validation rules. This time we're not interested in
 	// the stack top, but its second value. If a second value is present,
 	// it's a duration to retain the hold for from the block time.
@@ -90,7 +84,9 @@ func (tx *Unstake) Apply(appI interface{}) error {
 		retainFor = math.Duration(retainI)
 	}
 
-	return app.UpdateState(app.Unstake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules, retainFor))
+	return app.UpdateState(
+		app.applyTxDetails(tx),
+		app.Unstake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules, retainFor))
 }
 
 // GetSource implements Sourcer

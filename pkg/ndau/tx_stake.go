@@ -98,13 +98,9 @@ func (tx *Stake) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Stake) Apply(appI interface{}) error {
 	app := appI.(*App)
-
-	var err error
-	err = app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
-	return app.UpdateState(app.Stake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules, tx))
+	return app.UpdateState(
+		app.applyTxDetails(tx),
+		app.Stake(tx.Qty, tx.Target, tx.StakeTo, tx.Rules, tx))
 }
 
 // GetSource implements Sourcer

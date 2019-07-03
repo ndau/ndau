@@ -74,12 +74,8 @@ func (tx *Delegate) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Delegate) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
-	return app.UpdateState(func(stI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		state := stI.(*backing.State)
 		err := app.Delegate(state, tx.Target, tx.Node)
 		return state, err

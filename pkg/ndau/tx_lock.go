@@ -59,18 +59,14 @@ func (tx *Lock) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *Lock) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
 	lockedBonusRateTable := eai.RateTable{}
-	err = app.System(sv.LockedRateTableName, &lockedBonusRateTable)
+	err := app.System(sv.LockedRateTableName, &lockedBonusRateTable)
 	if err != nil {
 		return err
 	}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		accountData, _ := app.getAccount(tx.Target)
 
