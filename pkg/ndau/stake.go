@@ -66,7 +66,7 @@ func (app *App) Stake(
 
 		targetAcct, _ := app.getAccount(target)
 
-		targetAcct.UpdateSettlements(app.BlockTime())
+		targetAcct.UpdateRecourses(app.BlockTime())
 
 		ab, err := targetAcct.AvailableBalance()
 		if err != nil {

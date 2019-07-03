@@ -140,7 +140,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		return acct, exists, sigset, err
 	}
 
-	acct.UpdateSettlements(app.BlockTime())
+	acct.UpdateRecourses(app.BlockTime())
 	available, err := acct.AvailableBalance()
 	if err != nil {
 		return acct, exists, sigset, err
@@ -186,7 +186,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 //  - reduce source balance (if applicable)
 //  - if source drops below 1000 ndau, remove currency seat
 //  - update sequence
-//  - resolve completed settlements
+//  - resolve completed recourse holds
 //
 // Of course, most transactions will imply more modifications than these, but
 // this at least provides a standard template for taking care of the basics.
@@ -276,7 +276,7 @@ func (app *App) applyTxDetails(tx NTransactable) error {
 	// Below this point, no error values are permitted.                //
 	/////////////////////////////////////////////////////////////////////
 
-	source.UpdateSettlements(app.BlockTime())
+	source.UpdateRecourses(app.BlockTime())
 
 	return app.UpdateState(func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)

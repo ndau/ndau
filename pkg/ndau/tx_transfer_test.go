@@ -20,7 +20,7 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
-	// generate the transfer key so we can transfer from it
+	// generate the validation key so we can transfer from it
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
@@ -33,30 +33,30 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	return app, private
 }
 
-// generate an app with an account with a bunch of escrowed transactions
+// generate an app with an account with a bunch of transactions with recourse holds
 //
-// returns that account's private key, and a timestamp after which all escrows
+// returns that account's private key, and a timestamp after which all holds
 // should be valid
 //
-// It is guaranteed that all escrows expire in the interval (timestamp - 1 day : timestamp)
-func initAppSettlement(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
+// It is guaranteed that all recourse holds expire in the interval (timestamp - 1 day : timestamp)
+func initAppRecourse(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	app, _ := initAppTx(t)
 
 	ts, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
-	// generate the transfer key so we can transfer from the escrowed acct
+	// generate the validation key so we can transfer from the acct with recourse holds
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	const qtyEscrows = 10
+	const qtyRecourses = 10
 
 	modify(t, settled, app, func(acct *backing.AccountData) {
 		// initialize the address with a bunch of ndau
-		// incoming funds are added to the balance and the settlements;
+		// incoming funds are added to the balance and the holds;
 		// it's just that the available balance is reduced by the sum
-		// of the uncleared settlements
-		for i := 1; i < qtyEscrows; i++ {
+		// of the uncleared holds
+		for i := 1; i < qtyRecourses; i++ {
 			acct.Balance += math.Ndau(i * constants.QuantaPerUnit)
 			x := ts.Sub(math.Duration(i))
 			acct.Holds = append(acct.Holds, backing.Hold{
@@ -343,14 +343,14 @@ func TestTransferSequenceMustIncrease(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
+func TestTransferWithExpiredRecoursesWorks(t *testing.T) {
 	// setup app
-	app, key, ts := initAppSettlement(t)
+	app, key, ts := initAppRecourse(t)
 	require.True(t, app.BlockTime().Compare(ts) >= 0)
 	tn := ts.Add(1 * math.Second)
 
 	// generate transfer
-	// because the escrowed funds have cleared,
+	// because the recourse period holds have ended
 	// this should succeed
 	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
@@ -368,14 +368,14 @@ func TestTransferWithExpiredEscrowsWorks(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestTransferWithUnexpiredEscrowsFails(t *testing.T) {
+func TestTransferWithUnexpiredRecoursesFails(t *testing.T) {
 	// setup app
-	app, key, ts := initAppSettlement(t)
-	// set app time to a day before the escrow expiry time
+	app, key, ts := initAppRecourse(t)
+	// set app time to a day before the recourse period expiry time
 	tn := ts.Add(math.Duration(-24 * 3600 * math.Second))
 
 	// generate transfer
-	// because the escrowed funds have not yet cleared,
+	// because the recourse period holds have ended
 	// this should fail
 	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
@@ -398,7 +398,7 @@ func TestValidationScriptValidatesTransfers(t *testing.T) {
 	public2, private2, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// this script just ensures that the first transfer key
+	// this script just ensures that the first validation key
 	// is used, no matter how many keys are included
 	script := vm.MiniAsm("handler 0 one and not enddef")
 

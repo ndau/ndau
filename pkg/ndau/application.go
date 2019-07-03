@@ -157,23 +157,23 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	return
 }
 
-func (app *App) getDefaultSettlementDuration() math.Duration {
-	var defaultSettlementPeriod math.Duration
-	err := app.System(sv.DefaultSettlementDurationName, &defaultSettlementPeriod)
+func (app *App) getDefaultRecourseDuration() math.Duration {
+	var defaultRecoursePeriod math.Duration
+	err := app.System(sv.DefaultRecourseDurationName, &defaultRecoursePeriod)
 	// app.System errors in two cases:
 	// - the system variable doesn't exist: chain is in a bad state
 	// - the variable we passed to receive the sysvar is of the wrong type
 	//
 	// Given this situation, we want to fail in the most noisy way possible.
 	if err != nil {
-		app.DecoratedLogger().WithError(err).Error("app.getAccount failed to fetch defaultSettlementPeriod")
+		app.DecoratedLogger().WithError(err).Error("app.getAccount failed to fetch defaultRecoursePeriod")
 		panic(err)
 	}
-	return defaultSettlementPeriod
+	return defaultRecoursePeriod
 }
 
 func (app *App) getAccount(addr address.Address) (backing.AccountData, bool) {
-	return app.GetState().(*backing.State).GetAccount(addr, app.BlockTime(), app.getDefaultSettlementDuration())
+	return app.GetState().(*backing.State).GetAccount(addr, app.BlockTime(), app.getDefaultRecourseDuration())
 }
 
 // IsFeatureActive returns whether the given feature is currently active.

@@ -11,13 +11,13 @@ import (
 
 // An Account contains the data necessary to interact with an account:
 //
-// ownership keys, transfer keys if assigned, an account nickname, and an address
+// ownership keys, validation keys if assigned, an account nickname, and an address
 type Account struct {
 	Name             string          `toml:"name"`
 	Address          address.Address `toml:"address"`
 	Root             *Keypair        `toml:"root"`
 	Ownership        Keypair         `toml:"ownership"`
-	Transfer         []Keypair       `toml:"transfer"`
+	Validation       []Keypair       `toml:"validation"`
 	ValidationScript chaincode       `toml:"validation_script"`
 }
 
@@ -27,33 +27,33 @@ func (a *Account) String() string {
 		a.Name,
 		a.Address.String()[:8],
 		a.Address.String()[len(a.Address.String())-5:],
-		len(a.Transfer),
+		len(a.Validation),
 	)
 }
 
-// TransferPublic constructs a list of all private transfer keys
-func (a *Account) TransferPublic() []signature.PublicKey {
-	pks := make([]signature.PublicKey, 0, len(a.Transfer))
-	for _, kp := range a.Transfer {
+// ValidationPublic constructs a list of all private validation keys
+func (a *Account) ValidationPublic() []signature.PublicKey {
+	pks := make([]signature.PublicKey, 0, len(a.Validation))
+	for _, kp := range a.Validation {
 		pks = append(pks, kp.Public)
 	}
 	return pks
 }
 
-// TransferPrivate constructs a list of all private transfer keys
-func (a *Account) TransferPrivate() []signature.PrivateKey {
-	pks := make([]signature.PrivateKey, 0, len(a.Transfer))
-	for _, kp := range a.Transfer {
+// ValidationPrivate constructs a list of all private validation keys
+func (a *Account) ValidationPrivate() []signature.PrivateKey {
+	pks := make([]signature.PrivateKey, 0, len(a.Validation))
+	for _, kp := range a.Validation {
 		pks = append(pks, kp.Private)
 	}
 	return pks
 }
 
-// TransferPrivateK constructs a list of all private transfer keys which have
+// ValidationPrivateK constructs a list of all private validation keys which have
 // their bits set, treating `keys` as a bitset with the lowest bit corresponding
-// to the 0 index of the list of private keys.
-func (a *Account) TransferPrivateK(keys int) []signature.PrivateKey {
-	return FilterK(a.TransferPrivate(), keys)
+// to the 0 index of the list of validation keys.
+func (a *Account) ValidationPrivateK(keys int) []signature.PrivateKey {
+	return FilterK(a.ValidationPrivate(), keys)
 }
 
 // FilterK filters a list of private keys by k, treating k as a bitset.
@@ -79,7 +79,7 @@ func FilterK(keys []signature.PrivateKey, k int) []signature.PrivateKey {
 	return out
 }
 
-func (a *Account) highestTransferPath() (account uint64, key uint64) {
+func (a *Account) highestValidationPath() (account uint64, key uint64) {
 	// given an account at /44'/20036'/100/17, its keys must all live at
 	// /44'/20036'/100/10000/17/n.
 	//
@@ -98,34 +98,34 @@ func (a *Account) highestTransferPath() (account uint64, key uint64) {
 		return
 	}
 
-	for _, tr := range a.Transfer {
+	for _, tr := range a.Validation {
 		if tr.Path != nil {
-			var traccount, trkey, validationkeyoffset uint64
+			var traccount, valkey, validationkeyoffset uint64
 			n, err := fmt.Sscanf(
 				*tr.Path,
 				ValidationPathFormat,
 				&accountlistoffset,
 				&validationkeyoffset,
 				&traccount,
-				&trkey,
+				&valkey,
 			)
 			if err != nil || n != 4 || accountlistoffset != AccountListOffset || validationkeyoffset != ValidationKeyOffset || traccount != account {
 				continue
 			}
 
-			if trkey > key {
-				key = trkey
+			if valkey > key {
+				key = valkey
 			}
 		}
 	}
 	return
 }
 
-func (a *Account) nextTransferPath() *string {
+func (a *Account) nextValidationPath() *string {
 	if a.Ownership.Path == nil {
 		return nil
 	}
-	account, key := a.highestTransferPath()
+	account, key := a.highestValidationPath()
 	if account == 0 {
 		account = AccountStartNumber
 	}
@@ -139,17 +139,17 @@ func (a *Account) nextTransferPath() *string {
 	return &h
 }
 
-// MakeTransferKey makes a transfer key for this account
+// MakeValidationKey makes a validation key for this account
 //
 // It does not actually add it to the keys list--that may be contraindicated
 // by errors further on.
-func (a *Account) MakeTransferKey(path *string) (newKeys *Keypair, err error) {
+func (a *Account) MakeValidationKey(path *string) (newKeys *Keypair, err error) {
 	newKeys = &Keypair{}
 	if a.Root == nil {
 		// it's probably a non-hd key, so just proceed on that assumption
 		newKeys.Public, newKeys.Private, err = signature.Generate(signature.Ed25519, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "generating new transfer key")
+			return nil, errors.Wrap(err, "generating new validation key")
 		}
 	} else {
 		// probably HD
@@ -158,10 +158,10 @@ func (a *Account) MakeTransferKey(path *string) (newKeys *Keypair, err error) {
 			return nil, errors.Wrap(err, "extracting hd ownership key")
 		}
 		if path == nil || len(*path) == 0 {
-			path = a.nextTransferPath()
+			path = a.nextValidationPath()
 		}
 		if path == nil {
-			return nil, errors.New("could not compute next transfer path")
+			return nil, errors.New("could not compute next validation path")
 		}
 
 		newKeys.Path = path

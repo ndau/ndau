@@ -44,11 +44,11 @@ var (
 	targetPublic  signature.PublicKey
 	targetAddress address.Address
 
-	childAddress          address.Address
-	childPublic           signature.PublicKey
-	childPrivate          signature.PrivateKey
-	childSignature        signature.Signature
-	childSettlementPeriod math.Duration
+	childAddress        address.Address
+	childPublic         signature.PublicKey
+	childPrivate        signature.PrivateKey
+	childSignature      signature.Signature
+	childRecoursePeriod math.Duration
 
 	transferPublic  signature.PublicKey
 	transferPrivate signature.PrivateKey
@@ -96,8 +96,8 @@ func init() {
 		panic("child public and private keys do not agree")
 	}
 
-	// We'll use the default settlement period for child accounts.  Any negative duration will do.
-	childSettlementPeriod = -math.Duration(1)
+	// We'll use the default recourse period for child accounts.  Any negative duration will do.
+	childRecoursePeriod = -math.Duration(1)
 
 	transferPublic, transferPrivate, err = signature.Generate(signature.Ed25519, nil)
 	if err != nil {
