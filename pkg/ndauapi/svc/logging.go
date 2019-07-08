@@ -42,8 +42,8 @@ func LogMW(handler http.Handler) http.HandlerFunc {
 		handler.ServeHTTP(&lw, r)
 		duration := time.Now().Sub(start)
 		logger.WithFields(logrus.Fields{
-			"bin":     	  binName,
-			"node_id": 	  nodeID,
+			"bin":        binName,
+			"node_id":    nodeID,
 			"host":       r.Host,
 			"remoteAddr": r.RemoteAddr,
 			"method":     r.Method,
