@@ -49,46 +49,48 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 // Apply satisfies metatx.Transactable
 func (tx *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
+
+	var updater func(...func(metast.State) (metast.State, error)) error
+	updater = app.UpdateState
+	if !app.IsFeatureActive("NoLeakyUpdateState") {
+		updater = app.UpdateStateLeaky
 	}
 
-	source, _ := app.getAccount(tx.Source)
-	dest, _ := app.getAccount(tx.Destination)
+	return updater(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
+		source, _ := app.getAccount(tx.Source)
+		dest, _ := app.getAccount(tx.Destination)
 
-	err = (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
-		app.BlockTime().Since(dest.LastWAAUpdate),
-		tx.Qty,
-		dest.Balance,
-	)
-	if err != nil {
-		return errors.Wrap(err, "update waa")
-	}
-	dest.LastWAAUpdate = app.BlockTime()
-
-	dest.Balance += tx.Qty
-
-	destIsExchange := false
-	if app.IsFeatureActive("NoExchangeHoldsOnTransfer") {
-		destIsExchange, err = app.GetState().(*backing.State).AccountHasAttribute(tx.Destination, sv.AccountAttributeExchange)
+		err := (&dest.WeightedAverageAge).UpdateWeightedAverageAge(
+			app.BlockTime().Since(dest.LastWAAUpdate),
+			tx.Qty,
+			dest.Balance,
+		)
 		if err != nil {
-			return errors.New("dest account exchange attribute can't be retrieved")
+			return stateI, errors.Wrap(err, "update waa")
 		}
-	}
+		dest.LastWAAUpdate = app.BlockTime()
 
-	if source.RecourseSettings.Period != 0 && !destIsExchange {
-		x := app.BlockTime().Add(source.RecourseSettings.Period)
-		dest.Holds = append(dest.Holds, backing.Hold{
-			Qty:    tx.Qty,
-			Expiry: &x,
-			Txhash: metatx.Hash(tx),
-		})
-	}
+		dest.Balance += tx.Qty
 
-	dest.UpdateCurrencySeat(app.BlockTime())
+		destIsExchange := false
+		if app.IsFeatureActive("NoExchangeHoldsOnTransfer") {
+			destIsExchange, err = app.GetState().(*backing.State).AccountHasAttribute(tx.Destination, sv.AccountAttributeExchange)
+			if err != nil {
+				return stateI, errors.New("dest account exchange attribute can't be retrieved")
+			}
+		}
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+		if source.RecourseSettings.Period != 0 && !destIsExchange {
+			x := app.BlockTime().Add(source.RecourseSettings.Period)
+			dest.Holds = append(dest.Holds, backing.Hold{
+				Qty:    tx.Qty,
+				Expiry: &x,
+				Txhash: metatx.Hash(tx),
+			})
+		}
+
+		dest.UpdateCurrencySeat(app.BlockTime())
+
 		state := stateI.(*backing.State)
 
 		state.Accounts[tx.Destination.String()] = dest

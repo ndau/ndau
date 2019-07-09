@@ -133,12 +133,7 @@ func (tx *RecordPrice) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *RecordPrice) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
-
-	return app.UpdateState(app.updatePricesAndSIB(tx.MarketPrice))
+	return app.UpdateState(app.applyTxDetails(tx), app.updatePricesAndSIB(tx.MarketPrice))
 }
 
 // GetSource implements Sourcer

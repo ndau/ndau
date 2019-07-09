@@ -64,15 +64,10 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *SetSysvar) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
-
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		state.Sysvars[tx.Name] = tx.Value
-		return state, err
+		return state, nil
 	})
 }
 

@@ -46,13 +46,9 @@ func (tx *CreditEAI) Validate(appI interface{}) error {
 // Apply implements metatx.Transactable
 func (tx *CreditEAI) Apply(appI interface{}) error {
 	app := appI.(*App)
-	err := app.applyTxDetails(tx)
-	if err != nil {
-		return err
-	}
 
 	unlockedTable := new(eai.RateTable)
-	err = app.System(sv.UnlockedRateTableName, unlockedTable)
+	err := app.System(sv.UnlockedRateTableName, unlockedTable)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 	}
@@ -78,7 +74,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	// fees appropriately
 	var totalEAICredited uint64
 
-	return app.UpdateState(func(stateI metast.State) (metast.State, error) {
+	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		nodeData, _ := app.getAccount(tx.Node)
 
