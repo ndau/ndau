@@ -71,8 +71,8 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 		maxKeys = 0
 	}
 	if len(acct.ValidationKeys) > maxKeys {
-		return fmt.Errorf("SetValidation only works when at most %d validation keys are set",
-			maxKeys)
+		return fmt.Errorf("SetValidation only works when at most %d validation keys are set and %d are present",
+			maxKeys, len(acct.ValidationKeys))
 	}
 
 	// Prevent establishing locked exchange accounts.  If this fails, it means we've been working

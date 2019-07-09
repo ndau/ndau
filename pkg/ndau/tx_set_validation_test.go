@@ -70,7 +70,7 @@ func TestValidSetValidation(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestSetValidationNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
+func TestSetValidationNewValidationKeyNotEqualOwnershipKey(t *testing.T) {
 	app := initAppSetValidation(t)
 
 	ca := NewSetValidation(targetAddress, targetPublic, []signature.PublicKey{targetPublic}, []byte{}, 1, targetPrivate)
@@ -82,7 +82,7 @@ func TestSetValidationNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestValidSetValidationUpdatesTransferKey(t *testing.T) {
+func TestValidSetValidationUpdatesValidationKey(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func TestSetValidationTooManyValidationKeys(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestSetValidationCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
+func TestSetValidationCannotOverwriteMoreThanOneValidationKey(t *testing.T) {
 	app := initAppSetValidation(t)
 
 	existing1, _, err := signature.Generate(signature.Ed25519, nil)
