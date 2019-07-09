@@ -49,7 +49,14 @@ func (tx *Transfer) Validate(appInt interface{}) error {
 // Apply satisfies metatx.Transactable
 func (tx *Transfer) Apply(appInt interface{}) error {
 	app := appInt.(*App)
-	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
+
+	var updater func(...func(metast.State) (metast.State, error)) error
+	updater = app.UpdateState
+	if !app.IsFeatureActive("NoLeakyUpdateState") {
+		updater = app.UpdateStateLeaky
+	}
+
+	return updater(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		source, _ := app.getAccount(tx.Source)
 		dest, _ := app.getAccount(tx.Destination)
 

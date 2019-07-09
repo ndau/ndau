@@ -222,7 +222,7 @@ func TestNAVChangesState(t *testing.T) {
 
 	resp := deliverTx(t, app, recordEndowmentNAV)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
+	state = app.GetState().(*backing.State)
 	require.True(t, state.IsManagedVarSet("EndowmentNAV"))
 	require.Equal(t, pricecurve.Nanocent(finalNAV), state.GetEndowmentNAV())
 }
