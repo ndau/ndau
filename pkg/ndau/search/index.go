@@ -36,8 +36,7 @@ type SysvarIndexable interface {
 type AddressIndexable interface {
 	metatx.Transactable
 
-	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
-	GetAccountAddresses() []string
+	GetAccountAddresses(*backing.State) ([]string, error)
 }
 
 // Client is a search Client that implements IncrementalIndexer.
@@ -333,7 +332,15 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		// Index account addresses associated with the transaction.
 		indexable, isIndexable := tx.(AddressIndexable)
 		if isIndexable {
-			addresses := indexable.GetAccountAddresses()
+			addresses, err := indexable.GetAccountAddresses(search.state.(*backing.State))
+			if err != nil {
+				err = fmt.Errorf(
+					"tx with hash %s attempted to get account addresses: %s",
+					metatx.Hash(tx),
+					err.Error(),
+				)
+				return updateCount, insertCount, err
+			}
 
 			for _, addr := range addresses {
 				acct, hasAccount := search.state.(*backing.State).Accounts[addr]
