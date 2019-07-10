@@ -2,10 +2,8 @@ package svc
 
 import (
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/oneiro-ndev/o11y/pkg/honeycomb"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,9 +30,7 @@ func (w *LogWriter) Write(b []byte) (int, error) {
 // LogMW wraps a regular handler and replaces the writer with some logging middleware.
 func LogMW(handler http.Handler) http.HandlerFunc {
 
-	logger := honeycomb.Setup(logrus.New())
-	binName := "ndauapi"
-	nodeID := os.Getenv("NODE_ID")
+	logger := logrus.New()
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -42,8 +38,6 @@ func LogMW(handler http.Handler) http.HandlerFunc {
 		handler.ServeHTTP(&lw, r)
 		duration := time.Now().Sub(start)
 		logger.WithFields(logrus.Fields{
-			"bin":        binName,
-			"node_id":    nodeID,
 			"host":       r.Host,
 			"remoteAddr": r.RemoteAddr,
 			"method":     r.Method,
