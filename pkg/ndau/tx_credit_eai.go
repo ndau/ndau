@@ -285,6 +285,13 @@ func (tx *CreditEAI) ExtendSignatures(sa []signature.Signature) {
 
 // GetAccountAddresses returns the account addresses associated with this transaction type.
 func (tx *CreditEAI) GetAccountAddresses(app *App) ([]string, error) {
-	// TODO: there are many more addresses than this!
-	return []string{tx.Node.String()}, nil
+	state := app.GetState().(*backing.State)
+	addrs := make([]string, 0, 1+len(state.Delegates[tx.Node.String()]))
+	for d := range state.Delegates[tx.Node.String()] {
+		addrs = append(addrs, d)
+	}
+	sort.Strings(addrs)
+	addrs = append(addrs, tx.Node.String())
+
+	return addrs, nil
 }
