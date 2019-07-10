@@ -39,11 +39,6 @@ func (app *App) Delegate(state *backing.State, target, node address.Address) err
 	return nil
 }
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *Delegate) GetAccountAddresses() []string {
-	return []string{tx.Target.String(), tx.Node.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *Delegate) Validate(appI interface{}) error {
 	_, err := address.Validate(tx.Target.String())
@@ -100,4 +95,9 @@ func (tx *Delegate) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *Delegate) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *Delegate) GetAccountAddresses(app *App) ([]string, error) {
+	return []string{tx.Target.String(), tx.Node.String()}, nil
 }

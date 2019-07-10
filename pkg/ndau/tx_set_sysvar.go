@@ -102,11 +102,6 @@ func (tx *SetSysvar) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *SetSysvar) GetAccountAddresses() []string {
-	return []string{}
-}
-
 // GetName implements SysvarIndexable.
 func (tx *SetSysvar) GetName() string {
 	return tx.Name

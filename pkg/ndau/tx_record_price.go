@@ -166,8 +166,3 @@ func (tx *RecordPrice) GetSignatures() []signature.Signature {
 func (tx *RecordPrice) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *RecordPrice) GetAccountAddresses() []string {
-	return []string{}
-}

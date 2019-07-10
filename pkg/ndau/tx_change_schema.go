@@ -73,8 +73,3 @@ func (tx *ChangeSchema) GetSignatures() []signature.Signature {
 func (tx *ChangeSchema) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ChangeSchema) GetAccountAddresses() []string {
-	return []string{}
-}

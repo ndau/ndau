@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *Lock) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *Lock) Validate(appI interface{}) error {
 	app := appI.(*App)

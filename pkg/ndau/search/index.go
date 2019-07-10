@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	metaapp "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -32,13 +33,6 @@ type SysvarIndexable interface {
 	GetValue() []byte
 }
 
-// AddressIndexable is a Transactable that has addresses associated with it that we want to index.
-type AddressIndexable interface {
-	metatx.Transactable
-
-	GetAccountAddresses(*backing.State) ([]string, error)
-}
-
 // Client is a search Client that implements IncrementalIndexer.
 type Client struct {
 	*metasearch.Client
@@ -48,7 +42,7 @@ type Client struct {
 	sysvarKeyToValueData map[string]*ValueData
 
 	// Used for getting account data to index.
-	state metastate.State
+	app metaapp.Indexable
 
 	// Used for indexing transaction hashes.
 	txs []metatx.Transactable
@@ -65,7 +59,7 @@ type Client struct {
 }
 
 // NewClient is a factory method for Client.
-func NewClient(address string, version int) (search *Client, err error) {
+func NewClient(address string, version int, app metaapp.Indexable) (search *Client, err error) {
 	search = &Client{}
 	search.Client, err = metasearch.NewClient(address, version)
 	if err != nil {
@@ -73,7 +67,7 @@ func NewClient(address string, version int) (search *Client, err error) {
 	}
 
 	search.sysvarKeyToValueData = nil
-	search.state = nil
+	search.app = app
 	search.txs = nil
 	search.blockTime = time.Time{}
 	search.blockHash = ""
@@ -177,7 +171,6 @@ func (search *Client) onIndexingComplete(
 
 	// No need to keep this data around any longer.
 	search.sysvarKeyToValueData = nil
-	search.state = nil
 	search.txs = nil
 	search.blockTime = time.Time{}
 	search.blockHash = ""
@@ -330,32 +323,29 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		}
 
 		// Index account addresses associated with the transaction.
-		indexable, isIndexable := tx.(AddressIndexable)
-		if isIndexable {
-			addresses, err := indexable.GetAccountAddresses(search.state.(*backing.State))
-			if err != nil {
-				err = fmt.Errorf(
-					"tx with hash %s attempted to get account addresses: %s",
-					metatx.Hash(tx),
-					err.Error(),
-				)
-				return updateCount, insertCount, err
-			}
+		addresses, err := search.app.GetAccountAddresses(tx)
+		if err != nil {
+			err = fmt.Errorf(
+				"tx with hash %s attempted to get account addresses: %s",
+				metatx.Hash(tx),
+				err.Error(),
+			)
+			return updateCount, insertCount, err
+		}
 
-			for _, addr := range addresses {
-				acct, hasAccount := search.state.(*backing.State).Accounts[addr]
-				if hasAccount {
-					searchKey := formatAccountAddressToHeightSearchKey(addr)
-					acctValueData.Balance = acct.Balance
-					searchValue := acctValueData.Marshal()
+		for _, addr := range addresses {
+			acct, hasAccount := search.app.GetState().(*backing.State).Accounts[addr]
+			if hasAccount {
+				searchKey := formatAccountAddressToHeightSearchKey(addr)
+				acctValueData.Balance = acct.Balance
+				searchValue := acctValueData.Marshal()
 
-					updCount, insCount, err :=
-						search.indexKeyValueWithHistory(searchKey, searchValue)
-					updateCount += updCount
-					insertCount += insCount
-					if err != nil {
-						return updateCount, insertCount, err
-					}
+				updCount, insCount, err :=
+					search.indexKeyValueWithHistory(searchKey, searchValue)
+				updateCount += updCount
+				insertCount += insCount
+				if err != nil {
+					return updateCount, insertCount, err
 				}
 			}
 		}

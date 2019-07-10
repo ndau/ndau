@@ -11,11 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *Transfer) GetAccountAddresses() []string {
-	return []string{tx.Source.String(), tx.Destination.String()}
-}
-
 // Validate satisfies metatx.Transactable
 func (tx *Transfer) Validate(appInt interface{}) error {
 	app := appInt.(*App)
@@ -123,4 +118,9 @@ func (tx *Transfer) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *Transfer) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *Transfer) GetAccountAddresses(app *App) ([]string, error) {
+	return []string{tx.Source.String(), tx.Destination.String()}, nil
 }

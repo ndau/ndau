@@ -290,3 +290,26 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 		return st, nil
 	}
 }
+
+// AddressIndexable is a Transactable that has addresses associated with it that we want to index.
+type AddressIndexable interface {
+	metatx.Transactable
+	GetAccountAddresses(*App) ([]string, error)
+}
+
+// GetAccountAddresses gets the affected account addresses from a tx
+//
+// Transactions can override the behavior by implementing AddressIndexable,
+// but by default, every ndau transactable will return its source
+func (app *App) GetAccountAddresses(tx metatx.Transactable) ([]string, error) {
+	switch x := tx.(type) {
+	case AddressIndexable:
+		return x.GetAccountAddresses(app)
+	case Sourcer:
+		addr, err := x.GetSource(app)
+		return []string{addr.String()}, err
+	default:
+		// if we only ever use NTransactables, this will never happen
+		return []string{}, nil
+	}
+}
