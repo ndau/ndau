@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"time"
 
-	metaapp "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
@@ -52,9 +51,7 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 }
 
 // OnCommit indexes all the transaction data we collected since the last BeginBlock().
-func (search *Client) OnCommit(app metaapp.Indexable) error {
-	search.app = app
-
+func (search *Client) OnCommit() error {
 	_, _, err := search.index()
 	if err != nil {
 		return err

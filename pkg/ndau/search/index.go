@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	metaapp "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -23,6 +22,15 @@ const accountAddressToHeightSearchKeyPrefix = "a:"
 const blockHashToHeightSearchKeyPrefix = "b:"
 const sysvarKeyToValueSearchKeyPrefix = "s:"
 const txHashToHeightSearchKeyPrefix = "t:"
+
+// AppIndexable is an app which can help index its transactions.
+//
+// It's really only a thing in order to avoid circular imports; it will always
+// in actuality be an ndau.App
+type AppIndexable interface {
+	GetAccountAddresses(tx metatx.Transactable) ([]string, error)
+	GetState() metastate.State
+}
 
 // SysvarIndexable is a Transactable that has sysar data that we want to index.
 type SysvarIndexable interface {
@@ -42,7 +50,7 @@ type Client struct {
 	sysvarKeyToValueData map[string]*ValueData
 
 	// Used for getting account data to index.
-	app metaapp.Indexable
+	app AppIndexable
 
 	// Used for indexing transaction hashes.
 	txs []metatx.Transactable
@@ -59,7 +67,7 @@ type Client struct {
 }
 
 // NewClient is a factory method for Client.
-func NewClient(address string, version int, app metaapp.Indexable) (search *Client, err error) {
+func NewClient(address string, version int, app AppIndexable) (search *Client, err error) {
 	search = &Client{}
 	search.Client, err = metasearch.NewClient(address, version)
 	if err != nil {
