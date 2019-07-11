@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// MaxSequenceIncrement is the max allowed difference between the current
+// sequence number and its successor
+const MaxSequenceIncrement = 128
+
 // A Sourcer is a transaction with a source from which tx fees are withdrawn,
 // whose sequence number is checked, etc.
 type Sourcer interface {
@@ -101,6 +105,9 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	acct, exists := app.getAccount(address)
 	if tx.GetSequence() <= acct.Sequence {
 		return acct, exists, nil, errors.New("sequence too low")
+	}
+	if app.IsFeatureActive("SequenceIncrementProtection") && tx.GetSequence() > acct.Sequence+MaxSequenceIncrement {
+		return acct, exists, nil, errors.New("sequence too high")
 	}
 
 	var sigset *bitset256.Bitset256
@@ -288,5 +295,28 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 		st.PendingNodeReward += fee
 		st.TotalBurned += sib
 		return st, nil
+	}
+}
+
+// AddressIndexable is a Transactable that has addresses associated with it that we want to index.
+type AddressIndexable interface {
+	metatx.Transactable
+	GetAccountAddresses(*App) ([]string, error)
+}
+
+// GetAccountAddresses gets the affected account addresses from a tx
+//
+// Transactions can override the behavior by implementing AddressIndexable,
+// but by default, every ndau transactable will return its source
+func (app *App) GetAccountAddresses(tx metatx.Transactable) ([]string, error) {
+	switch x := tx.(type) {
+	case AddressIndexable:
+		return x.GetAccountAddresses(app)
+	case Sourcer:
+		addr, err := x.GetSource(app)
+		return []string{addr.String()}, err
+	default:
+		// if we only ever use NTransactables, this will never happen
+		return []string{}, nil
 	}
 }

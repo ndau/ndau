@@ -81,8 +81,3 @@ func (tx *RecordEndowmentNAV) GetSignatures() []signature.Signature {
 func (tx *RecordEndowmentNAV) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *RecordEndowmentNAV) GetAccountAddresses() []string {
-	return []string{}
-}

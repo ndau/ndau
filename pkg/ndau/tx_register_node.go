@@ -33,11 +33,6 @@ func TMAddress(key signature.PublicKey) (string, error) {
 	return tkey.Address().String(), nil
 }
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *RegisterNode) GetAccountAddresses() []string {
-	return []string{tx.Node.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *RegisterNode) Validate(appI interface{}) error {
 	if !IsChaincode(tx.DistributionScript) {

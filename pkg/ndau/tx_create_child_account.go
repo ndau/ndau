@@ -12,11 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *CreateChildAccount) GetAccountAddresses() []string {
-	return []string{tx.Target.String(), tx.Child.String()}
-}
-
 // Validate returns nil if tx is valid, or an error
 func (tx *CreateChildAccount) Validate(appI interface{}) error {
 	// Ensure the target and child address are valid.
@@ -162,4 +157,9 @@ func (tx *CreateChildAccount) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *CreateChildAccount) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *CreateChildAccount) GetAccountAddresses(app *App) ([]string, error) {
+	return []string{tx.Target.String(), tx.Child.String()}, nil
 }

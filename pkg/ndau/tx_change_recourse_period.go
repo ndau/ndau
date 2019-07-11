@@ -8,11 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ChangeRecoursePeriod) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *ChangeRecoursePeriod) Validate(appI interface{}) (err error) {
 	app := appI.(*App)

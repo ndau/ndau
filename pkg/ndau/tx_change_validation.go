@@ -7,14 +7,8 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-
 	"github.com/pkg/errors"
 )
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ChangeValidation) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}
 
 // Validate implements metatx.Transactable
 func (tx *ChangeValidation) Validate(appI interface{}) (err error) {

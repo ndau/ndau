@@ -11,11 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *SetValidation) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}
-
 // Validate returns nil if tx is valid, or an error
 func (tx *SetValidation) Validate(appI interface{}) error {
 	// we need to verify that the ownership key submitted actually generates

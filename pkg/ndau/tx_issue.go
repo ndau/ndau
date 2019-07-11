@@ -67,8 +67,3 @@ func (tx *Issue) GetSignatures() []signature.Signature {
 func (tx *Issue) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *Issue) GetAccountAddresses() []string {
-	return []string{}
-}

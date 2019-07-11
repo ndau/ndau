@@ -17,11 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *CreditEAI) GetAccountAddresses() []string {
-	return []string{tx.Node.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
@@ -53,6 +48,14 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		return errors.Wrap(err, fmt.Sprintf("Error fetching %s system variable in CreditEAI.Apply", sv.UnlockedRateTableName))
 	}
 
+	eaiOvertime := new(math.Duration)
+	err = app.System(sv.EAIOvertime, eaiOvertime)
+	if err != nil {
+		app.DecoratedTxLogger(tx).Info("could not get EAI Overtime sysvar; will not apply overtime limit")
+		err = nil
+		eaiOvertime = nil
+	}
+
 	// Exchange accounts get a flat rate for EAI.  To accomplish this, we make a 1-element rate
 	// table using the exchange account Rate (dependent on account) with a zero From field.
 	exchangeTable := make(eai.RateTable, 1, 1)
@@ -82,7 +85,6 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		delegatedAccounts := state.Delegates[tx.Node.String()]
 
 		logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
-			"tx":            "CreditEAI",
 			"node":          tx.Node.String(),
 			"blockTime":     app.BlockTime(),
 			"unlockedTable": unlockedTable,
@@ -167,8 +169,16 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				return
 			}
 
+			// when the EAI overtime duration is set, this is the maximum amount
+			// of EAI which can be applied by a CreditEAI transaction. This
+			// encourages node operators to issue the tx regularly.
+			lastUpdate := acctData.LastEAIUpdate
+			if eaiOvertime != nil && lastUpdate.Add(*eaiOvertime) < app.BlockTime() {
+				lastUpdate = app.BlockTime().Sub(*eaiOvertime)
+			}
+
 			eaiAward, err := eai.Calculate(
-				pending, app.BlockTime(), acctData.LastEAIUpdate,
+				pending, app.BlockTime(), lastUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
 				*ageTable,
 			)
@@ -286,4 +296,17 @@ func (tx *CreditEAI) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *CreditEAI) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *CreditEAI) GetAccountAddresses(app *App) ([]string, error) {
+	state := app.GetState().(*backing.State)
+	addrs := make([]string, 0, 1+len(state.Delegates[tx.Node.String()]))
+	for d := range state.Delegates[tx.Node.String()] {
+		addrs = append(addrs, d)
+	}
+	sort.Strings(addrs)
+	addrs = append(addrs, tx.Node.String())
+
+	return addrs, nil
 }

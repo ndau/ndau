@@ -14,11 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ClaimNodeReward) GetAccountAddresses() []string {
-	return []string{tx.Node.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *ClaimNodeReward) Validate(appI interface{}) error {
 	app := appI.(*App)

@@ -108,8 +108,3 @@ func (tx *Unstake) GetSignatures() []signature.Signature {
 func (tx *Unstake) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *Unstake) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}

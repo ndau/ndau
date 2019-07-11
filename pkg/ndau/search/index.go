@@ -23,6 +23,15 @@ const blockHashToHeightSearchKeyPrefix = "b:"
 const sysvarKeyToValueSearchKeyPrefix = "s:"
 const txHashToHeightSearchKeyPrefix = "t:"
 
+// AppIndexable is an app which can help index its transactions.
+//
+// It's really only a thing in order to avoid circular imports; it will always
+// in actuality be an ndau.App
+type AppIndexable interface {
+	GetAccountAddresses(tx metatx.Transactable) ([]string, error)
+	GetState() metastate.State
+}
+
 // SysvarIndexable is a Transactable that has sysar data that we want to index.
 type SysvarIndexable interface {
 	metatx.Transactable
@@ -30,14 +39,6 @@ type SysvarIndexable interface {
 	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
 	GetName() string
 	GetValue() []byte
-}
-
-// AddressIndexable is a Transactable that has addresses associated with it that we want to index.
-type AddressIndexable interface {
-	metatx.Transactable
-
-	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
-	GetAccountAddresses() []string
 }
 
 // Client is a search Client that implements IncrementalIndexer.
@@ -49,7 +50,7 @@ type Client struct {
 	sysvarKeyToValueData map[string]*ValueData
 
 	// Used for getting account data to index.
-	state metastate.State
+	app AppIndexable
 
 	// Used for indexing transaction hashes.
 	txs []metatx.Transactable
@@ -66,7 +67,7 @@ type Client struct {
 }
 
 // NewClient is a factory method for Client.
-func NewClient(address string, version int) (search *Client, err error) {
+func NewClient(address string, version int, app AppIndexable) (search *Client, err error) {
 	search = &Client{}
 	search.Client, err = metasearch.NewClient(address, version)
 	if err != nil {
@@ -74,7 +75,7 @@ func NewClient(address string, version int) (search *Client, err error) {
 	}
 
 	search.sysvarKeyToValueData = nil
-	search.state = nil
+	search.app = app
 	search.txs = nil
 	search.blockTime = time.Time{}
 	search.blockHash = ""
@@ -178,7 +179,6 @@ func (search *Client) onIndexingComplete(
 
 	// No need to keep this data around any longer.
 	search.sysvarKeyToValueData = nil
-	search.state = nil
 	search.txs = nil
 	search.blockTime = time.Time{}
 	search.blockHash = ""
@@ -331,24 +331,29 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		}
 
 		// Index account addresses associated with the transaction.
-		indexable, isIndexable := tx.(AddressIndexable)
-		if isIndexable {
-			addresses := indexable.GetAccountAddresses()
+		addresses, err := search.app.GetAccountAddresses(tx)
+		if err != nil {
+			err = fmt.Errorf(
+				"tx with hash %s attempted to get account addresses: %s",
+				metatx.Hash(tx),
+				err.Error(),
+			)
+			return updateCount, insertCount, err
+		}
 
-			for _, addr := range addresses {
-				acct, hasAccount := search.state.(*backing.State).Accounts[addr]
-				if hasAccount {
-					searchKey := formatAccountAddressToHeightSearchKey(addr)
-					acctValueData.Balance = acct.Balance
-					searchValue := acctValueData.Marshal()
+		for _, addr := range addresses {
+			acct, hasAccount := search.app.GetState().(*backing.State).Accounts[addr]
+			if hasAccount {
+				searchKey := formatAccountAddressToHeightSearchKey(addr)
+				acctValueData.Balance = acct.Balance
+				searchValue := acctValueData.Marshal()
 
-					updCount, insCount, err :=
-						search.indexKeyValueWithHistory(searchKey, searchValue)
-					updateCount += updCount
-					insertCount += insCount
-					if err != nil {
-						return updateCount, insertCount, err
-					}
+				updCount, insCount, err :=
+					search.indexKeyValueWithHistory(searchKey, searchValue)
+				updateCount += updCount
+				insertCount += insCount
+				if err != nil {
+					return updateCount, insertCount, err
 				}
 			}
 		}
