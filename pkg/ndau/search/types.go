@@ -3,7 +3,9 @@ package search
 // Types common to indexing and searching.
 
 import (
+	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -52,7 +54,7 @@ type AccountListParams struct {
 	Limit   int    `json:"limit"`
 }
 
-// TxValueData is used for storing the block height and transaction offset within the block.
+// TxValueData is used for data about a particular transaction
 type TxValueData struct {
 	BlockHeight uint64 `json:"height"`
 	TxOffset    int    `json:"offset"`
@@ -99,27 +101,39 @@ func (valueData *ValueData) Unmarshal(searchValue string) error {
 
 // Marshal the value data into a search value string to index it with its search key string.
 func (valueData *TxValueData) Marshal() string {
-	return fmt.Sprintf("%d %d", valueData.BlockHeight, valueData.TxOffset)
+	m, err := json.Marshal(valueData)
+	if err != nil {
+		// it's pretty hard to panic marshaling a basic numeric type like this though
+		panic(err)
+	}
+	return string(m)
 }
+
+var valueDataOldPattern = regexp.MustCompile(`^\d+ \d+$`)
 
 // Unmarshal the given search value string that was indexed with its search key string.
 func (valueData *TxValueData) Unmarshal(searchValue string) error {
-	separator := strings.Index(searchValue, " ")
+	if valueDataOldPattern.Match([]byte(searchValue)) {
+		// use the old unmarshaling code
+		separator := strings.Index(searchValue, " ")
 
-	height, err := strconv.ParseUint(searchValue[:separator], 10, 64)
-	if err != nil {
-		return err
+		height, err := strconv.ParseUint(searchValue[:separator], 10, 64)
+		if err != nil {
+			return err
+		}
+
+		offset, err := strconv.ParseInt(searchValue[separator+1:], 10, 32)
+		if err != nil {
+			return err
+		}
+
+		valueData.BlockHeight = height
+		valueData.TxOffset = int(offset)
+
+		return nil
 	}
-
-	offset, err := strconv.ParseInt(searchValue[separator+1:], 10, 32)
-	if err != nil {
-		return err
-	}
-
-	valueData.BlockHeight = height
-	valueData.TxOffset = int(offset)
-
-	return nil
+	// use new unmarshaling code
+	return json.Unmarshal([]byte(searchValue), valueData)
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
