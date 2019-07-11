@@ -2,9 +2,9 @@ package svc
 
 import (
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,24 +30,8 @@ func (w *LogWriter) Write(b []byte) (int, error) {
 
 // LogMW wraps a regular handler and replaces the writer with some logging middleware.
 func LogMW(handler http.Handler) http.HandlerFunc {
-	logger := logrus.New()
-	logger.Out = os.Stdout
-
-	// Procmon assumes json output from ndauapi.
-	logger.Formatter = &logrus.JSONFormatter{}
-
-	switch os.Getenv("LOG_LEVEL") {
-	case "info", "":
-		logger.Level = logrus.InfoLevel
-	case "debug":
-		logger.Level = logrus.DebugLevel
-	case "warn", "warning":
-		logger.Level = logrus.WarnLevel
-	case "err", "error":
-		logger.Level = logrus.ErrorLevel
-	default:
-		logger.Level = logrus.InfoLevel
-	}
+	// Default logger that consults LOG_FORMAT and LOG_LEVEL env vars and logs to Stderr.
+	logger := app.NewLogger()
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
