@@ -13,11 +13,6 @@ import (
 
 const resolveStakeDenominator = 255
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ResolveStake) GetAccountAddresses() []string {
-	return []string{tx.Target.String(), tx.Rules.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *ResolveStake) Validate(appI interface{}) error {
 	_, err := address.Validate(tx.Target.String())
@@ -151,4 +146,9 @@ func (tx *ResolveStake) calculatePayment(st *backing.State) (math.Ndau, error) {
 		return 0, errors.Wrap(err, "getting return code from rules validation vm")
 	}
 	return math.Ndau(payment), nil
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *ResolveStake) GetAccountAddresses(app *App) ([]string, error) {
+	return []string{tx.Target.String(), tx.Rules.String()}, nil
 }

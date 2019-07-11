@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"time"
 
-	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 )
 
@@ -14,7 +13,6 @@ import (
 func (search *Client) OnBeginBlock(height uint64, blockTime time.Time, tmHash string) error {
 	// There's only one block to consider for incremental indexing.
 	search.sysvarKeyToValueData = make(map[string]*ValueData)
-	search.state = nil
 	search.txs = nil
 	search.blockTime = blockTime
 	search.blockHash = tmHash
@@ -53,9 +51,7 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 }
 
 // OnCommit indexes all the transaction data we collected since the last BeginBlock().
-func (search *Client) OnCommit(app *meta.App) error {
-	search.state = app.GetState()
-
+func (search *Client) OnCommit() error {
 	_, _, err := search.index()
 	if err != nil {
 		return err

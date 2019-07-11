@@ -9,11 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ReleaseFromEndowment) GetAccountAddresses() []string {
-	return []string{tx.Destination.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *ReleaseFromEndowment) Validate(appI interface{}) error {
 	app := appI.(*App)
@@ -71,4 +66,13 @@ func (tx *ReleaseFromEndowment) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *ReleaseFromEndowment) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *ReleaseFromEndowment) GetAccountAddresses(app *App) ([]string, error) {
+	rfea, err := tx.GetSource(app)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting RFE SV")
+	}
+	return []string{rfea.String(), tx.Destination.String()}, nil
 }

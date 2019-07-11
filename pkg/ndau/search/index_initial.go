@@ -21,7 +21,6 @@ func (search *Client) IndexBlockchain(
 
 	// Start fresh.  It should already be zero'd out upon entry.
 	search.sysvarKeyToValueData = make(map[string]*ValueData)
-	search.state = nil
 	search.txs = nil
 	// TODO: We really should be using block time when indexing below, but we don't store block
 	// timestamps in noms.  So we must eventually write the external ndauindexer app.  Then we

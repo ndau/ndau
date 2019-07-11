@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *SetStakeRules) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *SetStakeRules) Validate(appI interface{}) (err error) {
 	tx.Target, err = address.Validate(tx.Target.String())

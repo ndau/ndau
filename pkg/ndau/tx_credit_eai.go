@@ -17,11 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *CreditEAI) GetAccountAddresses() []string {
-	return []string{tx.Node.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *CreditEAI) Validate(appI interface{}) error {
 	app := appI.(*App)
@@ -286,4 +281,17 @@ func (tx *CreditEAI) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *CreditEAI) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
+}
+
+// GetAccountAddresses returns the account addresses associated with this transaction type.
+func (tx *CreditEAI) GetAccountAddresses(app *App) ([]string, error) {
+	state := app.GetState().(*backing.State)
+	addrs := make([]string, 0, 1+len(state.Delegates[tx.Node.String()]))
+	for d := range state.Delegates[tx.Node.String()] {
+		addrs = append(addrs, d)
+	}
+	sort.Strings(addrs)
+	addrs = append(addrs, tx.Node.String())
+
+	return addrs, nil
 }
