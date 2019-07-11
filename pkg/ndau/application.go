@@ -5,12 +5,14 @@
 package ndau
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/BurntSushi/toml"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
@@ -231,4 +233,20 @@ func (app *App) IsFeatureActive(feature string) bool {
 	}
 
 	return app.Height() >= gateHeight
+}
+
+// CalculateTxFeeNapu implements AppIndexable
+func (app *App) CalculateTxFeeNapu(tx metatx.Transactable) (uint64, error) {
+	fee, err := app.calculateTxFee(tx)
+	return uint64(fee), err
+}
+
+// CalculateTxSIBNapu implements AppIndexable
+func (app *App) CalculateTxSIBNapu(tx metatx.Transactable) (uint64, error) {
+	ntx, ok := tx.(NTransactable)
+	if !ok {
+		return 0, fmt.Errorf("%T does not implement NTransactable", tx)
+	}
+	sib, err := app.calculateSIB(ntx)
+	return uint64(sib), err
 }

@@ -56,6 +56,8 @@ type AccountListParams struct {
 type TxValueData struct {
 	BlockHeight uint64 `json:"height"`
 	TxOffset    int    `json:"offset"`
+	Fee         uint64 `json:"fee"`
+	SIB         uint64 `json:"sib"`
 }
 
 // AccountTxValueData is like TxValueData that stores account balance at the associated block.

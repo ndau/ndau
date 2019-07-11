@@ -30,6 +30,8 @@ const txHashToHeightSearchKeyPrefix = "t:"
 type AppIndexable interface {
 	GetAccountAddresses(tx metatx.Transactable) ([]string, error)
 	GetState() metastate.State
+	CalculateTxFeeNapu(tx metatx.Transactable) (uint64, error)
+	CalculateTxSIBNapu(tx metatx.Transactable) (uint64, error)
 }
 
 // SysvarIndexable is a Transactable that has sysar data that we want to index.
@@ -312,7 +314,7 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 	}
 
 	// We'll reuse these for marshaling data into it.
-	valueData := TxValueData{search.blockHeight, 0}
+	valueData := TxValueData{BlockHeight: search.blockHeight}
 	acctValueData := AccountTxValueData{search.blockHeight, 0, 0}
 
 	for txOffset, tx := range search.txs {
@@ -320,6 +322,14 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		txHash := metatx.Hash(tx)
 		searchKey := formatTxHashToHeightSearchKey(txHash)
 		valueData.TxOffset = txOffset
+		valueData.Fee, err = search.app.CalculateTxFeeNapu(tx)
+		if err != nil {
+			return updateCount, insertCount, err
+		}
+		valueData.SIB, err = search.app.CalculateTxSIBNapu(tx)
+		if err != nil {
+			return updateCount, insertCount, err
+		}
 		acctValueData.TxOffset = txOffset
 		searchValue := valueData.Marshal()
 
