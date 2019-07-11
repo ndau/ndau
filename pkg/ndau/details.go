@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// MaxSequenceIncrement is the max allowed difference between the current
+// sequence number and its successor
+const MaxSequenceIncrement = 128
+
 // A Sourcer is a transaction with a source from which tx fees are withdrawn,
 // whose sequence number is checked, etc.
 type Sourcer interface {
@@ -101,6 +105,9 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 	acct, exists := app.getAccount(address)
 	if tx.GetSequence() <= acct.Sequence {
 		return acct, exists, nil, errors.New("sequence too low")
+	}
+	if app.IsFeatureActive("SequenceIncrementProtection") && tx.GetSequence() > acct.Sequence+MaxSequenceIncrement {
+		return acct, exists, nil, errors.New("sequence too high")
 	}
 
 	var sigset *bitset256.Bitset256
