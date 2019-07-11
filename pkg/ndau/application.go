@@ -160,14 +160,11 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 func (app *App) getDefaultRecourseDuration() math.Duration {
 	var defaultRecoursePeriod math.Duration
 	err := app.System(sv.DefaultRecourseDurationName, &defaultRecoursePeriod)
-	// app.System errors in two cases:
-	// - the system variable doesn't exist: chain is in a bad state
-	// - the variable we passed to receive the sysvar is of the wrong type
-	//
-	// Given this situation, we want to fail in the most noisy way possible.
 	if err != nil {
-		app.DecoratedLogger().WithError(err).Error("app.getAccount failed to fetch defaultRecoursePeriod")
-		panic(err)
+		// if the sysvar doesn't exist or is inaccessable, use 1 hour;
+		// this was the default at genesis.
+		defaultRecoursePeriod = 1 * math.Hour
+		err = nil
 	}
 	return defaultRecoursePeriod
 }

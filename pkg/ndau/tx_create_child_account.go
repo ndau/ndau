@@ -84,7 +84,7 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 	// as that happens in Apply().  Those are set precisely when its validation keys are set.
 	// So only checking validation keys here is sufficient.
 	if len(child.ValidationKeys) > 0 {
-		return errors.New("Cannot set validation rules for a child account that already has them set.")
+		return errors.New("child account may not already have validation keys")
 	}
 
 	// Below we ensure that the child account is not locked.
