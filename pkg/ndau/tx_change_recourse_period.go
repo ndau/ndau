@@ -13,7 +13,7 @@ func (tx *ChangeRecoursePeriod) Validate(appI interface{}) (err error) {
 	app := appI.(*App)
 
 	if tx.Period < 0 {
-		return errors.New("Negative settlement period")
+		return errors.New("Negative recourse period")
 	}
 	_, _, _, err = app.getTxAccount(tx)
 	if err != nil {

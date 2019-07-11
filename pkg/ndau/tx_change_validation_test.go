@@ -61,7 +61,7 @@ func TestChangeValidationAddressFieldValidates(t *testing.T) {
 func TestValidChangeValidation(t *testing.T) {
 	app := initAppChangeValidation(t)
 
-	// now change the transfer key using the previous transfer key
+	// now change the validation key using the previous validation key
 	newPub, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
@@ -160,7 +160,7 @@ func TestChangeValidationDeductsTxFee(t *testing.T) {
 	})
 
 	for i := 0; i < 2; i++ {
-		// now change the transfer key using the previous transfer key
+		// now change the validation key using the previous validation key
 		newPub, _, err := signature.Generate(signature.Ed25519, nil)
 		require.NoError(t, err)
 

@@ -56,7 +56,7 @@ func getGoDir(t *testing.T) string {
 	return string(bytes.TrimRight(output, "\n"))
 }
 
-// Invoke the ndau tool to create an account, claim it, and rfe to it.
+// Invoke the ndau tool to create an account, set its validation rules, and rfe to it.
 // Return the address of the account created.
 func createNdauBlock(t *testing.T) string {
 	acctName := accountAndNamespaceString
@@ -76,9 +76,9 @@ func createNdauBlock(t *testing.T) string {
 	acctErr, _ := ioutil.ReadAll(acctStderr)
 	err = acctCmd.Wait()
 	if err == nil {
-		err = exec.Command(ndauTool, "account", "claim", acctName).Run()
+		err = exec.Command(ndauTool, "account", "set-validation", acctName).Run()
 		if err != nil {
-			t.Errorf("Error claiming account: %s", err)
+			t.Errorf("Error setting validation rules for account: %s", err)
 		}
 	} else if !strings.Contains(string(acctErr), "already exists") {
 		t.Errorf("Error creating account: %s", err)

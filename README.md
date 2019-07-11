@@ -1,14 +1,14 @@
 # Ndau
 
-This is the implementation of the Ndau chain. See the Ndau design whitepaper for details.  All Ndau transactions are stored on this chain.  An (incomplete) list of possible transactions on the Ndau chain include:
+This is the implementation of the Ndau chain. See the Ndau design whitepaper for details.  All Ndau transactions are stored on this chain.  An incomplete list of possible transactions on the Ndau chain include:
 
 - Transfer
-- ChangeTransferKey
+- ChangeValidation
 - ReleaseFromEndowment
-- ChangeEscrowPeriod
+- ChangeRecoursePeriod
 - Delegate
 - CreditEAI
-- GTValidatorChange
+- CommandValidatorChange
 
 #### See the [commands](https://github.com/oneiro-ndev/commands) README for how to build and run locally.  Some of the steps below may no longer applicable since we moved all `/cmd` source to the new repo.
 
@@ -192,7 +192,7 @@ Once you have the configuration file written, you can finally interact with the 
 ./ndau account new demo
 ```
 
-#### Claim the account and set a validation key
+#### Set a validation key
 
 ```sh
 $ ./ndau -v account claim demo
@@ -224,7 +224,7 @@ node = "http://0.0.0.0:32777"
     public = "kgHEIF45MoYR0qDtvUxIJpvwuFPs7avCLE+cp4ZN0TZSbxW7"
     private = "kgHEQOi7pmwV2bQOXFM9X4ItXLpREsnF5fVDlyktGDFinB5aXjkyhhHSoO29TEgmm/C4U+ztq8IsT5ynhk3RNlJvFbs="
 
-  [[accounts.transfer]]
+  [[accounts.validation]]
     public = "kgHEIP6AIjEZ7lN0vr58BBDXo+6R8ULpxUJ76ovu/+U7d1+W"
     private = "kgHEQKtqyg1LI8mzYBTXeVYLlcUVyJw0jxcL7N/sWCwVYat9/oAiMRnuU3S+vnwEENej7pHxQunFQnvqi+7/5Tt3X5Y="
 
@@ -244,7 +244,7 @@ at which the ndau tool can reach the ndau chain
 
 - The `[[...]]` syntax denotes a single item of a top-level list whose name is contained in the double brackets
 
-- The `accounts` list contains items with a human name, an ndau address, an ownership keypair, and potentially a transfer keypair
+- The `accounts` list contains items with a human name, an ndau address, an ownership keypair, and potentially a validation keypair
 
 #### Examine the blockchain account data
 
@@ -264,7 +264,7 @@ $ ./ndau -v account query demo
   "lastWAAUpdate": 0,
   "weightedAverageAge": 0,
   "Sequence": 1,
-  "settlements": null,
+  "recourses": null,
   "RecourseSettings": {
     "Period": 0,
     "ChangesAt": null,
@@ -283,7 +283,7 @@ $ ./ndau -v account query demo
 
 Notes about this output:
 
-- `RecourseSettings` is set to the default settlement duration, which is a system variable. It was set during the `change-transfer-key` transaction which assigned the transfer key. Whenever a CTK transaction is signed with the ownership key and the escrow duration is 0, the duration is updated to the default.
+- `RecourseSettings` is set to the default recourse period duration, which is a system variable. It was set during the `change-validation` transaction which assigned the validation rules.
 
 - The second JSON object returned is present because we used the `-v` flag. It again contains the raw response from the RPC command.
 
@@ -330,7 +330,7 @@ Transfer 1 ndau from ndaqmatgkap2ff62hkqpwmyzfr6uzdrct6g6mmkk38q3eekk to ndart5w
 }
 ```
 
-For something more interesting, we can create an account on the blockchain by transfering to it. Note that this example requires the [`toml` command](https://github.com/chrisdickinson/toml-cli).
+For something more interesting, we can create an account on the blockchain by transferring to it. Note that this example requires the [`toml` command](https://github.com/chrisdickinson/toml-cli).
 
 ```sh
 $ # create a new account without sending anything to the blockchain
@@ -364,7 +364,7 @@ $ ./ndau account query --address=$demo_receiver_addr
   "lastWAAUpdate": 593029878000000,
   "weightedAverageAge": 29090909,
   "Sequence": 0,
-  "settlements": null,
+  "recourses": null,
   "RecourseSettings": {
     "Period": 0,
     "ChangesAt": null,
@@ -374,12 +374,12 @@ $ ./ndau account query --address=$demo_receiver_addr
 }
 ```
 
-Note that the balance remains 0, and the account is unclaimed.
+Note that the balance remains 0, and validation keys have not been set.
 
-#### Change the settlement settings
+#### Change the recourse settings
 
-We can allow senders to create a "settlement period" which will cause transfers to be delayed before they can be spent.
-The default will not always be convenient. A user might want to set a differet settlement period. They might do so like this:
+We can allow senders to create a "recourse period" which will cause transfers to be delayed before they can be spent.
+The default will not always be convenient. A user might want to set a differet recourse period. They might do so like this:
 
 ```sh
 $ ./ndau account query demo
@@ -397,7 +397,7 @@ $ ./ndau account query demo
   "lastWAAUpdate": 0,
   "weightedAverageAge": 0,
   "Sequence": 11,
-  "settlements": null,
+  "recourses": null,
   "RecourseSettings": {
     "Period": 3600000000,
     "ChangesAt": null,
@@ -407,7 +407,7 @@ $ ./ndau account query demo
 }
 ```
 
-The escrow settings will now change to 1 hour. Settlement periods only change after the current escrow period has expired.
+The recourse settings will now change to 1 hour. Recourse periods only change after the current recourse period has expired.
 
 If we now send another .2 ndau to our account above:
 
@@ -442,7 +442,7 @@ $ ./ndau account query --address=$demo_receiver_addr
   "lastWAAUpdate": 593030185000000,
   "weightedAverageAge": 284384615,
   "Sequence": 0,
-  "settlements": [
+  "holds": [
     {
       "Qty": 20000000,
       "Expiry": 593033785000000

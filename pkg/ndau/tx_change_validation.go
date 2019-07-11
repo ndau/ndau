@@ -18,9 +18,9 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	}
 
 	// business rule: there must be at least 1 and no more than a const
-	// transfer keys set in this tx
+	// validation keys set in this tx
 	if len(tx.NewKeys) < 1 || len(tx.NewKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
+		return fmt.Errorf("Expect between 1 and %d validation keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
 	}
 
 	if len(tx.ValidationScript) > 0 && !IsChaincode(tx.ValidationScript) {
@@ -35,7 +35,7 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 
 	// get the target address kind for later use:
 	// we need to generate addresses for the signing key, to verify it matches
-	// the actual ownership key, if used, and for the new transfer key,
+	// the actual ownership key, if used, and for the new validation key,
 	// to ensure it's not equal to the actual ownership key
 	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
@@ -44,13 +44,13 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 
 	// per-key validation
 	for _, tk := range tx.NewKeys {
-		// new transfer key must not equal ownership key
+		// new validation key must not equal ownership key
 		ntAddr, err := address.Generate(kind, tk.KeyBytes())
 		if err != nil {
-			return errors.Wrap(err, "Failed to generate address from new transfer key")
+			return errors.Wrap(err, "Failed to generate address from new validation key")
 		}
 		if tx.Target.String() == ntAddr.String() {
-			return fmt.Errorf("New transfer key must not equal ownership key")
+			return fmt.Errorf("New validation key must not equal ownership key")
 		}
 	}
 

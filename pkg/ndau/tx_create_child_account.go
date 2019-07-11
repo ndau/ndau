@@ -26,7 +26,7 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 			fmt.Sprintf("Child account address invalid: %s", tx.Child.String()))
 	}
 
-	// Verify that the child ownership key submitted generates the child address being claimed.
+	// Verify that the child ownership key submitted generates the child address being created.
 	childKind := tx.Child.Kind()
 	if !address.IsValidKind(childKind) {
 		return fmt.Errorf("Child account %s has invalid address kind: %x",
@@ -45,17 +45,17 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 		return errors.New("Invalid child signature")
 	}
 
-	// Similar to ClaimAccount tx: there must be at least 1 and no more than a const transfer
+	// Similar to SetValidation tx: there must be at least 1 and no more than a const validation keys
 	// keys set in this tx.
 	if len(tx.ChildValidationKeys) < 1 || len(tx.ChildValidationKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d",
+		return fmt.Errorf("Expect between 1 and %d validation keys; got %d",
 			backing.MaxKeysInAccount, len(tx.ChildValidationKeys))
 	}
 
-	// No child transfer key may be equal to the child ownership key.
+	// No child validation key may be equal to the child ownership key.
 	for _, tk := range tx.ChildValidationKeys {
 		if bytes.Equal(tk.KeyBytes(), tx.ChildOwnership.KeyBytes()) {
-			return errors.New("Child ownership key may not be used as a transfer key")
+			return errors.New("Child ownership key may not be used as a validation key")
 		}
 	}
 
@@ -73,13 +73,13 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 
 	child, _ := app.getAccount(tx.Child)
 
-	// Ensure the child account is not already claimed.
+	// Ensure the child account does not already exist on the blockchain
 	// This consequently also ensures that we won't have ancestry loops.
 	// It also ensures that the child account does not yet have a Parent or Progenitor set,
 	// as that happens in Apply().  Those are set precisely when its validation keys are set.
 	// So only checking validation keys here is sufficient.
 	if len(child.ValidationKeys) > 0 {
-		return errors.New("Cannot claim a child account that is already claimed")
+		return errors.New("child account may not already have validation keys")
 	}
 
 	// Below we ensure that the child account is not locked.
@@ -95,9 +95,9 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 	}
 
 	// Ensure the child account is not locked, which could happen, for example, if a
-	// TransferAndLock happened on the child prior to claiming.
+	// TransferAndLock happened on the child prior to being created as a child account.
 	if isExchangeAccount && child.IsLocked(app.BlockTime()) {
-		return errors.New("Cannot claim a locked child exchange account")
+		return errors.New("Cannot create a locked child exchange account")
 	}
 
 	return nil
@@ -127,9 +127,9 @@ func (tx *CreateChildAccount) Apply(appI interface{}) error {
 			child.Progenitor = target.Progenitor
 		}
 
-		period := tx.ChildSettlementPeriod
+		period := tx.ChildRecoursePeriod
 		if period < 0 {
-			period = app.getDefaultSettlementDuration()
+			period = app.getDefaultRecourseDuration()
 		}
 		child.RecourseSettings.Period = period
 

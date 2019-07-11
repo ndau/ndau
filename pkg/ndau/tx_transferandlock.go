@@ -46,9 +46,9 @@ func (tx *TransferAndLock) Validate(appInt interface{}) error {
 	// destination account doesn't exist, then it can't possibly be an exchange account.  There
 	// could be an exchange *address* getting ready to become associated with an exchange account,
 	// and in that case, it could get locked by this transaction.  However, it will then not be
-	// allowed to be claimed later, by either ClaimAccount or ClaimChildAccount.  Such accounts
+	// allowed to be established later, by either SetValidation or CreateChildAccount.  Such accounts
 	// will never become "exchange accounts" and exchanges will have to make a new address and
-	// not attempt to lock it before claiming.
+	// not transfer to and lock it.
 	if exists {
 		return errors.New("invalid TransferAndLock: cannot be sent to an existing account")
 	}

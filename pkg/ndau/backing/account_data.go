@@ -16,7 +16,7 @@ import (
 //go:generate find $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing -name "*noms_gen*.go" -maxdepth 1 -exec goimports -w {} ;
 //nomsify AccountData RecourseSettings
 
-// RecourseSettings tracks the settlement settings for outbound transactions
+// RecourseSettings tracks the recourse settings for outbound transactions
 type RecourseSettings struct {
 	Period    math.Duration   `json:"period" chain:"111,RecourseSettings_Period"`
 	ChangesAt *math.Timestamp `json:"changes_at" chain:"112,RecourseSettings_ChangesAt"`
@@ -31,12 +31,12 @@ type RecourseSettings struct {
 //
 // Unfortunately, go being go, we can't require that this method is used,
 // but we can provide it to make it easier to do the right thing.
-func NewAccountData(blockTime math.Timestamp, defaultSettlementPeriod math.Duration) AccountData {
+func NewAccountData(blockTime math.Timestamp, defaultRecoursePeriod math.Duration) AccountData {
 	return AccountData{
 		LastEAIUpdate: blockTime,
 		LastWAAUpdate: blockTime,
 		RecourseSettings: RecourseSettings{
-			Period: defaultSettlementPeriod,
+			Period: defaultRecoursePeriod,
 		},
 	}
 }
