@@ -11,15 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *SetValidation) GetAccountAddresses() []string {
-	return []string{tx.Target.String()}
-}
-
 // Validate returns nil if tx is valid, or an error
 func (tx *SetValidation) Validate(appI interface{}) error {
 	// we need to verify that the ownership key submitted actually generates
-	// the address being claimed
+	// the address for which validation is being set
 	// get the address kind:
 	_, err := address.Validate(tx.Target.String())
 	if err != nil {
@@ -43,15 +38,15 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 	}
 
 	// business rule: there must be at least 1 and no more than a const
-	// transfer keys set in this tx
+	// validation keys set in this tx
 	if len(tx.ValidationKeys) < 1 || len(tx.ValidationKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d transfer keys; got %d", backing.MaxKeysInAccount, len(tx.ValidationKeys))
+		return fmt.Errorf("Expect between 1 and %d validation keys; got %d", backing.MaxKeysInAccount, len(tx.ValidationKeys))
 	}
 
-	// no transfer key may be equal to the ownership key
+	// no validation key may be equal to the ownership key
 	for _, tk := range tx.ValidationKeys {
 		if bytes.Equal(tk.KeyBytes(), tx.Ownership.KeyBytes()) {
-			return errors.New("Ownership key may not be used as a transfer key")
+			return errors.New("Ownership key may not be used as a validation key")
 		}
 	}
 
@@ -71,22 +66,22 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 		maxKeys = 0
 	}
 	if len(acct.ValidationKeys) > maxKeys {
-		return fmt.Errorf("SetValidation only works when at most %d validation keys are set",
-			maxKeys)
+		return fmt.Errorf("SetValidation only works when at most %d validation keys are set and %d are present",
+			maxKeys, len(acct.ValidationKeys))
 	}
 
-	// Prevent claiming of locked exchange accounts.  If this fails, it means we've been working
-	// with an exchange, they have an address, they locked their account, then tried to claim it.
-	// That would be in direct defiance of our instructions to them and they'll have to make a new
-	// address to use with their progenitor account.  If this check passes for a to-become child
-	// exchange account, then the ClaimChildAccount tx will later fail, and likewise will have to
-	// make a new child account that isn't locked before claiming it as a child.
+	// Prevent establishing locked exchange accounts.  If this fails, it means we've been working
+	// with an exchange, they have an address, they transferred into and locked their account, then
+	// tried to create it. That will make it impossible to establish the child account: they'll have to
+	// create a new address for their progenitor account.  If this check passes for a to-become child
+	// exchange account, then the CreateChildAccount tx will later fail, and likewise will have to
+	// make a new child account that isn't locked before establishing it as a child.
 	isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(tx.Target, sv.AccountAttributeExchange)
 	if err != nil {
 		return err
 	}
 	if isExchangeAccount && acct.IsLocked(app.BlockTime()) {
-		return errors.New("Cannot claim a locked exchange account")
+		return errors.New("Cannot create a locked child exchange account")
 	}
 
 	return nil

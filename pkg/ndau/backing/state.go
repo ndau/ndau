@@ -83,11 +83,11 @@ func (s *State) Init(nt.ValueReadWriter) {
 func (s *State) GetAccount(
 	address address.Address,
 	blockTime math.Timestamp,
-	defaultSettlementPeriod math.Duration,
+	defaultRecoursePeriod math.Duration,
 ) (AccountData, bool) {
 	data, hasAccount := s.Accounts[address.String()]
 	if !hasAccount {
-		data = NewAccountData(blockTime, defaultSettlementPeriod)
+		data = NewAccountData(blockTime, defaultRecoursePeriod)
 	}
 	return data, hasAccount
 }
@@ -107,12 +107,12 @@ func (s *State) PayReward(
 	srcAddress address.Address,
 	reward math.Ndau,
 	blockTime math.Timestamp,
-	defaultSettlementPeriod math.Duration,
+	defaultRecoursePeriod math.Duration,
 	isEAI bool,
 	resetUncreditedEAI bool,
 ) ([]address.Address, error) {
 	var err error
-	srcAccount, _ := s.GetAccount(srcAddress, blockTime, defaultSettlementPeriod)
+	srcAccount, _ := s.GetAccount(srcAddress, blockTime, defaultRecoursePeriod)
 
 	if isEAI && resetUncreditedEAI {
 		// the uncredited EAI is being accounted for, so reset it
@@ -122,7 +122,7 @@ func (s *State) PayReward(
 	if srcAccount.RewardsTarget != nil {
 		// rewards are being redirected, so get the target account
 		tgtAddress := *(srcAccount.RewardsTarget)
-		tgtAccount, _ := s.GetAccount(tgtAddress, blockTime, defaultSettlementPeriod)
+		tgtAccount, _ := s.GetAccount(tgtAddress, blockTime, defaultRecoursePeriod)
 		// recalc WAA
 		err = tgtAccount.WeightedAverageAge.UpdateWeightedAverageAge(
 			blockTime.Since(tgtAccount.LastWAAUpdate),

@@ -586,9 +586,9 @@ func (z *CreateChildAccount) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	// string "cper"
 	o = append(o, 0xa4, 0x63, 0x70, 0x65, 0x72)
-	o, err = z.ChildSettlementPeriod.MarshalMsg(o)
+	o, err = z.ChildRecoursePeriod.MarshalMsg(o)
 	if err != nil {
-		err = msgp.WrapError(err, "ChildSettlementPeriod")
+		err = msgp.WrapError(err, "ChildRecoursePeriod")
 		return
 	}
 	// string "ckey"
@@ -670,9 +670,9 @@ func (z *CreateChildAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "cper":
-			bts, err = z.ChildSettlementPeriod.UnmarshalMsg(bts)
+			bts, err = z.ChildRecoursePeriod.UnmarshalMsg(bts)
 			if err != nil {
-				err = msgp.WrapError(err, "ChildSettlementPeriod")
+				err = msgp.WrapError(err, "ChildRecoursePeriod")
 				return
 			}
 		case "ckey":
@@ -745,7 +745,7 @@ func (z *CreateChildAccount) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *CreateChildAccount) Msgsize() (s int) {
-	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Child.Msgsize() + 5 + z.ChildOwnership.Msgsize() + 5 + z.ChildSignature.Msgsize() + 5 + z.ChildSettlementPeriod.Msgsize() + 5 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Child.Msgsize() + 5 + z.ChildOwnership.Msgsize() + 5 + z.ChildSignature.Msgsize() + 5 + z.ChildRecoursePeriod.Msgsize() + 5 + msgp.ArrayHeaderSize
 	for za0001 := range z.ChildValidationKeys {
 		s += z.ChildValidationKeys[za0001].Msgsize()
 	}

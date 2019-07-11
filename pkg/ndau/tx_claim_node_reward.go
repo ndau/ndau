@@ -14,11 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *ClaimNodeReward) GetAccountAddresses() []string {
-	return []string{tx.Node.String()}
-}
-
 // Validate implements metatx.Transactable
 func (tx *ClaimNodeReward) Validate(appI interface{}) error {
 	app := appI.(*App)
@@ -172,7 +167,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				final = true
 			}
 			state.UnclaimedNodeReward -= award
-			_, err = state.PayReward(addrA, award, app.BlockTime(), app.getDefaultSettlementDuration(), false, false)
+			_, err = state.PayReward(addrA, award, app.BlockTime(), app.getDefaultRecourseDuration(), false, false)
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}
@@ -184,7 +179,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		// if after disbursement to costakers there remains some node reward,
 		// it goes to the node
 		if state.UnclaimedNodeReward > 0 {
-			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.BlockTime(), app.getDefaultSettlementDuration(), false, false)
+			_, err = state.PayReward(tx.Node, state.UnclaimedNodeReward, app.BlockTime(), app.getDefaultRecourseDuration(), false, false)
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}

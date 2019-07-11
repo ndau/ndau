@@ -58,9 +58,22 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
 	}
 
+	app := App{
+		metaapp,
+		config,
+		false,
+	}
+	app.App.SetChild(&app)
+
+	// We set this environment variable on our devnet nodes to disable feature height gating.
+	// The devnet blockchain starts from scratch, so all features are enabled at genesis.
+	if os.Getenv("USE_ZERO_HEIGHT_FEATURES") == "1" {
+		app.config.Features = nil
+	}
+
 	if indexVersion >= 0 {
 		// Set up ndau-specific search client.
-		search, err := search.NewClient(indexAddr, indexVersion)
+		search, err := search.NewClient(indexAddr, indexVersion, &app)
 		if err != nil {
 			return nil, errors.Wrap(err, "NewApp unable to init search client")
 		}
@@ -84,19 +97,6 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 		}).Info("ndau initial indexing complete")
 
 		metaapp.SetSearch(search)
-	}
-
-	app := App{
-		metaapp,
-		config,
-		false,
-	}
-	app.App.SetChild(&app)
-
-	// We set this environment variable on our devnet nodes to disable feature height gating.
-	// The devnet blockchain starts from scratch, so all features are enabled at genesis.
-	if os.Getenv("USE_ZERO_HEIGHT_FEATURES") == "1" {
-		app.config.Features = nil
 	}
 
 	return &app, nil
@@ -157,23 +157,20 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	return
 }
 
-func (app *App) getDefaultSettlementDuration() math.Duration {
-	var defaultSettlementPeriod math.Duration
-	err := app.System(sv.DefaultSettlementDurationName, &defaultSettlementPeriod)
-	// app.System errors in two cases:
-	// - the system variable doesn't exist: chain is in a bad state
-	// - the variable we passed to receive the sysvar is of the wrong type
-	//
-	// Given this situation, we want to fail in the most noisy way possible.
+func (app *App) getDefaultRecourseDuration() math.Duration {
+	var defaultRecoursePeriod math.Duration
+	err := app.System(sv.DefaultRecourseDurationName, &defaultRecoursePeriod)
 	if err != nil {
-		app.DecoratedLogger().WithError(err).Error("app.getAccount failed to fetch defaultSettlementPeriod")
-		panic(err)
+		// if the sysvar doesn't exist or is inaccessable, use 1 hour;
+		// this was the default at genesis.
+		defaultRecoursePeriod = 1 * math.Hour
+		err = nil
 	}
-	return defaultSettlementPeriod
+	return defaultRecoursePeriod
 }
 
 func (app *App) getAccount(addr address.Address) (backing.AccountData, bool) {
-	return app.GetState().(*backing.State).GetAccount(addr, app.BlockTime(), app.getDefaultSettlementDuration())
+	return app.GetState().(*backing.State).GetAccount(addr, app.BlockTime(), app.getDefaultRecourseDuration())
 }
 
 // IsFeatureActive returns whether the given feature is currently active.

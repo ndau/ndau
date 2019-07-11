@@ -16,6 +16,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/signed"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 )
 
@@ -157,7 +158,12 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 
 	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
 
-	context := ddc(t).at(math.Timestamp(1 * math.Year)).withExchangeAccount(sourceAddress)
+	context := ddc(t).
+		at(math.Timestamp(1 * math.Year)).
+		withExchangeAccount(sourceAddress).
+		with(func(svs map[string][]byte) {
+			delete(svs, sv.EAIOvertime)
+		})
 	resp, _ := deliverTxContext(t, app, compute, context)
 	if resp.Log != "" {
 		t.Log(resp.Log)
@@ -639,4 +645,50 @@ func TestCreditEAICanOnlyBeSubmittedByActiveNode(t *testing.T) {
 	tx := NewCreditEAI(nodeAddress, 1, private)
 	resp := deliverTxAt(t, app, tx, 45*math.Day)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestCreditEAIUsesOvertimeAppropriately(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+	compute := NewCreditEAI(nodeAddress, 1, private)
+
+	// source has 10000 ndau exactly
+	// EAI overtime limit is 30 days
+
+	blockTime := math.Timestamp(45 * math.Day)
+	resp := deliverTxAt(t, app, compute, blockTime)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// require that a positive EAI was applied
+	acct, _ := app.getAccount(sourceAddress)
+	require.Nil(t, acct.Lock)
+	t.Log(acct.Balance)
+
+	// we must have applied exactly 30 days' worth of EAI using the standard table,
+	// despite the 45 days which have accrued since the last update.
+	// How much is that, anyway?
+	eaiAward, err := eai.Calculate(
+		10000*constants.NapuPerNdau, 45*math.Day, 15*math.Day,
+		45*math.Day, nil,
+		eai.DefaultUnlockedEAI,
+	)
+	require.NoError(t, err)
+	feeTable := new(sv.EAIFeeTable)
+	err = app.System(sv.EAIFeeTableName, feeTable)
+	require.NoError(t, err)
+	awardPerNdau := math.Ndau(constants.QuantaPerUnit)
+	for _, fee := range *feeTable {
+		awardPerNdau -= fee.Fee
+	}
+	reducedAward, err := signed.MulDiv(
+		int64(eaiAward),
+		int64(awardPerNdau),
+		constants.QuantaPerUnit,
+	)
+	require.NoError(t, err)
+	expect := math.Ndau((10000 * constants.NapuPerNdau) + reducedAward)
+
+	require.Equal(t, expect, acct.Balance)
 }

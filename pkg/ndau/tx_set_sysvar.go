@@ -18,7 +18,7 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 	// if we let someone overwrite the sysvar governing who is allowed to
 	// set the sysvar with bad data, then we're hosed. Let's ensure that
 	// if that's the sysvar being set, it's by an account which has been
-	// claimed.
+	// exists and has at least one validation key.
 	if tx.Name == sv.SetSysvarAddressName {
 		var acct address.Address
 		leftovers, err := acct.UnmarshalMsg(tx.Value)
@@ -100,11 +100,6 @@ func (tx *SetSysvar) GetSignatures() []signature.Signature {
 // ExtendSignatures implements Signable
 func (tx *SetSysvar) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
-}
-
-// GetAccountAddresses returns the account addresses associated with this transaction type.
-func (tx *SetSysvar) GetAccountAddresses() []string {
-	return []string{}
 }
 
 // GetName implements SysvarIndexable.

@@ -55,7 +55,7 @@ type Transfer struct {
 // static assert that Transfer is NTransactable
 var _ NTransactable = (*Transfer)(nil)
 
-// A ChangeValidation transaction is used to set transfer keys
+// A ChangeValidation transaction is used to set validation rules
 type ChangeValidation struct {
 	Target           address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
 	NewKeys          []signature.PublicKey `msg:"key" chain:"31,Tx_NewKeys" json:"new_keys"`
@@ -80,7 +80,7 @@ type ReleaseFromEndowment struct {
 
 var _ NTransactable = (*ReleaseFromEndowment)(nil)
 
-// A ChangeRecoursePeriod transaction is used to change the settlement period for
+// A ChangeRecoursePeriod transaction is used to change the recourse period for
 // transactions outbound from an account.
 type ChangeRecoursePeriod struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
@@ -162,9 +162,9 @@ type SetRewardsDestination struct {
 
 var _ NTransactable = (*SetRewardsDestination)(nil)
 
-// A SetValidation transaction is used to set the initial transfer keys for an account.
+// A SetValidation transaction is used to set the initial validation rules for an account.
 //
-// It is the only type of transaction which may be signed with only the ownership key.
+// It is the only type of transaction which may be signed with the ownership key.
 type SetValidation struct {
 	Target           address.Address       `msg:"tgt" json:"target"`
 	Ownership        signature.PublicKey   `msg:"own" json:"ownership"`
@@ -176,14 +176,14 @@ type SetValidation struct {
 
 var _ NTransactable = (*SetValidation)(nil)
 
-// A CreateChildAccount transaction is used to set the initial transfer keys for a child account,
+// A CreateChildAccount transaction is used to set the initial validation rules for a child account,
 // and link the target account as its parent.
 type CreateChildAccount struct {
 	Target                address.Address       `msg:"tgt"  json:"target"`
 	Child                 address.Address       `msg:"chd"  json:"child"`
 	ChildOwnership        signature.PublicKey   `msg:"cown" json:"child_ownership"`
 	ChildSignature        signature.Signature   `msg:"csig" json:"child_signature"`
-	ChildSettlementPeriod math.Duration         `msg:"cper" json:"child_settlement_period"`
+	ChildRecoursePeriod   math.Duration         `msg:"cper" json:"child_recourse_period"`
 	ChildValidationKeys   []signature.PublicKey `msg:"ckey" json:"child_validation_keys"`
 	ChildValidationScript []byte                `msg:"cval" json:"child_validation_script"`
 	ChildDelegationNode   address.Address       `msg:"nod"  json:"child_delegation_node"`

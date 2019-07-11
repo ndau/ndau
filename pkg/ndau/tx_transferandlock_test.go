@@ -138,7 +138,7 @@ func TestTnLsSetLockOnDest(t *testing.T) {
 	})
 }
 
-func TestTnLsSettlementPeriod(t *testing.T) {
+func TestTnLsRecoursePeriod(t *testing.T) {
 	app, private := initAppTx(t)
 
 	destAddress := generateRandomAddr(t)
@@ -277,14 +277,14 @@ func TestTnLSequenceMustIncrease(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
+func TestTnLWithExpiredRecourseWorks(t *testing.T) {
 	// setup app
-	app, key, ts := initAppSettlement(t)
+	app, key, ts := initAppRecourse(t)
 	require.True(t, app.BlockTime().Compare(ts) >= 0)
 	tn := ts.Add(1 * math.Second)
 
 	// generate transfer
-	// because the escrowed funds have cleared,
+	// because the recourse period has ended
 	// this should succeed
 	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
@@ -303,14 +303,14 @@ func TestTnLWithExpiredEscrowsWorks(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestTnLWithUnexpiredEscrowsFails(t *testing.T) {
+func TestTnLWithUnexpiredRecourseFails(t *testing.T) {
 	// setup app
-	app, key, ts := initAppSettlement(t)
-	// set app time to a day before the escrow expiry time
+	app, key, ts := initAppRecourse(t)
+	// set app time to a day before the recourse expiry time
 	tn := ts.Add(math.Duration(-24 * 3600 * math.Second))
 
 	// generate transfer
-	// because the escrowed funds have not yet cleared,
+	// because the recourse period has ended
 	// this should fail
 	sourceAddress, err := address.Validate(settled)
 	require.NoError(t, err)
@@ -334,7 +334,7 @@ func TestValidationScriptValidatesTnLs(t *testing.T) {
 	require.NoError(t, err)
 
 	// this script should be pretty stable for future versions of chaincode:
-	// it means `one and not`, which just ensures that the first transfer key
+	// it means `one and not`, which just ensures that the first validation key
 	// is used, no matter how many keys are included
 	script, err := base64.StdEncoding.DecodeString("oAAasUiI")
 	require.NoError(t, err)
@@ -390,7 +390,7 @@ func TestTnLDeductsTxFee(t *testing.T) {
 	}
 }
 
-func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
+func TestTnLsPreventsCreatingExchangeAccount(t *testing.T) {
 	app, private := initAppTx(t)
 
 	destPublic, destPrivate, err := signature.Generate(signature.Ed25519, nil)
@@ -406,7 +406,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// If the dest is an exchange address, we shouldn't be able to claim the locked account.
+	// If the dest is an exchange address, we shouldn't be able to create the locked account.
 	context := ddc(t).withExchangeAccount(destAddress)
 
 	ca := NewSetValidation(
@@ -418,7 +418,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 		destPrivate,
 	)
 
-	// The ClaimAccount should fail.
+	// The SetValidation should fail.
 	resp, _ = deliverTxContext(t, app, ca, context)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
@@ -427,7 +427,7 @@ func TestTnLsPreventsClaimingExchangeAccount(t *testing.T) {
 	require.True(t, destAcct.IsLocked(app.BlockTime()))
 }
 
-func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
+func TestTnLsPreventsCreatingExchangeAccountAsChild(t *testing.T) {
 	app, private := initAppTx(t)
 
 	tr := generateTransferAndLock(
@@ -438,7 +438,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
-	// If the source is an exchange address, we shouldn't be able to claim the locked child.
+	// If the source is an exchange address, we shouldn't be able to set validation rules for the locked child.
 	context := ddc(t).withExchangeAccount(sourceAddress)
 
 	cca := NewCreateChildAccount(
@@ -446,7 +446,7 @@ func TestTnLsPreventsClaimingExchangeAccountAsChild(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,

@@ -54,8 +54,8 @@ func TestCanQueryAccountStatusDest(t *testing.T) {
 }
 
 func TestQueryRunsUpdateBalance(t *testing.T) {
-	app, _, ts := initAppSettlement(t)
-	t.Log("timestamp after which escrows expire", ts)
+	app, _, ts := initAppRecourse(t)
+	t.Log("timestamp of end of recourse period", ts)
 	t.Log("app blocktime", app.BlockTime())
 	t.Log("comparison", app.BlockTime().Compare(ts))
 	require.True(t, app.BlockTime().Compare(ts) >= 0)

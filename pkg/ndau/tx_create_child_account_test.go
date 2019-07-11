@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
+func TestCreateChildAccountInvalidTargetAddress(t *testing.T) {
 	app, private := initAppTx(t)
 
 	// Flip the bits of the last byte so the address is no longer correct.
@@ -34,7 +34,7 @@ func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
@@ -50,7 +50,7 @@ func TestClaimChildAccountInvalidTargetAddress(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
+func TestCreateChildAccountInvalidChildAddress(t *testing.T) {
 	app, private := initAppTx(t)
 
 	// Flip the bits of the last byte so the address is no longer correct.
@@ -71,7 +71,7 @@ func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
 		addr,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
@@ -87,7 +87,7 @@ func TestClaimChildAccountInvalidChildAddress(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
+func TestCreateChildAccountNonExistentTargetAddress(t *testing.T) {
 	app, private := initAppTx(t)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -98,7 +98,7 @@ func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
@@ -113,7 +113,7 @@ func TestClaimChildAccountNonExistentTargetAddress(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestValidClaimChildAccount(t *testing.T) {
+func TestValidCreateChildAccount(t *testing.T) {
 	app, private := initAppTx(t)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -124,7 +124,7 @@ func TestValidClaimChildAccount(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
@@ -142,15 +142,15 @@ func TestValidClaimChildAccount(t *testing.T) {
 	dresp := deliverTx(t, app, cca)
 	t.Log(dresp.Log)
 
-	// Ensure the child's settlement period matches the default from the system variable.
+	// Ensure the child's recourse period matches the default from the system variable.
 	child, _ := app.getAccount(childAddress)
-	require.Equal(t, app.getDefaultSettlementDuration(), child.RecourseSettings.Period)
+	require.Equal(t, app.getDefaultRecourseDuration(), child.RecourseSettings.Period)
 	// ensure we updated the delegation node
 	require.NotNil(t, child.DelegationNode)
 	require.Equal(t, cca.ChildDelegationNode, *child.DelegationNode)
 }
 
-func TestClaimChildAccountSettlementPeriod(t *testing.T) {
+func TestCreateChildAccountRecoursePeriod(t *testing.T) {
 	app, private := initAppTx(t)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -181,12 +181,12 @@ func TestClaimChildAccountSettlementPeriod(t *testing.T) {
 	dresp := deliverTx(t, app, cca)
 	t.Log(dresp.Log)
 
-	// Ensure the child's settlement period matches what we set it to.
+	// Ensure the child's recourse period matches what we set it to.
 	child, _ := app.getAccount(childAddress)
 	require.Equal(t, period, child.RecourseSettings.Period)
 }
 
-func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
+func TestCreateChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	app, private := initAppTx(t)
 
 	cca := NewCreateChildAccount(
@@ -194,7 +194,7 @@ func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{childPublic},
 		[]byte{},
 		childAddress,
@@ -210,7 +210,7 @@ func TestClaimChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
+func TestValidCreateChildAccountUpdatesTransferKey(t *testing.T) {
 	app, private := initAppTx(t)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -221,7 +221,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
@@ -245,7 +245,7 @@ func TestValidClaimChildAccountUpdatesTransferKey(t *testing.T) {
 	})
 }
 
-func TestClaimChildAccountNoValidationKeys(t *testing.T) {
+func TestCreateChildAccountNoValidationKeys(t *testing.T) {
 	app, private := initAppTx(t)
 
 	cca := NewCreateChildAccount(
@@ -253,7 +253,7 @@ func TestClaimChildAccountNoValidationKeys(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{},
 		[]byte{},
 		childAddress,
@@ -269,7 +269,7 @@ func TestClaimChildAccountNoValidationKeys(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
+func TestCreateChildAccountTooManyValidationKeys(t *testing.T) {
 	app, private := initAppTx(t)
 
 	noKeys := backing.MaxKeysInAccount + 1
@@ -285,7 +285,7 @@ func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		newKeys,
 		[]byte{},
 		childAddress,
@@ -301,10 +301,10 @@ func TestClaimChildAccountTooManyValidationKeys(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
+func TestCreateChildAccountCannotHappenTwice(t *testing.T) {
 	app, private := initAppTx(t)
 
-	// Simulate the child account already having been claimed.
+	// Simulate the child account already having been created.
 	existing, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 	modify(t, childAddress.String(), app, func(ad *backing.AccountData) {
@@ -319,7 +319,7 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
@@ -335,10 +335,10 @@ func TestClaimChildAccountCannotHappenTwice(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimGrandchildAccount(t *testing.T) {
+func TestCreateGrandchildAccount(t *testing.T) {
 	app, sourceValidation := initAppTx(t)
 
-	claimChild := func(
+	createChild := func(
 		parent address.Address,
 		progenitor address.Address,
 		parentPrivate signature.PrivateKey,
@@ -361,7 +361,7 @@ func TestClaimGrandchildAccount(t *testing.T) {
 			child,
 			childPublic,
 			childSignature,
-			childSettlementPeriod,
+			childRecoursePeriod,
 			[]signature.PublicKey{validationPublic},
 			[]byte{},
 			child,
@@ -399,14 +399,14 @@ func TestClaimGrandchildAccount(t *testing.T) {
 		return child, validationPrivate
 	}
 
-	// Claim a child of the source account.
-	child, childValidation := claimChild(sourceAddress, sourceAddress, sourceValidation)
+	// Create a child of the source account.
+	child, childValidation := createChild(sourceAddress, sourceAddress, sourceValidation)
 
-	// Claim a child of the child (a grandchild of the source account).
-	claimChild(child, sourceAddress, childValidation)
+	// Create a child of the child (a grandchild of the source account).
+	createChild(child, sourceAddress, childValidation)
 }
 
-func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
+func TestCreateChildAccountInvalidValidationScript(t *testing.T) {
 	app, private := initAppTx(t)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -417,7 +417,7 @@ func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
 		childAddress,
 		childPublic,
 		childSignature,
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{0x01},
 		childAddress,
@@ -433,7 +433,7 @@ func TestClaimChildAccountInvalidValidationScript(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimChildAccountInvalidChildSignature(t *testing.T) {
+func TestCreateChildAccountInvalidChildSignature(t *testing.T) {
 	app, private := initAppTx(t)
 
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
@@ -444,7 +444,7 @@ func TestClaimChildAccountInvalidChildSignature(t *testing.T) {
 		childAddress,
 		childPublic,
 		private.Sign([]byte(childAddress.String())),
-		childSettlementPeriod,
+		childRecoursePeriod,
 		[]signature.PublicKey{newPublic},
 		[]byte{},
 		childAddress,
