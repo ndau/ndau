@@ -12,7 +12,7 @@ import (
 // given an address and the current time, generates some keypairs for this address,
 // sets them in the app, and returns the private components
 //
-// mock accounts have 2 transfer keys and no validation script; they
+// mock accounts have 2 validation keys and no validation script; they
 // therefore implement 1 of 2 multisig.
 func MockSystemAccount(app *App, addr address.Address) ([]signature.PrivateKey, error) {
 	const numKeys = 2

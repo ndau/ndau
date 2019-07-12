@@ -46,16 +46,16 @@ func (ad *AccountData) IsNotified(blockTime math.Timestamp) bool {
 	return false
 }
 
-// UpdateSettlements settles funds whose settlement periods have expired
-func (ad *AccountData) UpdateSettlements(blockTime math.Timestamp) {
-	newSettlements := make([]Hold, 0, len(ad.Holds))
-	for _, settlement := range ad.Holds {
-		if settlement.Expiry == nil || settlement.Expiry.Compare(blockTime) > 0 {
-			// blockTime > settlement.Expiry
-			newSettlements = append(newSettlements, settlement)
+// UpdateRecourses settles funds whose recourse periods have expired
+func (ad *AccountData) UpdateRecourses(blockTime math.Timestamp) {
+	newRecourses := make([]Hold, 0, len(ad.Holds))
+	for _, recourse := range ad.Holds {
+		if recourse.Expiry == nil || recourse.Expiry.Compare(blockTime) > 0 {
+			// blockTime > recourse.Expiry
+			newRecourses = append(newRecourses, recourse)
 		}
 	}
-	ad.Holds = newSettlements
+	ad.Holds = newRecourses
 
 	// true if there exists a pending change which is less than or equal to the block time
 	if ad.RecourseSettings.ChangesAt != nil && blockTime.Compare(*ad.RecourseSettings.ChangesAt) >= 0 {
@@ -67,7 +67,7 @@ func (ad *AccountData) UpdateSettlements(blockTime math.Timestamp) {
 
 // AvailableBalance computes the balance available
 //
-// Normally one would wish to call UpdateSettlements shortly before calling this
+// Normally one would wish to call UpdateRecourses shortly before calling this
 func (ad AccountData) AvailableBalance() (math.Ndau, error) {
 	held := ad.HoldSum()
 	var err error
@@ -100,7 +100,7 @@ func (ad *AccountData) ValidateSignatures(data []byte, signatures []signature.Si
 		return false, signatureSet
 	}
 
-	// we could get fancy, making a map from each transfer key to its index,
+	// we could get fancy, making a map from each validation key to its index,
 	// using that to update the bitset, so that we could minimize the number
 	// of test validations required. However, this would eliminate at most half
 	// the field, causing us to check 128 signatures instead of 256. For these

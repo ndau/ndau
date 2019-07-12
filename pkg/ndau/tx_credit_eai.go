@@ -208,7 +208,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				addr,
 				eaiAward,
 				app.BlockTime(),
-				app.getDefaultSettlementDuration(),
+				app.getDefaultRecourseDuration(),
 				true,
 				app.IsFeatureActive("ResetUncreditedEAIOnCreditEAI"),
 			)

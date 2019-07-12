@@ -15,14 +15,14 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func initAppClaimAccount(t *testing.T) *App {
+func initAppSetValidation(t *testing.T) *App {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	return app
 }
 
-func TestClaimAccountAddressFieldValidates(t *testing.T) {
+func TestSetValidationAddressFieldValidates(t *testing.T) {
 	// flip the bits of the last byte so the address is no longer correct
 	addrBytes := []byte(targetAddress.String())
 	addrBytes[len(addrBytes)-1] = ^addrBytes[len(addrBytes)-1]
@@ -42,7 +42,7 @@ func TestClaimAccountAddressFieldValidates(t *testing.T) {
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	app := initAppClaimAccount(t)
+	app := initAppSetValidation(t)
 	resp := app.CheckTx(ctkBytes)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
@@ -56,7 +56,7 @@ func TestClaimAccountAddressFieldValidates(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestValidClaimAccount(t *testing.T) {
+func TestValidSetValidation(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
@@ -64,14 +64,14 @@ func TestValidClaimAccount(t *testing.T) {
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	app := initAppClaimAccount(t)
+	app := initAppSetValidation(t)
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
-func TestClaimAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
-	app := initAppClaimAccount(t)
+func TestSetValidationNewValidationKeyNotEqualOwnershipKey(t *testing.T) {
+	app := initAppSetValidation(t)
 
 	ca := NewSetValidation(targetAddress, targetPublic, []signature.PublicKey{targetPublic}, []byte{}, 1, targetPrivate)
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
@@ -82,7 +82,7 @@ func TestClaimAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
+func TestValidSetValidationUpdatesValidationKey(t *testing.T) {
 	newPublic, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
@@ -90,7 +90,7 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	app := initAppClaimAccount(t)
+	app := initAppSetValidation(t)
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -110,18 +110,18 @@ func TestValidClaimAccountUpdatesTransferKey(t *testing.T) {
 	})
 }
 
-func TestClaimAccountNoValidationKeys(t *testing.T) {
+func TestSetValidationNoValidationKeys(t *testing.T) {
 	ca := NewSetValidation(targetAddress, targetPublic, []signature.PublicKey{}, []byte{}, 1, targetPrivate)
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	app := initAppClaimAccount(t)
+	app := initAppSetValidation(t)
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimAccountTooManyValidationKeys(t *testing.T) {
+func TestSetValidationTooManyValidationKeys(t *testing.T) {
 	noKeys := backing.MaxKeysInAccount + 1
 	newKeys := make([]signature.PublicKey, 0, noKeys)
 	for i := 0; i < noKeys; i++ {
@@ -134,14 +134,14 @@ func TestClaimAccountTooManyValidationKeys(t *testing.T) {
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	app := initAppClaimAccount(t)
+	app := initAppSetValidation(t)
 	resp := app.CheckTx(ctkBytes)
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
-	app := initAppClaimAccount(t)
+func TestSetValidationCannotOverwriteMoreThanOneValidationKey(t *testing.T) {
+	app := initAppSetValidation(t)
 
 	existing1, _, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
@@ -163,8 +163,8 @@ func TestClaimAccountCannotOverwriteMoreThanOneTransferKey(t *testing.T) {
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
-func TestClaimAccountDeductsTxFee(t *testing.T) {
-	app := initAppClaimAccount(t)
+func TestSetValidationDeductsTxFee(t *testing.T) {
+	app := initAppSetValidation(t)
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})
@@ -194,9 +194,9 @@ func TestClaimAccountDeductsTxFee(t *testing.T) {
 	}
 }
 
-func TestClaimAccountDoesntResetWAA(t *testing.T) {
+func TestSetValidationDoesntResetWAA(t *testing.T) {
 	// inspired by a Real Live Bug!
-	app := initAppClaimAccount(t)
+	app := initAppSetValidation(t)
 
 	assertExistsAndNonzeroWAAUpdate := func(expectExists bool) {
 		resp := app.Query(abci.RequestQuery{

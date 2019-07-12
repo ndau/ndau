@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCSPStoresPendingEscrowChange(t *testing.T) {
+func TestCSPStoresPendingRecourseChange(t *testing.T) {
 	app, private := initAppTx(t)
 	acct := app.GetState().(*backing.State).Accounts[source]
 	require.Equal(t, math.Duration(0), acct.RecourseSettings.Period)
@@ -29,19 +29,19 @@ func TestCSPStoresPendingEscrowChange(t *testing.T) {
 
 	// the state of UpdateBalance is formally undefined at this point:
 	// it's legit for implementations to notice that the current UpdateDuration
-	// is 0, and to update the escrow period immediately. It's also legit
-	// for them to wait for an UpdateEscrow call.
+	// is 0, and to update the recourse period immediately. It's also legit
+	// for them to wait for an UpdateRecourse call.
 
 	// update the acct struct
 	acct = app.GetState().(*backing.State).Accounts[source]
-	acct.UpdateSettlements(ts)
+	acct.UpdateRecourses(ts)
 
 	require.Equal(t, newDuration, acct.RecourseSettings.Period)
 	require.Nil(t, acct.RecourseSettings.Next)
 	require.Nil(t, acct.RecourseSettings.ChangesAt)
 }
 
-func TestChangeSettlementPeriodDeductsTxFee(t *testing.T) {
+func TestChangeRecoursePeriodDeductsTxFee(t *testing.T) {
 	app, private := initAppTx(t)
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.Balance = 1

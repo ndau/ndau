@@ -23,7 +23,7 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
-	// generate the transfer key so we claim the node reward
+	// generate a validation key so we claim the node reward
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
