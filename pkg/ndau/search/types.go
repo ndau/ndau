@@ -5,7 +5,6 @@ package search
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -109,30 +108,8 @@ func (valueData *TxValueData) Marshal() string {
 	return string(m)
 }
 
-var valueDataOldPattern = regexp.MustCompile(`^\d+ \d+$`)
-
 // Unmarshal the given search value string that was indexed with its search key string.
 func (valueData *TxValueData) Unmarshal(searchValue string) error {
-	if valueDataOldPattern.Match([]byte(searchValue)) {
-		// use the old unmarshaling code
-		separator := strings.Index(searchValue, " ")
-
-		height, err := strconv.ParseUint(searchValue[:separator], 10, 64)
-		if err != nil {
-			return err
-		}
-
-		offset, err := strconv.ParseInt(searchValue[separator+1:], 10, 32)
-		if err != nil {
-			return err
-		}
-
-		valueData.BlockHeight = height
-		valueData.TxOffset = int(offset)
-
-		return nil
-	}
-	// use new unmarshaling code
 	return json.Unmarshal([]byte(searchValue), valueData)
 }
 
