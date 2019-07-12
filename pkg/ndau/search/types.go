@@ -3,13 +3,13 @@ package search
 // Types common to indexing and searching.
 
 import (
-	"encoding/json"
-	"fmt"
-	"strconv"
-	"strings"
+	"encoding/base64"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/pkg/errors"
 )
+
+//go:generate msgp
 
 // HeightByBlockHashCommand is a QueryParams command for searching block height by block hash.
 const HeightByBlockHashCommand = "heightbyblockhash"
@@ -35,8 +35,8 @@ type SysvarHistoryParams struct {
 
 // ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
 type ValueData struct {
-	height      uint64
-	valueBase64 string
+	height      uint64 `msg:"h"`
+	valueBase64 string `msg:"v"`
 }
 
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
@@ -55,118 +55,97 @@ type AccountListParams struct {
 
 // TxValueData is used for data about a particular transaction
 type TxValueData struct {
-	BlockHeight uint64 `json:"height"`
-	TxOffset    int    `json:"offset"`
-	Fee         uint64 `json:"fee"`
-	SIB         uint64 `json:"sib"`
+	BlockHeight uint64 `json:"height" msg:"h"`
+	TxOffset    int    `json:"offset" msg:"o"`
+	Fee         uint64 `json:"fee" msg:"f"`
+	SIB         uint64 `json:"sib" msg:"s"`
 }
 
 // AccountTxValueData is like TxValueData that stores account balance at the associated block.
 // We could index a Ref target hash, but that would use more space than just storing the balance.
 type AccountTxValueData struct {
-	BlockHeight uint64
-	TxOffset    int
-	Balance     types.Ndau
+	BlockHeight uint64     `msg:"h"`
+	TxOffset    int        `msg:"o"`
+	Balance     types.Ndau `msg:"b"`
 }
 
 // AccountHistoryResponse is the return value from the account history endpoint.
 type AccountHistoryResponse struct {
-	Txs []AccountTxValueData
+	Txs []AccountTxValueData `msg:"t"`
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
 func (valueData *ValueData) Marshal() string {
-	// To guarantee ZAdd() will keep history of same-value key entries, we prefix the value
-	// with the height.  Otherwise redis would just update the score and not add more history.
-	// Because of this, we use unsorted sets with SAdd() since sortedness isn't benefiting us.
-	return fmt.Sprintf("%d %s", valueData.height, valueData.valueBase64)
+	msgp, err := valueData.MarshalMsg(nil)
+	if err != nil {
+		panic(err)
+	}
+	return base64.StdEncoding.EncodeToString(msgp)
 }
 
 // Unmarshal the given search value string that was indexed with its search key string.
 func (valueData *ValueData) Unmarshal(searchValue string) error {
-	// The "value" for a key in the index is stored as "<height> <valueBase64>".
-	separator := strings.Index(searchValue, " ")
-
-	height, err := strconv.ParseUint(searchValue[:separator], 10, 64)
+	bytes, err := base64.StdEncoding.DecodeString(searchValue)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "decoding b64")
 	}
-
-	valueData.height = height
-	valueData.valueBase64 = searchValue[separator+1:]
-
-	return nil
+	_, err = valueData.UnmarshalMsg(bytes)
+	return errors.Wrap(err, "decoding msgp")
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
 func (valueData *TxValueData) Marshal() string {
-	m, err := json.Marshal(valueData)
+	m, err := valueData.MarshalMsg(nil)
 	if err != nil {
-		// it's pretty hard to panic marshaling a basic numeric type like this though
 		panic(err)
 	}
-	return string(m)
+	return base64.StdEncoding.EncodeToString(m)
 }
 
 // Unmarshal the given search value string that was indexed with its search key string.
 func (valueData *TxValueData) Unmarshal(searchValue string) error {
-	return json.Unmarshal([]byte(searchValue), valueData)
+	bytes, err := base64.StdEncoding.DecodeString(searchValue)
+	if err != nil {
+		return errors.Wrap(err, "decoding b64")
+	}
+	_, err = valueData.UnmarshalMsg(bytes)
+	return errors.Wrap(err, "decoding msgp")
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
 func (valueData *AccountTxValueData) Marshal() string {
-	return fmt.Sprintf("%d %d %d", valueData.BlockHeight, valueData.TxOffset, valueData.Balance)
+	m, err := valueData.MarshalMsg(nil)
+	if err != nil {
+		panic(err)
+	}
+	return base64.StdEncoding.EncodeToString(m)
 }
 
 // Unmarshal the given search value string that was indexed with its search key string.
 func (valueData *AccountTxValueData) Unmarshal(searchValue string) error {
-	separator1 := strings.Index(searchValue, " ")
-	separator2 := strings.LastIndex(searchValue, " ")
-
-	height, err := strconv.ParseUint(searchValue[:separator1], 10, 64)
+	bytes, err := base64.StdEncoding.DecodeString(searchValue)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "decoding b64")
 	}
-
-	offset, err := strconv.ParseInt(searchValue[separator1+1:separator2], 10, 32)
-	if err != nil {
-		return err
-	}
-
-	balance, err := strconv.ParseUint(searchValue[separator2+1:], 10, 64)
-	if err != nil {
-		return err
-	}
-
-	valueData.BlockHeight = height
-	valueData.TxOffset = int(offset)
-	valueData.Balance = types.Ndau(balance)
-
-	return nil
+	_, err = valueData.UnmarshalMsg(bytes)
+	return errors.Wrap(err, "decoding msgp")
 }
 
 // Marshal the account history response into something we can pass over RPC.
 func (response *AccountHistoryResponse) Marshal() string {
-	var sb strings.Builder
-	for _, valueData := range response.Txs {
-		sb.WriteString(valueData.Marshal())
-		sb.WriteString(":")
+	m, err := response.MarshalMsg(nil)
+	if err != nil {
+		panic(err)
 	}
-	return sb.String()
+	return base64.StdEncoding.EncodeToString(m)
 }
 
 // Unmarshal the account history response from something we received over RPC.
 func (response *AccountHistoryResponse) Unmarshal(searchValue string) error {
-	response.Txs = nil
-
-	items := strings.Split(searchValue, ":")
-	for _, item := range items {
-		if item != "" {
-			valueData := AccountTxValueData{}
-			valueData.Unmarshal(item)
-			response.Txs = append(response.Txs, valueData)
-		}
+	bytes, err := base64.StdEncoding.DecodeString(searchValue)
+	if err != nil {
+		return errors.Wrap(err, "decoding b64")
 	}
-
-	return nil
+	_, err = response.UnmarshalMsg(bytes)
+	return errors.Wrap(err, "decoding msgp")
 }
