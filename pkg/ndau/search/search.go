@@ -29,8 +29,8 @@ func (search *Client) SearchSysvarHistory(
 			return err
 		}
 
-		height := valueData.height
-		valueBase64 := valueData.valueBase64
+		height := valueData.Height
+		valueBase64 := valueData.ValueBase64
 
 		value, err := base64.StdEncoding.DecodeString(valueBase64)
 		if err != nil {
@@ -83,29 +83,30 @@ func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 	return strconv.ParseUint(searchValue, 10, 64)
 }
 
-// SearchTxHash returns the height of block containing the given tx hash.
-// It also returns the transaction offset within the block.
-// Returns 0, 0 and no error if the given tx hash was not found in the index.
-func (search *Client) SearchTxHash(txHash string) (uint64, int, error) {
+// SearchTxHash returns tx data for the given tx hash.
+//
+// Returns nil and no error if the given tx hash was not found in the index.
+func (search *Client) SearchTxHash(txHash string) (valueData *TxValueData, err error) {
 	searchKey := formatTxHashToHeightSearchKey(txHash)
 
-	searchValue, err := search.Client.Get(searchKey)
+	var searchValue string
+	searchValue, err = search.Client.Get(searchKey)
 	if err != nil {
-		return 0, 0, err
+		return
 	}
 
 	if searchValue == "" {
 		// Empty search results.  No error.
-		return 0, 0, nil
+		return
 	}
 
-	valueData := TxValueData{}
+	valueData = new(TxValueData)
 	err = valueData.Unmarshal(searchValue)
 	if err != nil {
-		return 0, 0, err
+		return
 	}
 
-	return valueData.BlockHeight, valueData.TxOffset, nil
+	return
 }
 
 // SearchAccountHistory returns an array of block height and txoffset pairs associated with the

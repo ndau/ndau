@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"fmt"
+	"math/rand"
 	"os/exec"
 	"testing"
 	"time"
@@ -43,7 +44,8 @@ func TestSysvarHistoryIndex(t *testing.T) {
 	// disable persistence by not loading the default redis.conf file.  That way we don't have to
 	// .gitignore it, and we don't have to force-wipe the index from the last time we ran the
 	// tests.  We get a fresh test every time.
-	port := "6378"
+	portn := 6378 + rand.Intn(1024)
+	port := fmt.Sprint(portn)
 	cmd := exec.Command("redis-server", "--port", port)
 	cmd.Start()
 
@@ -128,7 +130,8 @@ func TestIndex(t *testing.T) {
 	// disable persistence by not loading the default redis.conf file.  That way we don't have to
 	// .gitignore it, and we don't have to force-wipe the index from the last time we ran the
 	// tests.  We get a fresh test every time.
-	port := "6378"
+	portn := 6378 + rand.Intn(1024)
+	port := fmt.Sprint(portn)
 	cmd := exec.Command("redis-server", "--port", port)
 	cmd.Start()
 
@@ -225,10 +228,10 @@ func TestIndex(t *testing.T) {
 		})
 
 		t.Run("TestTxHashSearching", func(t *testing.T) {
-			heightResult, txOffsetResult, err := search.SearchTxHash(txHash)
+			vd, err := search.SearchTxHash(txHash)
 			require.NoError(t, err)
-			require.Equal(t, height, heightResult)
-			require.Equal(t, txOffset, txOffsetResult)
+			require.Equal(t, height, vd.BlockHeight)
+			require.Equal(t, txOffset, vd.TxOffset)
 		})
 
 		t.Run("TestAccountSearching", func(t *testing.T) {

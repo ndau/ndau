@@ -45,11 +45,12 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		txhash := metatx.Hash(tx)
 
 		// Check if the tx has already been indexed.
-		blockheight, _, err := searchTxHash(node, txhash)
+		vd, err := searchTxHash(node, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
 		}
+		blockheight := vd.BlockHeight
 
 		result := PrevalidateResult{TxHash: txhash, Code: EndpointResultOK}
 		code := http.StatusOK

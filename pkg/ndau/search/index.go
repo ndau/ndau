@@ -136,14 +136,14 @@ func (search *Client) onIndexingComplete(
 						return err
 					}
 
-					height := valueData.height
-					valueBase64 := valueData.valueBase64
+					height := valueData.Height
+					valueBase64 := valueData.ValueBase64
 
-					if !hasValue || dupeHeight < height && height <= data.height {
+					if !hasValue || dupeHeight < height && height <= data.Height {
 						dupeValueBase64 = valueBase64
 						dupeHeight = height
 						hasValue = true
-						if dupeHeight == data.height {
+						if dupeHeight == data.Height {
 							// Found potential dupe at the right height.
 							// No need to iterate further.
 							return metastate.StopIteration()
@@ -155,7 +155,7 @@ func (search *Client) onIndexingComplete(
 				return updateCount, insertCount, err
 			}
 
-			if hasValue && dupeValueBase64 == data.valueBase64 {
+			if hasValue && dupeValueBase64 == data.ValueBase64 {
 				skip = true
 			}
 		}
@@ -253,25 +253,25 @@ func (search *Client) indexState(
 		data, hasValue := search.sysvarKeyToValueData[searchKey]
 		if !hasValue {
 			search.sysvarKeyToValueData[searchKey] = &ValueData{
-				height:      search.blockHeight,
-				valueBase64: valueBase64,
+				Height:      search.blockHeight,
+				ValueBase64: valueBase64,
 			}
 			continue
 		}
 
 		// Skip indexing adjacent blocks having the same value for the given key.
 		// This assumes we're iterating blocks in order from the head to genesis.
-		if data.valueBase64 == valueBase64 {
+		if data.ValueBase64 == valueBase64 {
 			// Save off the current height of the iteration.  We do this when we're
 			// not indexing it so we eventually index with the lowest block height
 			// seen for a given search key.
-			data.height = search.blockHeight
+			data.Height = search.blockHeight
 			continue
 		}
 
 		// This is only a sanity check.  Noms doesn't preserve any but the last-set value
 		// for a given key and height.  So we'll never encounter this case.
-		if data.height == search.blockHeight {
+		if data.Height == search.blockHeight {
 			continue
 		}
 
@@ -286,8 +286,8 @@ func (search *Client) indexState(
 
 		// Save off the current value of the iteration.  We'll eventually index it at the
 		// lowest height we see for it.
-		data.height = search.blockHeight
-		data.valueBase64 = valueBase64
+		data.Height = search.blockHeight
+		data.ValueBase64 = valueBase64
 	}
 
 	return updateCount, insertCount, nil

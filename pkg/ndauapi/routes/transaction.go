@@ -24,7 +24,7 @@ type TransactionData struct {
 	Tx          *metatx.Transaction
 }
 
-func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset int, err error) {
+func searchTxHash(node *client.HTTP, txhash string) (valueData *search.TxValueData, err error) {
 	// Prepare search params.
 	params := search.QueryParams{
 		Command: search.HeightByTxHashCommand,
@@ -34,20 +34,19 @@ func searchTxHash(node *client.HTTP, txhash string) (blockheight int64, txoffset
 	json.NewEncoder(paramsBuf).Encode(params)
 	paramsString := paramsBuf.String()
 
-	searchValue, err := tool.GetSearchResults(node, paramsString)
+	var searchValue string
+	searchValue, err = tool.GetSearchResults(node, paramsString)
 	if err != nil {
-		return 0, 0, err
+		return
 	}
 
-	valueData := search.TxValueData{}
+	valueData = new(search.TxValueData)
 	err = valueData.Unmarshal(searchValue)
 	if err != nil {
-		return 0, 0, err
+		return
 	}
 
-	blockheight = int64(valueData.BlockHeight)
-	txoffset = valueData.TxOffset
-	return blockheight, txoffset, nil
+	return
 }
 
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.
@@ -66,11 +65,13 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		blockheight, txoffset, err := searchTxHash(node, txhash)
+		vd, err := searchTxHash(node, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("txhash search failed: %v", err), http.StatusInternalServerError))
 			return
 		}
+		blockheight := int64(vd.BlockHeight)
+		txoffset := vd.TxOffset
 
 		if blockheight <= 0 {
 			// The search was valid, but there were no results.

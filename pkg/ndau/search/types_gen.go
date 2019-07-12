@@ -1197,6 +1197,18 @@ func (z *ValueData) DecodeMsg(dc *msgp.Reader) (err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
+		case "h":
+			z.Height, err = dc.ReadUint64()
+			if err != nil {
+				err = msgp.WrapError(err, "Height")
+				return
+			}
+		case "v":
+			z.ValueBase64, err = dc.ReadString()
+			if err != nil {
+				err = msgp.WrapError(err, "ValueBase64")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -1210,9 +1222,25 @@ func (z *ValueData) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z ValueData) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 0
-	err = en.Append(0x80)
+	// map header, size 2
+	// write "h"
+	err = en.Append(0x82, 0xa1, 0x68)
 	if err != nil {
+		return
+	}
+	err = en.WriteUint64(z.Height)
+	if err != nil {
+		err = msgp.WrapError(err, "Height")
+		return
+	}
+	// write "v"
+	err = en.Append(0xa1, 0x76)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.ValueBase64)
+	if err != nil {
+		err = msgp.WrapError(err, "ValueBase64")
 		return
 	}
 	return
@@ -1221,8 +1249,13 @@ func (z ValueData) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z ValueData) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 0
-	o = append(o, 0x80)
+	// map header, size 2
+	// string "h"
+	o = append(o, 0x82, 0xa1, 0x68)
+	o = msgp.AppendUint64(o, z.Height)
+	// string "v"
+	o = append(o, 0xa1, 0x76)
+	o = msgp.AppendString(o, z.ValueBase64)
 	return
 }
 
@@ -1244,6 +1277,18 @@ func (z *ValueData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
+		case "h":
+			z.Height, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Height")
+				return
+			}
+		case "v":
+			z.ValueBase64, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ValueBase64")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -1258,6 +1303,6 @@ func (z *ValueData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z ValueData) Msgsize() (s int) {
-	s = 1
+	s = 1 + 2 + msgp.Uint64Size + 2 + msgp.StringPrefixSize + len(z.ValueBase64)
 	return
 }
