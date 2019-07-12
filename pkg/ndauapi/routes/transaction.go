@@ -21,6 +21,8 @@ import (
 type TransactionData struct {
 	BlockHeight int64
 	TxOffset    int
+	Fee         uint64
+	SIB         uint64
 	Tx          *metatx.Transaction
 }
 
@@ -106,6 +108,8 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 		result := TransactionData{
 			BlockHeight: blockheight,
 			TxOffset:    txoffset,
+			Fee:         vd.Fee,
+			SIB:         vd.SIB,
 			Tx:          tx,
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(result))
