@@ -39,11 +39,11 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 	if hasValue {
 		// Override whatever value was there before for this block.
 		// We only want one k-v pair per block height in our index: the one for the latest value.
-		data.valueBase64 = valueBase64
+		data.ValueBase64 = valueBase64
 	} else {
 		search.sysvarKeyToValueData[searchKey] = &ValueData{
-			height:      search.blockHeight,
-			valueBase64: valueBase64,
+			Height:      search.blockHeight,
+			ValueBase64: valueBase64,
 		}
 	}
 
