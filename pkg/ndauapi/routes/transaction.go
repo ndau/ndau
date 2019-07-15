@@ -26,7 +26,7 @@ type TransactionData struct {
 	Tx          *metatx.Transaction
 }
 
-func searchTxHash(node *client.HTTP, txhash string) (valueData *search.TxValueData, err error) {
+func searchTxHash(node *client.HTTP, txhash string) (search.TxValueData, error) {
 	// Prepare search params.
 	params := search.QueryParams{
 		Command: search.HeightByTxHashCommand,
@@ -36,19 +36,14 @@ func searchTxHash(node *client.HTTP, txhash string) (valueData *search.TxValueDa
 	json.NewEncoder(paramsBuf).Encode(params)
 	paramsString := paramsBuf.String()
 
-	var searchValue string
-	searchValue, err = tool.GetSearchResults(node, paramsString)
+	valueData := search.TxValueData{}
+	searchValue, err := tool.GetSearchResults(node, paramsString)
 	if err != nil {
-		return
+		return valueData, err
 	}
 
-	valueData = new(search.TxValueData)
 	err = valueData.Unmarshal(searchValue)
-	if err != nil {
-		return
-	}
-
-	return
+	return valueData, err
 }
 
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.

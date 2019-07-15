@@ -86,27 +86,22 @@ func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 // SearchTxHash returns tx data for the given tx hash.
 //
 // Returns nil and no error if the given tx hash was not found in the index.
-func (search *Client) SearchTxHash(txHash string) (valueData *TxValueData, err error) {
+func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
+	valueData := TxValueData{}
 	searchKey := formatTxHashToHeightSearchKey(txHash)
 
-	var searchValue string
-	searchValue, err = search.Client.Get(searchKey)
+	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
-		return
+		return valueData, err
 	}
 
 	if searchValue == "" {
 		// Empty search results.  No error.
-		return
+		return valueData, err
 	}
 
-	valueData = new(TxValueData)
 	err = valueData.Unmarshal(searchValue)
-	if err != nil {
-		return
-	}
-
-	return
+	return valueData, err
 }
 
 // SearchAccountHistory returns an array of block height and txoffset pairs associated with the
