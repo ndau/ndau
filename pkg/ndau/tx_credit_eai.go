@@ -104,7 +104,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		// fashion. Instead, log errors as they occur, but never fail here.
 		handle := func(err error) bool {
 			if err != nil {
-				logger.WithError(err).Error("eai.Calculate failed")
+				logger.WithError(err).Error("EAI.Calculate failed")
 				err = nil
 				return true
 			}
@@ -131,7 +131,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 
 			if postpone && len(acctData.IncomingRewardsFrom) > 0 {
 				logger.WithField(
-					"len(IncomingRewardsFrom)",
+					"len_IncomingRewardsFrom",
 					len(acctData.IncomingRewardsFrom),
 				).Info("postponing due to incoming rewards")
 				postponed = append(postponed, addrS)
@@ -185,27 +185,27 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 			tableS := strings.Join(tableRows, "/")
 			logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
-				"source acct":          addrS,
-				"pending":              pending.String(),
-				"block time":           app.BlockTime().String(),
-				"last EAI update":      acctData.LastEAIUpdate.String(),
-				"weighted average age": acctData.WeightedAverageAge.String(),
-				"age table":            tableS,
+				"sourceAcct":         addrS,
+				"pending":            pending.String(),
+				"blockTime":          app.BlockTime().String(),
+				"lastEAIUpdate":      acctData.LastEAIUpdate.String(),
+				"weightedAverageAge": acctData.WeightedAverageAge.String(),
+				"ageTable":           tableS,
 			})
 			if acctData.Lock == nil {
 				logger = logger.WithField("lock", "nil")
 			} else {
 				logger = logger.WithFields(log.Fields{
-					"lock.notice period": acctData.Lock.NoticePeriod.String(),
-					"lock.bonus":         acctData.Lock.Bonus.String(),
+					"lock.noticePeriod": acctData.Lock.NoticePeriod.String(),
+					"lock.bonus":        acctData.Lock.Bonus.String(),
 				})
 				if acctData.Lock.UnlocksOn == nil {
-					logger = logger.WithField("lock.unlocks on", "nil")
+					logger = logger.WithField("lock.unlocksOn", "nil")
 				} else {
-					logger = logger.WithField("lock.unlocks on", acctData.Lock.UnlocksOn.String())
+					logger = logger.WithField("lock.unlocksOn", acctData.Lock.UnlocksOn.String())
 				}
 			}
-			logger.Info("credit eai calculation fields")
+			logger.Info("credit EAI calculation fields")
 
 			eaiAward, err := eai.Calculate(
 				pending, app.BlockTime(), lastUpdate,
@@ -217,10 +217,10 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 
 			app.DecoratedTxLogger(tx).WithFields(log.Fields{
-				"source acct":    addrS,
-				"eai award":      eaiAward.String(),
-				"uncredited eai": acctData.UncreditedEAI.String(),
-			}).Info("credit eai calculation results")
+				"sourceAcct":    addrS,
+				"EAIAward":      eaiAward.String(),
+				"uncreditedEAI": acctData.UncreditedEAI.String(),
+			}).Info("credit EAI calculation results")
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
 			if handle(err) {
@@ -241,9 +241,9 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 
 			app.GetLogger().WithFields(log.Fields{
-				"source acct":   addrS,
-				"total award":   eaiAward.String(),
-				"reduced award": math.Ndau(reducedAward).String(),
+				"sourceAcct":   addrS,
+				"totalAward":   eaiAward.String(),
+				"reducedAward": math.Ndau(reducedAward).String(),
 			}).Info("credit eai award reduction")
 
 			eaiAward = math.Ndau(reducedAward)
@@ -278,7 +278,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 
 		// and finally do the postponed ones (in deterministic order as well)
-		logger.WithField("len(postponed)", len(postponed)).Info("calculating postponed accounts")
+		logger.WithField("len_postponed", len(postponed)).Info("calculating postponed accounts")
 		for _, acct := range postponed {
 			calc(acct, false)
 		}

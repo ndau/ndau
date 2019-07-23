@@ -258,18 +258,18 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 		}
 
 		logger := app.GetLogger().WithFields(log.Fields{
-			"source acct":          sourceA.String(),
-			"pending":              pending.String(),
-			"block time":           app.BlockTime().String(),
-			"last EAI update":      source.LastEAIUpdate.String(),
-			"weighted average age": source.WeightedAverageAge.String(),
+			"sourceAcct":         sourceA.String(),
+			"pending":            pending.String(),
+			"blockTime":          app.BlockTime().String(),
+			"lastEAIUpdate":      source.LastEAIUpdate.String(),
+			"weightedAverageAge": source.WeightedAverageAge.String(),
 		})
 		if source.Lock == nil {
 			logger = logger.WithField("lock", "nil")
 		} else {
 			logger = logger.WithFields(log.Fields{
-				"lock.notice period": source.Lock.NoticePeriod.String(),
-				"lock.bonus":         source.Lock.Bonus.String(),
+				"lock.noticePeriod": source.Lock.NoticePeriod.String(),
+				"lock.bonus":        source.Lock.Bonus.String(),
 			})
 			if source.Lock.UnlocksOn == nil {
 				logger = logger.WithField("lock.unlocks on", "nil")
