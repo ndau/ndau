@@ -269,9 +269,13 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 		} else {
 			logger = logger.WithFields(log.Fields{
 				"lock.notice period": source.Lock.NoticePeriod.String(),
-				"lock.unlocks on":    source.Lock.UnlocksOn.String(),
 				"lock.bonus":         source.Lock.Bonus.String(),
 			})
+			if source.Lock.UnlocksOn == nil {
+				logger = logger.WithField("lock.unlocks on", "nil")
+			} else {
+				logger = logger.WithField("lock.unlocks on", source.Lock.UnlocksOn.String())
+			}
 		}
 		logger.Info("details eai calculation fields")
 
