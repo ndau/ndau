@@ -197,9 +197,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			} else {
 				logger = logger.WithFields(log.Fields{
 					"lock.notice period": acctData.Lock.NoticePeriod.String(),
-					"lock.unlocks on":    acctData.Lock.UnlocksOn.String(),
 					"lock.bonus":         acctData.Lock.Bonus.String(),
 				})
+				if acctData.Lock.UnlocksOn == nil {
+					logger = logger.WithField("lock.unlocks on", "nil")
+				} else {
+					logger = logger.WithField("lock.unlocks on", acctData.Lock.UnlocksOn.String())
+				}
 			}
 			logger.Info("credit eai calculation fields")
 
