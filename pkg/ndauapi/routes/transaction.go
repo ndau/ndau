@@ -24,6 +24,7 @@ type TransactionData struct {
 	Fee         uint64
 	SIB         uint64
 	Tx          *metatx.Transaction
+	TxBytes     []byte
 }
 
 func searchTxHash(node *client.HTTP, txhash string) (search.TxValueData, error) {
@@ -106,6 +107,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			Fee:         vd.Fee,
 			SIB:         vd.SIB,
 			Tx:          tx,
+			TxBytes:     txBytes,
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
