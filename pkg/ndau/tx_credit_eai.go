@@ -184,7 +184,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				tableRows = append(tableRows, string(rt))
 			}
 			tableS := strings.Join(tableRows, "/")
-			logger := app.GetLogger().WithFields(log.Fields{
+			logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
 				"source acct":          addrS,
 				"pending":              pending.String(),
 				"block time":           app.BlockTime().String(),
@@ -212,7 +212,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				return
 			}
 
-			app.GetLogger().WithFields(log.Fields{
+			app.DecoratedTxLogger(tx).WithFields(log.Fields{
 				"source acct":    addrS,
 				"eai award":      eaiAward.String(),
 				"uncredited eai": acctData.UncreditedEAI.String(),

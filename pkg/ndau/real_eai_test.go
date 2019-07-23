@@ -13,6 +13,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,6 +29,16 @@ func makeVKs(t *testing.T, keys ...string) []signature.PublicKey {
 
 func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T) {
 	app, _ := initApp(t)
+
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		delete(state.Sysvars, sv.EAIOvertime)
+		// dur := math.Duration(0)
+		// durbytes, err := dur.MarshalMsg(nil)
+		// require.NoError(t, err)
+		// state.Sysvars[sv.EAIOvertime] = durbytes
+		return state, nil
+	})
 
 	node1, err := address.Validate("ndarw5i7rmqtqstw4mtnchmfvxnrq4k3e2ytsyvsc7nxt2y7")
 	require.NoError(t, err)
@@ -90,6 +101,8 @@ func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T)
 		require.NoError(t, err)
 		tx, err := metatx.Unmarshal(data, TxIDs)
 		require.NoError(t, err)
+		acct1, _ := app.getAccount(addr)
+		require.Equal(t, math.Ndau(100000000000), acct1.Balance)
 		resp := deliverTxAt(t, app, tx, 610888325000000)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 		acct, _ := app.getAccount(addr)
