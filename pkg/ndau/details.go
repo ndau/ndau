@@ -14,6 +14,7 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // MaxSequenceIncrement is the max allowed difference between the current
@@ -256,6 +257,24 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 			return stI, errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
 		}
 
+		logger := app.GetLogger().WithFields(log.Fields{
+			"source acct":          sourceA.String(),
+			"pending":              pending.String(),
+			"block time":           app.BlockTime().String(),
+			"last EAI update":      source.LastEAIUpdate.String(),
+			"weighted average age": source.WeightedAverageAge.String(),
+		})
+		if source.Lock == nil {
+			logger = logger.WithField("lock", "nil")
+		} else {
+			logger = logger.WithFields(log.Fields{
+				"lock.notice period": source.Lock.NoticePeriod.String(),
+				"lock.unlocks on":    source.Lock.UnlocksOn.String(),
+				"lock.bonus":         source.Lock.Bonus.String(),
+			})
+		}
+		logger.Info("details eai calculation fields")
+
 		eai, err := eai.Calculate(
 			pending, app.BlockTime(), source.LastEAIUpdate,
 			source.WeightedAverageAge, source.Lock,
@@ -288,7 +307,7 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 
 		source.Sequence = tx.GetSequence()
 
-	  source.UpdateRecourses(app.BlockTime())
+		source.UpdateRecourses(app.BlockTime())
 
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source

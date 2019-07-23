@@ -3,6 +3,7 @@ package ndau
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -177,6 +178,31 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				lastUpdate = app.BlockTime().Sub(*eaiOvertime)
 			}
 
+			tableRows := make([]string, 0, len(*ageTable))
+			for _, row := range *ageTable {
+				rt, _ := row.MarshalText()
+				tableRows = append(tableRows, string(rt))
+			}
+			tableS := strings.Join(tableRows, "/")
+			logger := app.GetLogger().WithFields(log.Fields{
+				"source acct":          addrS,
+				"pending":              pending.String(),
+				"block time":           app.BlockTime().String(),
+				"last EAI update":      acctData.LastEAIUpdate.String(),
+				"weighted average age": acctData.WeightedAverageAge.String(),
+				"age table":            tableS,
+			})
+			if acctData.Lock == nil {
+				logger = logger.WithField("lock", "nil")
+			} else {
+				logger = logger.WithFields(log.Fields{
+					"lock.notice period": acctData.Lock.NoticePeriod.String(),
+					"lock.unlocks on":    acctData.Lock.UnlocksOn.String(),
+					"lock.bonus":         acctData.Lock.Bonus.String(),
+				})
+			}
+			logger.Info("credit eai calculation fields")
+
 			eaiAward, err := eai.Calculate(
 				pending, app.BlockTime(), lastUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
@@ -185,6 +211,12 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			if handle(err) {
 				return
 			}
+
+			app.GetLogger().WithFields(log.Fields{
+				"source acct":    addrS,
+				"eai award":      eaiAward.String(),
+				"uncredited eai": acctData.UncreditedEAI.String(),
+			}).Info("credit eai calculation results")
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
 			if handle(err) {
@@ -203,6 +235,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			if handle(err) {
 				return
 			}
+
+			app.GetLogger().WithFields(log.Fields{
+				"source acct":   addrS,
+				"total award":   eaiAward.String(),
+				"reduced award": math.Ndau(reducedAward).String(),
+			}).Info("credit eai award reduction")
+
 			eaiAward = math.Ndau(reducedAward)
 			_, err = state.PayReward(
 				addr,
