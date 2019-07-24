@@ -76,7 +76,10 @@ func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T)
 		ad.LastEAIUpdate = ts
 		ad.LastWAAUpdate = ts
 		ad.CurrencySeatDate = &ts
-		ad.Lock = backing.NewLock(math.Year, eai.DefaultLockBonusEAI)
+		ad.Lock = backing.NewLock(
+			math.Year+(2*math.Month)+(22*math.Day),
+			eai.DefaultLockBonusEAI,
+		)
 		ad.Lock.Notify(ts, 0)
 		ad.RecourseSettings.Period = math.Hour
 	})
@@ -98,7 +101,7 @@ func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T)
 		require.NoError(t, err)
 		tx, err := metatx.Unmarshal(data, TxIDs)
 		require.NoError(t, err)
-		resp, _ := deliverTxContext(t, app, tx, context.at(610888325000000))
+		resp, _ := deliverTxContext(t, app, tx, context.at(610888325348024))
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 		acct, _ := app.getAccount(addr)
 		require.Equal(t, math.Ndau(113065871044), acct.Balance)
@@ -314,7 +317,10 @@ func Test_ndadyrd7u7kyjkq9nwcz3rgyi3m6fyeexwwi6hy6giwby7wy_History(t *testing.T)
 		ad.LastEAIUpdate = ts
 		ad.LastWAAUpdate = ts
 		ad.CurrencySeatDate = &ts
-		ad.Lock = backing.NewLock(math.Year, eai.DefaultLockBonusEAI)
+		ad.Lock = backing.NewLock(
+			math.Year+(2*math.Month)+(22*math.Day),
+			eai.DefaultLockBonusEAI,
+		)
 		ad.Lock.Notify(ts, 0)
 		ad.RecourseSettings.Period = math.Hour
 	})
