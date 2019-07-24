@@ -187,7 +187,6 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
 				"sourceAcct":         addrS,
 				"pending":            pending.String(),
-				"blockTime":          app.BlockTime().String(),
 				"lastUpdate":         lastUpdate.String(),
 				"weightedAverageAge": acctData.WeightedAverageAge.String(),
 				"ageTable":           tableS,
@@ -205,7 +204,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 					logger = logger.WithField("lock.unlocksOn", acctData.Lock.UnlocksOn.String())
 				}
 			}
-			logger.Info("credit EAI calculation fields")
+			logger.Debug("credit EAI calculation fields")
 
 			eaiAward, err := eai.Calculate(
 				pending, app.BlockTime(), lastUpdate,
@@ -220,7 +219,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				"sourceAcct":    addrS,
 				"EAIAward":      eaiAward.String(),
 				"uncreditedEAI": acctData.UncreditedEAI.String(),
-			}).Info("credit EAI calculation results")
+			}).Debug("credit EAI calculation results")
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
 			if handle(err) {
@@ -240,11 +239,11 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				return
 			}
 
-			app.GetLogger().WithFields(log.Fields{
+			app.DecoratedTxLogger(tx).WithFields(log.Fields{
 				"sourceAcct":   addrS,
 				"totalAward":   eaiAward.String(),
 				"reducedAward": math.Ndau(reducedAward).String(),
-			}).Info("credit eai award reduction")
+			}).Debug("credit EAI award reduction")
 
 			eaiAward = math.Ndau(reducedAward)
 			_, err = state.PayReward(

@@ -158,6 +158,7 @@ func initAppWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 	// send log output to the test logger
 	logger := logrus.StandardLogger()
 	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.DebugLevel)
 	logger.Out = testwriter.New(t)
 	app.SetLogger(logger)
 
