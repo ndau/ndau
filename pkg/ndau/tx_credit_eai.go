@@ -188,7 +188,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				"sourceAcct":         addrS,
 				"pending":            pending.String(),
 				"blockTime":          app.BlockTime().String(),
-				"lastEAIUpdate":      acctData.LastEAIUpdate.String(),
+				"lastUpdate":         lastUpdate.String(),
 				"weightedAverageAge": acctData.WeightedAverageAge.String(),
 				"ageTable":           tableS,
 			})
