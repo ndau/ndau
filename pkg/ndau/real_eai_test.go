@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -33,6 +34,7 @@ func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T)
 	node1, err := address.Validate("ndarw5i7rmqtqstw4mtnchmfvxnrq4k3e2ytsyvsc7nxt2y7")
 	require.NoError(t, err)
 	modify(t, node1.String(), app, func(ad *backing.AccountData) {
+		ad.Balance = 1500 * constants.NapuPerNdau
 		ad.ValidationKeys = makeVKs(t,
 			"npuba8jadtbbeamn89h5zgr5cmjggcwkchbsgqhf5m7zb58xe7rwqwvzif23ebfqz4wh224ve2qw",
 			"npuba8jadtbbeabmk869zakhpzmiv2xvzc7yyxrzcmfu6eqbw9ttyi9bwrcpiz7jqki9pwsw7vsp",
@@ -82,6 +84,7 @@ func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T)
 		)
 		ad.Lock.Notify(ts, 0)
 		ad.RecourseSettings.Period = math.Hour
+		ad.ValidationKeys = makeVKs(t, "npuba4jaftckeebfuvyxu849uinc3pcjx3c3dud3f6xhw5jk7u5pxa22puqf7xtpnwaf3qui2aaaaaa7wxy6dqt9i7fzmqwbd5sse7693vgq46t9bh8epcbpt4m58rfyp9zfjskwjm65", "npuba8jadtbbechbeutgcj8nttn8qg7styjgnfvp542yy4qxyxentazy9sebfdteaciyip25k2p8", "npuba8jadtbbec9vnei6qnxcczpsw6wjbmejt2scwqbaa9axxdxf3znry482gaz5r9u6mbmz3uz4")
 	})
 
 	addr, err := address.Validate("ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq")
@@ -92,8 +95,14 @@ func Test_ndacc2gihhrj6rhe3v2jx5k6gqpedy878eaxn35j4tvcdirq_History(t *testing.T)
 	// set the EAI overtime system var above what we need
 	overtime, err := math.Duration(10 * math.Year).MarshalMsg(nil)
 	require.NoError(t, err)
+	txFeeScript, err := base64.StdEncoding.DecodeString("oAAlAIhSanSIoA0UEwkXFhANDgYIBwUEIyChB4igAxIMCyQA4fUFiKADFQIKgQCIoAEDIugDgQGIoAEBIugDgQGIoAEPIugDgQEjIKEHQIiAAAIJIhAnQiMgoQdAiIABAwlgCwlDgQKIgAIBBSMgoQfAiiMgoQcQjwUkgPD6AsSKJIDw+gIQj4g=")
+	require.NoError(t, err)
+	txFeeCC := vm.ToChaincode(txFeeScript)
+	txFeeSV, err := txFeeCC.MarshalMsg(nil)
+	require.NoError(t, err)
 	context := ddc(t).with(func(svs map[string][]byte) {
 		svs[sv.EAIOvertime] = overtime
+		svs[sv.TxFeeScriptName] = txFeeSV
 	})
 
 	{
@@ -323,6 +332,7 @@ func Test_ndadyrd7u7kyjkq9nwcz3rgyi3m6fyeexwwi6hy6giwby7wy_History(t *testing.T)
 		)
 		ad.Lock.Notify(ts, 0)
 		ad.RecourseSettings.Period = math.Hour
+		ad.ValidationKeys = makeVKs(t, "npuba4jaftckeeb6fhehighdynxjhmzesk3hgmx5zzmsa2bth3ap7e74geqnaus4cgafrc3cqaaaaab5u4dv5bh89htt6hcbdnb7a8fepggs9remtitqzd2zakjff6yyk6r57g5pfbpa", "npuba8jadtbbeagz62jqga7afidyiux4zjf2ek9rv9s6sf54vkk2trx4macw7ahvgp3scyppjuqb", "npuba8jadtbbec9vnei6qnxcczpsw6wjbmejt2scwqbaa9axxdxf3znry482gaz5r9u6mbmz3uz4")
 	})
 
 	addr, err := address.Validate("ndadyrd7u7kyjkq9nwcz3rgyi3m6fyeexwwi6hy6giwby7wy")
