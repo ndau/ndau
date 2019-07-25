@@ -692,3 +692,51 @@ func TestCreditEAIUsesOvertimeAppropriately(t *testing.T) {
 
 	require.Equal(t, expect, acct.Balance)
 }
+
+func TestCreditEAIRetainsPendingLock(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+
+	// set up the source account such that it is delegated to the node
+	err := app.UpdateStateImmediately(app.Delegate(sourceAddress, nodeAddress))
+	require.NoError(t, err)
+	// ensure source is locked and has not yet unlocked
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Lock = backing.NewLock(math.Year, eai.DefaultLockBonusEAI)
+		ad.Lock.Notify(0, 0)
+	})
+
+	// source is locked for a year at time 0
+	// to test whether the lock is retained, we deliver the credit after less than a year
+
+	tx := NewCreditEAI(nodeAddress, 1, private)
+	resp := deliverTxAt(t, app, tx, 6*math.Month)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// ensure the account is still locked
+	ad, _ := app.getAccount(sourceAddress)
+	require.NotNil(t, ad.Lock)
+}
+
+func TestCreditEAIClearsCompletedLock(t *testing.T) {
+	app, private := initAppCreditEAI(t)
+
+	// set up the source account such that it is delegated to the node
+	err := app.UpdateStateImmediately(app.Delegate(sourceAddress, nodeAddress))
+	require.NoError(t, err)
+	// ensure source is locked and has not yet unlocked
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.Lock = backing.NewLock(math.Year, eai.DefaultLockBonusEAI)
+		ad.Lock.Notify(0, 0)
+	})
+
+	// source is locked for a year at time 0
+	// to test whether the lock is retained, we deliver the credit after more than a year
+
+	tx := NewCreditEAI(nodeAddress, 1, private)
+	resp := deliverTxAt(t, app, tx, 18*math.Month)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// ensure the account is still locked
+	ad, _ := app.getAccount(sourceAddress)
+	require.Nil(t, ad.Lock)
+}

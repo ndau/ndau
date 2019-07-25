@@ -112,11 +112,11 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 
 		calc := func(addrS string, postpone bool) {
+			logger = logger.WithField("acct", addrS)
 			addr, err := address.Validate(addrS)
 			if handle(err) {
 				return
 			}
-			logger = logger.WithField("acct", addr)
 
 			acctData, hasAcct := app.getAccount(addr)
 			if !hasAcct {
@@ -220,6 +220,17 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				"EAIAward":      eaiAward.String(),
 				"uncreditedEAI": acctData.UncreditedEAI.String(),
 			}).Info("credit EAI calculation results")
+
+			// now that the lock data has been used to calculate the pending EAI,
+			// clear it if it has expired.
+			acctData.IsLocked(app.BlockTime())
+			// we can't unconditionally update WAA, so we have to update only
+			// the account data lock field
+			ad2, ok := state.Accounts[addrS]
+			if ok {
+				ad2.Lock = acctData.Lock
+				state.Accounts[addrS] = ad2
+			}
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
 			if handle(err) {
