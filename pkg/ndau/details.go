@@ -257,6 +257,17 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 			return stI, errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
 		}
 
+		if app.IsFeatureActive("ApplyUncreditedEAI") {
+			err = source.WeightedAverageAge.UpdateWeightedAverageAge(
+				app.BlockTime().Since(source.LastWAAUpdate),
+				0,
+				source.Balance,
+			)
+			if err != nil {
+				return stI, errors.Wrap(err, "updating weighted average age")
+			}
+		}
+
 		logger := app.GetLogger().WithFields(log.Fields{
 			"sourceAcct":         sourceA.String(),
 			"pending":            pending.String(),
@@ -284,10 +295,13 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 			source.WeightedAverageAge, source.Lock,
 			*unlockedTable,
 		)
+		if err != nil {
+			return stI, errors.Wrap(err, "calculating uncredited eai")
+		}
 
 		source.UncreditedEAI, err = source.UncreditedEAI.Add(eai)
 		if err != nil {
-			return stI, errors.Wrap(err, "calculating new uncredited EAI")
+			return stI, errors.Wrap(err, "summing uncredited eai")
 		}
 		source.LastEAIUpdate = app.BlockTime()
 
