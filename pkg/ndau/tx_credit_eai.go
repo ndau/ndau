@@ -221,15 +221,17 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				"uncreditedEAI": acctData.UncreditedEAI.String(),
 			}).Info("credit EAI calculation results")
 
-			// now that the lock data has been used to calculate the pending EAI,
-			// clear it if it has expired.
-			acctData.IsLocked(app.BlockTime())
-			// we can't unconditionally update WAA, so we have to update only
-			// the account data lock field
-			ad2, ok := state.Accounts[addrS]
-			if ok {
-				ad2.Lock = acctData.Lock
-				state.Accounts[addrS] = ad2
+			if app.IsFeatureActive("CreditEAIUnlocksAccounts") {
+				// now that the lock data has been used to calculate the pending EAI,
+				// clear it if it has expired.
+				acctData.IsLocked(app.BlockTime())
+				// we can't unconditionally update WAA, so we have to update only
+				// the account data lock field
+				ad2, ok := state.Accounts[addrS]
+				if ok {
+					ad2.Lock = acctData.Lock
+					state.Accounts[addrS] = ad2
+				}
 			}
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
