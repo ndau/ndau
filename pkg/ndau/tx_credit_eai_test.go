@@ -27,10 +27,9 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	d := NewDelegate(sourceAddress, nodeAddress, 1, private)
 	resp := deliverTx(t, app, d)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	modify(t, source, app, func(ad *backing.AccountData) {
-		ad.LastEAIUpdate = 0
-		ad.LastWAAUpdate = 0
-	})
+	ensureRecent(t, app, sourceAddress.String())
+	ensureRecent(t, app, nodeAddress.String())
+	ensureRecent(t, app, targetAddress.String())
 
 	// create a keypair for the node
 	public, private, err := signature.Generate(signature.Ed25519, nil)
@@ -156,7 +155,9 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 	require.NoError(t, err)
 	t.Log("expectedEAI less fees =", math.Ndau(expectedEAI).String())
 
-	require.Equal(t, acct.LastEAIUpdate, math.Timestamp(0))
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.LastEAIUpdate = 0
+	})
 
 	context := ddc(t).
 		at(math.Timestamp(1 * math.Year)).

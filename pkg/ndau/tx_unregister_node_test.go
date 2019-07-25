@@ -18,6 +18,7 @@ func initAppUnregisterNode(t *testing.T) *App {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
+	ensureRecent(t, app, targetAddress.String())
 	// ensure the target address is self-staked at the beginning of the test
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
 		acct.ValidationKeys = []signature.PublicKey{transferPublic}

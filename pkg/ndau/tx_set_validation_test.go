@@ -165,6 +165,7 @@ func TestSetValidationCannotOverwriteMoreThanOneValidationKey(t *testing.T) {
 
 func TestSetValidationDeductsTxFee(t *testing.T) {
 	app := initAppSetValidation(t)
+	ensureRecent(t, app, targetAddress.String())
 	modify(t, targetAddress.String(), app, func(ad *backing.AccountData) {
 		ad.Balance = 1
 	})

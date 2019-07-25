@@ -391,3 +391,14 @@ func getRulesAccount(t *testing.T, app *App) (rulesAcct address.Address, private
 
 	return
 }
+
+func ensureRecent(t *testing.T, app *App, addr string) {
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	ts -= math.Year
+
+	modify(t, addr, app, func(ad *backing.AccountData) {
+		ad.LastEAIUpdate = ts
+		ad.LastWAAUpdate = ts
+	})
+}
