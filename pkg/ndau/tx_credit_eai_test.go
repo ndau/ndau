@@ -157,6 +157,8 @@ func TestCreditEAIHandlesExchangeAccounts(t *testing.T) {
 
 	modify(t, source, app, func(ad *backing.AccountData) {
 		ad.LastEAIUpdate = 0
+		ad.LastWAAUpdate = 0
+		ad.UncreditedEAI = 0
 	})
 
 	context := ddc(t).
@@ -407,7 +409,7 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 		return st, nil
 	})
 
-	resps, _ := deliverTxsContext(t, app, txs, ddc(t))
+	resps, _ := deliverTxsContext(t, app, txs, ddc(t).at(math.Timestamp(math.Year)))
 	for _, resp := range resps {
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	}
@@ -446,8 +448,7 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 	// we don't actually vary the conditions within each test instance; we just
 	// want some measure of reassurance that we're not just getting lucky
 	// with random map iteration order.
-	now, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
+	ts := math.Timestamp(math.Year + math.Month)
 	for i := uint64(0); i < 128; i++ {
 		// perform a CreditEAI tx
 		tx := NewCreditEAI(node.address, i+5, node.private)
@@ -456,7 +457,7 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 			t,
 			app,
 			tx,
-			now.Add(math.Duration(i*math.Month)),
+			ts,
 		)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -562,7 +563,7 @@ func TestCreditEAIIsDeterministic2(t *testing.T) {
 		return st, nil
 	})
 
-	resps, _ := deliverTxsContext(t, app, txs, ddc(t))
+	resps, _ := deliverTxsContext(t, app, txs, ddc(t).at(math.Timestamp(math.Year)))
 	for _, resp := range resps {
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	}
@@ -601,8 +602,7 @@ func TestCreditEAIIsDeterministic2(t *testing.T) {
 	// we don't actually vary the conditions within each test instance; we just
 	// want some measure of reassurance that we're not just getting lucky
 	// with random map iteration order.
-	now, err := math.TimestampFrom(time.Now())
-	require.NoError(t, err)
+	ts := math.Timestamp(math.Year + math.Month)
 	for i := uint64(0); i < 128; i++ {
 		// perform a CreditEAI tx
 		tx := NewCreditEAI(node.address, i+5, node.private)
@@ -611,7 +611,7 @@ func TestCreditEAIIsDeterministic2(t *testing.T) {
 			t,
 			app,
 			tx,
-			now.Add(math.Duration(i*math.Month)),
+			ts,
 		)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -652,11 +652,19 @@ func TestCreditEAIUsesOvertimeAppropriately(t *testing.T) {
 	app, private := initAppCreditEAI(t)
 	compute := NewCreditEAI(nodeAddress, 1, private)
 
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
 	// source has 10000 ndau exactly
 	// EAI overtime limit is 30 days
+	modify(t, source, app, func(ad *backing.AccountData) {
+		ad.UncreditedEAI = 0
+		ad.LastEAIUpdate = ts - (45 * math.Day)
+		ad.LastWAAUpdate = ts - (45 * math.Day)
+		ad.WeightedAverageAge = 0
+	})
 
-	blockTime := math.Timestamp(45 * math.Day)
-	resp := deliverTxAt(t, app, compute, blockTime)
+	resp := deliverTxAt(t, app, compute, ts)
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
