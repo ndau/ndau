@@ -78,6 +78,8 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	// fees appropriately
 	var totalEAICredited uint64
 
+	fixEAIUnlockBug := app.IsFeatureActive("FixEAIUnlockBug")
+
 	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		nodeData, _ := app.getAccount(tx.Node)
@@ -209,7 +211,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			eaiAward, err := eai.Calculate(
 				pending, app.BlockTime(), lastUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
-				*ageTable,
+				*ageTable, fixEAIUnlockBug,
 			)
 			if handle(err) {
 				return

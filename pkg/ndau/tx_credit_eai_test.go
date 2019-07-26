@@ -681,7 +681,7 @@ func TestCreditEAIUsesOvertimeAppropriately(t *testing.T) {
 	eaiAward, err := eai.Calculate(
 		10000*constants.NapuPerNdau, 45*math.Day, 15*math.Day,
 		45*math.Day, nil,
-		eai.DefaultUnlockedEAI,
+		eai.DefaultUnlockedEAI, true,
 	)
 	require.NoError(t, err)
 	feeTable := new(sv.EAIFeeTable)

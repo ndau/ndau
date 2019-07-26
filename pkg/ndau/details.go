@@ -293,7 +293,7 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 		eai, err := eai.Calculate(
 			pending, app.BlockTime(), source.LastEAIUpdate,
 			source.WeightedAverageAge, source.Lock,
-			*unlockedTable,
+			*unlockedTable, app.IsFeatureActive("FixEAIUnlockBug"),
 		)
 		if err != nil {
 			return stI, errors.Wrap(err, "calculating uncredited eai")
