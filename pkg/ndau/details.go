@@ -14,6 +14,7 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // MaxSequenceIncrement is the max allowed difference between the current
@@ -256,15 +257,51 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 			return stI, errors.Wrap(err, "adding uncredited eai to balance for new eai calc")
 		}
 
+		if app.IsFeatureActive("ApplyUncreditedEAI") {
+			err = source.WeightedAverageAge.UpdateWeightedAverageAge(
+				app.BlockTime().Since(source.LastWAAUpdate),
+				0,
+				source.Balance,
+			)
+			if err != nil {
+				return stI, errors.Wrap(err, "updating weighted average age")
+			}
+		}
+
+		logger := app.GetLogger().WithFields(log.Fields{
+			"sourceAcct":         sourceA.String(),
+			"pending":            pending.String(),
+			"blockTime":          app.BlockTime().String(),
+			"lastEAIUpdate":      source.LastEAIUpdate.String(),
+			"weightedAverageAge": source.WeightedAverageAge.String(),
+		})
+		if source.Lock == nil {
+			logger = logger.WithField("lock", "nil")
+		} else {
+			logger = logger.WithFields(log.Fields{
+				"lock.noticePeriod": source.Lock.NoticePeriod.String(),
+				"lock.bonus":        source.Lock.Bonus.String(),
+			})
+			if source.Lock.UnlocksOn == nil {
+				logger = logger.WithField("lock.unlocks on", "nil")
+			} else {
+				logger = logger.WithField("lock.unlocks on", source.Lock.UnlocksOn.String())
+			}
+		}
+		logger.Info("details eai calculation fields")
+
 		eai, err := eai.Calculate(
 			pending, app.BlockTime(), source.LastEAIUpdate,
 			source.WeightedAverageAge, source.Lock,
-			*unlockedTable,
+			*unlockedTable, app.IsFeatureActive("FixEAIUnlockBug"),
 		)
+		if err != nil {
+			return stI, errors.Wrap(err, "calculating uncredited eai")
+		}
 
 		source.UncreditedEAI, err = source.UncreditedEAI.Add(eai)
 		if err != nil {
-			return stI, errors.Wrap(err, "calculating new uncredited EAI")
+			return stI, errors.Wrap(err, "summing uncredited eai")
 		}
 		source.LastEAIUpdate = app.BlockTime()
 
@@ -288,7 +325,7 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 
 		source.Sequence = tx.GetSequence()
 
-	  source.UpdateRecourses(app.BlockTime())
+		source.UpdateRecourses(app.BlockTime())
 
 		st := stI.(*backing.State)
 		st.Accounts[sourceS] = source

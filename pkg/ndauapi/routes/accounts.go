@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -20,6 +19,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
@@ -192,7 +192,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			txhash := metatx.Hash(txab)
 			item := AccountHistoryItem{
 				Balance:   balance,
-				Timestamp: block.Block.Header.Time.Format(time.RFC3339),
+				Timestamp: block.Block.Header.Time.Format(constants.TimestampFormat),
 				TxHash:    txhash,
 				Height:    blockheight,
 			}

@@ -20,6 +20,8 @@ func initAppRegisterNode(t *testing.T) *App {
 	app, _ := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
+	ensureRecent(t, app, targetAddress.String())
+
 	// this ensures the target address exists
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
 		acct.Balance = 1000 * constants.NapuPerNdau

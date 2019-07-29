@@ -9,34 +9,38 @@ import (
 )
 
 // Delegate Target to Node
-func (app *App) Delegate(state *backing.State, target, node address.Address) error {
-	as := target.String()
-	ds := node.String()
-	acct, _ := app.getAccount(target)
+func (app *App) Delegate(target, node address.Address) func(metast.State) (metast.State, error) {
+	return func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
 
-	// remove it from its current delegate
-	if acct.DelegationNode != nil {
-		cs := acct.DelegationNode.String()
-		currentSet, hasCurrent := state.Delegates[cs]
-		if hasCurrent {
-			delete(currentSet, as)
-			state.Delegates[cs] = currentSet
+		as := target.String()
+		ds := node.String()
+		acct, _ := app.getAccount(target)
+
+		// remove it from its current delegate
+		if acct.DelegationNode != nil {
+			cs := acct.DelegationNode.String()
+			currentSet, hasCurrent := state.Delegates[cs]
+			if hasCurrent {
+				delete(currentSet, as)
+				state.Delegates[cs] = currentSet
+			}
 		}
+
+		// set its delegate
+		acct.DelegationNode = &node
+		state.Accounts[as] = acct
+
+		// update the target delegate's set
+		dest := state.Delegates[ds]
+		if dest == nil {
+			dest = make(map[string]struct{})
+		}
+		dest[as] = struct{}{}
+		state.Delegates[ds] = dest
+
+		return state, nil
 	}
-
-	// set its delegate
-	acct.DelegationNode = &node
-	state.Accounts[as] = acct
-
-	// update the target delegate's set
-	dest := state.Delegates[ds]
-	if dest == nil {
-		dest = make(map[string]struct{})
-	}
-	dest[as] = struct{}{}
-	state.Delegates[ds] = dest
-
-	return nil
 }
 
 // Validate implements metatx.Transactable
@@ -70,11 +74,7 @@ func (tx *Delegate) Validate(appI interface{}) error {
 func (tx *Delegate) Apply(appI interface{}) error {
 	app := appI.(*App)
 
-	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
-		state := stI.(*backing.State)
-		err := app.Delegate(state, tx.Target, tx.Node)
-		return state, err
-	})
+	return app.UpdateState(app.applyTxDetails(tx), app.Delegate(tx.Target, tx.Node))
 }
 
 // GetSource implements Sourcer

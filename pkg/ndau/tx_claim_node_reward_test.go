@@ -27,6 +27,9 @@ func initAppCNR(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) {
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
+	ensureRecent(t, app, targetAddress.String())
+	ensureRecent(t, app, eaiNode)
+
 	modify(t, eaiNode, app, func(acct *backing.AccountData) {
 		acct.ValidationKeys = []signature.PublicKey{public}
 	})

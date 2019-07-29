@@ -24,6 +24,8 @@ func initAppTx(t *testing.T) (*App, signature.PrivateKey) {
 	public, private, err := signature.Generate(signature.Ed25519, nil)
 	require.NoError(t, err)
 
+	ensureRecent(t, app, source)
+
 	modifySource(t, app, func(acct *backing.AccountData) {
 		// initialize the source address with a bunch of ndau
 		acct.Balance = math.Ndau(10000 * constants.QuantaPerUnit)
@@ -51,6 +53,7 @@ func initAppRecourse(t *testing.T) (*App, signature.PrivateKey, math.Timestamp) 
 
 	const qtyRecourses = 10
 
+	ensureRecent(t, app, settled)
 	modify(t, settled, app, func(acct *backing.AccountData) {
 		// initialize the address with a bunch of ndau
 		// incoming funds are added to the balance and the holds;

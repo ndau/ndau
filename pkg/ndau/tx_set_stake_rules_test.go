@@ -20,6 +20,7 @@ func initAppSetStakeRules(t *testing.T) *App {
 	app.InitChain(abci.RequestInitChain{})
 
 	// this ensures the target address exists
+	ensureRecent(t, app, targetAddress.String())
 	modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
 		acct.ValidationKeys = []signature.PublicKey{transferPublic}
 	})

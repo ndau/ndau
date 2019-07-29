@@ -42,6 +42,7 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 			Inbound: make(map[string]uint64),
 		}
 	})
+	ensureRecent(t, app, rulesAcct.String())
 
 	setupAcct := func(addr address.Address, pkconst string) {
 		public, private, err := signature.Generate(signature.Ed25519, nil)
@@ -51,6 +52,7 @@ func initAppUnstake(t *testing.T) (*App, generator.Associated, address.Address) 
 			ad.ValidationKeys = []signature.PublicKey{public}
 		})
 		assc[pkconst] = private
+		ensureRecent(t, app, addr.String())
 	}
 
 	setupAcct(nodeAddress, nodePrivate)

@@ -3,6 +3,7 @@ package ndau
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
@@ -77,6 +78,8 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	// fees appropriately
 	var totalEAICredited uint64
 
+	fixEAIUnlockBug := app.IsFeatureActive("FixEAIUnlockBug")
+
 	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		nodeData, _ := app.getAccount(tx.Node)
@@ -103,7 +106,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		// fashion. Instead, log errors as they occur, but never fail here.
 		handle := func(err error) bool {
 			if err != nil {
-				logger.WithError(err).Error("eai.Calculate failed")
+				logger.WithError(err).Error("EAI.Calculate failed")
 				err = nil
 				return true
 			}
@@ -111,11 +114,11 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 
 		calc := func(addrS string, postpone bool) {
+			logger = logger.WithField("acct", addrS)
 			addr, err := address.Validate(addrS)
 			if handle(err) {
 				return
 			}
-			logger = logger.WithField("acct", addr)
 
 			acctData, hasAcct := app.getAccount(addr)
 			if !hasAcct {
@@ -130,7 +133,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 
 			if postpone && len(acctData.IncomingRewardsFrom) > 0 {
 				logger.WithField(
-					"len(IncomingRewardsFrom)",
+					"len_IncomingRewardsFrom",
 					len(acctData.IncomingRewardsFrom),
 				).Info("postponing due to incoming rewards")
 				postponed = append(postponed, addrS)
@@ -177,13 +180,60 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				lastUpdate = app.BlockTime().Sub(*eaiOvertime)
 			}
 
+			tableRows := make([]string, 0, len(*ageTable))
+			for _, row := range *ageTable {
+				rt, _ := row.MarshalText()
+				tableRows = append(tableRows, string(rt))
+			}
+			tableS := strings.Join(tableRows, "/")
+			logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
+				"sourceAcct":         addrS,
+				"pending":            pending.String(),
+				"lastUpdate":         lastUpdate.String(),
+				"weightedAverageAge": acctData.WeightedAverageAge.String(),
+				"ageTable":           tableS,
+			})
+			if acctData.Lock == nil {
+				logger = logger.WithField("lock", "nil")
+			} else {
+				logger = logger.WithFields(log.Fields{
+					"lock.noticePeriod": acctData.Lock.NoticePeriod.String(),
+					"lock.bonus":        acctData.Lock.Bonus.String(),
+				})
+				if acctData.Lock.UnlocksOn == nil {
+					logger = logger.WithField("lock.unlocksOn", "nil")
+				} else {
+					logger = logger.WithField("lock.unlocksOn", acctData.Lock.UnlocksOn.String())
+				}
+			}
+			logger.Info("credit EAI calculation fields")
+
 			eaiAward, err := eai.Calculate(
 				pending, app.BlockTime(), lastUpdate,
 				acctData.WeightedAverageAge, acctData.Lock,
-				*ageTable,
+				*ageTable, fixEAIUnlockBug,
 			)
 			if handle(err) {
 				return
+			}
+
+			app.DecoratedTxLogger(tx).WithFields(log.Fields{
+				"sourceAcct":    addrS,
+				"EAIAward":      eaiAward.String(),
+				"uncreditedEAI": acctData.UncreditedEAI.String(),
+			}).Info("credit EAI calculation results")
+
+			if app.IsFeatureActive("CreditEAIUnlocksAccounts") {
+				// now that the lock data has been used to calculate the pending EAI,
+				// clear it if it has expired.
+				acctData.IsLocked(app.BlockTime())
+				// we can't unconditionally update WAA, so we have to update only
+				// the account data lock field
+				ad2, ok := state.Accounts[addrS]
+				if ok {
+					ad2.Lock = acctData.Lock
+					state.Accounts[addrS] = ad2
+				}
 			}
 
 			eaiAward, err = eaiAward.Add(acctData.UncreditedEAI)
@@ -203,6 +253,13 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			if handle(err) {
 				return
 			}
+
+			app.DecoratedTxLogger(tx).WithFields(log.Fields{
+				"sourceAcct":   addrS,
+				"totalAward":   eaiAward.String(),
+				"reducedAward": math.Ndau(reducedAward).String(),
+			}).Info("credit EAI award reduction")
+
 			eaiAward = math.Ndau(reducedAward)
 			_, err = state.PayReward(
 				addr,
@@ -235,7 +292,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 
 		// and finally do the postponed ones (in deterministic order as well)
-		logger.WithField("len(postponed)", len(postponed)).Info("calculating postponed accounts")
+		logger.WithField("len_postponed", len(postponed)).Info("calculating postponed accounts")
 		for _, acct := range postponed {
 			calc(acct, false)
 		}

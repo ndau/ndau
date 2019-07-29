@@ -33,10 +33,10 @@ func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 			sigs = signatures.String()
 		}
 		logger := app.GetLogger().WithError(err).WithFields(logrus.Fields{
-			"method":      "CommandValidatorChange.Validate",
-			"tx hash":     metatx.Hash(tx),
-			"acct exists": exists,
-			"signatures":  sigs,
+			"method":     "CommandValidatorChange.Validate",
+			"txHash":     metatx.Hash(tx),
+			"acctExists": exists,
+			"signatures": sigs,
 		})
 		logger.Error("cvc validation err")
 	}

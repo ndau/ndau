@@ -157,6 +157,8 @@ func initAppWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 
 	// send log output to the test logger
 	logger := logrus.StandardLogger()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.DebugLevel)
 	logger.Out = testwriter.New(t)
 	app.SetLogger(logger)
 
@@ -388,4 +390,39 @@ func getRulesAccount(t *testing.T, app *App) (rulesAcct address.Address, private
 	})
 
 	return
+}
+
+// EAI calculation comes down to e^(rate*time). However, because we're expressing
+// rates as integer rationals, we needed to implement our own calculation of
+// that exponent. That calculation is limited: it only works for values between
+// 0 and 1.
+//
+// Backing off, this means that there's a relation between the max rate and
+// the max time we can calculate for. Using the default unlocked rate table,
+// that's a 10% rate for 10 years. If the composite rate (due to a lock) raises
+// to 15%, then the max time before the calculation fails is only 6y8m.
+//
+// Account times are stored internally as microseconds since an epoch.
+// The epoch we use is midnight, 1 January 2000. The zero value of an account
+// therefore was implicitly created on that date. It began earning 10% interest
+// on 1 October 2000. That was more than 10 years ago. That causes the calculation
+// to fail.
+//
+// This function just updates an account to have a creation date of 1 year ago,
+// which means that we can explore its properties without worrying about
+// incalculable amounts of uncredited eai building up.
+//
+// Note: there exists another strategy, which some tests use: instead of moving
+// the account's creation date, backdate the transaction time to a fixed amount
+// after the epoch. Both strategies are viable. If that strategy is used, this
+// function is not required.
+func ensureRecent(t *testing.T, app *App, addr string) {
+	ts, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+	ts -= math.Year
+
+	modify(t, addr, app, func(ad *backing.AccountData) {
+		ad.LastEAIUpdate = ts
+		ad.LastWAAUpdate = ts
+	})
 }
