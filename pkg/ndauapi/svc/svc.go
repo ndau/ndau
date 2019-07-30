@@ -7,11 +7,11 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
-	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -66,7 +66,7 @@ var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 
 var dummyTransactionResult = routes.TransactionData{
 	BlockHeight: 1234,
-	TxOffset: 3,
+	TxOffset:    3,
 	// Assigning to Tx here causes the doc generator to fail, so we leave it nil.
 }
 
@@ -87,17 +87,20 @@ var dummyPrevalidateResult = routes.PrevalidateResult{
 func New(cf cfg.Cfg) *boneful.Service {
 	svc := new(boneful.Service).
 		Path("/").
-		Doc(`This service provides the API for Tendermint and Chaos/Order/ndau blockchain data.
+		Doc(`This service provides the ndau API, used to retrieve information about and manage the ndau blockchain and
+		its Tendermint consensus engine.
 
 		It is organized into several sections:
 
 		* /account returns data about specific accounts
 		* /block returns information about blocks on the blockchain
-		* /chaos returns information from the chaos chain
 		* /node provides information about node operations
-		* /order returns information from the order chain
-		* /transaction allows querying individual transactions on the blockchain
-		* /tx provides tools to build and submit transactions
+		* /price returns information related to the ndau monetary system
+		* /state provides dynamic system state information
+		* /system rqueries or sets system variables
+		* /transaction queries individual transactions on the blockchain
+		* /tx provides tools to build, prevalidate, and submit transactions
+		* /version returns current system version information
 
 		Each of these, in turn, has several endpoints within it.
 		`)
@@ -119,7 +122,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(map[string]backing.AccountData{dummyAddress.String(): dummyAccount}))
 
 	svc.Route(svc.POST("/account/eai/rate").To(routes.GetEAIRate(cf)).
-		Operation("DEPRECATEDAccountEAIRate").
+		Operation("DEPRECATED:AccountEAIRate").
 		Doc("This call is deprecated -- please use /system/eai/rate.").
 		Consumes(JSON).
 		Produces(JSON))
@@ -142,7 +145,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 	svc.Route(svc.GET("/account/list").To(routes.HandleAccountList(cf)).
 		Doc("Returns a list of account IDs.").
 		Notes(`This returns a list of every account on the blockchain, sorted
-		alphabetically. A maximum of 10000 accounts can be returned in a single
+		alphabetically. A maximum of 1000 accounts can be returned in a single
 		request. The results are sorted by address.`).
 		Operation("AccountList").
 		Param(boneful.QueryParameter("after", "The address after which (sorted alphabetically) results should start.").DataType("string").Required(false)).
@@ -157,7 +160,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		}))
 
 	svc.Route(svc.GET("/account/currencyseats").To(routes.HandleAccountCurrencySeats(cf)).
-		Doc("Returns a list of ndau 'currency seats', which are accounts containing more than 1000 ndau.").
+		Doc("Returns a list of ndau 'currency seats', the oldest 3000 accounts containing more than 1000 ndau.").
 		Notes(`The ndau currency seats are accounts containing more than 1000 ndau. The seniority of
 		a currency seat is determined by how long it has been above the 1000 threshold, so this endpoint
 		also sorts the result by age (oldest first). It does not return detailed account information.`).
@@ -287,26 +290,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(p2p.NodeInfo.NetAddress))
 
 	svc.Route(svc.GET("/order/current").To(routes.GetOrderData(cf)).
-		Operation("DEPRECATEDOrderCurrent").
-		Doc("This is an obsolete format. Please use /price/current instead.").
+		Operation("DEPRECATED:OrderCurrent").
+		Doc("This call is deprecated. Please use /price/current.").
 		Produces(JSON))
-
-	svc.Route(svc.GET("/price/height/:height").To(routes.HandlePriceHeight(cf)).
-		Operation("OrderHeight").
-		Doc("Returns the collection of price data as of a specific ndau block height.").
-		Param(boneful.PathParameter("height", "Height from the ndau chain.").DataType("int").Required(true)).
-		Produces(JSON).
-		Writes(routes.PriceInfo{}))
-
-	svc.Route(svc.GET("/price/history").To(routes.HandlePriceHistory(cf)).
-		Operation("OrderHistory").
-		Doc("Returns an array of data from the order chain at periodic intervals over time, sorted chronologically.").
-		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=100, max=1000.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("period", "Duration between samples (ex: 1d, 5m); default=1d.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to end (exclusive); default=now.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("after", "Timestamp (ISO 8601) to start (inclusive); default=before-(limit*period).").DataType("string").Required(true)).
-		Produces(JSON).
-		Writes([]routes.PriceHistoryRecord{}))
 
 	svc.Route(svc.GET("/price/current").To(routes.GetPriceData(cf)).
 		Operation("PriceInfo").
@@ -329,6 +315,23 @@ func New(cf cfg.Cfg) *boneful.Service {
 			CurrentSIB:  9876543210,
 		}))
 
+	svc.Route(svc.GET("/price/height/:height").To(routes.HandlePriceHeight(cf)).
+		Operation("PriceHeight").
+		Doc("Returns the collection of price data as of a specific ndau block height.").
+		Param(boneful.PathParameter("height", "Height from the ndau chain.").DataType("int").Required(true)).
+		Produces(JSON).
+		Writes(routes.PriceInfo{}))
+
+	svc.Route(svc.GET("/price/history").To(routes.HandlePriceHistory(cf)).
+		Operation("PriceHistory").
+		Doc("Returns an array of data from the order chain at periodic intervals over time, sorted chronologically.").
+		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=100, max=1000.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("period", "Duration between samples (ex: 1d, 5m); default=1d.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to end (exclusive); default=now.").DataType("string").Required(true)).
+		Param(boneful.QueryParameter("after", "Timestamp (ISO 8601) to start (inclusive); default=before-(limit*period).").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes([]routes.PriceHistoryRecord{}))
+
 	svc.Route(svc.GET("/state/delegates").To(routes.HandleStateDelegates(cf)).
 		Operation("StateDelegates").
 		Doc("Returns the current collection of delegate information.").
@@ -343,7 +346,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/system/get/:sysvars").To(routes.HandleSystemGet(cf)).
 		Doc("Return the names and current values of some currently definted system variables.").
-		Operation("SysvarGet").
+		Operation("SystemGet").
 		Param(boneful.PathParameter("sysvars", "A comma-separated list of system variables of interest.").DataType("string").Required(true)).
 		Produces(JSON).
 		Writes(""))
@@ -358,7 +361,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Returns the JSON encoding of a SetSysvar transaction. It is the caller's
 		responsibility to update this transaction with appropriate sequence and
 		signatures and then send it at the normal endpoint (/tx/submit/setsysvar).`).
-		Operation("SysvarSet").
+		Operation("SystemSet").
 		Param(boneful.PathParameter("sysvar", "The name of the system variable to return").DataType("string").Required(true)).
 		Consumes(JSON).
 		Produces(JSON).
@@ -368,7 +371,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("Returns the value history of a system variable given its name.").
 		Notes(`The history includes the height and value of each change to the system variable.
 		The result is sorted chronologically.`).
-		Operation("SysvarHistory").
+		Operation("SystemHistory").
 		Param(boneful.PathParameter("sysvar", "The name of the system variable for which to return history").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("after", "The block height after which results should start.").DataType("string").Required(false)).
 		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
@@ -379,7 +382,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		}}}))
 
 	svc.Route(svc.POST("/system/eai/rate").To(routes.GetEAIRate(cf)).
-		Operation("AccountEAIRate").
+		Operation("SystemEAIRate").
 		Doc("Returns eai rates for a collection of account information.").
 		Notes(`Accepts an array of rate requests that includes an address
 		field; this field may be any string (the account information is not
@@ -424,7 +427,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.POST("/tx/submit/:txtype").To(routes.HandleSubmitTx(cf)).
 		Doc("Submits a transaction.").
-		Notes("Transactions consist of JSON for any defined transaction type. Valid transaction names are: " + strings.Join(routes.TxNames(), ", ")).
+		Notes("Transactions consist of JSON for any defined transaction type. Valid transaction names and aliases are: " + strings.Join(routes.TxNames(), ", ")).
 		Operation("TxSubmit").
 		Consumes(JSON).
 		Reads(dummyLockTx).
