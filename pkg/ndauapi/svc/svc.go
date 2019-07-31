@@ -121,12 +121,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Produces(JSON).
 		Writes(map[string]backing.AccountData{dummyAddress.String(): dummyAccount}))
 
-	svc.Route(svc.POST("/account/eai/rate").To(routes.GetEAIRate(cf)).
-		Operation("DEPRECATED:AccountEAIRate").
-		Doc("This call is deprecated -- please use /system/eai/rate.").
-		Consumes(JSON).
-		Produces(JSON))
-
 	svc.Route(svc.GET("/account/history/:address").To(routes.HandleAccountHistory(cf)).
 		Doc("Returns the balance history of an account given its address.").
 		Notes(`The history includes the timestamp, new balance, and transaction ID of each change to the account's balance.
@@ -288,11 +282,6 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Param(boneful.PathParameter("id", "the NodeID as a hex string")).
 		Produces(JSON).
 		Writes(p2p.NodeInfo.NetAddress))
-
-	svc.Route(svc.GET("/order/current").To(routes.GetOrderData(cf)).
-		Operation("DEPRECATED:OrderCurrent").
-		Doc("This call is deprecated. Please use /price/current.").
-		Produces(JSON))
 
 	svc.Route(svc.GET("/price/current").To(routes.GetPriceData(cf)).
 		Operation("PriceInfo").
