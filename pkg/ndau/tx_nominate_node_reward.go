@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -92,6 +93,10 @@ func (app *App) callWinnerWebhook(tx *NominateNodeReward, winner address.Address
 
 	if app.config.NodeRewardWebhook == nil {
 		return
+	}
+
+	if app.config.NodeRewardWebhookDelay != nil {
+		time.Sleep(time.Duration(*app.config.NodeRewardWebhookDelay*rand.Float64()) * time.Second)
 	}
 
 	logger = logger.WithField("method", "callWinnerWebhook")
