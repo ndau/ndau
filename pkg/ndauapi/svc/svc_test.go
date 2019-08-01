@@ -18,8 +18,9 @@ func TestRouting(t *testing.T) {
 	routes := []rt{
 		rt{"GET", "/account/account/123456", "/account/account/:address"},
 		rt{"POST", "/account/accounts", "/account/accounts"},
-		rt{"POST", "/account/eai/rate", "/account/eai/rate"},
 		rt{"GET", "/account/history/123456", "/account/history/:address"},
+		rt{"GET", "/account/list", "/account/list"},
+		rt{"GET", "/account/currencyseats", "/account/currencyseats"},
 		rt{"GET", "/block/before/123", "/block/before/:height"},
 		rt{"GET", "/block/hash/abc123", "/block/hash/:blockhash"},
 		rt{"GET", "/block/height/10234", "/block/height/:height"},
