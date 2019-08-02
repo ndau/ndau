@@ -42,6 +42,19 @@ type Config struct {
 	// wins, so they can create a `ClaimNodeReward` transaction.
 	NodeRewardWebhook *string
 
+	// NodeRewardWebhookDelay is a floating-point number of seconds.
+	//
+	// If set, the node will wait a random number of seconds between 0 and this
+	// value before dispatching its request to the Node Reward Webhook. This
+	// is because many nodes may all dispatch these requests to the same webhook;
+	// having an interval between them helps humans understand the sequencing.
+	//
+	// This is a pointer for optionality: if a pointer is not present in a
+	// TOML file, the unmarshaler just lets it be nil. If a non-pointer value
+	// is not present, it complains about the missing value. Missing values
+	// are treated as 0: no delay.
+	NodeRewardWebhookDelay *float64
+
 	// Map whose keys are features,
 	// and whose values are the mainnet block height at which the feature becomes active.
 	Features map[string]uint64

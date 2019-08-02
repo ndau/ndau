@@ -135,7 +135,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				logger.WithField(
 					"len_IncomingRewardsFrom",
 					len(acctData.IncomingRewardsFrom),
-				).Info("postponing due to incoming rewards")
+				).Debug("postponing due to incoming rewards")
 				postponed = append(postponed, addrS)
 				return
 			}
@@ -206,7 +206,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 					logger = logger.WithField("lock.unlocksOn", acctData.Lock.UnlocksOn.String())
 				}
 			}
-			logger.Info("credit EAI calculation fields")
+			logger.Debug("credit EAI calculation fields")
 
 			eaiAward, err := eai.Calculate(
 				pending, app.BlockTime(), lastUpdate,
@@ -221,7 +221,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				"sourceAcct":    addrS,
 				"EAIAward":      eaiAward.String(),
 				"uncreditedEAI": acctData.UncreditedEAI.String(),
-			}).Info("credit EAI calculation results")
+			}).Debug("credit EAI calculation results")
 
 			if app.IsFeatureActive("CreditEAIUnlocksAccounts") {
 				// now that the lock data has been used to calculate the pending EAI,
@@ -258,7 +258,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 				"sourceAcct":   addrS,
 				"totalAward":   eaiAward.String(),
 				"reducedAward": math.Ndau(reducedAward).String(),
-			}).Info("credit EAI award reduction")
+			}).Debug("credit EAI award reduction")
 
 			eaiAward = math.Ndau(reducedAward)
 			_, err = state.PayReward(
@@ -275,7 +275,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			logger.WithFields(log.Fields{
 				"award":         eaiAward,
 				"rewardsTarget": acctData.RewardsTarget,
-			}).Info("awarded EAI")
+			}).Debug("awarded EAI")
 		}
 
 		// for determinism, we must iterate the account list in a defined order
@@ -292,7 +292,7 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		}
 
 		// and finally do the postponed ones (in deterministic order as well)
-		logger.WithField("len_postponed", len(postponed)).Info("calculating postponed accounts")
+		logger.WithField("len_postponed", len(postponed)).Debug("calculating postponed accounts")
 		for _, acct := range postponed {
 			calc(acct, false)
 		}

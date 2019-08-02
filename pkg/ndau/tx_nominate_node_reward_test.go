@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
@@ -184,6 +185,13 @@ func TestNNRCallsWebhook(t *testing.T) {
 	webhookAddr := fmt.Sprintf("http://localhost%s", port)
 	app.config.NodeRewardWebhook = &webhookAddr
 
+	// set up a waitgroup so we can wait for the webhook to complete
+	var wg sync.WaitGroup
+	wg.Add(1)
+	whDone = func() {
+		wg.Done()
+	}
+
 	// now deliver the NNR transaction
 	privateKeys := assc[nnrKeys].([]signature.PrivateKey)
 
@@ -195,8 +203,7 @@ func TestNNRCallsWebhook(t *testing.T) {
 	resp := deliverTx(t, app, nnr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	// JSG skip this last compare due to race cond, will move to int tests
-	t.Skip("skip NNRCallsWebhook last compare due to race condtion")
+	wg.Wait()
 
 	require.Equal(t, 1, qtyCalls)
 }

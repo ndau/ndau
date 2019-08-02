@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -63,21 +64,42 @@ func (tx *NominateNodeReward) Apply(appI interface{}) error {
 		if err != nil {
 			return state, err
 		}
-		go app.callWinnerWebhook(tx, nrw)
+
+		wh := ""
+		if app.config.NodeRewardWebhook != nil {
+			wh = *app.config.NodeRewardWebhook
+		}
+		logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
+			"webhook": wh,
+		})
+		logger.Info("launching callWinnerWebhook goroutine")
+
+		go app.callWinnerWebhook(tx, nrw, logger)
 		state.NodeRewardWinner = &nrw
 		return state, err
 	})
 }
 
-func (app *App) callWinnerWebhook(tx *NominateNodeReward, winner address.Address) {
+// this is a noop normally, but tests can use it to synchronize a waitgroup
+// once the webhook completes
+var whDone func()
+
+func init() {
+	whDone = func() {}
+}
+
+func (app *App) callWinnerWebhook(tx *NominateNodeReward, winner address.Address, logger *log.Entry) {
+	defer whDone()
+
 	if app.config.NodeRewardWebhook == nil {
 		return
 	}
 
-	logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
-		"method":  "callWinnerWebhook",
-		"webhook": *app.config.NodeRewardWebhook,
-	})
+	if app.config.NodeRewardWebhookDelay != nil {
+		time.Sleep(time.Duration(*app.config.NodeRewardWebhookDelay*rand.Float64()) * time.Second)
+	}
+
+	logger = logger.WithField("method", "callWinnerWebhook")
 
 	body := struct {
 		Random int64  `json:"random"`
