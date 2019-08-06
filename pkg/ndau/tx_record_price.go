@@ -73,7 +73,11 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 	}
 
 	// compute the current target price
-	targetPrice, err = pricecurve.PriceAtUnit(state.TotalIssue)
+	if app.IsFeatureActive("TargetPrice9999") {
+		targetPrice, err = pricecurve.PriceAtUnit9999(state.TotalIssue)
+	} else {
+		targetPrice, err = pricecurve.PriceAtUnit10000(state.TotalIssue)
+	}
 	if err != nil {
 		err = errors.Wrap(err, "computing target price")
 		return
