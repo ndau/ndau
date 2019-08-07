@@ -169,6 +169,12 @@ func New(cf cfg.Cfg) *boneful.Service {
 			Accounts:    []string{dummyAddress.String()},
 		}))
 
+	svc.Route(svc.POST("/account/eai/rate").To(routes.GetEAIRate(cf)).
+		Operation("DEPRECATED:AccountEAIRate").
+		Doc("This call is deprecated -- please use /system/eai/rate.").
+		Consumes(JSON).
+		Produces(JSON))
+
 	svc.Route(svc.GET("/block/before/:height").To(routes.HandleBlockBefore(cf)).
 		Operation("BlockBefore").
 		Doc("Returns a (possibly filtered) sequence of block metadata for blocks of height less than last.").
