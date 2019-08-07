@@ -9,11 +9,22 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // Validate implements metatx.Transactable
 func (tx *SetSysvar) Validate(appI interface{}) error {
 	app := appI.(*App)
+
+	validity := sv.IsValid(tx.Name, tx.Value)
+	if validity == nil {
+		app.DecoratedTxLogger(tx).WithFields(log.Fields{
+			"sysvar.name": tx.Name,
+		}).Warn("sysvar has no validation configured")
+	}
+	if validity != nil && !*validity {
+		return errors.New("sysvar validation failed")
+	}
 
 	// if we let someone overwrite the sysvar governing who is allowed to
 	// set the sysvar with bad data, then we're hosed. Let's ensure that
