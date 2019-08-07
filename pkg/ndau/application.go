@@ -67,12 +67,6 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	}
 	app.App.SetChild(&app)
 
-	// We set this environment variable on our devnet nodes to disable feature height gating.
-	// The devnet blockchain starts from scratch, so all features are enabled at genesis.
-	if os.Getenv("USE_ZERO_HEIGHT_FEATURES") == "1" {
-		app.config.Features = nil
-	}
-
 	if indexVersion >= 0 {
 		// Set up ndau-specific search client.
 		search, err := search.NewClient(indexAddr, indexVersion, &app)
