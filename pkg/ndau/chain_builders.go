@@ -548,6 +548,10 @@ func BuildVMForRulesValidation(
 	if err != nil {
 		return nil, errors.Wrap(err, "rules")
 	}
+	primaryV, err := chain.ToValue(primary)
+	if err != nil {
+		return nil, errors.Wrap(err, "primary")
+	}
 
 	rulesAcctData, ok := state.Accounts[rules.String()]
 	if !ok {
@@ -565,7 +569,7 @@ func BuildVMForRulesValidation(
 
 	err = theVM.Init(
 		byte(id),
-		rulesV, stakeToV, targetV,
+		primaryV, rulesV, stakeToV, targetV,
 		txV,
 		aggregateV, primaryTotalV, targetTotalV,
 	)
