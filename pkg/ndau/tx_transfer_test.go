@@ -6,6 +6,7 @@ import (
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
@@ -497,5 +498,18 @@ func TestAppSurvivesEmptySignatureTransfer(t *testing.T) {
 
 	resp := deliverTx(t, app, tx)
 	// must be invalid because no signatures
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestTransferDestFieldValidates(t *testing.T) {
+	app, private := initAppTx(t)
+
+	tr := generateTransfer(t, 1, 1, []signature.PrivateKey{private})
+	// unset the destination
+	tr.Destination = address.Address{}
+	// re-sign because we just changed the signable bytes
+	tr.Signatures = []signature.Signature{metatx.Sign(tr, private)}
+
+	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

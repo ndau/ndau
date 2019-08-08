@@ -3,6 +3,9 @@ package ndau
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"sort"
+	"strings"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -98,12 +101,50 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		return nil
 	}
 
-	address, err := tx.GetSource(app)
+	addr, err := tx.GetSource(app)
 	if err != nil {
 		return backing.AccountData{}, false, nil, err
 	}
 
-	acct, exists := app.getAccount(address)
+	acct, exists := app.getAccount(addr)
+
+	// revalidate all addresses in the tx, because that isn't
+	// handled by default by the msgpack deserializer
+	{
+		txv := reflect.ValueOf(tx)
+		for txv.Kind() == reflect.Ptr || txv.Kind() == reflect.Interface {
+			txv = txv.Elem()
+		}
+		if txv.Kind() == reflect.Struct {
+			failures := make(map[string]error)
+			addrtype := reflect.TypeOf(address.Address{})
+			for fn := 0; fn < txv.NumField(); fn++ {
+				fv := txv.Field(fn)
+				if fv.Type() == addrtype {
+					addr := fv.Interface().(address.Address)
+					err := addr.Revalidate()
+					if err != nil {
+						failures[txv.Type().Field(fn).Name] = err
+					}
+				}
+			}
+			if len(failures) > 0 {
+				fkeys := make([]string, 0, len(failures))
+				for key := range failures {
+					fkeys = append(fkeys, key)
+				}
+				sort.Strings(fkeys)
+
+				ferrs := make([]string, 0, len(failures))
+				for _, fkey := range fkeys {
+					ferrs = append(ferrs, fmt.Sprintf("%s: %s", fkey, failures[fkey]))
+				}
+
+				return acct, exists, nil, errors.New("the following fields failed to validate: " + strings.Join(ferrs, ", "))
+			}
+		}
+	}
+
 	if tx.GetSequence() <= acct.Sequence {
 		return acct, exists, nil, errors.New("sequence too low")
 	}
@@ -159,7 +200,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 		errb, err = json.Marshal(map[string]interface{}{
 			"balance":           acct.Balance,
 			"available balance": available,
-			"address":           address,
+			"address":           addr,
 			"tx cost":           fee,
 			"msg":               "insufficient available balance to pay for tx",
 			"tx hash":           metatx.Hash(tx),
@@ -172,7 +213,7 @@ func (app *App) getTxAccount(tx NTransactable) (backing.AccountData, bool, *bits
 			// unlikely ever to occur, but we left the old code in here just in case
 			err = fmt.Errorf(
 				"%s: insufficient available balance (%s ndau) to pay for tx (%s ndau)",
-				address,
+				addr,
 				available,
 				fee,
 			)
