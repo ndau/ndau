@@ -36,7 +36,11 @@ func Prevalidate(node client.ABCIClient, tx metatx.Transactable, logger logrus.F
 	// parse the response
 	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolveStakeCost)
 	if err != nil {
-		logger.WithError(err).WithField("response.Info", resp.Response.Info).WithField("response.Log", resp.Response.Log).Info("Prevalidate sscanf failed")
+		l := logger.WithError(err)
+		if resp != nil {
+			l = l.WithField("response.Info", resp.Response.Info).WithField("response.Log", resp.Response.Log)
+		}
+		l.Info("Prevalidate sscanf failed")
 		return
 	}
 
