@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,11 +28,8 @@ func (w *LogWriter) Write(b []byte) (int, error) {
 }
 
 // LogMW wraps a regular handler and replaces the writer with some logging middleware.
-func LogMW(handler http.Handler) (http.HandlerFunc, logrus.FieldLogger) {
-	// Default logger that consults LOG_FORMAT and LOG_LEVEL env vars and logs to Stderr.
-	logger := app.NewLogger()
-
-	h := func(w http.ResponseWriter, r *http.Request) {
+func LogMW(handler http.Handler, logger logrus.FieldLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lw := LogWriter{ResponseWriter: w}
 		handler.ServeHTTP(&lw, r)
@@ -49,5 +45,4 @@ func LogMW(handler http.Handler) (http.HandlerFunc, logrus.FieldLogger) {
 			"took":       duration,
 		}).Info("REQ")
 	}
-	return h, logger
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/kentquirk/boneful"
+	"github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
@@ -22,9 +23,11 @@ import (
 
 // NewLogMux returns a new boneful service with all of our routes and logging middleware.
 func NewLogMux(cf cfg.Cfg) http.HandlerFunc {
+	// Default logger that consults LOG_FORMAT and LOG_LEVEL env vars and logs to Stderr.
+	cf.Logger = app.NewLogger()
+
 	svc := New(cf)
-	logmw, logger := LogMW(svc.Mux())
-	cf.Logger = logger
+	logmw := LogMW(svc.Mux(), cf.Logger)
 	return logmw
 }
 
