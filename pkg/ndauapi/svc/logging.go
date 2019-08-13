@@ -29,11 +29,11 @@ func (w *LogWriter) Write(b []byte) (int, error) {
 }
 
 // LogMW wraps a regular handler and replaces the writer with some logging middleware.
-func LogMW(handler http.Handler) http.HandlerFunc {
+func LogMW(handler http.Handler) (http.HandlerFunc, logrus.FieldLogger) {
 	// Default logger that consults LOG_FORMAT and LOG_LEVEL env vars and logs to Stderr.
 	logger := app.NewLogger()
 
-	return func(w http.ResponseWriter, r *http.Request) {
+	h := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lw := LogWriter{ResponseWriter: w}
 		handler.ServeHTTP(&lw, r)
@@ -49,4 +49,5 @@ func LogMW(handler http.Handler) http.HandlerFunc {
 			"took":       duration,
 		}).Info("REQ")
 	}
+	return h, logger
 }

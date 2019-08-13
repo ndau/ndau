@@ -30,6 +30,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		txtype := bone.GetValue(r, "txtype")
 		tx, err := TxUnmarshal(txtype, r.Body)
 		if err != nil {
+			cf.Logger.WithError(err).Info("tx.Data did not unmarshal into a tx")
 			reqres.RespondJSON(w, reqres.NewFromErr("tx.Data did not unmarshal into a tx", err, http.StatusBadRequest))
 			return
 		}
@@ -38,6 +39,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		// first find a node to talk to
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
+			cf.Logger.WithError(err).Info("error retrieving node")
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving node", err, http.StatusInternalServerError))
 			return
 		}
@@ -47,6 +49,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		// Check if the tx has already been indexed.
 		vd, err := searchTxHash(node, txhash)
 		if err != nil {
+			cf.Logger.WithError(err).Info("txhash search failed")
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
 		}
@@ -62,11 +65,12 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			code = http.StatusAccepted
 		} else {
 			// run the prevalidation query
-			fee, sib, resolveStakeCost, _, err := tool.Prevalidate(node, tx)
+			fee, sib, resolveStakeCost, _, err := tool.Prevalidate(node, tx, cf.Logger)
 			result.FeeNapu = int64(fee)
 			result.SibNapu = int64(sib)
 			result.ResolveStakeNapu = int64(resolveStakeCost)
 			if err != nil {
+				cf.Logger.WithError(err).Info("prevalidate returned an error")
 				result.Err = err.Error()
 				result.ErrCode = -1
 				result.Code = EndpointResultFail

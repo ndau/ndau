@@ -23,7 +23,9 @@ import (
 // NewLogMux returns a new boneful service with all of our routes and logging middleware.
 func NewLogMux(cf cfg.Cfg) http.HandlerFunc {
 	svc := New(cf)
-	return LogMW(svc.Mux())
+	logmw, logger := LogMW(svc.Mux())
+	cf.Logger = logger
+	return logmw
 }
 
 // JSON is the MIME type that we process
