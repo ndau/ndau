@@ -41,7 +41,7 @@ func Prevalidate(node client.ABCIClient, tx metatx.Transactable, logger logrus.F
 			l = l.WithField("response.Info", resp.Response.Info).WithField("response.Log", resp.Response.Log)
 		}
 		l.Info("Prevalidate sscanf failed")
-		return
+		// DO NOT RETURN HERE
 	}
 
 	// promote returned errors
