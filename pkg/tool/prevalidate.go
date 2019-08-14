@@ -17,8 +17,7 @@ import (
 
 // Prevalidate prevalidates the provided transactable
 func Prevalidate(node client.ABCIClient, tx metatx.Transactable, logger logrus.FieldLogger) (
-	fee math.Ndau, sib math.Ndau, resolveStakeCost math.Ndau,
-	resp *rpctypes.ResultABCIQuery, err error,
+	fee math.Ndau, sib math.Ndau, resp *rpctypes.ResultABCIQuery, err error,
 ) {
 	txb, err := metatx.Marshal(tx, ndau.TxIDs)
 	if err != nil {
@@ -34,7 +33,7 @@ func Prevalidate(node client.ABCIClient, tx metatx.Transactable, logger logrus.F
 	}
 
 	// parse the response
-	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolveStakeCost)
+	_, err = fmt.Sscanf(resp.Response.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	if err != nil {
 		l := logger.WithError(err)
 		if resp != nil {
