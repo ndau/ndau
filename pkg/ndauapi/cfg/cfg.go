@@ -29,6 +29,7 @@ func New() (Cfg, []string, error) {
 		// get configuration from env vars
 		NodeAddress: os.Getenv("NDAUAPI_NDAU_RPC_URL"),
 		Port:        0,
+		Logger:      logrus.New(),
 	}
 
 	if cf.NodeAddress == "" {
