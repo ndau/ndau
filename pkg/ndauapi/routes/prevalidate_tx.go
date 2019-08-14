@@ -65,7 +65,6 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			code = http.StatusAccepted
 		} else {
 			// run the prevalidation query
-			cf.Logger.Info("cf.Logger exists and is working")
 			fee, sib, resolveStakeCost, _, err := tool.Prevalidate(node, tx, cf.Logger)
 			result.FeeNapu = int64(fee)
 			result.SibNapu = int64(sib)
