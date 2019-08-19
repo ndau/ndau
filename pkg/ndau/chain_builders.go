@@ -58,6 +58,25 @@ func makeSeedInt(a, b, c uint64) []byte {
 	return seed
 }
 
+// decorate account data with the account's address
+func decorateAddr(addr string, acct backing.AccountData) (vm.Value, error) {
+	acctV, err := chain.ToValue(acct)
+	if err != nil {
+		return acctV, err
+	}
+	addrV, err := chain.ToValue(addr)
+	if err != nil {
+		return acctV, err
+	}
+	// field 1 is usually Tx_Source, but it also makes sense in a struct
+	// context as the address
+	acctS, isStruct := acctV.(*vm.Struct)
+	if !isStruct {
+		return acctV, errors.New("acctV is not a *vm.Struct")
+	}
+	return acctS.SafeSet(byte(1), addrV)
+}
+
 // we always want to transform ndau VMs in certain predictable ways;
 // we bundle those transformations here for convenience
 func ndauVM(VM *vm.ChaincodeVM, timestamp math.Timestamp, seed []byte) error {
@@ -302,25 +321,6 @@ func BuildVMForNodeDistribution(
 	totalAward math.Ndau,
 	ts math.Timestamp,
 ) (*vm.ChaincodeVM, error) {
-	// decorate account data with the account's address
-	decorateAddr := func(addr string, acct backing.AccountData) (vm.Value, error) {
-		acctV, err := chain.ToValue(acct)
-		if err != nil {
-			return acctV, err
-		}
-		addrV, err := chain.ToValue(addr)
-		if err != nil {
-			return acctV, err
-		}
-		// field 1 is usually Tx_Source, but it also makes sense in a struct
-		// context as the address
-		acctS, isStruct := acctV.(*vm.Struct)
-		if !isStruct {
-			return acctV, errors.New("acctV is not a *vm.Struct")
-		}
-		return acctS.SafeSet(byte(1), addrV)
-	}
-
 	nodeV, err := decorateAddr(node.String(), accounts[node.String()])
 	if err != nil {
 		return nil, errors.Wrap(err, "chaincode value for node")
@@ -455,9 +455,10 @@ func BuildVMForSIB(
 // - total current stake from primary staker (0 if no primary stake yet)
 // - aggregate stake from primary staker and all costakers (0 if no primary stake)
 // - tx
-// - target account data
-// - stakeTo account data
-// - rules account data
+// - target account ID (or account data for ResolveStake)
+// - stakeTo account ID
+// - rules account ID (or account data for ResolveStake)
+// - primary account ID
 //
 // Expected output: 0 on top of stack if tx is valid, otherwise non-0
 // Additionally, for Unstake: if the second item on the stack is a number
@@ -559,6 +560,18 @@ func BuildVMForRulesValidation(
 	}
 	if rulesAcctData.StakeRules == nil {
 		return nil, errors.New("rules account has no stake rules")
+	}
+
+	// ResolveStake tx expect not just the account ID but the whole struct of account data
+	if _, ok := tx.(*ResolveStake); ok {
+		rulesV, err = decorateAddr(rules.String(), rulesAcctData)
+		if err != nil {
+			return nil, errors.Wrap(err, "resolving rules account data for ResolveStake")
+		}
+		targetV, err = decorateAddr(target.String(), state.Accounts[target.String()])
+		if err != nil {
+			return nil, errors.Wrap(err, "resolving target account data for ResolveStake")
+		}
 	}
 
 	bin := buildBinary(rulesAcctData.StakeRules.Script, "Rules validation", "")

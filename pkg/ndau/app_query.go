@@ -15,7 +15,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/version"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -199,20 +198,7 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 		return
 	}
 
-	var resolveStakeCost math.Ndau
-	if stake, ok := tx.(*Stake); ok {
-		rs := ResolveStake{
-			Target: stake.Target,
-			Rules:  stake.Rules,
-		}
-		resolveStakeCost, err = rs.calculatePayment(app.GetState().(*backing.State))
-		if err != nil {
-			app.QueryError(err, response, "calculating payment")
-			return
-		}
-	}
-
-	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee, sib, resolveStakeCost)
+	response.Info = fmt.Sprintf(query.PrevalidateInfoFmt, fee, sib)
 
 	err = tx.Validate(appI)
 	if err != nil {

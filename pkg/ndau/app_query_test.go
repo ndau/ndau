@@ -150,8 +150,8 @@ func TestPrevalidateValidTx(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Info)
 
-	var fee, sib, resolvestakecost math.Ndau
-	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	var fee, sib math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
 }
 
@@ -169,8 +169,8 @@ func TestPrevalidateInvalidTx(t *testing.T) {
 	require.Equal(t, code.QueryError, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Info)
 
-	var fee, sib, resolvestakecost math.Ndau
-	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	var fee, sib math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
 }
 
@@ -198,8 +198,8 @@ func TestPrevalidateReportsCorrectFee(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Info)
 
-	var fee, sib, resolvestakecost math.Ndau
-	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	var fee, sib math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
 	require.Equal(t, math.Ndau(1), fee)
 }
@@ -225,37 +225,8 @@ func TestPrevalidateReportsCorrectSIB(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	require.NotEmpty(t, resp.Info)
 
-	var fee, sib, resolvestakecost math.Ndau
-	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
+	var fee, sib math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
 	require.Equal(t, math.Ndau(constants.NapuPerNdau), sib)
-}
-
-func TestPrevalidateReportsCorrectResolveStakeCost(t *testing.T) {
-	app, private := initAppTx(t)
-
-	// set up the rules account to charge 1 napu resolve stake fee
-	rulesaccount, _ := getRulesAccount(t, app)
-	modify(t, rulesaccount.String(), app, func(acct *backing.AccountData) {
-		require.NotNil(t, acct.StakeRules)
-		acct.StakeRules.Script = vm.MiniAsm("handler 0 zero enddef handler 1 1a one enddef").Bytes()
-	})
-
-	// the resolve stake fee is only ever non-0 for a Stake tx
-	tx := NewStake(sourceAddress, rulesaccount, rulesaccount, 1000*constants.NapuPerNdau, 1, private)
-	trb, err := metatx.Marshal(tx, TxIDs)
-	require.NoError(t, err)
-
-	resp := app.Query(abci.RequestQuery{
-		Path: query.PrevalidateEndpoint,
-		Data: trb,
-	})
-
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-	require.NotEmpty(t, resp.Info)
-
-	var fee, sib, resolvestakecost math.Ndau
-	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib, &resolvestakecost)
-	require.NoError(t, err)
-	require.Equal(t, math.Ndau(1), resolvestakecost)
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -15,6 +17,7 @@ const (
 type Cfg struct {
 	NodeAddress string // NodeAddress is the Tendermint IP and RPC port of the ndau node.
 	Port        int    // Port is which port to listen for connections.
+	Logger      logrus.FieldLogger
 }
 
 // New initializes config and returns the singleton config struct if already initialized.
@@ -26,6 +29,7 @@ func New() (Cfg, []string, error) {
 		// get configuration from env vars
 		NodeAddress: os.Getenv("NDAUAPI_NDAU_RPC_URL"),
 		Port:        0,
+		Logger:      logrus.New(),
 	}
 
 	if cf.NodeAddress == "" {
