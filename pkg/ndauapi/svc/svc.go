@@ -72,7 +72,8 @@ var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 var dummyTransactionResult = routes.TransactionData{
 	BlockHeight: 1234,
 	TxOffset:    3,
-	// Assigning to Tx here causes the doc generator to fail, so we leave it nil.
+	TxType:      "Lock",
+	TxData:      dummyLockTx,
 }
 
 var dummySubmitResult = routes.SubmitResult{

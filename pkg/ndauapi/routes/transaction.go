@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
@@ -23,8 +25,8 @@ type TransactionData struct {
 	TxOffset    int
 	Fee         uint64
 	SIB         uint64
-	Tx          *metatx.Transaction
-	TxBytes     []byte
+	TxType      string
+	TxData      metatx.Transactable
 }
 
 func searchTxHash(node *client.HTTP, txhash string) (search.TxValueData, error) {
@@ -101,13 +103,26 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		txdata, err := tx.AsTransactable(ndau.TxIDs)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not convert tx to transactable: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		// Get the transaction type name without the package name on the front.
+		txtype := fmt.Sprintf("%T", txdata)
+		idx := strings.LastIndex(txtype, ".")
+		if idx >= 0 {
+			txtype = txtype[idx+1:]
+		}
+
 		result := TransactionData{
 			BlockHeight: blockheight,
 			TxOffset:    txoffset,
 			Fee:         vd.Fee,
 			SIB:         vd.SIB,
-			Tx:          tx,
-			TxBytes:     txBytes,
+			TxType:      txtype,
+			TxData:      txdata,
 		}
 		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
