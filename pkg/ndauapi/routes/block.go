@@ -192,7 +192,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 	befores := bone.GetValue(r, "height")
 	before, err := strconv.ParseInt(befores, 10, 64)
 	if err != nil || before < 1 {
-		reqres.RespondJSON(w, reqres.NewFromErr("height must be a number > 1", err, http.StatusBadRequest))
+		reqres.RespondJSON(w, reqres.NewFromErr("height must be a number >= 1", err, http.StatusBadRequest))
 		return
 	}
 
@@ -222,15 +222,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 			return
 		}
 		if after > before || after < 1 {
-			reqres.RespondJSON(w, reqres.NewAPIError("after must be between 0 and before", http.StatusBadRequest))
-			return
-		}
-		if after == before {
-			// don't even do the query if after == before
-			reqres.RespondJSON(w, reqres.OKResponse(rpctypes.ResultBlockchainInfo{
-				LastHeight: after,
-				BlockMetas: make([]*tmtypes.BlockMeta, 0),
-			}))
+			reqres.RespondJSON(w, reqres.NewAPIError("after must be between 1 and before, inclusive", http.StatusBadRequest))
 			return
 		}
 	}
@@ -430,7 +422,7 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 	reqres.RespondJSON(w, reqres.OKResponse(blocks))
 }
 
-// HandleBlockBefore handles requests for blocks before a given height, and
+// HandleBlockBefore handles requests for blocks on or before a given height, and
 // manages filtering better than HandleBlockRange.
 func HandleBlockBefore(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

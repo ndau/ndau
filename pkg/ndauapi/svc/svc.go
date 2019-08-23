@@ -183,10 +183,11 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/block/before/:height").To(routes.HandleBlockBefore(cf)).
 		Operation("BlockBefore").
-		Doc("Returns a (possibly filtered) sequence of block metadata for blocks of height less than last.").
-		Param(boneful.PathParameter("height", "Blocks of this height and greater will not be returned.").DataType("int").Required(true)).
+		Doc("Returns a (possibly filtered) sequence of block metadata for a range of blocks on or before a given height.").
+		Param(boneful.PathParameter("height", "Blocks greater than this height will not be returned.").DataType("int").Required(true)).
 		Param(boneful.QueryParameter("filter", "Set to 'noempty' to exclude empty blocks.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("after", "The block height after which no more results should be returned.").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
