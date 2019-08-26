@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -153,11 +152,8 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			Limit:       limit,
 			AfterHeight: after,
 		}
-		paramsBuf := &bytes.Buffer{}
-		json.NewEncoder(paramsBuf).Encode(params)
-		paramsString := paramsBuf.String()
 
-		ahr, _, err := tool.GetAccountHistory(node, paramsString)
+		ahr, _, err := tool.GetAccountHistory(node, params)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
 			return
