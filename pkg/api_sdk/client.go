@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -52,8 +53,26 @@ func (c *Client) URL(path string, args ...interface{}) string {
 	return c.addr.String()
 }
 
-func (c *Client) get(obj interface{}, path string, args ...interface{}) error {
-	req, err := http.NewRequest(http.MethodGet, c.URL(path, args...), nil)
+// URLP constructs a URL from a path and adds some query parameters
+func (c *Client) URLP(params map[string]interface{}, path string, args ...interface{}) string {
+	u := c.URL(path, args...)
+	qfs := make([]string, 0, len(params))
+	for k, v := range params {
+		qfs = append(qfs, fmt.Sprintf(
+			"%s=%s",
+			url.QueryEscape(k),
+			url.QueryEscape(fmt.Sprint(v)),
+		))
+	}
+	q := strings.Join(qfs, "&")
+	if q != "" {
+		u += "?" + q
+	}
+	return u
+}
+
+func (c *Client) get(obj interface{}, url string) error {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return errors.Wrap(err, "constructing request")
 	}
@@ -74,7 +93,7 @@ func (c *Client) get(obj interface{}, path string, args ...interface{}) error {
 	return nil
 }
 
-func (c *Client) post(req interface{}, resp interface{}, path string, args ...interface{}) error {
+func (c *Client) post(req interface{}, resp interface{}, url string) error {
 	var data []byte
 	var err error
 	if req != nil {
@@ -84,7 +103,7 @@ func (c *Client) post(req interface{}, resp interface{}, path string, args ...in
 		}
 	}
 	buf := bytes.NewBuffer(data)
-	request, err := http.NewRequest(http.MethodPost, c.URL(path, args...), buf)
+	request, err := http.NewRequest(http.MethodPost, url, buf)
 	if err != nil {
 		return errors.Wrap(err, "constructing request")
 	}
