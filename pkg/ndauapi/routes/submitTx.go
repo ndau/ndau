@@ -49,12 +49,12 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		txhash := metatx.Hash(tx)
 
 		// Check if the tx has already been indexed.
-		vd, err := searchTxHash(node, txhash)
+		block, _, _, _, err := searchTxHash(node, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
 		}
-		blockheight := vd.BlockHeight
+		blockheight := block.Header.Height
 
 		result := SubmitResult{TxHash: txhash, Code: EndpointResultOK}
 		code := http.StatusOK

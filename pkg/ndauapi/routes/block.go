@@ -203,14 +203,10 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 		return
 	}
 
-	limits := qp["limit"]
-	var limit int64 = MaximumRange
-	if limits != "" {
-		limit, err = strconv.ParseInt(limits, 10, 64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("limit must be a number", err, http.StatusBadRequest))
-			return
-		}
+	limit, _, err := getPagingParams(r, MaximumRange)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewFromErr("paging error", err, http.StatusBadRequest))
+		return
 	}
 
 	afters := qp["after"]
@@ -233,7 +229,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 		return
 	}
 
-	blocks, err := getBlocksMatching(node, after, before, limit, filter)
+	blocks, err := getBlocksMatching(node, after, before, int64(limit), filter)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return
