@@ -42,7 +42,6 @@ func GetSequence(node client.ABCIClient, addr address.Address) (uint64, error) {
 }
 
 // GetAccountHistory gets account data history associated with a given address.
-// Pass params as a json-encoded search.AccountHistoryParams object.
 func GetAccountHistory(node client.ABCIClient, params search.AccountHistoryParams) (
 	*search.AccountHistoryResponse, *rpctypes.ResultABCIQuery, error,
 ) {
