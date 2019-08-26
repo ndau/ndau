@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/rpc/client"
+	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // GetAccount gets the account data associated with a given address
@@ -44,11 +43,15 @@ func GetSequence(node client.ABCIClient, addr address.Address) (uint64, error) {
 
 // GetAccountHistory gets account data history associated with a given address.
 // Pass params as a json-encoded search.AccountHistoryParams object.
-func GetAccountHistory(node client.ABCIClient, params string) (
+func GetAccountHistory(node client.ABCIClient, params search.AccountHistoryParams) (
 	*search.AccountHistoryResponse, *rpctypes.ResultABCIQuery, error,
 ) {
+	ps, err := json.Marshal(params)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "marshaling account history query params")
+	}
 	// perform the query
-	res, err := node.ABCIQuery(query.AccountHistoryEndpoint, []byte(params))
+	res, err := node.ABCIQuery(query.AccountHistoryEndpoint, ps)
 	if err != nil {
 		return nil, res, err
 	}
