@@ -5,13 +5,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// PriceInfo returns current price data for key parameters
-func (c *Client) PriceInfo() (info *routes.PriceInfo, err error) {
-	err = c.get(info, c.URL("price/current"))
-	err = errors.Wrap(err, "fetching price info from API")
-	return
-}
-
 // GetSIB exists for compatibility; it delegates to node.PriceInfo()
 func GetSIB(node *Client) (*routes.PriceInfo, error) {
 	return node.PriceInfo()
