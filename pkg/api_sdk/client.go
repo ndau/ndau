@@ -53,8 +53,10 @@ func (c *Client) URL(path string, args ...interface{}) string {
 	return c.addr.String()
 }
 
+type params map[string]interface{}
+
 // URLP constructs a URL from a path and adds some query parameters
-func (c *Client) URLP(params map[string]interface{}, path string, args ...interface{}) string {
+func (c *Client) URLP(params params, path string, args ...interface{}) string {
 	u := c.URL(path, args...)
 	qfs := make([]string, 0, len(params))
 	for k, v := range params {

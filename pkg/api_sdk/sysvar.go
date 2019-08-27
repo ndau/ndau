@@ -54,7 +54,7 @@ func Sysvar(node *Client, name string, example msgp.Unmarshaler) error {
 // Pass in 0,0 for the paging params to get the entire history.
 func (c *Client) SysvarHistory(name string, after uint64, limit int) (resp *query.SysvarHistoryResponse, err error) {
 	err = c.get(resp, c.URLP(
-		map[string]interface{}{"after": after, "limit": limit},
+		params{"after": after, "limit": limit},
 		"system/history/%s", name,
 	))
 	err = errors.Wrap(err, "getting sysvar history")

@@ -46,13 +46,13 @@ func GetSequence(node *Client, addr address.Address) (uint64, error) {
 }
 
 // GetAccountHistory gets account data history associated with a given address.
-func (c *Client) GetAccountHistory(params search.AccountHistoryParams) (*search.AccountHistoryResponse, error) {
+func (c *Client) GetAccountHistory(ahparams search.AccountHistoryParams) (*search.AccountHistoryResponse, error) {
 	var response struct {
 		Items []search.AccountTxValueData
 	}
 	err := c.get(response, c.URLP(
-		map[string]interface{}{"after": params.AfterHeight, "limit": params.Limit},
-		"account/history/%s", params.Address))
+		params{"after": ahparams.AfterHeight, "limit": ahparams.Limit},
+		"account/history/%s", ahparams.Address))
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func GetAccountHistory(node *Client, params search.AccountHistoryParams) (*searc
 func (c *Client) GetAccountList(after string, limit int) (*query.AccountListQueryResponse, error) {
 	resp := new(query.AccountListQueryResponse)
 	err := c.get(resp, c.URLP(
-		map[string]interface{}{"after": after, "limit": limit},
+		params{"after": after, "limit": limit},
 		"account/list",
 	))
 	if err != nil {
