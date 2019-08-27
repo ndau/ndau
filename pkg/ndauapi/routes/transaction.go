@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -35,12 +34,9 @@ func searchTxHash(node *client.HTTP, txhash string) (search.TxValueData, error) 
 		Command: search.HeightByTxHashCommand,
 		Hash:    txhash,
 	}
-	paramsBuf := &bytes.Buffer{}
-	json.NewEncoder(paramsBuf).Encode(params)
-	paramsString := paramsBuf.String()
 
 	valueData := search.TxValueData{}
-	searchValue, err := tool.GetSearchResults(node, paramsString)
+	searchValue, err := tool.GetSearchResults(node, params)
 	if err != nil {
 		return valueData, err
 	}

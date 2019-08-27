@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -511,11 +509,8 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			Command: search.HeightByBlockHashCommand,
 			Hash:    blockhash, // Hex digits are query-escaped by default.
 		}
-		paramsBuf := &bytes.Buffer{}
-		json.NewEncoder(paramsBuf).Encode(params)
-		paramsString := paramsBuf.String()
 
-		searchValue, err := tool.GetSearchResults(node, paramsString)
+		searchValue, err := tool.GetSearchResults(node, params)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
 			return

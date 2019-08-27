@@ -1,20 +1,29 @@
 package tool
 
 import (
-	"github.com/oneiro-ndev/metanode/pkg/meta/search"
+	"encoding/json"
+
+	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 
 // GetSearchResults returns search results for a given search query.
-// Pass params as a json-encoded search.QueryParams object.
-func GetSearchResults(node client.ABCIClient, params string) (
+func GetSearchResults(node client.ABCIClient, params search.QueryParams) (
 	string, error,
 ) {
-	// perform the query
-	res, err := node.ABCIQuery(query.SearchEndpoint, []byte(params))
+	// encode the query
+	ahpj, err := json.Marshal(params)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "marshaling params")
+	}
+
+	// perform the query
+	res, err := node.ABCIQuery(query.SearchEndpoint, ahpj)
+	if err != nil {
+		return "", errors.Wrap(err, "performing query")
 	}
 
 	// parse the response
@@ -26,7 +35,7 @@ func GetSearchResults(node client.ABCIClient, params string) (
 func SearchDateRange(node client.ABCIClient, first, last string) (
 	uint64, uint64, error,
 ) {
-	request := search.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
+	request := metasrch.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
 
 	// perform the query
 	res, err := node.ABCIQuery(query.DateRangeEndpoint, []byte(request.Marshal()))
@@ -36,7 +45,7 @@ func SearchDateRange(node client.ABCIClient, first, last string) (
 
 	// parse the response
 	searchValue := string(res.Response.GetValue())
-	var result search.DateRangeResult
+	var result metasrch.DateRangeResult
 	result.Unmarshal(searchValue)
 	return result.FirstHeight, result.LastHeight, nil
 }
