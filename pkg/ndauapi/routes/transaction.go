@@ -37,7 +37,7 @@ type TransactionList struct {
 }
 
 // Search the index for the block containing the transaction with the given hash.
-// Returns the block it's in and the tx offset within the block.
+// Returns the block it's in and the tx offset within the block, nil if no search results.
 // Also returns the fee and sib values at that transaction.
 func searchTxHash(node *client.HTTP, txhash string) (*types.Block, int, uint64, uint64, error) {
 	// Prepare search params.
@@ -180,6 +180,12 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		// The block will be nil if there were empty search results.
+		if block == nil {
+			reqres.RespondJSON(w, reqres.OKResponse(nil))
+			return
+		}
+
 		result, err := buildTransactionData(block.Data.Txs[txoffset], block.Header.Height, txoffset, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("could not build transaction data", err, http.StatusInternalServerError))
@@ -222,7 +228,13 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result, err := getTransactions(node, block.Header.Height, txoffset, limit)
+		// The block will be nil if there were empty search results.
+		var blockheight int64
+		if block != nil {
+			blockheight = block.Header.Height
+		}
+
+		result, err := getTransactions(node, blockheight, txoffset, limit)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("could not get transactions", err, http.StatusInternalServerError))
 			return

@@ -52,13 +52,12 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
 		}
-		blockheight := block.Header.Height
 
 		result := PrevalidateResult{TxHash: txhash, Code: EndpointResultOK}
 		code := http.StatusOK
 
 		// If we've got the tx indexed, it must already be on the blockchain; succeed by default.
-		if blockheight > 0 {
+		if block != nil {
 			result.Msg = "tx already committed"
 			result.Code = EndpointResultTxAlreadyCommitted
 			code = http.StatusAccepted
