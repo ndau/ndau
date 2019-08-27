@@ -39,6 +39,13 @@ func NewClient(node string) (*Client, error) {
 	}, nil
 }
 
+// SetTimeout updates the node's http timeout
+//
+// The default is 5 seconds
+func (c *Client) SetTimeout(timeout time.Duration) {
+	c.http.Timeout = timeout
+}
+
 // URL constructs a URL from a path
 //
 // It constructs the path from the supplied path and arguments using fmt.Sprintf.
