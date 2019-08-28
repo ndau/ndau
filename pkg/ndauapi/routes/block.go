@@ -14,9 +14,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -134,18 +132,14 @@ func nonemptyFilter(p *tmtypes.BlockMeta) bool {
 }
 
 func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
-	node, err := ws.Node(cf.NodeAddress)
-	if err != nil {
-		return 0, errors.New("could not get node client")
-	}
-	block, err := node.Block(nil)
+	block, err := cf.Node.Block(nil)
 	if err != nil {
 		return 0, errors.New("could not get block")
 	}
 	return block.Block.Height, nil
 }
 
-func getBlocksMatching(node *client.HTTP, first, last, limit int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
+func getBlocksMatching(node cfg.TMClient, first, last, limit int64, filter func(*tmtypes.BlockMeta) bool) (*rpctypes.ResultBlockchainInfo, error) {
 	// See tendermint/rpc/core/blocks.go:BlockchainInfo() for where this constant comes from.
 	const pageSize int64 = 20
 
@@ -186,7 +180,7 @@ func getBlocksMatching(node *client.HTTP, first, last, limit int64, filter func(
 	return blocks, nil
 }
 
-func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress string) {
+func handleBlockBefore(w http.ResponseWriter, r *http.Request, node cfg.TMClient) {
 	befores := bone.GetValue(r, "height")
 	before, err := strconv.ParseInt(befores, 10, 64)
 	if err != nil || before < 1 {
@@ -233,12 +227,6 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 		}
 	}
 
-	node, err := ws.Node(nodeAddress)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
-		return
-	}
-
 	blocks, err := getBlocksMatching(node, after, before, limit, filter)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
@@ -248,16 +236,11 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, nodeAddress strin
 	reqres.RespondJSON(w, reqres.OKResponse(blocks))
 }
 
-func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
+func handleBlockRange(w http.ResponseWriter, r *http.Request, node cfg.TMClient) {
 	reqdata, err := processBlockchainRequest(r)
 	if err != nil {
 		// Anything that errors from here is going to be a bad request.
 		reqres.RespondJSON(w, reqres.NewAPIError(err.Error(), http.StatusBadRequest))
-		return
-	}
-	node, err := ws.Node(nodeAddress)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
 		return
 	}
 
@@ -274,7 +257,7 @@ func handleBlockRange(w http.ResponseWriter, r *http.Request, nodeAddress string
 	reqres.RespondJSON(w, reqres.OKResponse(blocks))
 }
 
-func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress string) {
+func handleBlockDateRange(w http.ResponseWriter, r *http.Request, node cfg.TMClient) {
 	first := bone.GetValue(r, "first")
 	last := bone.GetValue(r, "last")
 	qp := getQueryParms(r)
@@ -319,12 +302,6 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 		if aftertime.After(firstTime) {
 			firstTime = aftertime
 		}
-	}
-
-	node, err := ws.Node(nodeAddress)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
-		return
 	}
 
 	firstBlockHeight := int64(1)
@@ -432,21 +409,21 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, nodeAddress st
 // manages filtering better than HandleBlockRange.
 func HandleBlockBefore(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockBefore(w, r, cf.NodeAddress)
+		handleBlockBefore(w, r, cf.Node)
 	}
 }
 
 // HandleBlockRange handles requests for a range of blocks
 func HandleBlockRange(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockRange(w, r, cf.NodeAddress)
+		handleBlockRange(w, r, cf.Node)
 	}
 }
 
 // HandleBlockDateRange handles requests for a range of blocks
 func HandleBlockDateRange(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleBlockDateRange(w, r, cf.NodeAddress)
+		handleBlockDateRange(w, r, cf.Node)
 	}
 }
 
@@ -476,12 +453,7 @@ func handleBlockHeight(cf cfg.Cfg, r *http.Request) (*rpctypes.ResultBlock, reqr
 		pheight = &height
 	}
 
-	node, err := ws.Node(cf.NodeAddress)
-	if err != nil {
-		return nil, reqres.NewAPIError("could not get node client", http.StatusInternalServerError)
-	}
-
-	block, err := node.Block(pheight)
+	block, err := cf.Node.Block(pheight)
 	if err != nil {
 		return nil, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusBadRequest)
 	}
@@ -498,19 +470,13 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-			return
-		}
-
 		// Prepare search params.
 		params := search.QueryParams{
 			Command: search.HeightByBlockHashCommand,
 			Hash:    blockhash, // Hex digits are query-escaped by default.
 		}
 
-		searchValue, err := tool.GetSearchResults(node, params)
+		searchValue, err := tool.GetSearchResults(cf.Node, params)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get search results: %v", err), http.StatusInternalServerError))
 			return
@@ -528,7 +494,7 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		block, err := node.Block(&blockheight)
+		block, err := cf.Node.Block(&blockheight)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
 			return

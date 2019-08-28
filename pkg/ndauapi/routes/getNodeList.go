@@ -8,7 +8,6 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/p2p"
@@ -28,7 +27,7 @@ type NodeInfo struct {
 // GetNodeList returns a list of nodes, including this one.
 func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ndauNodes := getNodes(cf.NodeAddress, w, r)
+		ndauNodes := getNodes(cf.Node, w, r)
 		if ndauNodes != nil {
 			// Monikers match between chaos and ndau, so we should be able iterate the two slices
 			// in parallel.  However, for robustness, we create a map from moniker to node pair,
@@ -68,17 +67,10 @@ func GetNodeList(cf cfg.Cfg) http.HandlerFunc {
 }
 
 func getNodes(
-	nodeAddress string,
+	node cfg.TMClient,
 	w http.ResponseWriter,
 	r *http.Request,
 ) []p2p.DefaultNodeInfo {
-	// get node
-	node, err := ws.Node(nodeAddress)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
-		return nil
-	}
-
 	nodeCh := tool.Nodes(node)
 	var nodes []p2p.DefaultNodeInfo
 
@@ -97,7 +89,7 @@ func getNodes(
 				return nodes
 			}
 		case <-time.After(defaultTendermintTimeout):
-			logrus.Warn("Timed out fetching node list.")
+			logrus.Warn("Timed out fetching cf.Node list.")
 			reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node list", http.StatusInternalServerError))
 			return nil
 		}

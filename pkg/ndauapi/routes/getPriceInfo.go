@@ -5,7 +5,6 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
@@ -26,12 +25,8 @@ type PriceInfo struct {
 // getPriceInfo builds a PriceInfo object
 func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
 	var oci PriceInfo
-	node, err := ws.Node(cf.NodeAddress)
-	if err != nil {
-		return oci, err
-	}
 
-	summ, _, err := tool.GetSummary(node)
+	summ, _, err := tool.GetSummary(cf.Node)
 	if err != nil {
 		return oci, err
 	}
@@ -39,7 +34,7 @@ func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
 	oci.TotalNdau = summ.TotalCirculation
 	oci.TotalSIB = summ.TotalBurned
 
-	sib, _, err := tool.GetSIB(node)
+	sib, _, err := tool.GetSIB(cf.Node)
 	if err != nil {
 		return oci, err
 	}

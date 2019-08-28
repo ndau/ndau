@@ -6,7 +6,6 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
@@ -21,14 +20,7 @@ type VersionResult struct {
 // HandleVersion is an http handler for version info
 func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// first find a node to talk to
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving ndau node", err, http.StatusInternalServerError))
-			return
-		}
-
-		version, _, err := tool.Version(node)
+		version, _, err := tool.Version(cf.Node)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving version info", err, http.StatusInternalServerError))
 			return
@@ -41,7 +33,7 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 		// The network name is stored in the tendermint chainid.
 		// It's expected to be used to identify the network that the API is talking to,
 		// as a way to differentiate the ndau mainnet from test networks.
-		block, err := node.Block(nil)
+		block, err := cf.Node.Block(nil)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving block info", err, http.StatusInternalServerError))
 		}

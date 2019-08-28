@@ -6,18 +6,12 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 )
 
 // GetDumpConsensusState returns the current consensus state.
 func GetDumpConsensusState(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("Could not get a node.", http.StatusInternalServerError))
-			return
-		}
-		consensusState, err := node.DumpConsensusState()
+		consensusState, err := cf.Node.DumpConsensusState()
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Could not fetch consensus state: %v", err), http.StatusInternalServerError))
 			return
