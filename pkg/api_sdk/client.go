@@ -9,9 +9,11 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 // JSON is the expected data format of requests and responses
@@ -37,6 +39,16 @@ func NewClient(node string) (*Client, error) {
 			Timeout: 5 * time.Second,
 		},
 	}, nil
+}
+
+// TestClient creates an SDKClient suitable for testing
+func TestClient(t *testing.T, client *http.Client, port uint) *Client {
+	u, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
+	require.NoError(t, err)
+	return &Client{
+		addr: u,
+		http: client,
+	}
 }
 
 // SetTimeout updates the node's http timeout
