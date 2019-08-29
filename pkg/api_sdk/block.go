@@ -11,6 +11,7 @@ import (
 //
 // If noempty is set, exclude blocks containing no transactions
 func (c *Client) GetBlocksByHeight(before, after uint64, noempty bool) (blocks *rpctypes.ResultBlockchainInfo, err error) {
+	blocks = new(rpctypes.ResultBlockchainInfo)
 	p := params{}
 	if after > 0 {
 		p["after"] = after
@@ -30,6 +31,7 @@ func (c *Client) GetBlocksByHeight(before, after uint64, noempty bool) (blocks *
 //
 // If height is 0, get the current block
 func (c *Client) GetBlockAt(height uint64) (block *rpctypes.ResultBlock, err error) {
+	block = new(rpctypes.ResultBlock)
 	var url string
 	if height == 0 {
 		url = c.URL("block/current")
@@ -48,6 +50,7 @@ func (c *Client) GetCurrentBlock() (*rpctypes.ResultBlock, error) {
 
 // GetBlock returns a block with a particular hash
 func (c *Client) GetBlock(hash string) (block *rpctypes.ResultBlock, err error) {
+	block = new(rpctypes.ResultBlock)
 	err = c.get(block, c.URL("block/hash/%s", hash))
 	err = errors.Wrap(err, "getting block by hash")
 	return
@@ -57,6 +60,7 @@ func (c *Client) GetBlock(hash string) (block *rpctypes.ResultBlock, err error) 
 //
 // If noempty is set, exclude blocks containing no transactions
 func (c *Client) GetBlocksByRange(before, after uint64, noempty bool) (blocks *rpctypes.ResultBlockchainInfo, err error) {
+	blocks = new(rpctypes.ResultBlockchainInfo)
 	p := params{}
 	if noempty {
 		p["noempty"] = "true"
@@ -74,6 +78,7 @@ func (c *Client) GetBlocksByRange(before, after uint64, noempty bool) (blocks *r
 // If noempty is set, exclude blocks containing no transactions.
 // after should be the last value from the previous page, or a zero value to exclude
 func (c *Client) GetBlocksByDaterange(first, last time.Time, noempty bool, after time.Time, limit int) (blocks *rpctypes.ResultBlockchainInfo, err error) {
+	blocks = new(rpctypes.ResultBlockchainInfo)
 	p := params{}
 	if after != (time.Time{}) {
 		p["after"] = after.Format(time.RFC3339)

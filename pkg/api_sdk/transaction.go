@@ -27,6 +27,7 @@ func Prevalidate(node *Client, tx metatx.Transactable) (fee math.Ndau, sib math.
 
 // Send broadcasts and commits a transaction
 func (c *Client) Send(tx metatx.Transactable) (result *routes.SubmitResult, err error) {
+	result = new(routes.SubmitResult)
 	err = c.post(tx, result, c.URL("tx/submit/%s", metatx.NameOf(tx)))
 	err = errors.Wrap(err, "submitting")
 	return

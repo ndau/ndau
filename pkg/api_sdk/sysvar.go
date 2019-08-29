@@ -1,8 +1,10 @@
 package sdk
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/oneiro-ndev/json2msgp"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tinylib/msgp/msgp"
@@ -10,14 +12,28 @@ import (
 
 // Sysvars gets the list of requested system variables, marshaled
 func (c *Client) Sysvars(vars ...string) (svs map[string][]byte, err error) {
+	svsj := make(map[string]interface{})
 	var url string
 	if len(vars) == 0 {
 		url = c.URL("system/all")
 	} else {
 		url = c.URL("system/get/%s", strings.Join(vars, ","))
 	}
-	err = c.get(svs, url)
-	err = errors.Wrap(err, "getting sysvars")
+	err = c.get(&svsj, url)
+	if err != nil {
+		err = errors.Wrap(err, "getting sysvars")
+		return
+	}
+	svs = make(map[string][]byte)
+	for name, jsdata := range svsj {
+		var data []byte
+		data, err = json2msgp.Convert(jsdata, nil)
+		if err != nil {
+			err = fmt.Errorf("failed to convert sysvar %s to msgpack", name)
+			return
+		}
+		svs[name] = data
+	}
 	return
 }
 
@@ -53,6 +69,7 @@ func Sysvar(node *Client, name string, example msgp.Unmarshaler) error {
 //
 // Pass in 0,0 for the paging params to get the entire history.
 func (c *Client) SysvarHistory(name string, after uint64, limit int) (resp *query.SysvarHistoryResponse, err error) {
+	resp = new(query.SysvarHistoryResponse)
 	err = c.get(resp, c.URLP(
 		params{"after": after, "limit": limit},
 		"system/history/%s", name,

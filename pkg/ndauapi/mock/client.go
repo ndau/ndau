@@ -5,26 +5,32 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
-	"github.com/stretchr/testify/require"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/stretchr/testify/require"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
 	tmmock "github.com/tendermint/tendermint/rpc/client/mock"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // Client returns a TMClient connected to a mock tendermint connected to a
 // real but empty ndau.App connected to an in-memory noms.
-func Client(t *testing.T) cfg.TMClient {
+func Client(t *testing.T, fixtures ...func(abcitypes.Application)) cfg.TMClient {
 	ndauconf, err := config.DefaultConfig()
 	require.NoError(t, err)
 	app, err := ndau.NewAppSilent("mem", "", -1, *ndauconf)
 	require.NoError(t, err)
 
-	return client{
+	c := client{
 		tmmock.ABCIApp{
 			App: app,
 		},
 	}
+
+	for _, fixture := range fixtures {
+		fixture(c.App)
+	}
+
+	return c
 }
 
 type client struct {

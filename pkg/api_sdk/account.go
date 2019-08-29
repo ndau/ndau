@@ -14,13 +14,13 @@ import (
 // GetAccount gets the account data associated with a given address
 func (c *Client) GetAccount(addr address.Address) (*backing.AccountData, error) {
 	ads := make(map[string]*backing.AccountData)
-	err := c.get(ads, c.URL("account/account/%s", addr))
+	err := c.get(&ads, c.URL("account/account/%s", addr))
 	if err != nil {
 		return nil, err
 	}
 	ad, ok := ads[addr.String()]
 	if !ok {
-		return nil, errors.New("server did not return expected account address")
+		return nil, nil
 	}
 	return ad, err
 }
@@ -37,7 +37,11 @@ func (c *Client) GetSequence(addr address.Address) (uint64, error) {
 		// highest representable sequence number
 		return ^uint64(0), err
 	}
-	return ad.Sequence, nil
+	if ad != nil {
+		return ad.Sequence, nil
+	}
+	// accounts which don't exist have sequence 0
+	return 0, nil
 }
 
 // GetSequence gets the current sequence number of a particular account
@@ -50,7 +54,7 @@ func (c *Client) GetAccountHistory(ahparams search.AccountHistoryParams) (*searc
 	var response struct {
 		Items []search.AccountTxValueData
 	}
-	err := c.get(response, c.URLP(
+	err := c.get(&response, c.URLP(
 		params{"after": ahparams.AfterHeight, "limit": ahparams.Limit},
 		"account/history/%s", ahparams.Address))
 	if err != nil {

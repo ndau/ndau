@@ -7,6 +7,7 @@ import (
 
 // PriceInfo returns current price data for key parameters
 func (c *Client) PriceInfo() (info *routes.PriceInfo, err error) {
+	info = new(routes.PriceInfo)
 	err = c.get(info, c.URL("price/current"))
 	err = errors.Wrap(err, "fetching price info from API")
 	return
@@ -14,6 +15,7 @@ func (c *Client) PriceInfo() (info *routes.PriceInfo, err error) {
 
 // PriceAt returns price data at the given height
 func (c *Client) PriceAt(height uint64) (info *routes.PriceInfo, err error) {
+	info = new(routes.PriceInfo)
 	err = c.get(info, c.URL("price/height/%d", height))
 	err = errors.Wrap(err, "fetching price data from API")
 	return

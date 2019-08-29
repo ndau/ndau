@@ -37,7 +37,10 @@ func HandleVersion(cf cfg.Cfg) http.HandlerFunc {
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving block info", err, http.StatusInternalServerError))
 		}
-		networkName := block.Block.ChainID
+		networkName := "unknown"
+		if block != nil && block.Block != nil {
+			networkName = block.Block.ChainID
+		}
 
 		result := VersionResult{
 			NdauVersion: version,

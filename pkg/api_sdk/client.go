@@ -42,12 +42,14 @@ func NewClient(node string) (*Client, error) {
 }
 
 // TestClient creates an SDKClient suitable for testing
-func TestClient(t *testing.T, client *http.Client, port uint) *Client {
+func TestClient(t *testing.T, port uint) *Client {
 	u, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	require.NoError(t, err)
 	return &Client{
 		addr: u,
-		http: client,
+		http: &http.Client{
+			Timeout: 500 * time.Millisecond,
+		},
 	}
 }
 

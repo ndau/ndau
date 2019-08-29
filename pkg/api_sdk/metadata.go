@@ -17,6 +17,7 @@ func GetSummary(node *Client) (*routes.PriceInfo, error) {
 
 // Version delivers version information
 func (c *Client) Version() (version *routes.VersionResult, err error) {
+	version = new(routes.VersionResult)
 	err = c.get(version, c.URL("version"))
 	err = errors.Wrap(err, "getting version from API")
 	return
