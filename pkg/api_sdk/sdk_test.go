@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	apiport = 34001
+	apiport = 4096
 	sysvar  = "ReleaseFromEndowmentAddress"
 )
 
