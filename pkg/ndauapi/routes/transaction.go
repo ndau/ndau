@@ -31,9 +31,10 @@ type TransactionData struct {
 }
 
 // TransactionList is the format we use when writing the result of the transaction list route.
+// We use an object containing a single array.  This allows us to add more to the response in
+// the future without breaking existing clients.
 type TransactionList struct {
-	Txs        []TransactionData
-	NextTxHash string
+	Txs []TransactionData
 }
 
 // Search the index for the block containing the transaction with the given hash.
@@ -114,6 +115,7 @@ func buildTransactionData(txbytes []byte, blockheight int64, txoffset int, txhas
 
 // Start at 'blockheight' (at the tx at 'txoffset' within that block) and fill a list of
 // transactions with a max length of 'limit'.
+// If txoffset is negative, we start with the latest transaction in the block at blockheight.
 func getTransactions(node *client.HTTP, blockheight int64, txoffset int, limit int) (*TransactionList, error) {
 	// This will default to no transactions and no next tx hash.
 	result := &TransactionList{}
@@ -126,18 +128,22 @@ Loop:
 		}
 
 		numTxs := int(block.Block.Header.NumTxs)
-		for i := txoffset; i < numTxs; i++ {
+		// If txoffset is negative, we want to start from the last transaction in this block.
+		if txoffset < 0 {
+			txoffset = numTxs - 1
+		}
+		// Work backward through the transaction list since we want reverse chronological order.
+		for i := txoffset; i >= 0; i-- {
 			transactionData, err := buildTransactionData(block.Block.Data.Txs[txoffset], h, i, "")
 			if err != nil {
 				return result, err
 			}
 
-			// If we've already gotten all the transactions we want,
-			// grab the hash out of the next transaction and break.
+			// If we've already gotten all the transactions we want, break out of both loops.
 			if limit == 0 {
-				result.NextTxHash = transactionData.TxHash
 				break Loop
 			}
+			limit--
 
 			// Search the index per transaction to get its Fee and SIB values.
 			_, _, fee, sib, err := searchTxHash(node, transactionData.TxHash)
@@ -148,11 +154,10 @@ Loop:
 			transactionData.SIB = sib
 
 			result.Txs = append(result.Txs, *transactionData)
-			limit--
 		}
 
-		// Start with the first transaction in the next block.
-		txoffset = 0
+		// Start with the last transaction in the next block.
+		txoffset = -1
 	}
 
 	return result, nil
@@ -186,7 +191,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result, err := buildTransactionData(block.Data.Txs[txoffset], block.Header.Height, txoffset, txhash)
+		result, err := buildTransactionData(block.Data.Txs[txoffset], block.Height, txoffset, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("could not build transaction data", err, http.StatusInternalServerError))
 			return
@@ -204,10 +209,6 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Transaction hashes are query-escaped by default.
 		txhash := bone.GetValue(r, "txhash")
-		if txhash == "" {
-			reqres.RespondJSON(w, reqres.NewAPIError("txhash parameter required", http.StatusBadRequest))
-			return
-		}
 
 		limit, _, err := getPagingParams(r, MaximumRange)
 		if err != nil {
@@ -215,23 +216,59 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		qp := getQueryParms(r)
+		txtypes := qp["types"]
+
 		node, err := ws.Node(cf.NodeAddress)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("Could not get node client", http.StatusInternalServerError))
 			return
 		}
 
-		// Find the block and txoffset from which to start gathering a page of transactions.
-		block, txoffset, _, _, err := searchTxHash(node, txhash)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
+		if txtypes != "" {
+			// FIXME: Implement filtering by types.
+			reqres.RespondJSON(w, reqres.OKResponse(&TransactionList{}))
 			return
 		}
 
-		// The block will be nil if there were empty search results.
 		var blockheight int64
-		if block != nil {
-			blockheight = block.Header.Height
+		var txoffset int
+		if txhash == "" {
+			// Start with the latest transaction on the blockchain.
+			block, err := node.Block(nil)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not get latest block", err, http.StatusInternalServerError))
+				return
+			}
+			blockheight = block.Block.Height
+			// This is the index of a theoretical "next" transaction.  We'll decrement this below.
+			txoffset = int(block.Block.Header.NumTxs)
+		} else {
+			// Find the block and txoffset from which to start gathering a page of transactions.
+			var block *types.Block
+			block, txoffset, _, _, err = searchTxHash(node, txhash)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
+				return
+			}
+
+			// The block will be nil if there were empty search results.
+			if block == nil {
+				// Render zero results.
+				blockheight = 0
+				txoffset = 0
+			} else {
+				// We'll render transactions at this height, before the transaction at txoffset.
+				blockheight = block.Height
+			}
+		}
+
+		// The API is exclusive.  Start on the transaction before the one we were given.
+		txoffset--
+		if txoffset < 0 {
+			// No more transactions, start with the latest transaction in the next block.
+			blockheight--
+			txoffset = -1
 		}
 
 		result, err := getTransactions(node, blockheight, txoffset, limit)

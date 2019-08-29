@@ -78,8 +78,7 @@ var dummyTransactionResult = routes.TransactionData{
 }
 
 var dummyTransactionList = routes.TransactionList{
-	Txs:        []routes.TransactionData{dummyTransactionResult},
-	NextTxHash: "123abc34099f",
+	Txs: []routes.TransactionData{dummyTransactionResult},
 }
 
 var dummySubmitResult = routes.SubmitResult{
@@ -426,8 +425,9 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/transaction/before/:txhash").To(routes.HandleTransactionBefore(cf)).
 		Operation("TransactionBefore").
-		Doc("Returns a sequence of transaction metadata for transactions equal to or before a given transaction.").
-		Param(boneful.PathParameter("txhash", "Transactions after this will not be returned.").DataType("string").Required(true)).
+		Doc("Returns a sequence of transaction metadata for transactions before a given transaction.").
+		Param(boneful.PathParameter("txhash", "Only transactions before this will be returned. Leave blank to get the most recent page of transactions").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("types", "Comma-separated list of transaction types to return. Leave blank to get transactions of any type").DataType("string").Required(false)).
 		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(dummyTransactionList))
