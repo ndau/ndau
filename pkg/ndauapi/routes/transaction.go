@@ -34,7 +34,8 @@ type TransactionData struct {
 // We use an object containing a single array.  This allows us to add more to the response in
 // the future without breaking existing clients.
 type TransactionList struct {
-	Txs []TransactionData
+	Txs        []TransactionData
+	NextTxHash string
 }
 
 // Search the index for the block containing the transaction with the given hash.
@@ -141,6 +142,8 @@ Loop:
 
 			// If we've already gotten all the transactions we want, break out of both loops.
 			if limit == 0 {
+				// This is where the next page of results would start.
+				result.NextTxHash = transactionData.TxHash
 				break Loop
 			}
 			limit--
@@ -209,6 +212,10 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Transaction hashes are query-escaped by default.
 		txhash := bone.GetValue(r, "txhash")
+		if txhash == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("txhash parameter required", http.StatusBadRequest))
+			return
+		}
 
 		limit, _, err := getPagingParams(r, MaximumRange)
 		if err != nil {
@@ -226,14 +233,14 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		if txtypes != "" {
-			// FIXME: Implement filtering by types.
+			// TODO: Implement filtering by types using a new index.
 			reqres.RespondJSON(w, reqres.OKResponse(&TransactionList{}))
 			return
 		}
 
 		var blockheight int64
 		var txoffset int
-		if txhash == "" {
+		if txhash == "start" {
 			// Start with the latest transaction on the blockchain.
 			block, err := node.Block(nil)
 			if err != nil {
@@ -241,8 +248,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 				return
 			}
 			blockheight = block.Block.Height
-			// This is the index of a theoretical "next" transaction.  We'll decrement this below.
-			txoffset = int(block.Block.Header.NumTxs)
+			txoffset = -1 // Negative offset means "start from the latest".
 		} else {
 			// Find the block and txoffset from which to start gathering a page of transactions.
 			var block *types.Block
@@ -254,21 +260,12 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 
 			// The block will be nil if there were empty search results.
 			if block == nil {
-				// Render zero results.
+				// Render zero results.  The txoffset is irrelevant in this case.
 				blockheight = 0
-				txoffset = 0
 			} else {
-				// We'll render transactions at this height, before the transaction at txoffset.
+				// We'll render transactions at this height, on or before txoffset.
 				blockheight = block.Height
 			}
-		}
-
-		// The API is exclusive.  Start on the transaction before the one we were given.
-		txoffset--
-		if txoffset < 0 {
-			// No more transactions, start with the latest transaction in the next block.
-			blockheight--
-			txoffset = -1
 		}
 
 		result, err := getTransactions(node, blockheight, txoffset, limit)
