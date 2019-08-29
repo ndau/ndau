@@ -318,8 +318,13 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, node cfg.TMCli
 	}
 
 	// Make sure the range is within the existing block range or the dates won't be indexed.
-	firstBlockTime := firstBlock.Block.Header.Time
-	lastBlockTime := lastBlock.Block.Header.Time
+	var firstBlockTime, lastBlockTime time.Time
+	if firstBlock != nil && firstBlock.Block != nil {
+		firstBlockTime = firstBlock.Block.Header.Time
+	}
+	if lastBlock != nil && lastBlock.Block != nil {
+		lastBlockTime = lastBlock.Block.Header.Time
+	}
 
 	if firstTime.Before(firstBlockTime) {
 		// We don't index anything before the first block, clip the first time to its time.
