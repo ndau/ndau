@@ -53,7 +53,7 @@ func setup(t *testing.T, test func(*sdk.Client), initAddrs ...address.Address) {
 			require.NoError(t, err)
 			for n, addr := range initAddrs {
 				state.Accounts[addr.String()] = backing.AccountData{
-					Balance:  math.Ndau(100 * n),
+					Balance:  math.Ndau(100*n + 1),
 					Sequence: uint64(n),
 				}
 			}
@@ -127,10 +127,15 @@ func TestGetAccountHistory(t *testing.T) {
 }
 
 func TestGetAccountList(t *testing.T) {
+	const count = 10
+	accts := make([]address.Address, 0, count)
+	for i := 0; i < count; i++ {
+		accts = append(accts, makeAddress(t))
+	}
 	setup(t, func(client *sdk.Client) {
 		_, err := client.GetAccountList("", 0)
 		require.NoError(t, err)
-	})
+	}, accts...)
 }
 
 func TestGetAccountListBatch(t *testing.T) {
