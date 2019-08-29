@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -66,11 +67,16 @@ func setup(t *testing.T, test func(*sdk.Client), initAddrs ...address.Address) {
 
 	cf.Port = port
 
+	ports := fmt.Sprintf(":%d", port)
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
+		Addr:    ports,
 		Handler: svc.NewLogMux(cf),
 	}
-	go server.ListenAndServe()
+	// the listener may take a moment to spin up, but this call blocks until
+	// it's ready. From there, the server should be ready the moment it calls Serve.
+	listener, err := net.Listen("tcp", ports)
+	require.NoError(t, err)
+	go server.Serve(listener)
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	defer server.Shutdown(ctx)
