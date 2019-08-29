@@ -3,6 +3,7 @@ package sdk_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"testing"
 	"time"
@@ -60,10 +61,13 @@ func setup(t *testing.T, test func(*sdk.Client), initAddrs ...address.Address) {
 			return state, nil
 		})
 	})
-	cf.Port = apiport
+
+	port := apiport + rand.Intn(1024)
+
+	cf.Port = port
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", apiport),
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: svc.NewLogMux(cf),
 	}
 	go server.ListenAndServe()
@@ -71,7 +75,7 @@ func setup(t *testing.T, test func(*sdk.Client), initAddrs ...address.Address) {
 	defer cancel()
 	defer server.Shutdown(ctx)
 
-	test(sdk.TestClient(t, apiport))
+	test(sdk.TestClient(t, uint(port)))
 }
 
 func TestTestSetupWorks(t *testing.T) {
