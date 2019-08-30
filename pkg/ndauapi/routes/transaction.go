@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -13,9 +12,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tinylib/msgp/msgp"
 )
 
@@ -29,18 +26,15 @@ type TransactionData struct {
 	TxData      metatx.Transactable
 }
 
-func searchTxHash(node *client.HTTP, txhash string) (search.TxValueData, error) {
+func searchTxHash(node cfg.TMClient, txhash string) (search.TxValueData, error) {
 	// Prepare search params.
 	params := search.QueryParams{
 		Command: search.HeightByTxHashCommand,
 		Hash:    txhash,
 	}
-	paramsBuf := &bytes.Buffer{}
-	json.NewEncoder(paramsBuf).Encode(params)
-	paramsString := paramsBuf.String()
 
 	valueData := search.TxValueData{}
-	searchValue, err := tool.GetSearchResults(node, paramsString)
+	searchValue, err := tool.GetSearchResults(node, params)
 	if err != nil {
 		return valueData, err
 	}
@@ -59,13 +53,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-			return
-		}
-
-		vd, err := searchTxHash(node, txhash)
+		vd, err := searchTxHash(cf.Node, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("txhash search failed: %v", err), http.StatusInternalServerError))
 			return
@@ -79,7 +67,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		block, err := node.Block(&blockheight)
+		block, err := cf.Node.Block(&blockheight)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
 			return

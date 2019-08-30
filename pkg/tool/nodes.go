@@ -14,8 +14,14 @@ type NodeResponse struct {
 	Nodes []p2p.DefaultNodeInfo
 }
 
+// NodesClient is the interface required by the Nodes function
+type NodesClient interface {
+	client.StatusClient
+	client.NetworkClient
+}
+
 // Nodes returns NodeInfo asyncronously.
-func Nodes(node *client.HTTP) chan NodeResponse {
+func Nodes(node NodesClient) chan NodeResponse {
 	var wg sync.WaitGroup
 	wg.Add(2) // going to make 2 requests
 
