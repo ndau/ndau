@@ -7,7 +7,6 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
@@ -35,18 +34,10 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		// now we have a tx, prevalidate it
-		// first find a node to talk to
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			cf.Logger.WithError(err).Info("error retrieving node")
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving node", err, http.StatusInternalServerError))
-			return
-		}
-
 		txhash := metatx.Hash(tx)
 
 		// Check if the tx has already been indexed.
-		block, _, _, _, err := searchTxHash(node, txhash)
+		block, _, _, _, err := searchTxHash(cf.Node, txhash)
 		if err != nil {
 			cf.Logger.WithError(err).Info("txhash search failed")
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
@@ -63,7 +54,7 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 			code = http.StatusAccepted
 		} else {
 			// run the prevalidation query
-			fee, sib, _, err := tool.Prevalidate(node, tx, cf.Logger)
+			fee, sib, _, err := tool.Prevalidate(cf.Node, tx, cf.Logger)
 			result.FeeNapu = int64(fee)
 			result.SibNapu = int64(sib)
 			if err != nil {

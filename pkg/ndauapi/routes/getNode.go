@@ -12,7 +12,6 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
@@ -30,15 +29,8 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// get node
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error creating node: %v", err), http.StatusInternalServerError))
-			return
-		}
-
 		// make request and get channels
-		ch := tool.Nodes(node)
+		ch := tool.Nodes(cf.Node)
 		var nodes []p2p.DefaultNodeInfo
 
 		for {
@@ -63,7 +55,7 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not find node: %v", nodeID), http.StatusNotFound))
 				}
 			case <-time.After(defaultTendermintTimeout):
-				logrus.Warn("Timeout fetching node info.")
+				logrus.Warn("Timeout fetching cf.Node info.")
 				reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node info", http.StatusInternalServerError))
 				return
 

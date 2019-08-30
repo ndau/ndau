@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +14,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
@@ -42,7 +40,7 @@ func HandleAccount(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		addr := bone.GetValue(r, "address")
 		addrs := []string{addr}
-		processAccounts(w, cf.NodeAddress, addrs)
+		processAccounts(w, cf.Node, addrs)
 	}
 }
 
@@ -61,11 +59,11 @@ func HandleAccounts(cf cfg.Cfg) http.HandlerFunc {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not parse request body as json", http.StatusBadRequest))
 			return
 		}
-		processAccounts(w, cf.NodeAddress, addrs)
+		processAccounts(w, cf.Node, addrs)
 	}
 }
 
-func processAccounts(w http.ResponseWriter, nodeAddr string, addresses []string) {
+func processAccounts(w http.ResponseWriter, node cfg.TMClient, addresses []string) {
 	addies := []address.Address{}
 	invalidAddies := []string{}
 
@@ -78,12 +76,6 @@ func processAccounts(w http.ResponseWriter, nodeAddr string, addresses []string)
 	}
 	if len(invalidAddies) > 0 {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not validate addresses: %v", invalidAddies), http.StatusBadRequest))
-		return
-	}
-
-	node, err := ws.Node(nodeAddr)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
 		return
 	}
 
@@ -126,12 +118,6 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
-			return
-		}
-
 		limit, afters, err := getPagingParams(r, 100)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("paging parms", err, http.StatusBadRequest))
@@ -153,11 +139,8 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			Limit:       limit,
 			AfterHeight: after,
 		}
-		paramsBuf := &bytes.Buffer{}
-		json.NewEncoder(paramsBuf).Encode(params)
-		paramsString := paramsBuf.String()
 
-		ahr, _, err := tool.GetAccountHistory(node, paramsString)
+		ahr, _, err := tool.GetAccountHistory(cf.Node, params)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
 			return
@@ -170,7 +153,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			txoffset := valueData.TxOffset
 			balance := valueData.Balance
 
-			block, err := node.Block(&blockheight)
+			block, err := cf.Node.Block(&blockheight)
 			if err != nil {
 				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
 				return
@@ -207,19 +190,13 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 // in the system
 func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
-			return
-		}
-
 		limit, after, err := getPagingParams(r, 100)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("reading paging info", err, http.StatusBadRequest))
 			return
 		}
 
-		accts, _, err := tool.GetAccountList(node, after, limit)
+		accts, _, err := tool.GetAccountList(cf.Node, after, limit)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address list: %s", err), http.StatusInternalServerError))
 			return
@@ -235,18 +212,11 @@ func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
 // to return (default 3000).
 func HandleAccountCurrencySeats(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
-			return
-		}
-
 		limit := 3000 // the number of currency seats eligible to vote in the 2nd tier election
 		qp := getQueryParms(r)
 		limitStr := qp["limit"]
 		if limitStr != "" {
-			var pi int64
-			pi, err = strconv.ParseInt(limitStr, 10, 32)
+			pi, err := strconv.ParseInt(limitStr, 10, 32)
 			if err != nil {
 				reqres.RespondJSON(w, reqres.NewAPIError("limit must be a valid number", http.StatusBadRequest))
 				return
@@ -254,7 +224,7 @@ func HandleAccountCurrencySeats(cf cfg.Cfg) http.HandlerFunc {
 			limit = int(pi)
 		}
 
-		accts, err := tool.GetCurrencySeats(node)
+		accts, err := tool.GetCurrencySeats(cf.Node)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching currency seats: %s", err), http.StatusInternalServerError))
 			return

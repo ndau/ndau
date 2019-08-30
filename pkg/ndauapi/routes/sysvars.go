@@ -12,17 +12,11 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/pkg/errors"
 )
 
-func getSystemVars(nodeAddr string, vars ...string) (map[string]interface{}, error) {
-	// first find a node to talk to
-	node, err := ws.Node(nodeAddr)
-	if err != nil {
-		return nil, errors.Wrap(err, "getSystemVars: get node")
-	}
+func getSystemVars(node cfg.TMClient, vars ...string) (map[string]interface{}, error) {
 	sv, _, err := tool.Sysvars(node, vars...)
 	if err != nil {
 		return nil, errors.Wrap(err, "getSystemVars: fetch")
@@ -37,7 +31,7 @@ func getSystemVars(nodeAddr string, vars ...string) (map[string]interface{}, err
 // HandleSystemAll retrieves all the system keys at the current block height.
 func HandleSystemAll(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		values, err := getSystemVars(cf.NodeAddress)
+		values, err := getSystemVars(cf.Node)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("reading system variables", err, http.StatusInternalServerError))
 			return
@@ -55,7 +49,7 @@ func HandleSystemGet(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		values, err := getSystemVars(cf.NodeAddress, strings.Split(sysvars, ",")...)
+		values, err := getSystemVars(cf.Node, strings.Split(sysvars, ",")...)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("reading system variables", err, http.StatusInternalServerError))
 			return
@@ -102,12 +96,6 @@ func HandleSystemHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error getting node: %s", err), http.StatusInternalServerError))
-			return
-		}
-
 		limit, afters, err := getPagingParams(r, 1000)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("paging parm error", err, http.StatusBadRequest))
@@ -123,7 +111,7 @@ func HandleSystemHistory(cf cfg.Cfg) http.HandlerFunc {
 			}
 		}
 
-		result, _, err := tool.SysvarHistory(node, sysvar, after, limit)
+		result, _, err := tool.SysvarHistory(cf.Node, sysvar, after, limit)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching sysvar history: %s", err), http.StatusInternalServerError))
 			return

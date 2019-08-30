@@ -8,7 +8,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 )
 
@@ -39,17 +38,10 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		tx := mtx.(ndau.NTransactable)
 
 		// now we have a signed tx, submit it
-		// first find a node to talk to
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("error retrieving node", err, http.StatusInternalServerError))
-			return
-		}
-
 		txhash := metatx.Hash(tx)
 
 		// Check if the tx has already been indexed.
-		block, _, _, _, err := searchTxHash(node, txhash)
+		block, _, _, _, err := searchTxHash(cf.Node, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
@@ -66,7 +58,7 @@ func HandleSubmitTx(cf cfg.Cfg) http.HandlerFunc {
 		} else {
 			// commit it synchronously; if we ever want to do this asynchronously, we'll need a
 			// new endpoint in part because we already use code http.StatusAccepted (202) above.
-			cr, err := tool.SendCommit(node, tx)
+			cr, err := tool.SendCommit(cf.Node, tx)
 			if err != nil {
 				// chances are high that if this fails, it's the user's fault, so let's
 				// blame them, not ourselves

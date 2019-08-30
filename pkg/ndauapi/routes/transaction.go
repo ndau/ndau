@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -12,9 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/types"
 	"github.com/tinylib/msgp/msgp"
 )
@@ -41,18 +38,15 @@ type TransactionList struct {
 // Search the index for the block containing the transaction with the given hash.
 // Returns the block it's in and the tx offset within the block, nil if no search results.
 // Also returns the fee and sib values at that transaction.
-func searchTxHash(node *client.HTTP, txhash string) (*types.Block, int, uint64, uint64, error) {
+func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, uint64, error) {
 	// Prepare search params.
 	params := search.QueryParams{
 		Command: search.HeightByTxHashCommand,
 		Hash:    txhash,
 	}
-	paramsBuf := &bytes.Buffer{}
-	json.NewEncoder(paramsBuf).Encode(params)
-	paramsString := paramsBuf.String()
 
 	valueData := search.TxValueData{}
-	searchValue, err := tool.GetSearchResults(node, paramsString)
+	searchValue, err := tool.GetSearchResults(node, params)
 	if err != nil {
 		return nil, -1, 0, 0, err
 	}
@@ -117,7 +111,7 @@ func buildTransactionData(txbytes []byte, blockheight int64, txoffset int, txhas
 // Start at 'blockheight' (at the tx at 'txoffset' within that block) and fill a list of
 // transactions with a max length of 'limit'.
 // If txoffset is negative, we start with the latest transaction in the block at blockheight.
-func getTransactions(node *client.HTTP, blockheight int64, txoffset int, limit int) (*TransactionList, error) {
+func getTransactions(node cfg.TMClient, blockheight int64, txoffset int, limit int) (*TransactionList, error) {
 	// This will default to no transactions and no next tx hash.
 	result := &TransactionList{}
 
@@ -176,13 +170,7 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("could not get node client", http.StatusInternalServerError))
-			return
-		}
-
-		block, txoffset, fee, sib, err := searchTxHash(node, txhash)
+		block, txoffset, fee, sib, err := searchTxHash(cf.Node, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
 			return
@@ -226,12 +214,6 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		qp := getQueryParms(r)
 		txtypes := qp["types"]
 
-		node, err := ws.Node(cf.NodeAddress)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError("Could not get node client", http.StatusInternalServerError))
-			return
-		}
-
 		if txtypes != "" {
 			// TODO: Implement filtering by types using a new index.
 			reqres.RespondJSON(w, reqres.OKResponse(&TransactionList{}))
@@ -242,7 +224,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		var txoffset int
 		if txhash == "start" {
 			// Start with the latest transaction on the blockchain.
-			block, err := node.Block(nil)
+			block, err := cf.Node.Block(nil)
 			if err != nil {
 				reqres.RespondJSON(w, reqres.NewFromErr("could not get latest block", err, http.StatusInternalServerError))
 				return
@@ -252,7 +234,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		} else {
 			// Find the block and txoffset from which to start gathering a page of transactions.
 			var block *types.Block
-			block, txoffset, _, _, err = searchTxHash(node, txhash)
+			block, txoffset, _, _, err = searchTxHash(cf.Node, txhash)
 			if err != nil {
 				reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
 				return
@@ -268,7 +250,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 			}
 		}
 
-		result, err := getTransactions(node, blockheight, txoffset, limit)
+		result, err := getTransactions(cf.Node, blockheight, txoffset, limit)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("could not get transactions", err, http.StatusInternalServerError))
 			return
