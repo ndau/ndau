@@ -121,7 +121,7 @@ func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) 
 	// However, once we have higher volume, the latest page will be ever-changing.  And, in a low
 	// volume ecosystem, there are likely not going to be many simultaneous queries.  So current
 	// implementation uses a short-lived union key and we DELETE it, rather than EXPIRE it.
-	searchKey := formatUnionSearchKey()
+	searchKey := formatUniqueUnionSearchKey()
 
 	// Delete the short-lived union key from the database when we're all done.
 	defer search.Client.Del(searchKey)
