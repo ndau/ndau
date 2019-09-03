@@ -324,363 +324,363 @@ func (x *State) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.managedVars (map[string]struct{}->*ast.MapType) is primitive: false
-			case "managedVars":
-				// template u_decompose: x.managedVars (map[string]struct{}->*ast.MapType)
-				// template u_set: x.managedVars
-				managedVarsGoSet := make(map[string]struct{})
-				if managedVarsSet, ok := value.(nt.Set); ok {
-					managedVarsSet.Iter(func(managedVarsItem nt.Value) (stop bool) {
-						if managedVarsItemString, ok := managedVarsItem.(nt.String); ok {
-							managedVarsGoSet[string(managedVarsItemString)] = struct{}{}
-						} else {
-							err = fmt.Errorf(
-								"State.AccountData.UnmarshalNoms expected managedVarsItem to be a nt.String; found %s",
-								reflect.TypeOf(value),
-							)
-						}
-						return err != nil
-					})
-				} else {
-					err = fmt.Errorf(
-						"State.AccountData.UnmarshalNoms expected managedVars to be a nt.Set; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.managedVars = managedVarsGoSet
-			// x.Accounts (map[string]AccountData->*ast.MapType) is primitive: false
-			case "Accounts":
-				// template u_decompose: x.Accounts (map[string]AccountData->*ast.MapType)
-				// template u_map: x.Accounts
-				accountsGMap := make(map[string]AccountData)
-				if accountsNMap, ok := value.(nt.Map); ok {
-					accountsNMap.Iter(func(accountsKey, accountsValue nt.Value) (stop bool) {
-						accountsKeyString, ok := accountsKey.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"State.UnmarshalNoms expected accountsKey to be a nt.String; found %s",
-								reflect.TypeOf(accountsKey),
-							)
-							return true
-						}
-
-						// template u_decompose: accountsValue (AccountData->*ast.Ident)
-						// template u_nomsmarshaler: accountsValue
-						var accountsValueInstance AccountData
-						err = accountsValueInstance.UnmarshalNoms(accountsValue)
-						err = errors.Wrap(err, "State.UnmarshalNoms->accountsValue")
-						if err != nil {
-							return true
-						}
-						accountsGMap[string(accountsKeyString)] = accountsValueInstance
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"State.UnmarshalNoms expected accountsGMap to be a nt.Map; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Accounts = accountsGMap
-			// x.Delegates (map[string]map[string]struct{}->*ast.MapType) is primitive: false
-			case "Delegates":
-				// template u_decompose: x.Delegates (map[string]map[string]struct{}->*ast.MapType)
-				// template u_map: x.Delegates
-				delegatesGMap := make(map[string]map[string]struct{})
-				if delegatesNMap, ok := value.(nt.Map); ok {
-					delegatesNMap.Iter(func(delegatesKey, delegatesValue nt.Value) (stop bool) {
-						delegatesKeyString, ok := delegatesKey.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"State.UnmarshalNoms expected delegatesKey to be a nt.String; found %s",
-								reflect.TypeOf(delegatesKey),
-							)
-							return true
-						}
-
-						// template u_decompose: delegatesValue (map[string]struct{}->*ast.MapType)
-						// template u_set: delegatesValue
-						delegatesValueGoSet := make(map[string]struct{})
-						if delegatesValueSet, ok := delegatesValue.(nt.Set); ok {
-							delegatesValueSet.Iter(func(delegatesValueItem nt.Value) (stop bool) {
-								if delegatesValueItemString, ok := delegatesValueItem.(nt.String); ok {
-									delegatesValueGoSet[string(delegatesValueItemString)] = struct{}{}
-								} else {
-									err = fmt.Errorf(
-										"State.AccountData.UnmarshalNoms expected delegatesValueItem to be a nt.String; found %s",
-										reflect.TypeOf(delegatesValue),
-									)
-								}
-								return err != nil
-							})
-						} else {
-							err = fmt.Errorf(
-								"State.AccountData.UnmarshalNoms expected delegatesValue to be a nt.Set; found %s",
-								reflect.TypeOf(delegatesValue),
-							)
-						}
-						if err != nil {
-							return true
-						}
-						delegatesGMap[string(delegatesKeyString)] = delegatesValueGoSet
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"State.UnmarshalNoms expected delegatesGMap to be a nt.Map; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Delegates = delegatesGMap
-			// x.Nodes (map[string]Node->*ast.MapType) is primitive: false
-			case "Nodes":
-				// template u_decompose: x.Nodes (map[string]Node->*ast.MapType)
-				// template u_map: x.Nodes
-				nodesGMap := make(map[string]Node)
-				if nodesNMap, ok := value.(nt.Map); ok {
-					nodesNMap.Iter(func(nodesKey, nodesValue nt.Value) (stop bool) {
-						nodesKeyString, ok := nodesKey.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"State.UnmarshalNoms expected nodesKey to be a nt.String; found %s",
-								reflect.TypeOf(nodesKey),
-							)
-							return true
-						}
-
-						// template u_decompose: nodesValue (Node->*ast.Ident)
-						// template u_nomsmarshaler: nodesValue
-						var nodesValueInstance Node
-						err = nodesValueInstance.UnmarshalNoms(nodesValue)
-						err = errors.Wrap(err, "State.UnmarshalNoms->nodesValue")
-						if err != nil {
-							return true
-						}
-						nodesGMap[string(nodesKeyString)] = nodesValueInstance
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"State.UnmarshalNoms expected nodesGMap to be a nt.Map; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Nodes = nodesGMap
-			// x.LastNodeRewardNomination (math.Timestamp->*ast.SelectorExpr) is primitive: true
-			case "LastNodeRewardNomination":
-				// template u_decompose: x.LastNodeRewardNomination (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.LastNodeRewardNomination
-				var lastNodeRewardNominationValue util.Int
-				lastNodeRewardNominationValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->LastNodeRewardNomination")
-					return
-				}
-				lastNodeRewardNominationTyped := math.Timestamp(lastNodeRewardNominationValue)
-
-				x.LastNodeRewardNomination = lastNodeRewardNominationTyped
-			// x.PendingNodeReward (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "PendingNodeReward":
-				// template u_decompose: x.PendingNodeReward (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.PendingNodeReward
-				var pendingNodeRewardValue util.Int
-				pendingNodeRewardValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->PendingNodeReward")
-					return
-				}
-				pendingNodeRewardTyped := math.Ndau(pendingNodeRewardValue)
-
-				x.PendingNodeReward = pendingNodeRewardTyped
-			// x.UnclaimedNodeReward (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "UnclaimedNodeReward":
-				// template u_decompose: x.UnclaimedNodeReward (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.UnclaimedNodeReward
-				var unclaimedNodeRewardValue util.Int
-				unclaimedNodeRewardValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->UnclaimedNodeReward")
-					return
-				}
-				unclaimedNodeRewardTyped := math.Ndau(unclaimedNodeRewardValue)
-
-				x.UnclaimedNodeReward = unclaimedNodeRewardTyped
-			// x.NodeRewardWinner (*address.Address->*ast.StarExpr) is primitive: false
-			case "NodeRewardWinner":
-				// template u_decompose: x.NodeRewardWinner (*address.Address->*ast.StarExpr)
-				// template u_pointer:  x.NodeRewardWinner
-				if hasNodeRewardWinnerValue, ok := vs.MaybeGet("HasNodeRewardWinner"); ok {
-					if hasNodeRewardWinner, ok := hasNodeRewardWinnerValue.(nt.Bool); ok {
-						if !hasNodeRewardWinner {
-							return
-						}
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.managedVars (map[string]struct{}->*ast.MapType) is primitive: false
+		case "managedVars":
+			// template u_decompose: x.managedVars (map[string]struct{}->*ast.MapType)
+			// template u_set: x.managedVars
+			managedVarsGoSet := make(map[string]struct{})
+			if managedVarsSet, ok := value.(nt.Set); ok {
+				managedVarsSet.Iter(func(managedVarsItem nt.Value) (stop bool) {
+					if managedVarsItemString, ok := managedVarsItem.(nt.String); ok {
+						managedVarsGoSet[string(managedVarsItemString)] = struct{}{}
 					} else {
 						err = fmt.Errorf(
-							"State.UnmarshalNoms expected HasNodeRewardWinner to be a nt.Bool; found %s",
-							reflect.TypeOf(hasNodeRewardWinnerValue),
+							"State.AccountData.UnmarshalNoms expected managedVarsItem to be a nt.String; found %s",
+							reflect.TypeOf(value),
 						)
+					}
+					return err != nil
+				})
+			} else {
+				err = fmt.Errorf(
+					"State.AccountData.UnmarshalNoms expected managedVars to be a nt.Set; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.managedVars = managedVarsGoSet
+		// x.Accounts (map[string]AccountData->*ast.MapType) is primitive: false
+		case "Accounts":
+			// template u_decompose: x.Accounts (map[string]AccountData->*ast.MapType)
+			// template u_map: x.Accounts
+			accountsGMap := make(map[string]AccountData)
+			if accountsNMap, ok := value.(nt.Map); ok {
+				accountsNMap.Iter(func(accountsKey, accountsValue nt.Value) (stop bool) {
+					accountsKeyString, ok := accountsKey.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"State.UnmarshalNoms expected accountsKey to be a nt.String; found %s",
+							reflect.TypeOf(accountsKey),
+						)
+						return true
+					}
+
+					// template u_decompose: accountsValue (AccountData->*ast.Ident)
+					// template u_nomsmarshaler: accountsValue
+					var accountsValueInstance AccountData
+					err = accountsValueInstance.UnmarshalNoms(accountsValue)
+					err = errors.Wrap(err, "State.UnmarshalNoms->accountsValue")
+					if err != nil {
+						return true
+					}
+					accountsGMap[string(accountsKeyString)] = accountsValueInstance
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"State.UnmarshalNoms expected accountsGMap to be a nt.Map; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Accounts = accountsGMap
+		// x.Delegates (map[string]map[string]struct{}->*ast.MapType) is primitive: false
+		case "Delegates":
+			// template u_decompose: x.Delegates (map[string]map[string]struct{}->*ast.MapType)
+			// template u_map: x.Delegates
+			delegatesGMap := make(map[string]map[string]struct{})
+			if delegatesNMap, ok := value.(nt.Map); ok {
+				delegatesNMap.Iter(func(delegatesKey, delegatesValue nt.Value) (stop bool) {
+					delegatesKeyString, ok := delegatesKey.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"State.UnmarshalNoms expected delegatesKey to be a nt.String; found %s",
+							reflect.TypeOf(delegatesKey),
+						)
+						return true
+					}
+
+					// template u_decompose: delegatesValue (map[string]struct{}->*ast.MapType)
+					// template u_set: delegatesValue
+					delegatesValueGoSet := make(map[string]struct{})
+					if delegatesValueSet, ok := delegatesValue.(nt.Set); ok {
+						delegatesValueSet.Iter(func(delegatesValueItem nt.Value) (stop bool) {
+							if delegatesValueItemString, ok := delegatesValueItem.(nt.String); ok {
+								delegatesValueGoSet[string(delegatesValueItemString)] = struct{}{}
+							} else {
+								err = fmt.Errorf(
+									"State.AccountData.UnmarshalNoms expected delegatesValueItem to be a nt.String; found %s",
+									reflect.TypeOf(delegatesValue),
+								)
+							}
+							return err != nil
+						})
+					} else {
+						err = fmt.Errorf(
+							"State.AccountData.UnmarshalNoms expected delegatesValue to be a nt.Set; found %s",
+							reflect.TypeOf(delegatesValue),
+						)
+					}
+					if err != nil {
+						return true
+					}
+					delegatesGMap[string(delegatesKeyString)] = delegatesValueGoSet
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"State.UnmarshalNoms expected delegatesGMap to be a nt.Map; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Delegates = delegatesGMap
+		// x.Nodes (map[string]Node->*ast.MapType) is primitive: false
+		case "Nodes":
+			// template u_decompose: x.Nodes (map[string]Node->*ast.MapType)
+			// template u_map: x.Nodes
+			nodesGMap := make(map[string]Node)
+			if nodesNMap, ok := value.(nt.Map); ok {
+				nodesNMap.Iter(func(nodesKey, nodesValue nt.Value) (stop bool) {
+					nodesKeyString, ok := nodesKey.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"State.UnmarshalNoms expected nodesKey to be a nt.String; found %s",
+							reflect.TypeOf(nodesKey),
+						)
+						return true
+					}
+
+					// template u_decompose: nodesValue (Node->*ast.Ident)
+					// template u_nomsmarshaler: nodesValue
+					var nodesValueInstance Node
+					err = nodesValueInstance.UnmarshalNoms(nodesValue)
+					err = errors.Wrap(err, "State.UnmarshalNoms->nodesValue")
+					if err != nil {
+						return true
+					}
+					nodesGMap[string(nodesKeyString)] = nodesValueInstance
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"State.UnmarshalNoms expected nodesGMap to be a nt.Map; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Nodes = nodesGMap
+		// x.LastNodeRewardNomination (math.Timestamp->*ast.SelectorExpr) is primitive: true
+		case "LastNodeRewardNomination":
+			// template u_decompose: x.LastNodeRewardNomination (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.LastNodeRewardNomination
+			var lastNodeRewardNominationValue util.Int
+			lastNodeRewardNominationValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->LastNodeRewardNomination")
+				return
+			}
+			lastNodeRewardNominationTyped := math.Timestamp(lastNodeRewardNominationValue)
+
+			x.LastNodeRewardNomination = lastNodeRewardNominationTyped
+		// x.PendingNodeReward (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "PendingNodeReward":
+			// template u_decompose: x.PendingNodeReward (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.PendingNodeReward
+			var pendingNodeRewardValue util.Int
+			pendingNodeRewardValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->PendingNodeReward")
+				return
+			}
+			pendingNodeRewardTyped := math.Ndau(pendingNodeRewardValue)
+
+			x.PendingNodeReward = pendingNodeRewardTyped
+		// x.UnclaimedNodeReward (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "UnclaimedNodeReward":
+			// template u_decompose: x.UnclaimedNodeReward (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.UnclaimedNodeReward
+			var unclaimedNodeRewardValue util.Int
+			unclaimedNodeRewardValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->UnclaimedNodeReward")
+				return
+			}
+			unclaimedNodeRewardTyped := math.Ndau(unclaimedNodeRewardValue)
+
+			x.UnclaimedNodeReward = unclaimedNodeRewardTyped
+		// x.NodeRewardWinner (*address.Address->*ast.StarExpr) is primitive: false
+		case "NodeRewardWinner":
+			// template u_decompose: x.NodeRewardWinner (*address.Address->*ast.StarExpr)
+			// template u_pointer:  x.NodeRewardWinner
+			if hasNodeRewardWinnerValue, ok := vs.MaybeGet("HasNodeRewardWinner"); ok {
+				if hasNodeRewardWinner, ok := hasNodeRewardWinnerValue.(nt.Bool); ok {
+					if !hasNodeRewardWinner {
 						return
 					}
 				} else {
 					err = fmt.Errorf(
-						"State.UnmarshalNoms->NodeRewardWinner is a pointer, so expected a HasNodeRewardWinner field: not found",
+						"State.UnmarshalNoms expected HasNodeRewardWinner to be a nt.Bool; found %s",
+						reflect.TypeOf(hasNodeRewardWinnerValue),
 					)
 					return
 				}
-
-				// template u_decompose: x.NodeRewardWinner (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.NodeRewardWinner
-				var nodeRewardWinnerValue address.Address
-				if nodeRewardWinnerString, ok := value.(nt.String); ok {
-					err = nodeRewardWinnerValue.UnmarshalText([]byte(nodeRewardWinnerString))
-				} else {
-					err = fmt.Errorf(
-						"State.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.NodeRewardWinner = &nodeRewardWinnerValue
-			// x.TotalRFE (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "TotalRFE":
-				// template u_decompose: x.TotalRFE (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.TotalRFE
-				var totalRFEValue util.Int
-				totalRFEValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->TotalRFE")
-					return
-				}
-				totalRFETyped := math.Ndau(totalRFEValue)
-
-				x.TotalRFE = totalRFETyped
-			// x.TotalIssue (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "TotalIssue":
-				// template u_decompose: x.TotalIssue (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.TotalIssue
-				var totalIssueValue util.Int
-				totalIssueValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->TotalIssue")
-					return
-				}
-				totalIssueTyped := math.Ndau(totalIssueValue)
-
-				x.TotalIssue = totalIssueTyped
-			// x.SIB (eai.Rate->*ast.SelectorExpr) is primitive: true
-			case "SIB":
-				// template u_decompose: x.SIB (eai.Rate->*ast.SelectorExpr)
-				// template u_primitive: x.SIB
-				var sIBValue util.Int
-				sIBValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->SIB")
-					return
-				}
-				sIBTyped := eai.Rate(sIBValue)
-
-				x.SIB = sIBTyped
-			// x.TotalBurned (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "TotalBurned":
-				// template u_decompose: x.TotalBurned (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.TotalBurned
-				var totalBurnedValue util.Int
-				totalBurnedValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->TotalBurned")
-					return
-				}
-				totalBurnedTyped := math.Ndau(totalBurnedValue)
-
-				x.TotalBurned = totalBurnedTyped
-			// x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
-			case "MarketPrice":
-				// template u_decompose: x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr)
-				// template u_primitive: x.MarketPrice
-				var marketPriceValue util.Int
-				marketPriceValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->MarketPrice")
-					return
-				}
-				marketPriceTyped := pricecurve.Nanocent(marketPriceValue)
-
-				x.MarketPrice = marketPriceTyped
-			// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
-			case "TargetPrice":
-				// template u_decompose: x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr)
-				// template u_primitive: x.TargetPrice
-				var targetPriceValue util.Int
-				targetPriceValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->TargetPrice")
-					return
-				}
-				targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
-
-				x.TargetPrice = targetPriceTyped
-			// x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
-			case "managedVarEndowmentNAV":
-				// template u_decompose: x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
-				// template u_primitive: x.managedVarEndowmentNAV
-				var managedVarEndowmentNAVValue util.Int
-				managedVarEndowmentNAVValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "State.UnmarshalNoms->managedVarEndowmentNAV")
-					return
-				}
-				managedVarEndowmentNAVTyped := pricecurve.Nanocent(managedVarEndowmentNAVValue)
-
-				x.managedVarEndowmentNAV = managedVarEndowmentNAVTyped
-			// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
-			case "Sysvars":
-				// template u_decompose: x.Sysvars (map[string][]byte->*ast.MapType)
-				// template u_map: x.Sysvars
-				sysvarsGMap := make(map[string][]byte)
-				if sysvarsNMap, ok := value.(nt.Map); ok {
-					sysvarsNMap.Iter(func(sysvarsKey, sysvarsValue nt.Value) (stop bool) {
-						sysvarsKeyString, ok := sysvarsKey.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"State.UnmarshalNoms expected sysvarsKey to be a nt.String; found %s",
-								reflect.TypeOf(sysvarsKey),
-							)
-							return true
-						}
-
-						// template u_decompose: sysvarsValue ([]byte->*ast.ArrayType)
-						// template u_primitive: sysvarsValue
-						sysvarsValueValue, ok := sysvarsValue.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"State.UnmarshalNoms expected sysvarsValue to be a nt.String; found %s",
-								reflect.TypeOf(sysvarsValue),
-							)
-						}
-						sysvarsValueTyped := []byte(sysvarsValueValue)
-						if err != nil {
-							return true
-						}
-						sysvarsGMap[string(sysvarsKeyString)] = sysvarsValueTyped
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"State.UnmarshalNoms expected sysvarsGMap to be a nt.Map; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Sysvars = sysvarsGMap
+			} else {
+				err = fmt.Errorf(
+					"State.UnmarshalNoms->NodeRewardWinner is a pointer, so expected a HasNodeRewardWinner field: not found",
+				)
+				return
 			}
+
+			// template u_decompose: x.NodeRewardWinner (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.NodeRewardWinner
+			var nodeRewardWinnerValue address.Address
+			if nodeRewardWinnerString, ok := value.(nt.String); ok {
+				err = nodeRewardWinnerValue.UnmarshalText([]byte(nodeRewardWinnerString))
+			} else {
+				err = fmt.Errorf(
+					"State.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.NodeRewardWinner = &nodeRewardWinnerValue
+		// x.TotalRFE (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "TotalRFE":
+			// template u_decompose: x.TotalRFE (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.TotalRFE
+			var totalRFEValue util.Int
+			totalRFEValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->TotalRFE")
+				return
+			}
+			totalRFETyped := math.Ndau(totalRFEValue)
+
+			x.TotalRFE = totalRFETyped
+		// x.TotalIssue (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "TotalIssue":
+			// template u_decompose: x.TotalIssue (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.TotalIssue
+			var totalIssueValue util.Int
+			totalIssueValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->TotalIssue")
+				return
+			}
+			totalIssueTyped := math.Ndau(totalIssueValue)
+
+			x.TotalIssue = totalIssueTyped
+		// x.SIB (eai.Rate->*ast.SelectorExpr) is primitive: true
+		case "SIB":
+			// template u_decompose: x.SIB (eai.Rate->*ast.SelectorExpr)
+			// template u_primitive: x.SIB
+			var sIBValue util.Int
+			sIBValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->SIB")
+				return
+			}
+			sIBTyped := eai.Rate(sIBValue)
+
+			x.SIB = sIBTyped
+		// x.TotalBurned (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "TotalBurned":
+			// template u_decompose: x.TotalBurned (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.TotalBurned
+			var totalBurnedValue util.Int
+			totalBurnedValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->TotalBurned")
+				return
+			}
+			totalBurnedTyped := math.Ndau(totalBurnedValue)
+
+			x.TotalBurned = totalBurnedTyped
+		// x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+		case "MarketPrice":
+			// template u_decompose: x.MarketPrice (pricecurve.Nanocent->*ast.SelectorExpr)
+			// template u_primitive: x.MarketPrice
+			var marketPriceValue util.Int
+			marketPriceValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->MarketPrice")
+				return
+			}
+			marketPriceTyped := pricecurve.Nanocent(marketPriceValue)
+
+			x.MarketPrice = marketPriceTyped
+		// x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+		case "TargetPrice":
+			// template u_decompose: x.TargetPrice (pricecurve.Nanocent->*ast.SelectorExpr)
+			// template u_primitive: x.TargetPrice
+			var targetPriceValue util.Int
+			targetPriceValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->TargetPrice")
+				return
+			}
+			targetPriceTyped := pricecurve.Nanocent(targetPriceValue)
+
+			x.TargetPrice = targetPriceTyped
+		// x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr) is primitive: true
+		case "managedVarEndowmentNAV":
+			// template u_decompose: x.managedVarEndowmentNAV (pricecurve.Nanocent->*ast.SelectorExpr)
+			// template u_primitive: x.managedVarEndowmentNAV
+			var managedVarEndowmentNAVValue util.Int
+			managedVarEndowmentNAVValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "State.UnmarshalNoms->managedVarEndowmentNAV")
+				return
+			}
+			managedVarEndowmentNAVTyped := pricecurve.Nanocent(managedVarEndowmentNAVValue)
+
+			x.managedVarEndowmentNAV = managedVarEndowmentNAVTyped
+		// x.Sysvars (map[string][]byte->*ast.MapType) is primitive: false
+		case "Sysvars":
+			// template u_decompose: x.Sysvars (map[string][]byte->*ast.MapType)
+			// template u_map: x.Sysvars
+			sysvarsGMap := make(map[string][]byte)
+			if sysvarsNMap, ok := value.(nt.Map); ok {
+				sysvarsNMap.Iter(func(sysvarsKey, sysvarsValue nt.Value) (stop bool) {
+					sysvarsKeyString, ok := sysvarsKey.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"State.UnmarshalNoms expected sysvarsKey to be a nt.String; found %s",
+							reflect.TypeOf(sysvarsKey),
+						)
+						return true
+					}
+
+					// template u_decompose: sysvarsValue ([]byte->*ast.ArrayType)
+					// template u_primitive: sysvarsValue
+					sysvarsValueValue, ok := sysvarsValue.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"State.UnmarshalNoms expected sysvarsValue to be a nt.String; found %s",
+							reflect.TypeOf(sysvarsValue),
+						)
+					}
+					sysvarsValueTyped := []byte(sysvarsValueValue)
+					if err != nil {
+						return true
+					}
+					sysvarsGMap[string(sysvarsKeyString)] = sysvarsValueTyped
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"State.UnmarshalNoms expected sysvarsGMap to be a nt.Map; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Sysvars = sysvarsGMap
 		}
+		stop = err != nil
+		return
 	})
 	return
 }

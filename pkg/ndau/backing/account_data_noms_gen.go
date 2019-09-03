@@ -347,511 +347,511 @@ func (x *AccountData) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Balance (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "Balance":
-				// template u_decompose: x.Balance (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.Balance
-				var balanceValue util.Int
-				balanceValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->Balance")
-					return
-				}
-				balanceTyped := math.Ndau(balanceValue)
-
-				x.Balance = balanceTyped
-			// x.ValidationKeys ([]signature.PublicKey->*ast.ArrayType) is primitive: false
-			case "ValidationKeys":
-				// template u_decompose: x.ValidationKeys ([]signature.PublicKey->*ast.ArrayType)
-				// template u_slice: x.ValidationKeys
-				var validationKeysSlice []signature.PublicKey
-				if validationKeysList, ok := value.(nt.List); ok {
-					validationKeysSlice = make([]signature.PublicKey, 0, validationKeysList.Len())
-					validationKeysList.Iter(func(validationKeysItem nt.Value, idx uint64) (stop bool) {
-
-						// template u_decompose: validationKeysItem (signature.PublicKey->*ast.SelectorExpr)
-						// template u_textmarshaler: validationKeysItem
-						var validationKeysItemValue signature.PublicKey
-						if validationKeysItemString, ok := validationKeysItem.(nt.String); ok {
-							err = validationKeysItemValue.UnmarshalText([]byte(validationKeysItemString))
-						} else {
-							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected validationKeysItem to be a nt.String; found %s",
-								reflect.ValueOf(validationKeysItem).Type(),
-							)
-						}
-						if err != nil {
-							return true
-						}
-						validationKeysSlice = append(validationKeysSlice, validationKeysItemValue)
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.ValidationKeys = validationKeysSlice
-			// x.ValidationScript ([]byte->*ast.ArrayType) is primitive: true
-			case "ValidationScript":
-				// template u_decompose: x.ValidationScript ([]byte->*ast.ArrayType)
-				// template u_primitive: x.ValidationScript
-				validationScriptValue, ok := value.(nt.String)
-				if !ok {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				validationScriptTyped := []byte(validationScriptValue)
-
-				x.ValidationScript = validationScriptTyped
-			// x.RewardsTarget (*address.Address->*ast.StarExpr) is primitive: false
-			case "RewardsTarget":
-				// template u_decompose: x.RewardsTarget (*address.Address->*ast.StarExpr)
-				// template u_pointer:  x.RewardsTarget
-				if hasRewardsTargetValue, ok := vs.MaybeGet("HasRewardsTarget"); ok {
-					if hasRewardsTarget, ok := hasRewardsTargetValue.(nt.Bool); ok {
-						if !hasRewardsTarget {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasRewardsTarget to be a nt.Bool; found %s",
-							reflect.TypeOf(hasRewardsTargetValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->RewardsTarget is a pointer, so expected a HasRewardsTarget field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.RewardsTarget (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.RewardsTarget
-				var rewardsTargetValue address.Address
-				if rewardsTargetString, ok := value.(nt.String); ok {
-					err = rewardsTargetValue.UnmarshalText([]byte(rewardsTargetString))
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.RewardsTarget = &rewardsTargetValue
-			// x.IncomingRewardsFrom ([]address.Address->*ast.ArrayType) is primitive: false
-			case "IncomingRewardsFrom":
-				// template u_decompose: x.IncomingRewardsFrom ([]address.Address->*ast.ArrayType)
-				// template u_slice: x.IncomingRewardsFrom
-				var incomingRewardsFromSlice []address.Address
-				if incomingRewardsFromList, ok := value.(nt.List); ok {
-					incomingRewardsFromSlice = make([]address.Address, 0, incomingRewardsFromList.Len())
-					incomingRewardsFromList.Iter(func(incomingRewardsFromItem nt.Value, idx uint64) (stop bool) {
-
-						// template u_decompose: incomingRewardsFromItem (address.Address->*ast.SelectorExpr)
-						// template u_textmarshaler: incomingRewardsFromItem
-						var incomingRewardsFromItemValue address.Address
-						if incomingRewardsFromItemString, ok := incomingRewardsFromItem.(nt.String); ok {
-							err = incomingRewardsFromItemValue.UnmarshalText([]byte(incomingRewardsFromItemString))
-						} else {
-							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected incomingRewardsFromItem to be a nt.String; found %s",
-								reflect.ValueOf(incomingRewardsFromItem).Type(),
-							)
-						}
-						if err != nil {
-							return true
-						}
-						incomingRewardsFromSlice = append(incomingRewardsFromSlice, incomingRewardsFromItemValue)
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.IncomingRewardsFrom = incomingRewardsFromSlice
-			// x.DelegationNode (*address.Address->*ast.StarExpr) is primitive: false
-			case "DelegationNode":
-				// template u_decompose: x.DelegationNode (*address.Address->*ast.StarExpr)
-				// template u_pointer:  x.DelegationNode
-				if hasDelegationNodeValue, ok := vs.MaybeGet("HasDelegationNode"); ok {
-					if hasDelegationNode, ok := hasDelegationNodeValue.(nt.Bool); ok {
-						if !hasDelegationNode {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasDelegationNode to be a nt.Bool; found %s",
-							reflect.TypeOf(hasDelegationNodeValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->DelegationNode is a pointer, so expected a HasDelegationNode field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.DelegationNode (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.DelegationNode
-				var delegationNodeValue address.Address
-				if delegationNodeString, ok := value.(nt.String); ok {
-					err = delegationNodeValue.UnmarshalText([]byte(delegationNodeString))
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.DelegationNode = &delegationNodeValue
-			// x.Lock (*Lock->*ast.StarExpr) is primitive: false
-			case "Lock":
-				// template u_decompose: x.Lock (*Lock->*ast.StarExpr)
-				// template u_pointer:  x.Lock
-				if hasLockValue, ok := vs.MaybeGet("HasLock"); ok {
-					if hasLock, ok := hasLockValue.(nt.Bool); ok {
-						if !hasLock {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasLock to be a nt.Bool; found %s",
-							reflect.TypeOf(hasLockValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->Lock is a pointer, so expected a HasLock field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Lock (Lock->*ast.Ident)
-				// template u_nomsmarshaler: x.Lock
-				var lockInstance Lock
-				err = lockInstance.UnmarshalNoms(value)
-				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Lock")
-
-				x.Lock = &lockInstance
-			// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
-			case "LastEAIUpdate":
-				// template u_decompose: x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.LastEAIUpdate
-				var lastEAIUpdateValue util.Int
-				lastEAIUpdateValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->LastEAIUpdate")
-					return
-				}
-				lastEAIUpdateTyped := math.Timestamp(lastEAIUpdateValue)
-
-				x.LastEAIUpdate = lastEAIUpdateTyped
-			// x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
-			case "LastWAAUpdate":
-				// template u_decompose: x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.LastWAAUpdate
-				var lastWAAUpdateValue util.Int
-				lastWAAUpdateValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->LastWAAUpdate")
-					return
-				}
-				lastWAAUpdateTyped := math.Timestamp(lastWAAUpdateValue)
-
-				x.LastWAAUpdate = lastWAAUpdateTyped
-			// x.WeightedAverageAge (math.Duration->*ast.SelectorExpr) is primitive: true
-			case "WeightedAverageAge":
-				// template u_decompose: x.WeightedAverageAge (math.Duration->*ast.SelectorExpr)
-				// template u_primitive: x.WeightedAverageAge
-				var weightedAverageAgeValue util.Int
-				weightedAverageAgeValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->WeightedAverageAge")
-					return
-				}
-				weightedAverageAgeTyped := math.Duration(weightedAverageAgeValue)
-
-				x.WeightedAverageAge = weightedAverageAgeTyped
-			// x.Sequence (uint64->*ast.Ident) is primitive: true
-			case "Sequence":
-				// template u_decompose: x.Sequence (uint64->*ast.Ident)
-				// template u_primitive: x.Sequence
-				var sequenceValue util.Int
-				sequenceValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->Sequence")
-					return
-				}
-				sequenceTyped := uint64(sequenceValue)
-
-				x.Sequence = sequenceTyped
-			// x.StakeRules (*StakeRules->*ast.StarExpr) is primitive: false
-			case "StakeRules":
-				// template u_decompose: x.StakeRules (*StakeRules->*ast.StarExpr)
-				// template u_pointer:  x.StakeRules
-				if hasStakeRulesValue, ok := vs.MaybeGet("HasStakeRules"); ok {
-					if hasStakeRules, ok := hasStakeRulesValue.(nt.Bool); ok {
-						if !hasStakeRules {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasStakeRules to be a nt.Bool; found %s",
-							reflect.TypeOf(hasStakeRulesValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->StakeRules is a pointer, so expected a HasStakeRules field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.StakeRules (StakeRules->*ast.Ident)
-				// template u_nomsmarshaler: x.StakeRules
-				var stakeRulesInstance StakeRules
-				err = stakeRulesInstance.UnmarshalNoms(value)
-				err = errors.Wrap(err, "AccountData.UnmarshalNoms->StakeRules")
-
-				x.StakeRules = &stakeRulesInstance
-			// x.Costakers (map[string]map[string]uint64->*ast.MapType) is primitive: false
-			case "Costakers":
-				// template u_decompose: x.Costakers (map[string]map[string]uint64->*ast.MapType)
-				// template u_map: x.Costakers
-				costakersGMap := make(map[string]map[string]uint64)
-				if costakersNMap, ok := value.(nt.Map); ok {
-					costakersNMap.Iter(func(costakersKey, costakersValue nt.Value) (stop bool) {
-						costakersKeyString, ok := costakersKey.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected costakersKey to be a nt.String; found %s",
-								reflect.TypeOf(costakersKey),
-							)
-							return true
-						}
-
-						// template u_decompose: costakersValue (map[string]uint64->*ast.MapType)
-						// template u_map: costakersValue
-						costakersValueGMap := make(map[string]uint64)
-						if costakersValueNMap, ok := costakersValue.(nt.Map); ok {
-							costakersValueNMap.Iter(func(costakersValueKey, costakersValueValue nt.Value) (stop bool) {
-								costakersValueKeyString, ok := costakersValueKey.(nt.String)
-								if !ok {
-									err = fmt.Errorf(
-										"AccountData.UnmarshalNoms expected costakersValueKey to be a nt.String; found %s",
-										reflect.TypeOf(costakersValueKey),
-									)
-									return true
-								}
-
-								// template u_decompose: costakersValueValue (uint64->*ast.Ident)
-								// template u_primitive: costakersValueValue
-								var costakersValueValueValue util.Int
-								costakersValueValueValue, err = util.IntFrom(costakersValueValue)
-								if err != nil {
-									err = errors.Wrap(err, "AccountData.UnmarshalNoms->costakersValueValue")
-									return
-								}
-								costakersValueValueTyped := uint64(costakersValueValueValue)
-								if err != nil {
-									return true
-								}
-								costakersValueGMap[string(costakersValueKeyString)] = costakersValueValueTyped
-								return false
-							})
-						} else {
-							err = fmt.Errorf(
-								"AccountData.UnmarshalNoms expected costakersValueGMap to be a nt.Map; found %s",
-								reflect.TypeOf(costakersValue),
-							)
-						}
-						if err != nil {
-							return true
-						}
-						costakersGMap[string(costakersKeyString)] = costakersValueGMap
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected costakersGMap to be a nt.Map; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Costakers = costakersGMap
-			// x.Holds ([]Hold->*ast.ArrayType) is primitive: false
-			case "Holds":
-				// template u_decompose: x.Holds ([]Hold->*ast.ArrayType)
-				// template u_slice: x.Holds
-				var holdsSlice []Hold
-				if holdsList, ok := value.(nt.List); ok {
-					holdsSlice = make([]Hold, 0, holdsList.Len())
-					holdsList.Iter(func(holdsItem nt.Value, idx uint64) (stop bool) {
-
-						// template u_decompose: holdsItem (Hold->*ast.Ident)
-						// template u_nomsmarshaler: holdsItem
-						var holdsItemInstance Hold
-						err = holdsItemInstance.UnmarshalNoms(holdsItem)
-						err = errors.Wrap(err, "AccountData.UnmarshalNoms->holdsItem")
-						if err != nil {
-							return true
-						}
-						holdsSlice = append(holdsSlice, holdsItemInstance)
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Holds = holdsSlice
-			// x.RecourseSettings (RecourseSettings->*ast.Ident) is primitive: false
-			case "RecourseSettings":
-				// template u_decompose: x.RecourseSettings (RecourseSettings->*ast.Ident)
-				// template u_nomsmarshaler: x.RecourseSettings
-				var recourseSettingsInstance RecourseSettings
-				err = recourseSettingsInstance.UnmarshalNoms(value)
-				err = errors.Wrap(err, "AccountData.UnmarshalNoms->RecourseSettings")
-
-				x.RecourseSettings = recourseSettingsInstance
-			// x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr) is primitive: false
-			case "CurrencySeatDate":
-				// template u_decompose: x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr)
-				// template u_pointer:  x.CurrencySeatDate
-				if hasCurrencySeatDateValue, ok := vs.MaybeGet("HasCurrencySeatDate"); ok {
-					if hasCurrencySeatDate, ok := hasCurrencySeatDateValue.(nt.Bool); ok {
-						if !hasCurrencySeatDate {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasCurrencySeatDate to be a nt.Bool; found %s",
-							reflect.TypeOf(hasCurrencySeatDateValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->CurrencySeatDate is a pointer, so expected a HasCurrencySeatDate field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.CurrencySeatDate (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.CurrencySeatDate
-				var currencySeatDateValue util.Int
-				currencySeatDateValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->CurrencySeatDate")
-					return
-				}
-				currencySeatDateTyped := math.Timestamp(currencySeatDateValue)
-
-				x.CurrencySeatDate = &currencySeatDateTyped
-			// x.Parent (*address.Address->*ast.StarExpr) is primitive: false
-			case "Parent":
-				// template u_decompose: x.Parent (*address.Address->*ast.StarExpr)
-				// template u_pointer:  x.Parent
-				if hasParentValue, ok := vs.MaybeGet("HasParent"); ok {
-					if hasParent, ok := hasParentValue.(nt.Bool); ok {
-						if !hasParent {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasParent to be a nt.Bool; found %s",
-							reflect.TypeOf(hasParentValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->Parent is a pointer, so expected a HasParent field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Parent (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.Parent
-				var parentValue address.Address
-				if parentString, ok := value.(nt.String); ok {
-					err = parentValue.UnmarshalText([]byte(parentString))
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.Parent = &parentValue
-			// x.Progenitor (*address.Address->*ast.StarExpr) is primitive: false
-			case "Progenitor":
-				// template u_decompose: x.Progenitor (*address.Address->*ast.StarExpr)
-				// template u_pointer:  x.Progenitor
-				if hasProgenitorValue, ok := vs.MaybeGet("HasProgenitor"); ok {
-					if hasProgenitor, ok := hasProgenitorValue.(nt.Bool); ok {
-						if !hasProgenitor {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"AccountData.UnmarshalNoms expected HasProgenitor to be a nt.Bool; found %s",
-							reflect.TypeOf(hasProgenitorValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms->Progenitor is a pointer, so expected a HasProgenitor field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Progenitor (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.Progenitor
-				var progenitorValue address.Address
-				if progenitorString, ok := value.(nt.String); ok {
-					err = progenitorValue.UnmarshalText([]byte(progenitorString))
-				} else {
-					err = fmt.Errorf(
-						"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.Progenitor = &progenitorValue
-			// x.UncreditedEAI (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "UncreditedEAI":
-				// template u_decompose: x.UncreditedEAI (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.UncreditedEAI
-				var uncreditedEAIValue util.Int
-				uncreditedEAIValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "AccountData.UnmarshalNoms->UncreditedEAI")
-					return
-				}
-				uncreditedEAITyped := math.Ndau(uncreditedEAIValue)
-
-				x.UncreditedEAI = uncreditedEAITyped
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.Balance (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "Balance":
+			// template u_decompose: x.Balance (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.Balance
+			var balanceValue util.Int
+			balanceValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Balance")
+				return
 			}
+			balanceTyped := math.Ndau(balanceValue)
+
+			x.Balance = balanceTyped
+		// x.ValidationKeys ([]signature.PublicKey->*ast.ArrayType) is primitive: false
+		case "ValidationKeys":
+			// template u_decompose: x.ValidationKeys ([]signature.PublicKey->*ast.ArrayType)
+			// template u_slice: x.ValidationKeys
+			var validationKeysSlice []signature.PublicKey
+			if validationKeysList, ok := value.(nt.List); ok {
+				validationKeysSlice = make([]signature.PublicKey, 0, validationKeysList.Len())
+				validationKeysList.Iter(func(validationKeysItem nt.Value, idx uint64) (stop bool) {
+
+					// template u_decompose: validationKeysItem (signature.PublicKey->*ast.SelectorExpr)
+					// template u_textmarshaler: validationKeysItem
+					var validationKeysItemValue signature.PublicKey
+					if validationKeysItemString, ok := validationKeysItem.(nt.String); ok {
+						err = validationKeysItemValue.UnmarshalText([]byte(validationKeysItemString))
+					} else {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected validationKeysItem to be a nt.String; found %s",
+							reflect.ValueOf(validationKeysItem).Type(),
+						)
+					}
+					if err != nil {
+						return true
+					}
+					validationKeysSlice = append(validationKeysSlice, validationKeysItemValue)
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.ValidationKeys = validationKeysSlice
+		// x.ValidationScript ([]byte->*ast.ArrayType) is primitive: true
+		case "ValidationScript":
+			// template u_decompose: x.ValidationScript ([]byte->*ast.ArrayType)
+			// template u_primitive: x.ValidationScript
+			validationScriptValue, ok := value.(nt.String)
+			if !ok {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+			validationScriptTyped := []byte(validationScriptValue)
+
+			x.ValidationScript = validationScriptTyped
+		// x.RewardsTarget (*address.Address->*ast.StarExpr) is primitive: false
+		case "RewardsTarget":
+			// template u_decompose: x.RewardsTarget (*address.Address->*ast.StarExpr)
+			// template u_pointer:  x.RewardsTarget
+			if hasRewardsTargetValue, ok := vs.MaybeGet("HasRewardsTarget"); ok {
+				if hasRewardsTarget, ok := hasRewardsTargetValue.(nt.Bool); ok {
+					if !hasRewardsTarget {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasRewardsTarget to be a nt.Bool; found %s",
+						reflect.TypeOf(hasRewardsTargetValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->RewardsTarget is a pointer, so expected a HasRewardsTarget field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.RewardsTarget (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.RewardsTarget
+			var rewardsTargetValue address.Address
+			if rewardsTargetString, ok := value.(nt.String); ok {
+				err = rewardsTargetValue.UnmarshalText([]byte(rewardsTargetString))
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.RewardsTarget = &rewardsTargetValue
+		// x.IncomingRewardsFrom ([]address.Address->*ast.ArrayType) is primitive: false
+		case "IncomingRewardsFrom":
+			// template u_decompose: x.IncomingRewardsFrom ([]address.Address->*ast.ArrayType)
+			// template u_slice: x.IncomingRewardsFrom
+			var incomingRewardsFromSlice []address.Address
+			if incomingRewardsFromList, ok := value.(nt.List); ok {
+				incomingRewardsFromSlice = make([]address.Address, 0, incomingRewardsFromList.Len())
+				incomingRewardsFromList.Iter(func(incomingRewardsFromItem nt.Value, idx uint64) (stop bool) {
+
+					// template u_decompose: incomingRewardsFromItem (address.Address->*ast.SelectorExpr)
+					// template u_textmarshaler: incomingRewardsFromItem
+					var incomingRewardsFromItemValue address.Address
+					if incomingRewardsFromItemString, ok := incomingRewardsFromItem.(nt.String); ok {
+						err = incomingRewardsFromItemValue.UnmarshalText([]byte(incomingRewardsFromItemString))
+					} else {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected incomingRewardsFromItem to be a nt.String; found %s",
+							reflect.ValueOf(incomingRewardsFromItem).Type(),
+						)
+					}
+					if err != nil {
+						return true
+					}
+					incomingRewardsFromSlice = append(incomingRewardsFromSlice, incomingRewardsFromItemValue)
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.IncomingRewardsFrom = incomingRewardsFromSlice
+		// x.DelegationNode (*address.Address->*ast.StarExpr) is primitive: false
+		case "DelegationNode":
+			// template u_decompose: x.DelegationNode (*address.Address->*ast.StarExpr)
+			// template u_pointer:  x.DelegationNode
+			if hasDelegationNodeValue, ok := vs.MaybeGet("HasDelegationNode"); ok {
+				if hasDelegationNode, ok := hasDelegationNodeValue.(nt.Bool); ok {
+					if !hasDelegationNode {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasDelegationNode to be a nt.Bool; found %s",
+						reflect.TypeOf(hasDelegationNodeValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->DelegationNode is a pointer, so expected a HasDelegationNode field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.DelegationNode (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.DelegationNode
+			var delegationNodeValue address.Address
+			if delegationNodeString, ok := value.(nt.String); ok {
+				err = delegationNodeValue.UnmarshalText([]byte(delegationNodeString))
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.DelegationNode = &delegationNodeValue
+		// x.Lock (*Lock->*ast.StarExpr) is primitive: false
+		case "Lock":
+			// template u_decompose: x.Lock (*Lock->*ast.StarExpr)
+			// template u_pointer:  x.Lock
+			if hasLockValue, ok := vs.MaybeGet("HasLock"); ok {
+				if hasLock, ok := hasLockValue.(nt.Bool); ok {
+					if !hasLock {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasLock to be a nt.Bool; found %s",
+						reflect.TypeOf(hasLockValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->Lock is a pointer, so expected a HasLock field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.Lock (Lock->*ast.Ident)
+			// template u_nomsmarshaler: x.Lock
+			var lockInstance Lock
+			err = lockInstance.UnmarshalNoms(value)
+			err = errors.Wrap(err, "AccountData.UnmarshalNoms->Lock")
+
+			x.Lock = &lockInstance
+		// x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
+		case "LastEAIUpdate":
+			// template u_decompose: x.LastEAIUpdate (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.LastEAIUpdate
+			var lastEAIUpdateValue util.Int
+			lastEAIUpdateValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->LastEAIUpdate")
+				return
+			}
+			lastEAIUpdateTyped := math.Timestamp(lastEAIUpdateValue)
+
+			x.LastEAIUpdate = lastEAIUpdateTyped
+		// x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr) is primitive: true
+		case "LastWAAUpdate":
+			// template u_decompose: x.LastWAAUpdate (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.LastWAAUpdate
+			var lastWAAUpdateValue util.Int
+			lastWAAUpdateValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->LastWAAUpdate")
+				return
+			}
+			lastWAAUpdateTyped := math.Timestamp(lastWAAUpdateValue)
+
+			x.LastWAAUpdate = lastWAAUpdateTyped
+		// x.WeightedAverageAge (math.Duration->*ast.SelectorExpr) is primitive: true
+		case "WeightedAverageAge":
+			// template u_decompose: x.WeightedAverageAge (math.Duration->*ast.SelectorExpr)
+			// template u_primitive: x.WeightedAverageAge
+			var weightedAverageAgeValue util.Int
+			weightedAverageAgeValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->WeightedAverageAge")
+				return
+			}
+			weightedAverageAgeTyped := math.Duration(weightedAverageAgeValue)
+
+			x.WeightedAverageAge = weightedAverageAgeTyped
+		// x.Sequence (uint64->*ast.Ident) is primitive: true
+		case "Sequence":
+			// template u_decompose: x.Sequence (uint64->*ast.Ident)
+			// template u_primitive: x.Sequence
+			var sequenceValue util.Int
+			sequenceValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->Sequence")
+				return
+			}
+			sequenceTyped := uint64(sequenceValue)
+
+			x.Sequence = sequenceTyped
+		// x.StakeRules (*StakeRules->*ast.StarExpr) is primitive: false
+		case "StakeRules":
+			// template u_decompose: x.StakeRules (*StakeRules->*ast.StarExpr)
+			// template u_pointer:  x.StakeRules
+			if hasStakeRulesValue, ok := vs.MaybeGet("HasStakeRules"); ok {
+				if hasStakeRules, ok := hasStakeRulesValue.(nt.Bool); ok {
+					if !hasStakeRules {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasStakeRules to be a nt.Bool; found %s",
+						reflect.TypeOf(hasStakeRulesValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->StakeRules is a pointer, so expected a HasStakeRules field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.StakeRules (StakeRules->*ast.Ident)
+			// template u_nomsmarshaler: x.StakeRules
+			var stakeRulesInstance StakeRules
+			err = stakeRulesInstance.UnmarshalNoms(value)
+			err = errors.Wrap(err, "AccountData.UnmarshalNoms->StakeRules")
+
+			x.StakeRules = &stakeRulesInstance
+		// x.Costakers (map[string]map[string]uint64->*ast.MapType) is primitive: false
+		case "Costakers":
+			// template u_decompose: x.Costakers (map[string]map[string]uint64->*ast.MapType)
+			// template u_map: x.Costakers
+			costakersGMap := make(map[string]map[string]uint64)
+			if costakersNMap, ok := value.(nt.Map); ok {
+				costakersNMap.Iter(func(costakersKey, costakersValue nt.Value) (stop bool) {
+					costakersKeyString, ok := costakersKey.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected costakersKey to be a nt.String; found %s",
+							reflect.TypeOf(costakersKey),
+						)
+						return true
+					}
+
+					// template u_decompose: costakersValue (map[string]uint64->*ast.MapType)
+					// template u_map: costakersValue
+					costakersValueGMap := make(map[string]uint64)
+					if costakersValueNMap, ok := costakersValue.(nt.Map); ok {
+						costakersValueNMap.Iter(func(costakersValueKey, costakersValueValue nt.Value) (stop bool) {
+							costakersValueKeyString, ok := costakersValueKey.(nt.String)
+							if !ok {
+								err = fmt.Errorf(
+									"AccountData.UnmarshalNoms expected costakersValueKey to be a nt.String; found %s",
+									reflect.TypeOf(costakersValueKey),
+								)
+								return true
+							}
+
+							// template u_decompose: costakersValueValue (uint64->*ast.Ident)
+							// template u_primitive: costakersValueValue
+							var costakersValueValueValue util.Int
+							costakersValueValueValue, err = util.IntFrom(costakersValueValue)
+							if err != nil {
+								err = errors.Wrap(err, "AccountData.UnmarshalNoms->costakersValueValue")
+								return
+							}
+							costakersValueValueTyped := uint64(costakersValueValueValue)
+							if err != nil {
+								return true
+							}
+							costakersValueGMap[string(costakersValueKeyString)] = costakersValueValueTyped
+							return false
+						})
+					} else {
+						err = fmt.Errorf(
+							"AccountData.UnmarshalNoms expected costakersValueGMap to be a nt.Map; found %s",
+							reflect.TypeOf(costakersValue),
+						)
+					}
+					if err != nil {
+						return true
+					}
+					costakersGMap[string(costakersKeyString)] = costakersValueGMap
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected costakersGMap to be a nt.Map; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Costakers = costakersGMap
+		// x.Holds ([]Hold->*ast.ArrayType) is primitive: false
+		case "Holds":
+			// template u_decompose: x.Holds ([]Hold->*ast.ArrayType)
+			// template u_slice: x.Holds
+			var holdsSlice []Hold
+			if holdsList, ok := value.(nt.List); ok {
+				holdsSlice = make([]Hold, 0, holdsList.Len())
+				holdsList.Iter(func(holdsItem nt.Value, idx uint64) (stop bool) {
+
+					// template u_decompose: holdsItem (Hold->*ast.Ident)
+					// template u_nomsmarshaler: holdsItem
+					var holdsItemInstance Hold
+					err = holdsItemInstance.UnmarshalNoms(holdsItem)
+					err = errors.Wrap(err, "AccountData.UnmarshalNoms->holdsItem")
+					if err != nil {
+						return true
+					}
+					holdsSlice = append(holdsSlice, holdsItemInstance)
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.List; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Holds = holdsSlice
+		// x.RecourseSettings (RecourseSettings->*ast.Ident) is primitive: false
+		case "RecourseSettings":
+			// template u_decompose: x.RecourseSettings (RecourseSettings->*ast.Ident)
+			// template u_nomsmarshaler: x.RecourseSettings
+			var recourseSettingsInstance RecourseSettings
+			err = recourseSettingsInstance.UnmarshalNoms(value)
+			err = errors.Wrap(err, "AccountData.UnmarshalNoms->RecourseSettings")
+
+			x.RecourseSettings = recourseSettingsInstance
+		// x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr) is primitive: false
+		case "CurrencySeatDate":
+			// template u_decompose: x.CurrencySeatDate (*math.Timestamp->*ast.StarExpr)
+			// template u_pointer:  x.CurrencySeatDate
+			if hasCurrencySeatDateValue, ok := vs.MaybeGet("HasCurrencySeatDate"); ok {
+				if hasCurrencySeatDate, ok := hasCurrencySeatDateValue.(nt.Bool); ok {
+					if !hasCurrencySeatDate {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasCurrencySeatDate to be a nt.Bool; found %s",
+						reflect.TypeOf(hasCurrencySeatDateValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->CurrencySeatDate is a pointer, so expected a HasCurrencySeatDate field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.CurrencySeatDate (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.CurrencySeatDate
+			var currencySeatDateValue util.Int
+			currencySeatDateValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->CurrencySeatDate")
+				return
+			}
+			currencySeatDateTyped := math.Timestamp(currencySeatDateValue)
+
+			x.CurrencySeatDate = &currencySeatDateTyped
+		// x.Parent (*address.Address->*ast.StarExpr) is primitive: false
+		case "Parent":
+			// template u_decompose: x.Parent (*address.Address->*ast.StarExpr)
+			// template u_pointer:  x.Parent
+			if hasParentValue, ok := vs.MaybeGet("HasParent"); ok {
+				if hasParent, ok := hasParentValue.(nt.Bool); ok {
+					if !hasParent {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasParent to be a nt.Bool; found %s",
+						reflect.TypeOf(hasParentValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->Parent is a pointer, so expected a HasParent field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.Parent (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.Parent
+			var parentValue address.Address
+			if parentString, ok := value.(nt.String); ok {
+				err = parentValue.UnmarshalText([]byte(parentString))
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.Parent = &parentValue
+		// x.Progenitor (*address.Address->*ast.StarExpr) is primitive: false
+		case "Progenitor":
+			// template u_decompose: x.Progenitor (*address.Address->*ast.StarExpr)
+			// template u_pointer:  x.Progenitor
+			if hasProgenitorValue, ok := vs.MaybeGet("HasProgenitor"); ok {
+				if hasProgenitor, ok := hasProgenitorValue.(nt.Bool); ok {
+					if !hasProgenitor {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"AccountData.UnmarshalNoms expected HasProgenitor to be a nt.Bool; found %s",
+						reflect.TypeOf(hasProgenitorValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms->Progenitor is a pointer, so expected a HasProgenitor field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.Progenitor (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.Progenitor
+			var progenitorValue address.Address
+			if progenitorString, ok := value.(nt.String); ok {
+				err = progenitorValue.UnmarshalText([]byte(progenitorString))
+			} else {
+				err = fmt.Errorf(
+					"AccountData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.Progenitor = &progenitorValue
+		// x.UncreditedEAI (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "UncreditedEAI":
+			// template u_decompose: x.UncreditedEAI (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.UncreditedEAI
+			var uncreditedEAIValue util.Int
+			uncreditedEAIValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "AccountData.UnmarshalNoms->UncreditedEAI")
+				return
+			}
+			uncreditedEAITyped := math.Ndau(uncreditedEAIValue)
+
+			x.UncreditedEAI = uncreditedEAITyped
 		}
+		stop = err != nil
+		return
 	})
 	return
 }
@@ -931,92 +931,92 @@ func (x *RecourseSettings) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Period (math.Duration->*ast.SelectorExpr) is primitive: true
-			case "Period":
-				// template u_decompose: x.Period (math.Duration->*ast.SelectorExpr)
-				// template u_primitive: x.Period
-				var periodValue util.Int
-				periodValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->Period")
-					return
-				}
-				periodTyped := math.Duration(periodValue)
-
-				x.Period = periodTyped
-			// x.ChangesAt (*math.Timestamp->*ast.StarExpr) is primitive: false
-			case "ChangesAt":
-				// template u_decompose: x.ChangesAt (*math.Timestamp->*ast.StarExpr)
-				// template u_pointer:  x.ChangesAt
-				if hasChangesAtValue, ok := vs.MaybeGet("HasChangesAt"); ok {
-					if hasChangesAt, ok := hasChangesAtValue.(nt.Bool); ok {
-						if !hasChangesAt {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"RecourseSettings.UnmarshalNoms expected HasChangesAt to be a nt.Bool; found %s",
-							reflect.TypeOf(hasChangesAtValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"RecourseSettings.UnmarshalNoms->ChangesAt is a pointer, so expected a HasChangesAt field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.ChangesAt (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.ChangesAt
-				var changesAtValue util.Int
-				changesAtValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->ChangesAt")
-					return
-				}
-				changesAtTyped := math.Timestamp(changesAtValue)
-
-				x.ChangesAt = &changesAtTyped
-			// x.Next (*math.Duration->*ast.StarExpr) is primitive: false
-			case "Next":
-				// template u_decompose: x.Next (*math.Duration->*ast.StarExpr)
-				// template u_pointer:  x.Next
-				if hasNextValue, ok := vs.MaybeGet("HasNext"); ok {
-					if hasNext, ok := hasNextValue.(nt.Bool); ok {
-						if !hasNext {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"RecourseSettings.UnmarshalNoms expected HasNext to be a nt.Bool; found %s",
-							reflect.TypeOf(hasNextValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"RecourseSettings.UnmarshalNoms->Next is a pointer, so expected a HasNext field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Next (math.Duration->*ast.SelectorExpr)
-				// template u_primitive: x.Next
-				var nextValue util.Int
-				nextValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->Next")
-					return
-				}
-				nextTyped := math.Duration(nextValue)
-
-				x.Next = &nextTyped
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.Period (math.Duration->*ast.SelectorExpr) is primitive: true
+		case "Period":
+			// template u_decompose: x.Period (math.Duration->*ast.SelectorExpr)
+			// template u_primitive: x.Period
+			var periodValue util.Int
+			periodValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->Period")
+				return
 			}
+			periodTyped := math.Duration(periodValue)
+
+			x.Period = periodTyped
+		// x.ChangesAt (*math.Timestamp->*ast.StarExpr) is primitive: false
+		case "ChangesAt":
+			// template u_decompose: x.ChangesAt (*math.Timestamp->*ast.StarExpr)
+			// template u_pointer:  x.ChangesAt
+			if hasChangesAtValue, ok := vs.MaybeGet("HasChangesAt"); ok {
+				if hasChangesAt, ok := hasChangesAtValue.(nt.Bool); ok {
+					if !hasChangesAt {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"RecourseSettings.UnmarshalNoms expected HasChangesAt to be a nt.Bool; found %s",
+						reflect.TypeOf(hasChangesAtValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"RecourseSettings.UnmarshalNoms->ChangesAt is a pointer, so expected a HasChangesAt field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.ChangesAt (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.ChangesAt
+			var changesAtValue util.Int
+			changesAtValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->ChangesAt")
+				return
+			}
+			changesAtTyped := math.Timestamp(changesAtValue)
+
+			x.ChangesAt = &changesAtTyped
+		// x.Next (*math.Duration->*ast.StarExpr) is primitive: false
+		case "Next":
+			// template u_decompose: x.Next (*math.Duration->*ast.StarExpr)
+			// template u_pointer:  x.Next
+			if hasNextValue, ok := vs.MaybeGet("HasNext"); ok {
+				if hasNext, ok := hasNextValue.(nt.Bool); ok {
+					if !hasNext {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"RecourseSettings.UnmarshalNoms expected HasNext to be a nt.Bool; found %s",
+						reflect.TypeOf(hasNextValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"RecourseSettings.UnmarshalNoms->Next is a pointer, so expected a HasNext field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.Next (math.Duration->*ast.SelectorExpr)
+			// template u_primitive: x.Next
+			var nextValue util.Int
+			nextValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "RecourseSettings.UnmarshalNoms->Next")
+				return
+			}
+			nextTyped := math.Duration(nextValue)
+
+			x.Next = &nextTyped
 		}
+		stop = err != nil
+		return
 	})
 	return
 }

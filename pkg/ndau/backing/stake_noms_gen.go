@@ -92,54 +92,54 @@ func (x *StakeData) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Point (math.Timestamp->*ast.SelectorExpr) is primitive: true
-			case "Point":
-				// template u_decompose: x.Point (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.Point
-				var pointValue util.Int
-				pointValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "StakeData.UnmarshalNoms->Point")
-					return
-				}
-				pointTyped := math.Timestamp(pointValue)
-
-				x.Point = pointTyped
-			// x.RulesAcct (address.Address->*ast.SelectorExpr) is primitive: false
-			case "RulesAcct":
-				// template u_decompose: x.RulesAcct (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.RulesAcct
-				var rulesAcctValue address.Address
-				if rulesAcctString, ok := value.(nt.String); ok {
-					err = rulesAcctValue.UnmarshalText([]byte(rulesAcctString))
-				} else {
-					err = fmt.Errorf(
-						"StakeData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.RulesAcct = rulesAcctValue
-			// x.StakeTo (address.Address->*ast.SelectorExpr) is primitive: false
-			case "StakeTo":
-				// template u_decompose: x.StakeTo (address.Address->*ast.SelectorExpr)
-				// template u_textmarshaler: x.StakeTo
-				var stakeToValue address.Address
-				if stakeToString, ok := value.(nt.String); ok {
-					err = stakeToValue.UnmarshalText([]byte(stakeToString))
-				} else {
-					err = fmt.Errorf(
-						"StakeData.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.StakeTo = stakeToValue
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.Point (math.Timestamp->*ast.SelectorExpr) is primitive: true
+		case "Point":
+			// template u_decompose: x.Point (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.Point
+			var pointValue util.Int
+			pointValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "StakeData.UnmarshalNoms->Point")
+				return
 			}
+			pointTyped := math.Timestamp(pointValue)
+
+			x.Point = pointTyped
+		// x.RulesAcct (address.Address->*ast.SelectorExpr) is primitive: false
+		case "RulesAcct":
+			// template u_decompose: x.RulesAcct (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.RulesAcct
+			var rulesAcctValue address.Address
+			if rulesAcctString, ok := value.(nt.String); ok {
+				err = rulesAcctValue.UnmarshalText([]byte(rulesAcctString))
+			} else {
+				err = fmt.Errorf(
+					"StakeData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.RulesAcct = rulesAcctValue
+		// x.StakeTo (address.Address->*ast.SelectorExpr) is primitive: false
+		case "StakeTo":
+			// template u_decompose: x.StakeTo (address.Address->*ast.SelectorExpr)
+			// template u_textmarshaler: x.StakeTo
+			var stakeToValue address.Address
+			if stakeToString, ok := value.(nt.String); ok {
+				err = stakeToValue.UnmarshalText([]byte(stakeToString))
+			} else {
+				err = fmt.Errorf(
+					"StakeData.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.StakeTo = stakeToValue
 		}
+		stop = err != nil
+		return
 	})
 	return
 }
@@ -201,64 +201,64 @@ func (x *StakeRules) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Script ([]byte->*ast.ArrayType) is primitive: true
-			case "Script":
-				// template u_decompose: x.Script ([]byte->*ast.ArrayType)
-				// template u_primitive: x.Script
-				scriptValue, ok := value.(nt.String)
-				if !ok {
-					err = fmt.Errorf(
-						"StakeRules.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				scriptTyped := []byte(scriptValue)
-
-				x.Script = scriptTyped
-			// x.Inbound (map[string]uint64->*ast.MapType) is primitive: false
-			case "Inbound":
-				// template u_decompose: x.Inbound (map[string]uint64->*ast.MapType)
-				// template u_map: x.Inbound
-				inboundGMap := make(map[string]uint64)
-				if inboundNMap, ok := value.(nt.Map); ok {
-					inboundNMap.Iter(func(inboundKey, inboundValue nt.Value) (stop bool) {
-						inboundKeyString, ok := inboundKey.(nt.String)
-						if !ok {
-							err = fmt.Errorf(
-								"StakeRules.UnmarshalNoms expected inboundKey to be a nt.String; found %s",
-								reflect.TypeOf(inboundKey),
-							)
-							return true
-						}
-
-						// template u_decompose: inboundValue (uint64->*ast.Ident)
-						// template u_primitive: inboundValue
-						var inboundValueValue util.Int
-						inboundValueValue, err = util.IntFrom(inboundValue)
-						if err != nil {
-							err = errors.Wrap(err, "StakeRules.UnmarshalNoms->inboundValue")
-							return
-						}
-						inboundValueTyped := uint64(inboundValueValue)
-						if err != nil {
-							return true
-						}
-						inboundGMap[string(inboundKeyString)] = inboundValueTyped
-						return false
-					})
-				} else {
-					err = fmt.Errorf(
-						"StakeRules.UnmarshalNoms expected inboundGMap to be a nt.Map; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-
-				x.Inbound = inboundGMap
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.Script ([]byte->*ast.ArrayType) is primitive: true
+		case "Script":
+			// template u_decompose: x.Script ([]byte->*ast.ArrayType)
+			// template u_primitive: x.Script
+			scriptValue, ok := value.(nt.String)
+			if !ok {
+				err = fmt.Errorf(
+					"StakeRules.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.TypeOf(value),
+				)
 			}
+			scriptTyped := []byte(scriptValue)
+
+			x.Script = scriptTyped
+		// x.Inbound (map[string]uint64->*ast.MapType) is primitive: false
+		case "Inbound":
+			// template u_decompose: x.Inbound (map[string]uint64->*ast.MapType)
+			// template u_map: x.Inbound
+			inboundGMap := make(map[string]uint64)
+			if inboundNMap, ok := value.(nt.Map); ok {
+				inboundNMap.Iter(func(inboundKey, inboundValue nt.Value) (stop bool) {
+					inboundKeyString, ok := inboundKey.(nt.String)
+					if !ok {
+						err = fmt.Errorf(
+							"StakeRules.UnmarshalNoms expected inboundKey to be a nt.String; found %s",
+							reflect.TypeOf(inboundKey),
+						)
+						return true
+					}
+
+					// template u_decompose: inboundValue (uint64->*ast.Ident)
+					// template u_primitive: inboundValue
+					var inboundValueValue util.Int
+					inboundValueValue, err = util.IntFrom(inboundValue)
+					if err != nil {
+						err = errors.Wrap(err, "StakeRules.UnmarshalNoms->inboundValue")
+						return
+					}
+					inboundValueTyped := uint64(inboundValueValue)
+					if err != nil {
+						return true
+					}
+					inboundGMap[string(inboundKeyString)] = inboundValueTyped
+					return false
+				})
+			} else {
+				err = fmt.Errorf(
+					"StakeRules.UnmarshalNoms expected inboundGMap to be a nt.Map; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.Inbound = inboundGMap
 		}
+		stop = err != nil
+		return
 	})
 	return
 }
