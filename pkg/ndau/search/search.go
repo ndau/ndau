@@ -109,11 +109,64 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
 	listValueData := TxListValueData{}
 
-	// FIXME: get hashes list from the tx types index after Z-stuff, unioning, etc
-	var hashes []string
+	var searchKeys []string
+	for _, t := range txTypes {
+		searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
+	}
+
+	// Use a unique key name for each query.
+	// NOTE: We could consider using a well-defined name based on the query params, but the
+	// usefulness of that is primarily around multiple blockchain explorer clients hitting the
+	// same endpoint near-simultaneously.  The most common one being the first page of results.
+	// However, once we have higher volume, the latest page will be ever-changing.  And, in a low
+	// volume ecosystem, there are likely not going to be many simultaneous queries.  So current
+	// implementation uses a short-lived union key and we DELETE it, rather than EXPIRE it.
+	searchKey := formatUnionSearchKey()
+
+	// Delete the short-lived union key from the database when we're all done.
+	defer search.Client.Del(searchKey)
+
+	// Merge sort all the requested tx type results.
+	_, err := search.Client.ZUnionStore(searchKey, searchKeys)
+	if err != nil {
+		return listValueData, err
+	}
+
+	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
+	// Use reverse rank since we want transactions in reverse chronological order.
+	start, err := search.Client.ZRevRank(searchKey, txHash)
+	if err != nil {
+		return listValueData, err
+	}
+
+	var stop int64
+	if limit <= 0 {
+		// Zero or negative limit means "unlimited".
+		stop = -1
+	} else {
+		// Like the start rank, the stop rank is inclusive.
+		// We don't subtract one here since we want to get the next tx hash after the page.
+		// If this is more than there are results, all results after the start are returned.
+		stop = start + int64(limit)
+	}
+
+	// Get a page's worth of results from the union.
+	hashes, err := search.Client.ZRevRange(searchKey, start, stop)
+	if err != nil {
+		return listValueData, err
+	}
+
+	if limit <= 0 || limit >= len(hashes) {
+		// We're getting the last page of results, there will be no "next" tx hash.
+		limit = len(hashes)
+	} else {
+		// The last element is used for the next tx hash and not included in our results below.
+		limit = len(hashes) - 1
+		listValueData.NextTxHash = hashes[limit]
+	}
 
 	// Pull out transaction data using the tx hash index, for each tx hash in the list.
-	for i := 0; i < len(hashes); i++ {
+	for i := 0; i < limit; i++ {
 		valueData, err := search.SearchTxHash(hashes[i])
 		if err != nil {
 			return listValueData, err
@@ -124,8 +177,6 @@ func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) 
 			listValueData.Txs = append(listValueData.Txs, valueData)
 		}
 	}
-
-	listValueData.NextTxHash = "FIXME"
 
 	return listValueData, nil
 }

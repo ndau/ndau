@@ -22,6 +22,8 @@ const accountAddressToHeightSearchKeyPrefix = "a:"
 const blockHashToHeightSearchKeyPrefix = "b:"
 const sysvarKeyToValueSearchKeyPrefix = "s:"
 const txHashToHeightSearchKeyPrefix = "t:"
+const unionPrefix = "u:"
+const txTypeToHeightSearchKeyPrefix = "y:"
 
 // AppIndexable is an app which can help index its transactions.
 //
@@ -98,6 +100,15 @@ func formatBlockHashToHeightSearchKey(hash string) string {
 
 func formatTxHashToHeightSearchKey(hash string) string {
 	return txHashToHeightSearchKeyPrefix + hash
+}
+
+func formatUnionSearchKey() string {
+	// Use time now to effectively guarantee uniqueness for every caller.
+	return fmt.Sprintf("%s%d", unionPrefix, time.Now().UnixNano())
+}
+
+func formatTxTypeToHeightSearchKey(typeName string) string {
+	return txTypeToHeightSearchKeyPrefix + typeName
 }
 
 func formatAccountAddressToHeightSearchKey(addr string) string {
