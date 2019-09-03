@@ -244,6 +244,14 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 		}
 		value := valueData.Marshal()
 		response.Value = []byte(value)
+	case srch.HeightsByTxTypesCommand:
+		valueData, err := client.SearchTxTypes(params.Hash, params.Types, params.Limit)
+		if err != nil {
+			app.QueryError(err, response, "heights by tx types search fail")
+			return
+		}
+		value := valueData.Marshal()
+		response.Value = []byte(value)
 	default:
 		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 	}

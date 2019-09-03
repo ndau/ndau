@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -106,6 +107,55 @@ func buildTransactionData(txbytes []byte, blockheight int64, txoffset int, txhas
 		TxType:      txtype,
 		TxData:      txdata,
 	}, nil
+}
+
+// Search the index for the blocks containing the transaction (or those before it) with the given
+// hash and transaction types and page size limit.
+func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit int) (*TransactionList, error) {
+	result := &TransactionList{}
+
+	params := search.QueryParams{
+		Command: search.HeightsByTxTypesCommand,
+		Hash:    txhash,
+		Types:   typeNames,
+		Limit:   limit,
+	}
+
+	valueData := search.TxListValueData{}
+	searchValue, err := tool.GetSearchResults(node, params)
+	if err != nil {
+		return result, err
+	}
+
+	err = valueData.Unmarshal(searchValue)
+	if err != nil {
+		return result, err
+	}
+
+	for i := 0; i < len(valueData.Txs); i++ {
+		txdata := valueData.Txs[i]
+
+		blockheight := int64(txdata.BlockHeight)
+		block, err := node.Block(&blockheight)
+		if err != nil {
+			return result, err
+		}
+
+		txoffset := txdata.TxOffset
+		transactionData, err := buildTransactionData(block.Block.Data.Txs[txoffset], blockheight, txoffset, "")
+		if err != nil {
+			return result, err
+		}
+
+		transactionData.Fee = txdata.Fee
+		transactionData.SIB = txdata.SIB
+
+		result.Txs = append(result.Txs, *transactionData)
+	}
+
+	result.NextTxHash = valueData.NextTxHash
+
+	return result, nil
 }
 
 // Start at 'blockheight' (at the tx at 'txoffset' within that block) and fill a list of
@@ -211,18 +261,25 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		// Use the tx type index if types were given, then exit early.
 		qp := getQueryParms(r)
 		txtypes := qp["types"]
-
-		if txtypes != "" {
-			// TODO: Implement filtering by types using a new index.
-			reqres.RespondJSON(w, reqres.OKResponse(&TransactionList{}))
+		typeNames := strings.Split(txtypes, ",")
+		if len(typeNames) > 1 || len(typeNames) == 1 && typeNames[0] != "" {
+			result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not find transactions", err, http.StatusInternalServerError))
+				return
+			}
+			reqres.RespondJSON(w, reqres.OKResponse(result))
 			return
 		}
 
+		// The remaining code paths iterate tendermint blocks to build the results list.
+		// There are no type filters in this case.  All transactions are returned.
 		var blockheight int64
 		var txoffset int
-		if txhash == "start" {
+		if txhash == search.StartTxHash {
 			// Start with the latest transaction on the blockchain.
 			block, err := cf.Node.Block(nil)
 			if err != nil {

@@ -10,6 +10,9 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
+// StartTxHash is used by SearchTxTypes() to return the latest transactions on the blockchain.
+const StartTxHash = "start"
+
 // SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
 // The response is sorted by ascending block height, each entry is where the key's value changed.
 // Pass in 0,0 for the paging params to get the entire history.
@@ -84,8 +87,6 @@ func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 }
 
 // SearchTxHash returns tx data for the given tx hash.
-//
-// Returns nil and no error if the given tx hash was not found in the index.
 func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 	valueData := TxValueData{}
 	searchKey := formatTxHashToHeightSearchKey(txHash)
@@ -102,6 +103,31 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 
 	err = valueData.Unmarshal(searchValue)
 	return valueData, err
+}
+
+// SearchTxTypes returns tx data for a range of transactions on or before the given tx hash.
+func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
+	listValueData := TxListValueData{}
+
+	// FIXME: get hashes list from the tx types index after Z-stuff, unioning, etc
+	var hashes []string
+
+	// Pull out transaction data using the tx hash index, for each tx hash in the list.
+	for i := 0; i < len(hashes); i++ {
+		valueData, err := search.SearchTxHash(hashes[i])
+		if err != nil {
+			return listValueData, err
+		}
+
+		// Sanity check.  Every search in this loop is exepected to return a valid tx result.
+		if valueData.BlockHeight > 0 {
+			listValueData.Txs = append(listValueData.Txs, valueData)
+		}
+	}
+
+	listValueData.NextTxHash = "FIXME"
+
+	return listValueData, nil
 }
 
 // SearchAccountHistory returns an array of block height and txoffset pairs associated with the
