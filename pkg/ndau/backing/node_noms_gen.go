@@ -89,68 +89,68 @@ func (x *Node) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Active (bool->*ast.Ident) is primitive: true
-			case "Active":
-				// template u_decompose: x.Active (bool->*ast.Ident)
-				// template u_primitive: x.Active
-				activeValue, ok := value.(nt.Bool)
-				if !ok {
-					err = fmt.Errorf(
-						"Node.UnmarshalNoms expected value to be a nt.Bool; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				activeTyped := bool(activeValue)
-
-				x.Active = activeTyped
-			// x.DistributionScript ([]byte->*ast.ArrayType) is primitive: true
-			case "DistributionScript":
-				// template u_decompose: x.DistributionScript ([]byte->*ast.ArrayType)
-				// template u_primitive: x.DistributionScript
-				distributionScriptValue, ok := value.(nt.String)
-				if !ok {
-					err = fmt.Errorf(
-						"Node.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				distributionScriptTyped := []byte(distributionScriptValue)
-
-				x.DistributionScript = distributionScriptTyped
-			// x.TMAddress (string->*ast.Ident) is primitive: true
-			case "TMAddress":
-				// template u_decompose: x.TMAddress (string->*ast.Ident)
-				// template u_primitive: x.TMAddress
-				tMAddressValue, ok := value.(nt.String)
-				if !ok {
-					err = fmt.Errorf(
-						"Node.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				tMAddressTyped := string(tMAddressValue)
-
-				x.TMAddress = tMAddressTyped
-			// x.Key (signature.PublicKey->*ast.SelectorExpr) is primitive: false
-			case "Key":
-				// template u_decompose: x.Key (signature.PublicKey->*ast.SelectorExpr)
-				// template u_textmarshaler: x.Key
-				var keyValue signature.PublicKey
-				if keyString, ok := value.(nt.String); ok {
-					err = keyValue.UnmarshalText([]byte(keyString))
-				} else {
-					err = fmt.Errorf(
-						"Node.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.ValueOf(value).Type(),
-					)
-				}
-
-				x.Key = keyValue
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.Active (bool->*ast.Ident) is primitive: true
+		case "Active":
+			// template u_decompose: x.Active (bool->*ast.Ident)
+			// template u_primitive: x.Active
+			activeValue, ok := value.(nt.Bool)
+			if !ok {
+				err = fmt.Errorf(
+					"Node.UnmarshalNoms expected value to be a nt.Bool; found %s",
+					reflect.TypeOf(value),
+				)
 			}
+			activeTyped := bool(activeValue)
+
+			x.Active = activeTyped
+		// x.DistributionScript ([]byte->*ast.ArrayType) is primitive: true
+		case "DistributionScript":
+			// template u_decompose: x.DistributionScript ([]byte->*ast.ArrayType)
+			// template u_primitive: x.DistributionScript
+			distributionScriptValue, ok := value.(nt.String)
+			if !ok {
+				err = fmt.Errorf(
+					"Node.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+			distributionScriptTyped := []byte(distributionScriptValue)
+
+			x.DistributionScript = distributionScriptTyped
+		// x.TMAddress (string->*ast.Ident) is primitive: true
+		case "TMAddress":
+			// template u_decompose: x.TMAddress (string->*ast.Ident)
+			// template u_primitive: x.TMAddress
+			tMAddressValue, ok := value.(nt.String)
+			if !ok {
+				err = fmt.Errorf(
+					"Node.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+			tMAddressTyped := string(tMAddressValue)
+
+			x.TMAddress = tMAddressTyped
+		// x.Key (signature.PublicKey->*ast.SelectorExpr) is primitive: false
+		case "Key":
+			// template u_decompose: x.Key (signature.PublicKey->*ast.SelectorExpr)
+			// template u_textmarshaler: x.Key
+			var keyValue signature.PublicKey
+			if keyString, ok := value.(nt.String); ok {
+				err = keyValue.UnmarshalText([]byte(keyString))
+			} else {
+				err = fmt.Errorf(
+					"Node.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.ValueOf(value).Type(),
+				)
+			}
+
+			x.Key = keyValue
 		}
+		stop = err != nil
+		return
 	})
 	return
 }
