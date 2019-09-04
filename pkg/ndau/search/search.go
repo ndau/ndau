@@ -109,6 +109,11 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
 	listValueData := TxListValueData{}
 
+	if len(txTypes) == 0 {
+		// No types given means no results.
+		return listValueData, nil
+	}
+
 	var searchKeys []string
 	for _, t := range txTypes {
 		searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
@@ -134,9 +139,23 @@ func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) 
 
 	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
 	// Use reverse rank since we want transactions in reverse chronological order.
-	start, err := search.Client.ZRevRank(searchKey, txHash)
-	if err != nil {
-		return listValueData, err
+	var start int64
+	if txHash == StartTxHash {
+		// Start from the latest tx.
+		start = 0
+
+		// Exit early if there are no results.
+		count, err := search.Client.ZCount(searchKey)
+		if err != nil || count <= 0 {
+			return listValueData, err
+		}
+	} else {
+		start, err = search.Client.ZRevRank(searchKey, txHash)
+		if err != nil {
+			// No error if the hash is bad (not part of the results, invalid, etc).
+			// Just return empty results.
+			return listValueData, nil
+		}
 	}
 
 	var stop int64

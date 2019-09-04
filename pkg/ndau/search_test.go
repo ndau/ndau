@@ -10,7 +10,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
+	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
@@ -119,7 +119,7 @@ func TestSysvarHistoryIndex(t *testing.T) {
 		t.Run("TestSysvarHistorySearching", func(t *testing.T) {
 			// Search for the update transaction we indexed.
 			t.Run("TestSysvarHistorySearchingTxUpdate", func(t *testing.T) {
-				hkr, err := app.GetSearch().(*search.Client).SearchSysvarHistory(sysvar, 0, 0)
+				hkr, err := app.GetSearch().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
 				require.NoError(t, err)
 
 				// Should have one result for our test key value pair.
@@ -144,7 +144,11 @@ func TestIndex(t *testing.T) {
 		var txHash string
 		blockTime := time.Now()
 
-		search := app.GetSearch().(*search.Client)
+		search := app.GetSearch().(*srch.Client)
+
+		// Ensure Redis is empty.
+		err := search.FlushDB()
+		require.NoError(t, err)
 
 		// Test initial indexing.
 		t.Run("TestHashInitialIndexing", func(t *testing.T) {
@@ -219,6 +223,56 @@ func TestIndex(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, height, vd.BlockHeight)
 				require.Equal(t, txOffset, vd.TxOffset)
+			})
+
+			t.Run("TestTxTypeSearchingRFE", func(t *testing.T) {
+				txTypes := []string{"ReleaseFromEndowment", "Transfer"}
+				vd, err := search.SearchTxTypes(srch.StartTxHash, txTypes, 10)
+				require.NoError(t, err)
+				require.Equal(t, 1, len(vd.Txs))
+				require.Equal(t, "", vd.NextTxHash)
+				require.Equal(t, height, vd.Txs[0].BlockHeight)
+				require.Equal(t, txOffset, vd.Txs[0].TxOffset)
+			})
+
+			t.Run("TestTxTypeSearchingRFEHash", func(t *testing.T) {
+				txTypes := []string{"ReleaseFromEndowment"}
+				vd, err := search.SearchTxTypes(txHash, txTypes, 1)
+				require.NoError(t, err)
+				require.Equal(t, 1, len(vd.Txs))
+				require.Equal(t, "", vd.NextTxHash)
+				require.Equal(t, height, vd.Txs[0].BlockHeight)
+				require.Equal(t, txOffset, vd.Txs[0].TxOffset)
+			})
+
+			t.Run("TestTxTypeSearchingTransfer", func(t *testing.T) {
+				txTypes := []string{"Transfer"}
+				vd, err := search.SearchTxTypes(srch.StartTxHash, txTypes, 1)
+				require.NoError(t, err)
+				require.Equal(t, 0, len(vd.Txs))
+				require.Equal(t, "", vd.NextTxHash)
+			})
+
+			t.Run("TestTxTypeSearchingInvalid", func(t *testing.T) {
+				txTypes := []string{"ReleaseFromEndowment"}
+				vd, err := search.SearchTxTypes("invalid-hash", txTypes, 1)
+				require.NoError(t, err)
+				require.Equal(t, 0, len(vd.Txs))
+				require.Equal(t, "", vd.NextTxHash)
+			})
+
+			t.Run("TestTxTypeSearchingEmpty", func(t *testing.T) {
+				vd, err := search.SearchTxTypes("invalid-hash", []string{}, 1)
+				require.NoError(t, err)
+				require.Equal(t, 0, len(vd.Txs))
+				require.Equal(t, "", vd.NextTxHash)
+			})
+
+			t.Run("TestTxTypeSearchingNil", func(t *testing.T) {
+				vd, err := search.SearchTxTypes("invalid-hash", nil, 1)
+				require.NoError(t, err)
+				require.Equal(t, 0, len(vd.Txs))
+				require.Equal(t, "", vd.NextTxHash)
 			})
 
 			t.Run("TestAccountSearching", func(t *testing.T) {
