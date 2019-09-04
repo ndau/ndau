@@ -18,6 +18,7 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
@@ -46,7 +47,7 @@ func TestValidCreditEAITxIsValid(t *testing.T) {
 	compute := NewCreditEAI(nodeAddress, 1, private)
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -61,7 +62,7 @@ func TestCreditEAINodeValidates(t *testing.T) {
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -71,7 +72,7 @@ func TestCreditEAISequenceValidates(t *testing.T) {
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -89,7 +90,7 @@ func TestCreditEAISignatureValidates(t *testing.T) {
 	// compute must be invalid
 	bytes, err := tx.Marshal(compute, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

@@ -91,7 +91,7 @@ func TestValidClaimNodeRewardTxIsValid(t *testing.T) {
 
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -107,7 +107,7 @@ func TestClaimNodeRewardAccountValidates(t *testing.T) {
 	// must be invalid
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -118,7 +118,7 @@ func TestClaimNodeRewardSequenceValidates(t *testing.T) {
 	// cnr must be invalid
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -136,7 +136,7 @@ func TestClaimNodeRewardSignatureValidates(t *testing.T) {
 	// cnr must be invalid
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -195,7 +195,7 @@ func TestImpostorCannotClaimNodeReward(t *testing.T) {
 
 	bytes, err := tx.Marshal(cnr, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

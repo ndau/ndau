@@ -10,6 +10,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func initAppDelegate(t *testing.T) (*App, signature.PrivateKey) {
@@ -31,7 +32,7 @@ func TestValidDelegateTxIsValid(t *testing.T) {
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 }
@@ -47,7 +48,7 @@ func TestDelegateAccountValidates(t *testing.T) {
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -62,7 +63,7 @@ func TestDelegateDelegateValidates(t *testing.T) {
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -73,7 +74,7 @@ func TestDelegateSequenceValidates(t *testing.T) {
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -91,7 +92,7 @@ func TestDelegateSignatureValidates(t *testing.T) {
 	// d must be invalid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -182,6 +183,6 @@ func TestDelegateNodeMustBeActive(t *testing.T) {
 	// d must be valid
 	bytes, err := tx.Marshal(d, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

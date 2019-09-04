@@ -59,7 +59,7 @@ func TestRecordPriceIsValidWithValidSignature(t *testing.T) {
 			recordPriceBytes, err := tx.Marshal(recordPrice, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(recordPriceBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: recordPriceBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -82,7 +82,7 @@ func TestRecordPriceIsInvalidWithInvalidSignature(t *testing.T) {
 	recordPriceBytes, err := tx.Marshal(recordPrice, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(recordPriceBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: recordPriceBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

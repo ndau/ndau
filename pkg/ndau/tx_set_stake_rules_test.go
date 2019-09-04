@@ -46,7 +46,7 @@ func TestSetStakeRulesAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppSetStakeRules(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// what about an address which is valid but doesn't already exist?
@@ -55,7 +55,7 @@ func TestSetStakeRulesAddressFieldValidates(t *testing.T) {
 	cv = NewSetStakeRules(fakeTarget, []byte{}, 1, transferPrivate)
 	ctkBytes, err = tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
-	resp = app.CheckTx(ctkBytes)
+	resp = app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -66,7 +66,7 @@ func TestValidSetStakeRules(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 

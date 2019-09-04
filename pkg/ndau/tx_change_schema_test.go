@@ -75,7 +75,7 @@ func TestChangeSchemaIsValidWithValidSignature(t *testing.T) {
 			changeSchemaBytes, err := tx.Marshal(changeSchema, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(changeSchemaBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: changeSchemaBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -98,7 +98,7 @@ func TestChangeSchemaIsInvalidWithInvalidSignature(t *testing.T) {
 	changeSchemaBytes, err := tx.Marshal(changeSchema, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(changeSchemaBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: changeSchemaBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

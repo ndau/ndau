@@ -97,13 +97,13 @@ func TestSysvarHistoryIndex(t *testing.T) {
 				txBytes, err := metatx.Marshal(tx, TxIDs)
 				require.NoError(t, err)
 
-				resp := app.CheckTx(txBytes)
+				resp := app.CheckTx(abci.RequestCheckTx{Tx: txBytes})
 				if resp.Log != "" {
 					t.Log(resp.Log)
 				}
 				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-				txResponse := app.DeliverTx(txBytes)
+				txResponse := app.DeliverTx(abci.RequestDeliverTx{Tx: txBytes})
 				require.Equal(t, "", txResponse.Log)
 			})
 
@@ -188,13 +188,13 @@ func TestIndex(t *testing.T) {
 				rfeBytes, err := metatx.Marshal(rfe, TxIDs)
 				require.NoError(t, err)
 
-				resp := app.CheckTx(rfeBytes)
+				resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 				if resp.Log != "" {
 					t.Log(resp.Log)
 				}
 				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-				txResponse := app.DeliverTx(rfeBytes)
+				txResponse := app.DeliverTx(abci.RequestDeliverTx{Tx: rfeBytes})
 				require.Equal(t, "", txResponse.Log)
 			})
 
