@@ -113,102 +113,102 @@ func (x *Hold) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.Qty (math.Ndau->*ast.SelectorExpr) is primitive: true
-			case "Qty":
-				// template u_decompose: x.Qty (math.Ndau->*ast.SelectorExpr)
-				// template u_primitive: x.Qty
-				var qtyValue util.Int
-				qtyValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Hold.UnmarshalNoms->Qty")
-					return
-				}
-				qtyTyped := math.Ndau(qtyValue)
-
-				x.Qty = qtyTyped
-			// x.Expiry (*math.Timestamp->*ast.StarExpr) is primitive: false
-			case "Expiry":
-				// template u_decompose: x.Expiry (*math.Timestamp->*ast.StarExpr)
-				// template u_pointer:  x.Expiry
-				if hasExpiryValue, ok := vs.MaybeGet("HasExpiry"); ok {
-					if hasExpiry, ok := hasExpiryValue.(nt.Bool); ok {
-						if !hasExpiry {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"Hold.UnmarshalNoms expected HasExpiry to be a nt.Bool; found %s",
-							reflect.TypeOf(hasExpiryValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"Hold.UnmarshalNoms->Expiry is a pointer, so expected a HasExpiry field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Expiry (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.Expiry
-				var expiryValue util.Int
-				expiryValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Hold.UnmarshalNoms->Expiry")
-					return
-				}
-				expiryTyped := math.Timestamp(expiryValue)
-
-				x.Expiry = &expiryTyped
-			// x.Txhash (string->*ast.Ident) is primitive: true
-			case "Txhash":
-				// template u_decompose: x.Txhash (string->*ast.Ident)
-				// template u_primitive: x.Txhash
-				txhashValue, ok := value.(nt.String)
-				if !ok {
-					err = fmt.Errorf(
-						"Hold.UnmarshalNoms expected value to be a nt.String; found %s",
-						reflect.TypeOf(value),
-					)
-				}
-				txhashTyped := string(txhashValue)
-
-				x.Txhash = txhashTyped
-			// x.Stake (*StakeData->*ast.StarExpr) is primitive: false
-			case "Stake":
-				// template u_decompose: x.Stake (*StakeData->*ast.StarExpr)
-				// template u_pointer:  x.Stake
-				if hasStakeValue, ok := vs.MaybeGet("HasStake"); ok {
-					if hasStake, ok := hasStakeValue.(nt.Bool); ok {
-						if !hasStake {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"Hold.UnmarshalNoms expected HasStake to be a nt.Bool; found %s",
-							reflect.TypeOf(hasStakeValue),
-						)
-						return
-					}
-				} else {
-					err = fmt.Errorf(
-						"Hold.UnmarshalNoms->Stake is a pointer, so expected a HasStake field: not found",
-					)
-					return
-				}
-
-				// template u_decompose: x.Stake (StakeData->*ast.Ident)
-				// template u_nomsmarshaler: x.Stake
-				var stakeInstance StakeData
-				err = stakeInstance.UnmarshalNoms(value)
-				err = errors.Wrap(err, "Hold.UnmarshalNoms->Stake")
-
-				x.Stake = &stakeInstance
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.Qty (math.Ndau->*ast.SelectorExpr) is primitive: true
+		case "Qty":
+			// template u_decompose: x.Qty (math.Ndau->*ast.SelectorExpr)
+			// template u_primitive: x.Qty
+			var qtyValue util.Int
+			qtyValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "Hold.UnmarshalNoms->Qty")
+				return
 			}
+			qtyTyped := math.Ndau(qtyValue)
+
+			x.Qty = qtyTyped
+		// x.Expiry (*math.Timestamp->*ast.StarExpr) is primitive: false
+		case "Expiry":
+			// template u_decompose: x.Expiry (*math.Timestamp->*ast.StarExpr)
+			// template u_pointer:  x.Expiry
+			if hasExpiryValue, ok := vs.MaybeGet("HasExpiry"); ok {
+				if hasExpiry, ok := hasExpiryValue.(nt.Bool); ok {
+					if !hasExpiry {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"Hold.UnmarshalNoms expected HasExpiry to be a nt.Bool; found %s",
+						reflect.TypeOf(hasExpiryValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"Hold.UnmarshalNoms->Expiry is a pointer, so expected a HasExpiry field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.Expiry (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.Expiry
+			var expiryValue util.Int
+			expiryValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "Hold.UnmarshalNoms->Expiry")
+				return
+			}
+			expiryTyped := math.Timestamp(expiryValue)
+
+			x.Expiry = &expiryTyped
+		// x.Txhash (string->*ast.Ident) is primitive: true
+		case "Txhash":
+			// template u_decompose: x.Txhash (string->*ast.Ident)
+			// template u_primitive: x.Txhash
+			txhashValue, ok := value.(nt.String)
+			if !ok {
+				err = fmt.Errorf(
+					"Hold.UnmarshalNoms expected value to be a nt.String; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+			txhashTyped := string(txhashValue)
+
+			x.Txhash = txhashTyped
+		// x.Stake (*StakeData->*ast.StarExpr) is primitive: false
+		case "Stake":
+			// template u_decompose: x.Stake (*StakeData->*ast.StarExpr)
+			// template u_pointer:  x.Stake
+			if hasStakeValue, ok := vs.MaybeGet("HasStake"); ok {
+				if hasStake, ok := hasStakeValue.(nt.Bool); ok {
+					if !hasStake {
+						return
+					}
+				} else {
+					err = fmt.Errorf(
+						"Hold.UnmarshalNoms expected HasStake to be a nt.Bool; found %s",
+						reflect.TypeOf(hasStakeValue),
+					)
+					return
+				}
+			} else {
+				err = fmt.Errorf(
+					"Hold.UnmarshalNoms->Stake is a pointer, so expected a HasStake field: not found",
+				)
+				return
+			}
+
+			// template u_decompose: x.Stake (StakeData->*ast.Ident)
+			// template u_nomsmarshaler: x.Stake
+			var stakeInstance StakeData
+			err = stakeInstance.UnmarshalNoms(value)
+			err = errors.Wrap(err, "Hold.UnmarshalNoms->Stake")
+
+			x.Stake = &stakeInstance
 		}
+		stop = err != nil
+		return
 	})
 	return
 }

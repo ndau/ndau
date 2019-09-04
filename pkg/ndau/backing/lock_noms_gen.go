@@ -92,71 +92,71 @@ func (x *Lock) UnmarshalNoms(value nt.Value) (err error) {
 	// the struct until it finds one whose name happens to match the one sought.
 	// It's better to iterate once over the struct and set the fields of the
 	// target struct in arbitrary order.
-	vs.IterFields(func(name string, value nt.Value) {
-		if err == nil {
-			switch name {
-			// x.NoticePeriod (math.Duration->*ast.SelectorExpr) is primitive: true
-			case "NoticePeriod":
-				// template u_decompose: x.NoticePeriod (math.Duration->*ast.SelectorExpr)
-				// template u_primitive: x.NoticePeriod
-				var noticePeriodValue util.Int
-				noticePeriodValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Lock.UnmarshalNoms->NoticePeriod")
-					return
-				}
-				noticePeriodTyped := math.Duration(noticePeriodValue)
+	vs.IterFields(func(name string, value nt.Value) (stop bool) {
+		switch name {
+		// x.NoticePeriod (math.Duration->*ast.SelectorExpr) is primitive: true
+		case "NoticePeriod":
+			// template u_decompose: x.NoticePeriod (math.Duration->*ast.SelectorExpr)
+			// template u_primitive: x.NoticePeriod
+			var noticePeriodValue util.Int
+			noticePeriodValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "Lock.UnmarshalNoms->NoticePeriod")
+				return
+			}
+			noticePeriodTyped := math.Duration(noticePeriodValue)
 
-				x.NoticePeriod = noticePeriodTyped
-			// x.UnlocksOn (*math.Timestamp->*ast.StarExpr) is primitive: false
-			case "UnlocksOn":
-				// template u_decompose: x.UnlocksOn (*math.Timestamp->*ast.StarExpr)
-				// template u_pointer:  x.UnlocksOn
-				if hasUnlocksOnValue, ok := vs.MaybeGet("HasUnlocksOn"); ok {
-					if hasUnlocksOn, ok := hasUnlocksOnValue.(nt.Bool); ok {
-						if !hasUnlocksOn {
-							return
-						}
-					} else {
-						err = fmt.Errorf(
-							"Lock.UnmarshalNoms expected HasUnlocksOn to be a nt.Bool; found %s",
-							reflect.TypeOf(hasUnlocksOnValue),
-						)
+			x.NoticePeriod = noticePeriodTyped
+		// x.UnlocksOn (*math.Timestamp->*ast.StarExpr) is primitive: false
+		case "UnlocksOn":
+			// template u_decompose: x.UnlocksOn (*math.Timestamp->*ast.StarExpr)
+			// template u_pointer:  x.UnlocksOn
+			if hasUnlocksOnValue, ok := vs.MaybeGet("HasUnlocksOn"); ok {
+				if hasUnlocksOn, ok := hasUnlocksOnValue.(nt.Bool); ok {
+					if !hasUnlocksOn {
 						return
 					}
 				} else {
 					err = fmt.Errorf(
-						"Lock.UnmarshalNoms->UnlocksOn is a pointer, so expected a HasUnlocksOn field: not found",
+						"Lock.UnmarshalNoms expected HasUnlocksOn to be a nt.Bool; found %s",
+						reflect.TypeOf(hasUnlocksOnValue),
 					)
 					return
 				}
-
-				// template u_decompose: x.UnlocksOn (math.Timestamp->*ast.SelectorExpr)
-				// template u_primitive: x.UnlocksOn
-				var unlocksOnValue util.Int
-				unlocksOnValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Lock.UnmarshalNoms->UnlocksOn")
-					return
-				}
-				unlocksOnTyped := math.Timestamp(unlocksOnValue)
-
-				x.UnlocksOn = &unlocksOnTyped
-			// x.Bonus (eai.Rate->*ast.SelectorExpr) is primitive: true
-			case "Bonus":
-				// template u_decompose: x.Bonus (eai.Rate->*ast.SelectorExpr)
-				// template u_primitive: x.Bonus
-				var bonusValue util.Int
-				bonusValue, err = util.IntFrom(value)
-				if err != nil {
-					err = errors.Wrap(err, "Lock.UnmarshalNoms->Bonus")
-					return
-				}
-				bonusTyped := eai.Rate(bonusValue)
-
-				x.Bonus = bonusTyped
+			} else {
+				err = fmt.Errorf(
+					"Lock.UnmarshalNoms->UnlocksOn is a pointer, so expected a HasUnlocksOn field: not found",
+				)
+				return
 			}
+
+			// template u_decompose: x.UnlocksOn (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.UnlocksOn
+			var unlocksOnValue util.Int
+			unlocksOnValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "Lock.UnmarshalNoms->UnlocksOn")
+				return
+			}
+			unlocksOnTyped := math.Timestamp(unlocksOnValue)
+
+			x.UnlocksOn = &unlocksOnTyped
+		// x.Bonus (eai.Rate->*ast.SelectorExpr) is primitive: true
+		case "Bonus":
+			// template u_decompose: x.Bonus (eai.Rate->*ast.SelectorExpr)
+			// template u_primitive: x.Bonus
+			var bonusValue util.Int
+			bonusValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "Lock.UnmarshalNoms->Bonus")
+				return
+			}
+			bonusTyped := eai.Rate(bonusValue)
+
+			x.Bonus = bonusTyped
 		}
+		stop = err != nil
+		return
 	})
 	return
 }
