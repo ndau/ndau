@@ -22,6 +22,17 @@ const accountAddressToHeightSearchKeyPrefix = "a:"
 const blockHashToHeightSearchKeyPrefix = "b:"
 const sysvarKeyToValueSearchKeyPrefix = "s:"
 const txHashToHeightSearchKeyPrefix = "t:"
+const unionPrefix = "u:"
+const txTypeToHeightSearchKeyPrefix = "y:"
+
+// This is used to be able to give transactions a float64 score in a sorted set where the integer
+// part of the score is the block height, and the fractional part contains the tx offset within
+// the block.  Typically there are zero or one transactions in a block.  If we ever had anything
+// close to this many transactions in a block, it will be a good problem to have.
+// For example, the 3rd transaction (tx offset = 2) in block 10 would have a score of 10.002.
+// Float determinism is not a concern here since we just want each transaction to have a unique
+// and well-defined order on the blockchain when compared to other transactions.
+const maxTxsPerBlock = 1000
 
 // AppIndexable is an app which can help index its transactions.
 //
@@ -98,6 +109,15 @@ func formatBlockHashToHeightSearchKey(hash string) string {
 
 func formatTxHashToHeightSearchKey(hash string) string {
 	return txHashToHeightSearchKeyPrefix + hash
+}
+
+func formatUniqueUnionSearchKey() string {
+	// Use time now to effectively guarantee uniqueness for every caller.
+	return fmt.Sprintf("%s%d", unionPrefix, time.Now().UnixNano())
+}
+
+func formatTxTypeToHeightSearchKey(typeName string) string {
+	return txTypeToHeightSearchKeyPrefix + typeName
 }
 
 func formatAccountAddressToHeightSearchKey(addr string) string {
@@ -237,6 +257,35 @@ func (search *Client) indexKeyValueWithHistory(searchKey, searchValue string) (
 	return updateCount, insertCount, nil
 }
 
+// Index a single key-value pair into a sorted set.
+func (search *Client) indexTxType(txType, txHash string, blockHeight uint64, txOffset int) (
+	updateCount int, insertCount int, err error,
+) {
+	if txOffset < 0 || txOffset >= maxTxsPerBlock {
+		// If this happens, we either have to increase maxTxsPerBlock or compute height-txoffset
+		// scores in a different way that doesn't have this limitation.  Either way, a full re-
+		// index will be necessary once solved.
+		return 0, 0, fmt.Errorf("Tx offset out of range: %d >= %d", txOffset, maxTxsPerBlock)
+	}
+
+	searchKey := formatTxTypeToHeightSearchKey(txType)
+	score := float64(blockHeight) + float64(txOffset) / float64(maxTxsPerBlock)
+	count, err := search.Client.ZAdd(searchKey, score, txHash)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if count == 0 {
+		updateCount = 1
+		insertCount = 0
+	} else {
+		updateCount = 0
+		insertCount = int(count) // count == 1 for a single ZADD.
+	}
+
+	return updateCount, insertCount, nil
+}
+
 // Index all the sysvar key-value pairs in the given state at the current search.blockHeight.
 func (search *Client) indexState(
 	st *backing.State,
@@ -334,6 +383,15 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		searchValue := valueData.Marshal()
 
 		updCount, insCount, err := search.indexKeyValue(searchKey, searchValue)
+		updateCount += updCount
+		insertCount += insCount
+		if err != nil {
+			return updateCount, insertCount, err
+		}
+
+		// Update the appropriate tx type index.
+		txType := metatx.NameOf(tx)
+		updCount, insCount, err = search.indexTxType(txType, txHash, search.blockHeight, txOffset)
 		updateCount += updCount
 		insertCount += insCount
 		if err != nil {

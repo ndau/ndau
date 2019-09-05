@@ -13,6 +13,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/tendermint/tendermint/types"
 	"github.com/tinylib/msgp/msgp"
 )
 
@@ -22,11 +23,21 @@ type TransactionData struct {
 	TxOffset    int
 	Fee         uint64
 	SIB         uint64
+	TxHash      string
 	TxType      string
 	TxData      metatx.Transactable
 }
 
-func searchTxHash(node cfg.TMClient, txhash string) (search.TxValueData, error) {
+// TransactionList is the format we use when writing the result of the transaction list route.
+type TransactionList struct {
+	Txs        []TransactionData
+	NextTxHash string
+}
+
+// Search the index for the block containing the transaction with the given hash.
+// Returns the block it's in and the tx offset within the block, nil if no search results.
+// Also returns the fee and sib values at that transaction.
+func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, uint64, error) {
 	// Prepare search params.
 	params := search.QueryParams{
 		Command: search.HeightByTxHashCommand,
@@ -36,11 +47,165 @@ func searchTxHash(node cfg.TMClient, txhash string) (search.TxValueData, error) 
 	valueData := search.TxValueData{}
 	searchValue, err := tool.GetSearchResults(node, params)
 	if err != nil {
-		return valueData, err
+		return nil, -1, 0, 0, err
 	}
 
 	err = valueData.Unmarshal(searchValue)
-	return valueData, err
+	if err != nil {
+		return nil, -1, 0, 0, err
+	}
+	blockheight := int64(valueData.BlockHeight)
+	txoffset := valueData.TxOffset
+
+	if blockheight <= 0 {
+		// The search was valid, but there were no results.
+		return nil, -1, 0, 0, nil
+	}
+
+	block, err := node.Block(&blockheight)
+	if err != nil {
+		return nil, -1, 0, 0, err
+	}
+
+	if txoffset >= int(block.Block.Header.NumTxs) {
+		return nil, -1, 0, 0, fmt.Errorf("tx offset out of range: %d >= %d", txoffset, int(block.Block.Header.NumTxs))
+	}
+
+	return block.Block, txoffset, valueData.Fee, valueData.SIB, nil
+}
+
+// Build a TransactionData out of raw transaction bytes from the blockchain.
+func buildTransactionData(txbytes []byte, blockheight int64, txoffset int, txhash string) (*TransactionData, error) {
+	// Use this approach to get the Transaction instead of metatx.Unmarshal() with
+	// metatx.AsTransaction() so that we get the same Nonce every time.
+	tx := &metatx.Transaction{}
+	bytesReader := bytes.NewReader(txbytes)
+	msgpReader := msgp.NewReader(bytesReader)
+	err := tx.DecodeMsg(msgpReader)
+	if err != nil {
+		return nil, err
+	}
+
+	txdata, err := tx.AsTransactable(ndau.TxIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Compute the hash if the caller doesn't know it.
+	if txhash == "" {
+		txhash = metatx.Hash(txdata)
+	}
+
+	txtype := metatx.NameOf(txdata)
+
+	return &TransactionData{
+		BlockHeight: blockheight,
+		TxOffset:    txoffset,
+		TxHash:      txhash,
+		TxType:      txtype,
+		TxData:      txdata,
+	}, nil
+}
+
+// Search the index for the blocks containing the transaction (or those before it) with the given
+// hash and transaction types and page size limit.
+func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit int) (*TransactionList, error) {
+	result := &TransactionList{}
+
+	params := search.QueryParams{
+		Command: search.HeightsByTxTypesCommand,
+		Hash:    txhash,
+		Types:   typeNames,
+		Limit:   limit,
+	}
+
+	valueData := search.TxListValueData{}
+	searchValue, err := tool.GetSearchResults(node, params)
+	if err != nil {
+		return result, err
+	}
+
+	err = valueData.Unmarshal(searchValue)
+	if err != nil {
+		return result, err
+	}
+
+	for i := 0; i < len(valueData.Txs); i++ {
+		txdata := valueData.Txs[i]
+
+		blockheight := int64(txdata.BlockHeight)
+		block, err := node.Block(&blockheight)
+		if err != nil {
+			return result, err
+		}
+
+		txoffset := txdata.TxOffset
+		transactionData, err := buildTransactionData(block.Block.Data.Txs[txoffset], blockheight, txoffset, "")
+		if err != nil {
+			return result, err
+		}
+
+		transactionData.Fee = txdata.Fee
+		transactionData.SIB = txdata.SIB
+
+		result.Txs = append(result.Txs, *transactionData)
+	}
+
+	result.NextTxHash = valueData.NextTxHash
+
+	return result, nil
+}
+
+// Start at 'blockheight' (at the tx at 'txoffset' within that block) and fill a list of
+// transactions with a max length of 'limit'.
+// If txoffset is negative, we start with the latest transaction in the block at blockheight.
+func getTransactions(node cfg.TMClient, blockheight int64, txoffset int, limit int) (*TransactionList, error) {
+	// This will default to no transactions and no next tx hash.
+	result := &TransactionList{}
+
+Loop:
+	for h := blockheight; h > 0; h-- {
+		block, err := node.Block(&h)
+		if err != nil {
+			return result, err
+		}
+
+		numTxs := int(block.Block.Header.NumTxs)
+		// If txoffset is negative, we want to start from the last transaction in this block.
+		if txoffset < 0 {
+			txoffset = numTxs - 1
+		}
+		// Work backward through the transaction list since we want reverse chronological order.
+		for i := txoffset; i >= 0; i-- {
+			transactionData, err := buildTransactionData(block.Block.Data.Txs[txoffset], h, i, "")
+			if err != nil {
+				return result, err
+			}
+
+			// If we've already gotten all the transactions we want, break out of both loops.
+			if limit == 0 {
+				// This is where the next page of results would start.
+				result.NextTxHash = transactionData.TxHash
+				break Loop
+			}
+			limit--
+
+			// Search the index per transaction to get its Fee and SIB values.
+			_, _, fee, sib, err := searchTxHash(node, transactionData.TxHash)
+			if err != nil {
+				return result, err
+			}
+			transactionData.Fee = fee
+			transactionData.SIB = sib
+
+			result.Txs = append(result.Txs, *transactionData)
+		}
+
+		// Start with the last transaction in the next block.
+		txoffset = -1
+	}
+
+	return result, nil
 }
 
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.
@@ -53,65 +218,104 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		vd, err := searchTxHash(cf.Node, txhash)
+		block, txoffset, fee, sib, err := searchTxHash(cf.Node, txhash)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("txhash search failed: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
 			return
 		}
-		blockheight := int64(vd.BlockHeight)
-		txoffset := vd.TxOffset
 
-		if blockheight <= 0 {
-			// The search was valid, but there were no results.
+		// The block will be nil if there were empty search results.
+		if block == nil {
 			reqres.RespondJSON(w, reqres.OKResponse(nil))
 			return
 		}
 
-		block, err := cf.Node.Block(&blockheight)
+		result, err := buildTransactionData(block.Data.Txs[txoffset], block.Height, txoffset, txhash)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("could not build transaction data", err, http.StatusInternalServerError))
 			return
 		}
 
-		if txoffset >= len(block.Block.Data.Txs) {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("tx offset out of range: %d >= %d", txoffset, len(block.Block.Data.Txs)), http.StatusInternalServerError))
+		result.Fee = fee
+		result.SIB = sib
+
+		reqres.RespondJSON(w, reqres.OKResponse(result))
+	}
+}
+
+// HandleTransactionBefore handles requests for transactions on or before a given tx hash.
+func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Transaction hashes are query-escaped by default.
+		txhash := bone.GetValue(r, "txhash")
+		if txhash == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("txhash parameter required", http.StatusBadRequest))
 			return
 		}
 
-		txBytes := block.Block.Data.Txs[txoffset]
+		// Treat "start" and "" as the same thing: get the latest page of transactions.
+		if txhash == "start" {
+			txhash = ""
+		}
 
-		// Use this approach to get the Transaction instead of metatx.Unmarshal() with
-		// metatx.AsTransaction() so that we get the same Nonce every time.
-		tx := &metatx.Transaction{}
-		bytesReader := bytes.NewReader(txBytes)
-		msgpReader := msgp.NewReader(bytesReader)
-		err = tx.DecodeMsg(msgpReader)
+		limit, _, err := getPagingParams(r, MaximumRange)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not decode tx: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("paging error", err, http.StatusBadRequest))
 			return
 		}
 
-		txdata, err := tx.AsTransactable(ndau.TxIDs)
+		// Use the tx type index if types were given, then exit early.
+		qp := getQueryParms(r)
+		txtypes := qp["types"]
+		typeNames := strings.Split(txtypes, "|")
+		if len(typeNames) > 1 || len(typeNames) == 1 && typeNames[0] != "" {
+			result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not find transactions", err, http.StatusInternalServerError))
+				return
+			}
+			reqres.RespondJSON(w, reqres.OKResponse(result))
+			return
+		}
+
+		// The remaining code paths iterate tendermint blocks to build the results list.
+		// There are no type filters in this case.  All transactions are returned.
+		var blockheight int64
+		var txoffset int
+		if txhash == "" {
+			// Start with the latest transaction on the blockchain.
+			block, err := cf.Node.Block(nil)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not get latest block", err, http.StatusInternalServerError))
+				return
+			}
+			blockheight = block.Block.Height
+			txoffset = -1 // Negative offset means "start from the latest".
+		} else {
+			// Find the block and txoffset from which to start gathering a page of transactions.
+			var block *types.Block
+			block, txoffset, _, _, err = searchTxHash(cf.Node, txhash)
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
+				return
+			}
+
+			// The block will be nil if there were empty search results.
+			if block == nil {
+				// Render zero results.  The txoffset is irrelevant in this case.
+				blockheight = 0
+			} else {
+				// We'll render transactions at this height, on or before txoffset.
+				blockheight = block.Height
+			}
+		}
+
+		result, err := getTransactions(cf.Node, blockheight, txoffset, limit)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not convert tx to transactable: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("could not get transactions", err, http.StatusInternalServerError))
 			return
 		}
 
-		// Get the transaction type name without the package name on the front.
-		txtype := fmt.Sprintf("%T", txdata)
-		idx := strings.LastIndex(txtype, ".")
-		if idx >= 0 {
-			txtype = txtype[idx+1:]
-		}
-
-		result := TransactionData{
-			BlockHeight: blockheight,
-			TxOffset:    txoffset,
-			Fee:         vd.Fee,
-			SIB:         vd.SIB,
-			TxType:      txtype,
-			TxData:      txdata,
-		}
 		reqres.RespondJSON(w, reqres.OKResponse(result))
 	}
 }
