@@ -11,32 +11,12 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
-
-const sysvarKeys = "sysvar private keys"
-
-func initAppSysvarWithIndex(t *testing.T, indexAddr string, indexVersion int) (
-	*App, generator.Associated,
-) {
-	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
-	app.InitChain(abci.RequestInitChain{})
-
-	// Fetch the sysvar address system variable.
-	sysvarAddr := address.Address{}
-	err := app.System(sv.SetSysvarAddressName, &sysvarAddr)
-	require.NoError(t, err)
-	assc[sysvarKeys], err = MockSystemAccount(app, sysvarAddr)
-
-	return app, assc
-}
 
 func withRedis(t *testing.T, test func(port string)) {
 	// Start redis server on a non-default (test) port.  Using a non-standard port means we
@@ -64,16 +44,32 @@ func withRedis(t *testing.T, test func(port string)) {
 	test(port)
 }
 
+func deliverTransaction(t *testing.T, app *App, tx metatx.Transactable) string {
+	txBytes, err := metatx.Marshal(tx, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.CheckTx(txBytes)
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	txResponse := app.DeliverTx(txBytes)
+	require.Equal(t, "", txResponse.Log)
+
+	return metatx.Hash(tx)
+}
+
 func TestSysvarHistoryIndex(t *testing.T) {
 	withRedis(t, func(port string) {
 		// Create the app and tx factory.
-		app, assc := initAppSysvarWithIndex(t, "localhost:"+port, 0)
+		app, assc := initAppRFEWithIndex(t, "localhost:"+port, 0)
 
 		// Test data.
 		sysvar := "sysvar"
 		value := "value"
-		height := uint64(123)
 		valueBytes := []byte(value)
+		height := uint64(123)
 
 		// Test incremental indexing.
 		t.Run("TestSysvarHistoryIncrementalIndexing", func(t *testing.T) {
@@ -93,18 +89,7 @@ func TestSysvarHistoryIndex(t *testing.T) {
 					uint64(1),
 					privateKeys[0],
 				)
-
-				txBytes, err := metatx.Marshal(tx, TxIDs)
-				require.NoError(t, err)
-
-				resp := app.CheckTx(txBytes)
-				if resp.Log != "" {
-					t.Log(resp.Log)
-				}
-				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-				txResponse := app.DeliverTx(txBytes)
-				require.Equal(t, "", txResponse.Log)
+				deliverTransaction(t, app, tx)
 			})
 
 			// End the block.
@@ -137,11 +122,15 @@ func TestIndex(t *testing.T) {
 		app, assc := initAppRFEWithIndex(t, "localhost:"+port, 0)
 
 		// Test data.
+		sysvar := "sysvar"
+		value := "value"
+		valueBytes := []byte(value)
 		height := uint64(123)
-		txOffset := 0                                 // One transaction in the block.
+		txOffsetSSV := 0
+		txOffsetRFE := 1
 		tmBlockHash := []byte("abcdefghijklmnopqrst") // 20 bytes
 		blockHash := fmt.Sprintf("%x", tmBlockHash)   // 40 characters
-		var txHash string
+		var txHashSSV, txHashRFE string
 		blockTime := time.Now()
 
 		search := app.GetSearch().(*srch.Client)
@@ -176,30 +165,25 @@ func TestIndex(t *testing.T) {
 			}
 			app.BeginBlock(begin)
 
-			// Deliver a tx.
+			// Deliver some transactions.
 			t.Run("TestTxHashIndexing", func(t *testing.T) {
-				privateKeys := assc[rfeKeys].([]signature.PrivateKey)
-				rfe := NewReleaseFromEndowment(
-					targetAddress,
-					math.Ndau(1),
+				privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
+				ssv := NewSetSysvar(
+					sysvar,
+					valueBytes,
 					uint64(1),
 					privateKeys[0],
 				)
+				txHashSSV = deliverTransaction(t, app, ssv)
 
-				// Get the tx hash so we an search on it later.
-				txHash = metatx.Hash(rfe)
-
-				rfeBytes, err := metatx.Marshal(rfe, TxIDs)
-				require.NoError(t, err)
-
-				resp := app.CheckTx(rfeBytes)
-				if resp.Log != "" {
-					t.Log(resp.Log)
-				}
-				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-				txResponse := app.DeliverTx(rfeBytes)
-				require.Equal(t, "", txResponse.Log)
+				privateKeys = assc[rfeKeys].([]signature.PrivateKey)
+				rfe := NewReleaseFromEndowment(
+					targetAddress,
+					math.Ndau(1),
+					uint64(2),
+					privateKeys[0],
+				)
+				txHashRFE = deliverTransaction(t, app, rfe)
 			})
 
 			// End the block.
@@ -218,36 +202,46 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, height, heightResult)
 			})
 
-			t.Run("TestTxHashSearching", func(t *testing.T) {
-				vd, err := search.SearchTxHash(txHash)
+			t.Run("TestTxHashSearchingSSV", func(t *testing.T) {
+				vd, err := search.SearchTxHash(txHashSSV)
 				require.NoError(t, err)
 				require.Equal(t, height, vd.BlockHeight)
-				require.Equal(t, txOffset, vd.TxOffset)
+				require.Equal(t, txOffsetSSV, vd.TxOffset)
 			})
 
-			t.Run("TestTxTypeSearchingRFE", func(t *testing.T) {
-				txTypes := []string{"ReleaseFromEndowment", "Transfer"}
-				vd, err := search.SearchTxTypes(srch.StartTxHash, txTypes, 10)
+			t.Run("TestTxHashSearchingRFE", func(t *testing.T) {
+				vd, err := search.SearchTxHash(txHashRFE)
+				require.NoError(t, err)
+				require.Equal(t, height, vd.BlockHeight)
+				require.Equal(t, txOffsetRFE, vd.TxOffset)
+			})
+
+			t.Run("TestTxTypeSearching", func(t *testing.T) {
+				txTypes := []string{"ReleaseFromEndowment", "SetSysvar"}
+
+				// The first query will tell us that this hash is the start of the next page.
+				txHashNext := txHashSSV
+
+				// The first page should return the latest (RFE) transaction.
+				vd, err := search.SearchTxTypes("", txTypes, 1)
+				require.NoError(t, err)
+				require.Equal(t, 1, len(vd.Txs))
+				require.Equal(t, txHashNext, vd.NextTxHash)
+				require.Equal(t, height, vd.Txs[0].BlockHeight)
+				require.Equal(t, txOffsetRFE, vd.Txs[0].TxOffset)
+
+				// The second page should return the first (SSV) transaction.
+				vd, err = search.SearchTxTypes(txHashNext, txTypes, 1)
 				require.NoError(t, err)
 				require.Equal(t, 1, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
 				require.Equal(t, height, vd.Txs[0].BlockHeight)
-				require.Equal(t, txOffset, vd.Txs[0].TxOffset)
-			})
-
-			t.Run("TestTxTypeSearchingRFEHash", func(t *testing.T) {
-				txTypes := []string{"ReleaseFromEndowment"}
-				vd, err := search.SearchTxTypes(txHash, txTypes, 1)
-				require.NoError(t, err)
-				require.Equal(t, 1, len(vd.Txs))
-				require.Equal(t, "", vd.NextTxHash)
-				require.Equal(t, height, vd.Txs[0].BlockHeight)
-				require.Equal(t, txOffset, vd.Txs[0].TxOffset)
+				require.Equal(t, txOffsetSSV, vd.Txs[0].TxOffset)
 			})
 
 			t.Run("TestTxTypeSearchingTransfer", func(t *testing.T) {
 				txTypes := []string{"Transfer"}
-				vd, err := search.SearchTxTypes(srch.StartTxHash, txTypes, 1)
+				vd, err := search.SearchTxTypes("", txTypes, 1)
 				require.NoError(t, err)
 				require.Equal(t, 0, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
@@ -281,7 +275,7 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, 1, len(ahr.Txs))
 				valueData := ahr.Txs[0]
 				require.Equal(t, height, valueData.BlockHeight)
-				require.Equal(t, txOffset, valueData.TxOffset)
+				require.Equal(t, txOffsetRFE, valueData.TxOffset)
 				require.Equal(t, math.Ndau(1), valueData.Balance)
 			})
 
