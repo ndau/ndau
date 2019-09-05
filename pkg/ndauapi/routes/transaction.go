@@ -269,7 +269,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		// Use the tx type index if types were given, then exit early.
 		qp := getQueryParms(r)
 		txtypes := qp["types"]
-		typeNames := strings.Split(txtypes, ",")
+		typeNames := strings.Split(txtypes, "|")
 		if len(typeNames) > 1 || len(typeNames) == 1 && typeNames[0] != "" {
 			result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
 			if err != nil {
