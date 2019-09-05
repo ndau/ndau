@@ -10,9 +10,6 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/query"
 )
 
-// StartTxHash is used by SearchTxTypes() to return the latest transactions on the blockchain.
-const StartTxHash = "start"
-
 // SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
 // The response is sorted by ascending block height, each entry is where the key's value changed.
 // Pass in 0,0 for the paging params to get the entire history.
@@ -106,6 +103,9 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 }
 
 // SearchTxTypes returns tx data for a range of transactions on or before the given tx hash.
+// If txHash is "", this will return the latest page of transactions from the blockchain.
+// If txTypes is empty, this will return zero results.
+// If limit is non-positive, this will return results as if the page size is infinite.
 func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
 	listValueData := TxListValueData{}
 
@@ -140,11 +140,9 @@ func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) 
 
 	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
 	// Use reverse rank since we want transactions in reverse chronological order.
+	// Default is to start from zero (latest transaction) when an empty tx hash is given.
 	var start int64
-	if txHash == StartTxHash || txHash == "" {
-		// Start from the latest tx.
-		start = 0
-	} else {
+	if txHash != "" {
 		start, err = search.Client.ZRevRank(searchKey, txHash)
 		if err != nil {
 			// No error if the hash is bad (not part of the results, invalid, etc).

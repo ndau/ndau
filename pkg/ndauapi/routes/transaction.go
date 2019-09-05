@@ -255,6 +255,11 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
+		// Treat "start" and "" as the same thing: get the latest page of transactions.
+		if txhash == "start" {
+			txhash = ""
+		}
+
 		limit, _, err := getPagingParams(r, MaximumRange)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("paging error", err, http.StatusBadRequest))
@@ -279,7 +284,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		// There are no type filters in this case.  All transactions are returned.
 		var blockheight int64
 		var txoffset int
-		if txhash == search.StartTxHash {
+		if txhash == "" {
 			// Start with the latest transaction on the blockchain.
 			block, err := cf.Node.Block(nil)
 			if err != nil {
