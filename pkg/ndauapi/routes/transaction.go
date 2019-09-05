@@ -29,8 +29,6 @@ type TransactionData struct {
 }
 
 // TransactionList is the format we use when writing the result of the transaction list route.
-// We use an object containing a single array.  This allows us to add more to the response in
-// the future without breaking existing clients.
 type TransactionList struct {
 	Txs        []TransactionData
 	NextTxHash string
