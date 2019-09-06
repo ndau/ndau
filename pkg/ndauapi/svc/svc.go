@@ -72,8 +72,14 @@ var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 var dummyTransactionResult = routes.TransactionData{
 	BlockHeight: 1234,
 	TxOffset:    3,
+	TxHash:      "123abc34099f",
 	TxType:      "Lock",
 	TxData:      dummyLockTx,
+}
+
+var dummyTransactionList = routes.TransactionList{
+	Txs:        []routes.TransactionData{dummyTransactionResult},
+	NextTxHash: "123abc34099f",
 }
 
 var dummySubmitResult = routes.SubmitResult{
@@ -183,10 +189,11 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/block/before/:height").To(routes.HandleBlockBefore(cf)).
 		Operation("BlockBefore").
-		Doc("Returns a (possibly filtered) sequence of block metadata for blocks of height less than last.").
-		Param(boneful.PathParameter("height", "Blocks of this height and greater will not be returned.").DataType("int").Required(true)).
+		Doc("Returns a (possibly filtered) sequence of block metadata for blocks on or before a given height.").
+		Param(boneful.PathParameter("height", "Blocks greater than this height will not be returned.").DataType("int").Required(true)).
 		Param(boneful.QueryParameter("filter", "Set to 'noempty' to exclude empty blocks.").DataType("string").Required(true)).
 		Param(boneful.QueryParameter("after", "The block height after which no more results should be returned.").DataType("int").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(rpctypes.ResultBlockchainInfo{
 			LastHeight: 12345,
@@ -416,6 +423,15 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("TransactionByHash").
 		Produces(JSON).
 		Writes(dummyTransactionResult))
+
+	svc.Route(svc.GET("/transaction/before/:txhash").To(routes.HandleTransactionBefore(cf)).
+		Operation("TransactionBefore").
+		Doc("Returns a sequence of transaction metadata for transactions on or before a given transaction hash.").
+		Param(boneful.PathParameter("txhash", "Only transactions on or before this will be returned. Use 'start' to get the most recent page of transactions").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("types", "Pipe-separated list of transaction types to return. Leave blank to get transactions of any type").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
+		Produces(JSON).
+		Writes(dummyTransactionList))
 
 	svc.Route(svc.POST("/tx/prevalidate/:txtype").To(routes.HandlePrevalidateTx(cf)).
 		Doc("Prevalidates a transaction (tells if it would be accepted and what the transaction fee will be.").

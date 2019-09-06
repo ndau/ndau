@@ -17,6 +17,9 @@ const HeightByBlockHashCommand = "heightbyblockhash"
 // HeightByTxHashCommand is a QueryParams command for searching block height by tx hash.
 const HeightByTxHashCommand = "heightbytxhash"
 
+// HeightsByTxTypesCommand is a QueryParams command for searching block heights by tx types.
+const HeightsByTxTypesCommand = "heightsbytxtypes"
+
 // QueryParams is a json-friendly struct for passing query terms over endpoints.
 type QueryParams struct {
 	// App-specific command.
@@ -24,6 +27,12 @@ type QueryParams struct {
 
 	// A block hash or tx hash (or any other kind of hash), depending on the command.
 	Hash string `json:"hash"`
+
+	// List of tx types, or any other format depending on the command.
+	Types []string `json:"types"`
+
+	// Useful for paging queries.
+	Limit int `json:"limit"`
 }
 
 // SysvarHistoryParams is a json-friendly struct for the /sysvar/history endpoint.
@@ -53,12 +62,18 @@ type AccountListParams struct {
 	Limit   int    `json:"limit"`
 }
 
-// TxValueData is used for data about a particular transaction
+// TxValueData is used for data about a particular transaction.
 type TxValueData struct {
 	BlockHeight uint64 `json:"height" msg:"h"`
 	TxOffset    int    `json:"offset" msg:"o"`
 	Fee         uint64 `json:"fee" msg:"f"`
 	SIB         uint64 `json:"sib" msg:"s"`
+}
+
+// TxListValueData is used for data about a list of transactions.
+type TxListValueData struct {
+	Txs        []TxValueData `json:"txs" msg:"t"`
+	NextTxHash string        `json:"next" msg:"n"`
 }
 
 // AccountTxValueData is like TxValueData that stores account balance at the associated block.
@@ -104,6 +119,25 @@ func (valueData *TxValueData) Marshal() string {
 
 // Unmarshal the given search value string that was indexed with its search key string.
 func (valueData *TxValueData) Unmarshal(searchValue string) error {
+	bytes, err := base64.StdEncoding.DecodeString(searchValue)
+	if err != nil {
+		return errors.Wrap(err, "decoding b64")
+	}
+	_, err = valueData.UnmarshalMsg(bytes)
+	return errors.Wrap(err, "decoding msgp")
+}
+
+// Marshal the value data into a search value string to index it with its search key string.
+func (valueData *TxListValueData) Marshal() string {
+	m, err := valueData.MarshalMsg(nil)
+	if err != nil {
+		panic(err)
+	}
+	return base64.StdEncoding.EncodeToString(m)
+}
+
+// Unmarshal the given search value string that was indexed with its search key string.
+func (valueData *TxListValueData) Unmarshal(searchValue string) error {
 	bytes, err := base64.StdEncoding.DecodeString(searchValue)
 	if err != nil {
 		return errors.Wrap(err, "decoding b64")

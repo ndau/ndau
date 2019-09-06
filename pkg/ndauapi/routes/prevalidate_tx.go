@@ -37,19 +37,18 @@ func HandlePrevalidateTx(cf cfg.Cfg) http.HandlerFunc {
 		txhash := metatx.Hash(tx)
 
 		// Check if the tx has already been indexed.
-		vd, err := searchTxHash(cf.Node, txhash)
+		block, _, _, _, err := searchTxHash(cf.Node, txhash)
 		if err != nil {
 			cf.Logger.WithError(err).Info("txhash search failed")
 			reqres.RespondJSON(w, reqres.NewFromErr("txhash search failed", err, http.StatusInternalServerError))
 			return
 		}
-		blockheight := vd.BlockHeight
 
 		result := PrevalidateResult{TxHash: txhash, Code: EndpointResultOK}
 		code := http.StatusOK
 
 		// If we've got the tx indexed, it must already be on the blockchain; succeed by default.
-		if blockheight > 0 {
+		if block != nil {
 			result.Msg = "tx already committed"
 			result.Code = EndpointResultTxAlreadyCommitted
 			code = http.StatusAccepted

@@ -84,8 +84,6 @@ func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 }
 
 // SearchTxHash returns tx data for the given tx hash.
-//
-// Returns nil and no error if the given tx hash was not found in the index.
 func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 	valueData := TxValueData{}
 	searchKey := formatTxHashToHeightSearchKey(txHash)
@@ -102,6 +100,97 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 
 	err = valueData.Unmarshal(searchValue)
 	return valueData, err
+}
+
+// SearchTxTypes returns tx data for a range of transactions on or before the given tx hash.
+// If txHash is "", this will return the latest page of transactions from the blockchain.
+// If txTypes is empty, this will return zero results.
+// If limit is non-positive, this will return results as if the page size is infinite.
+func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
+	listValueData := TxListValueData{}
+
+	if len(txTypes) == 0 {
+		// No types given means no results.
+		return listValueData, nil
+	}
+
+	var searchKeys []string
+	for _, t := range txTypes {
+		searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
+	}
+
+	// Use a unique key name for each query.
+	// NOTE: We could consider using a well-defined name based on the query params, but the
+	// usefulness of that is primarily around multiple blockchain explorer clients hitting the
+	// same endpoint near-simultaneously.  The most common one being the first page of results.
+	// However, once we have higher volume, the latest page will be ever-changing.  And, in a low
+	// volume ecosystem, there are likely not going to be many simultaneous queries.  So current
+	// implementation uses a short-lived union key and we DELETE it, rather than EXPIRE it.
+	searchKey := formatUniqueUnionSearchKey()
+
+	// Delete the short-lived union key from the database when we're all done.
+	defer search.Client.Del(searchKey)
+
+	// Merge sort all the requested tx type results.
+	count, err := search.Client.ZUnionStore(searchKey, searchKeys)
+	if err != nil || count == 0 {
+		// This will return an empty list with no error if the union returned zero count.
+		return listValueData, err
+	}
+
+	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
+	// Use reverse rank since we want transactions in reverse chronological order.
+	// Default is to start from zero (latest transaction) when an empty tx hash is given.
+	var start int64
+	if txHash != "" {
+		start, err = search.Client.ZRevRank(searchKey, txHash)
+		if err != nil {
+			// No error if the hash is bad (not part of the results, invalid, etc).
+			// Just return empty results.
+			return listValueData, nil
+		}
+	}
+
+	var stop int64
+	if limit <= 0 {
+		// Zero or negative limit means "unlimited".
+		stop = -1
+	} else {
+		// Like the start rank, the stop rank is inclusive.
+		// We don't subtract one here since we want to get the next tx hash after the page.
+		// If this is more than there are results, all results after the start are returned.
+		stop = start + int64(limit)
+	}
+
+	// Get a page's worth of results from the union.
+	hashes, err := search.Client.ZRevRange(searchKey, start, stop)
+	if err != nil {
+		return listValueData, err
+	}
+
+	if limit <= 0 || limit >= len(hashes) {
+		// We're getting the last page of results, there will be no "next" tx hash.
+		limit = len(hashes)
+	} else {
+		// The last element is used for the next tx hash and not included in our results below.
+		limit = len(hashes) - 1
+		listValueData.NextTxHash = hashes[limit]
+	}
+
+	// Pull out transaction data using the tx hash index, for each tx hash in the list.
+	for i := 0; i < limit; i++ {
+		valueData, err := search.SearchTxHash(hashes[i])
+		if err != nil {
+			return listValueData, err
+		}
+
+		// Sanity check.  Every search in this loop is exepected to return a valid tx result.
+		if valueData.BlockHeight > 0 {
+			listValueData.Txs = append(listValueData.Txs, valueData)
+		}
+	}
+
+	return listValueData, nil
 }
 
 // SearchAccountHistory returns an array of block height and txoffset pairs associated with the

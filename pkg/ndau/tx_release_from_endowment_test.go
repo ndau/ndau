@@ -20,6 +20,7 @@ import (
 )
 
 const rfeKeys = "rfe private keys"
+const sysvarKeys = "sysvar private keys"
 
 func initAppRFE(t *testing.T) (*App, generator.Associated) {
 	return initAppRFEWithIndex(t, "", -1)
@@ -31,9 +32,15 @@ func initAppRFEWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
 	app.InitChain(abci.RequestInitChain{})
 
+	// Fetch the sysvar address system variable.
+	sysvarAddr := address.Address{}
+	err := app.System(sv.SetSysvarAddressName, &sysvarAddr)
+	require.NoError(t, err)
+	assc[sysvarKeys], err = MockSystemAccount(app, sysvarAddr)
+
 	// fetch the RFE address system variable
 	rfeAddr := address.Address{}
-	err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
+	err = app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
 	require.NoError(t, err)
 	assc[rfeKeys], err = MockSystemAccount(app, rfeAddr)
 

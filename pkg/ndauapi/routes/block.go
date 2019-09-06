@@ -184,7 +184,7 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, node cfg.TMClient
 	befores := bone.GetValue(r, "height")
 	before, err := strconv.ParseInt(befores, 10, 64)
 	if err != nil || before < 1 {
-		reqres.RespondJSON(w, reqres.NewFromErr("height must be a number > 1", err, http.StatusBadRequest))
+		reqres.RespondJSON(w, reqres.NewFromErr("height must be a number >= 1", err, http.StatusBadRequest))
 		return
 	}
 
@@ -195,14 +195,10 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, node cfg.TMClient
 		return
 	}
 
-	limits := qp["limit"]
-	var limit int64 = MaximumRange
-	if limits != "" {
-		limit, err = strconv.ParseInt(limits, 10, 64)
-		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("limit must be a number", err, http.StatusBadRequest))
-			return
-		}
+	limit, _, err := getPagingParams(r, MaximumRange)
+	if err != nil {
+		reqres.RespondJSON(w, reqres.NewFromErr("paging error", err, http.StatusBadRequest))
+		return
 	}
 
 	afters := qp["after"]
@@ -214,20 +210,12 @@ func handleBlockBefore(w http.ResponseWriter, r *http.Request, node cfg.TMClient
 			return
 		}
 		if after > before || after < 1 {
-			reqres.RespondJSON(w, reqres.NewAPIError("after must be between 0 and before", http.StatusBadRequest))
-			return
-		}
-		if after == before {
-			// don't even do the query if after == before
-			reqres.RespondJSON(w, reqres.OKResponse(rpctypes.ResultBlockchainInfo{
-				LastHeight: after,
-				BlockMetas: make([]*tmtypes.BlockMeta, 0),
-			}))
+			reqres.RespondJSON(w, reqres.NewAPIError("after must be between 1 and before, inclusive", http.StatusBadRequest))
 			return
 		}
 	}
 
-	blocks, err := getBlocksMatching(node, after, before, limit, filter)
+	blocks, err := getBlocksMatching(node, after, before, int64(limit), filter)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get blockchain: %v", err), http.StatusInternalServerError))
 		return
@@ -410,7 +398,7 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, node cfg.TMCli
 	reqres.RespondJSON(w, reqres.OKResponse(blocks))
 }
 
-// HandleBlockBefore handles requests for blocks before a given height, and
+// HandleBlockBefore handles requests for blocks on or before a given height, and
 // manages filtering better than HandleBlockRange.
 func HandleBlockBefore(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
