@@ -117,7 +117,7 @@ func formatUniqueUnionSearchKey() string {
 }
 
 func formatTxTypeToHeightSearchKey(typeName string) string {
-	return txTypeToHeightSearchKeyPrefix + typeName
+	return txTypeToHeightSearchKeyPrefix + strings.ToLower(typeName)
 }
 
 func formatAccountAddressToHeightSearchKey(addr string) string {
