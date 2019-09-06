@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/go-zoo/bone"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -265,10 +264,8 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		// Use the tx type index if types were given, then exit early.
-		qp := getQueryParms(r)
-		txtypes := qp["types"]
-		typeNames := strings.Split(txtypes, "|")
-		if len(typeNames) > 1 || len(typeNames) == 1 && typeNames[0] != "" {
+		typeNames, ok := r.URL.Query()["types"]
+		if ok && len(typeNames) > 0 {
 			result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
 			if err != nil {
 				reqres.RespondJSON(w, reqres.NewFromErr("could not find transactions", err, http.StatusInternalServerError))

@@ -428,7 +428,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Operation("TransactionBefore").
 		Doc("Returns a sequence of transaction metadata for transactions on or before a given transaction hash.").
 		Param(boneful.PathParameter("txhash", "Only transactions on or before this will be returned. Use 'start' to get the most recent page of transactions").DataType("string").Required(false)).
-		Param(boneful.QueryParameter("types", "Pipe-separated list of transaction types to return. Leave blank to get transactions of any type").DataType("string").Required(false)).
+		Param(boneful.QueryParameter("types", "Comma-separated list of transaction types to return. Leave blank to get transactions of any type").DataType("string").Required(false)).
 		Param(boneful.QueryParameter("limit", "The maximum number of items to return. Use a positive limit, or 0 for getting max results; default=0, max=100").DataType("int").Required(false)).
 		Produces(JSON).
 		Writes(dummyTransactionList))
