@@ -3,7 +3,6 @@ package routes_test
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -18,24 +17,10 @@ import (
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-var ndauRPC string
-var chaosRPC string
-
 // This is used as an ndau account name as well as a chaos namespace in our tests.
 const accountAndNamespaceString = "integrationtest"
 
 func init() {
-	flag.StringVar(&ndauRPC, "ndaurpc", "", "ndau rpc url")
-	flag.StringVar(&chaosRPC, "chaosrpc", "", "chaos rpc url")
-	flag.Parse()
-
-	// Put these into environment variables so cfg.New() finds them where it's looking for them.
-	// But only if they were specified on the command line.  Otherwise, they may already be in
-	// environment variables.
-	if ndauRPC != "" {
-		os.Setenv("NDAUAPI_NDAU_RPC_URL", ndauRPC)
-	}
-
 	// The config calls need the NDAUHOME env var set, as well as each chaos/ndau tool invocation.
 	ndauhome := os.ExpandEnv("$NDAUHOME")
 	if ndauhome == "" {

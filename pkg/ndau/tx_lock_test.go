@@ -11,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestValidLockTxIsValid(t *testing.T) {
@@ -18,7 +19,7 @@ func TestValidLockTxIsValid(t *testing.T) {
 	lock := NewLock(sourceAddress, math.Duration(30*math.Day), 1, private)
 	bytes, err := tx.Marshal(lock, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -33,7 +34,7 @@ func TestLockAccountValidates(t *testing.T) {
 	// compute must be invalid
 	bytes, err := tx.Marshal(lock, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -44,7 +45,7 @@ func TestLockSequenceValidates(t *testing.T) {
 	// lock must be invalid
 	bytes, err := tx.Marshal(lock, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -62,7 +63,7 @@ func TestLockSignatureValidates(t *testing.T) {
 	// lock must be invalid
 	bytes, err := tx.Marshal(lock, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -97,7 +98,7 @@ func TestLockCannotReduceLockLength(t *testing.T) {
 	// lock must be invalid
 	bytes, err := tx.Marshal(lock, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

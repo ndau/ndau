@@ -83,7 +83,7 @@ func TestNNRIsValidWithValidSignature(t *testing.T) {
 			nnrBytes, err := tx.Marshal(nnr, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(nnrBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: nnrBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -105,7 +105,7 @@ func TestNNRIsInvalidWithInvalidSignature(t *testing.T) {
 	nnrBytes, err := tx.Marshal(nnr, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(nnrBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: nnrBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

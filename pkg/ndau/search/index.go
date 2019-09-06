@@ -269,7 +269,7 @@ func (search *Client) indexTxType(txType, txHash string, blockHeight uint64, txO
 	}
 
 	searchKey := formatTxTypeToHeightSearchKey(txType)
-	score := float64(blockHeight) + float64(txOffset) / float64(maxTxsPerBlock)
+	score := float64(blockHeight) + float64(txOffset)/float64(maxTxsPerBlock)
 	count, err := search.Client.ZAdd(searchKey, score, txHash)
 	if err != nil {
 		return 0, 0, err

@@ -64,7 +64,7 @@ func TestCVCIsValidWithValidSignature(t *testing.T) {
 			cvcBytes, err := metatx.Marshal(cvc, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(cvcBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: cvcBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -87,7 +87,7 @@ func TestCVCIsInvalidWithInvalidSignature(t *testing.T) {
 	cvcBytes, err := metatx.Marshal(cvc, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(cvcBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: cvcBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

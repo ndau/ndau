@@ -13,6 +13,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func initAppNotify(t *testing.T) (*App, signature.PrivateKey) {
@@ -29,7 +30,7 @@ func TestValidNotifyTxIsValid(t *testing.T) {
 	notify := NewNotify(sourceAddress, 1, private)
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
 
@@ -44,7 +45,7 @@ func TestNotifyAccountValidates(t *testing.T) {
 	// compute must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -55,7 +56,7 @@ func TestNotifySequenceValidates(t *testing.T) {
 	// notify must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -73,7 +74,7 @@ func TestNotifySignatureValidates(t *testing.T) {
 	// notify must be invalid
 	bytes, err := tx.Marshal(notify, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

@@ -11,6 +11,7 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestCreateChildAccountInvalidTargetAddress(t *testing.T) {
@@ -46,7 +47,7 @@ func TestCreateChildAccountInvalidTargetAddress(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -83,7 +84,7 @@ func TestCreateChildAccountInvalidChildAddress(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -109,7 +110,7 @@ func TestCreateChildAccountNonExistentTargetAddress(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -135,7 +136,7 @@ func TestValidCreateChildAccount(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -174,7 +175,7 @@ func TestCreateChildAccountRecoursePeriod(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -205,7 +206,7 @@ func TestCreateChildAccountNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -232,7 +233,7 @@ func TestValidCreateChildAccountUpdatesTransferKey(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -264,7 +265,7 @@ func TestCreateChildAccountNoValidationKeys(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -296,7 +297,7 @@ func TestCreateChildAccountTooManyValidationKeys(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -330,7 +331,7 @@ func TestCreateChildAccountCannotHappenTwice(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -428,7 +429,7 @@ func TestCreateChildAccountInvalidValidationScript(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -455,7 +456,7 @@ func TestCreateChildAccountInvalidChildSignature(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

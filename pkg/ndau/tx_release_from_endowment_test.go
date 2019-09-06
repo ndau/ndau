@@ -70,7 +70,7 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 			rfeBytes, err := tx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(rfeBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -93,7 +93,7 @@ func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 	rfeBytes, err := tx.Marshal(rfe, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(rfeBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -118,7 +118,7 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 			rfeBytes, err := tx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(rfeBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -127,7 +127,7 @@ func TestValidRFEAddsNdauToExistingDestination(t *testing.T) {
 			app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 				Time: time.Now(),
 			}})
-			dresp := app.DeliverTx(rfeBytes)
+			dresp := app.DeliverTx(abci.RequestDeliverTx{Tx: rfeBytes})
 			app.EndBlock(abci.RequestEndBlock{})
 			app.Commit()
 
@@ -163,7 +163,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			rfeBytes, err := tx.Marshal(rfe, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(rfeBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -172,7 +172,7 @@ func TestValidRFEAddsNdauToNonExistingDestination(t *testing.T) {
 			app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 				Time: time.Now(),
 			}})
-			dresp := app.DeliverTx(rfeBytes)
+			dresp := app.DeliverTx(abci.RequestDeliverTx{Tx: rfeBytes})
 			app.EndBlock(abci.RequestEndBlock{})
 			app.Commit()
 

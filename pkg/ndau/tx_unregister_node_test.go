@@ -65,7 +65,7 @@ func TestUnregisterNodeAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppUnregisterNode(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// what about an address which is valid but doesn't already exist?
@@ -74,7 +74,7 @@ func TestUnregisterNodeAddressFieldValidates(t *testing.T) {
 	rn = NewUnregisterNode(fakeTarget, 1, transferPrivate)
 	ctkBytes, err = tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
-	resp = app.CheckTx(ctkBytes)
+	resp = app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -85,7 +85,7 @@ func TestValidUnregisterNode(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -98,7 +98,7 @@ func TestUnregisterNodeMustBeANode(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

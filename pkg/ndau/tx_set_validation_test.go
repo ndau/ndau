@@ -43,7 +43,7 @@ func TestSetValidationAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppSetValidation(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// what about an address which is valid but doesn't already exist?
@@ -52,7 +52,7 @@ func TestSetValidationAddressFieldValidates(t *testing.T) {
 	ca = NewSetValidation(fakeTarget, targetPublic, []signature.PublicKey{newPublic}, []byte{}, 1, targetPrivate)
 	ctkBytes, err = tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
-	resp = app.CheckTx(ctkBytes)
+	resp = app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -65,7 +65,7 @@ func TestValidSetValidation(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppSetValidation(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -77,7 +77,7 @@ func TestSetValidationNewValidationKeyNotEqualOwnershipKey(t *testing.T) {
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -91,7 +91,7 @@ func TestValidSetValidationUpdatesValidationKey(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppSetValidation(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -99,7 +99,7 @@ func TestValidSetValidationUpdatesValidationKey(t *testing.T) {
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
 		Time: time.Now(),
 	}})
-	dresp := app.DeliverTx(ctkBytes)
+	dresp := app.DeliverTx(abci.RequestDeliverTx{Tx: ctkBytes})
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
@@ -116,7 +116,7 @@ func TestSetValidationNoValidationKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppSetValidation(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -135,7 +135,7 @@ func TestSetValidationTooManyValidationKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppSetValidation(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -158,7 +158,7 @@ func TestSetValidationCannotOverwriteMoreThanOneValidationKey(t *testing.T) {
 	ctkBytes, err := tx.Marshal(ca, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

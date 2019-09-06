@@ -48,13 +48,13 @@ func deliverTransaction(t *testing.T, app *App, tx metatx.Transactable) string {
 	txBytes, err := metatx.Marshal(tx, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(txBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: txBytes})
 	if resp.Log != "" {
 		t.Log(resp.Log)
 	}
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
-	txResponse := app.DeliverTx(txBytes)
+	txResponse := app.DeliverTx(abci.RequestDeliverTx{Tx: txBytes})
 	require.Equal(t, "", txResponse.Log)
 
 	return metatx.Hash(tx)

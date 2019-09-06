@@ -61,7 +61,7 @@ func TestRecordEndowmentNAVIsValidWithValidSignature(t *testing.T) {
 			recordEndowmentNAVBytes, err := tx.Marshal(recordEndowmentNAV, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(recordEndowmentNAVBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: recordEndowmentNAVBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -84,7 +84,7 @@ func TestRecordEndowmentNAVIsInvalidWithInvalidSignature(t *testing.T) {
 	recordEndowmentNAVBytes, err := tx.Marshal(recordEndowmentNAV, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(recordEndowmentNAVBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: recordEndowmentNAVBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

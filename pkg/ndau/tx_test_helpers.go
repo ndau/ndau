@@ -353,7 +353,7 @@ func deliverTxsContext(
 			bytes, err := metatx.Marshal(transactable, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.DeliverTx(bytes)
+			resp := app.DeliverTx(abci.RequestDeliverTx{Tx: bytes})
 			t.Log(code.ReturnCode(resp.Code))
 			if resp.Log != "" {
 				t.Log(resp.Log)

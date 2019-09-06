@@ -11,6 +11,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestValidSetRewardsDestinationTxIsValid(t *testing.T) {
@@ -20,7 +21,7 @@ func TestValidSetRewardsDestinationTxIsValid(t *testing.T) {
 	// srt must be valid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 }
@@ -36,7 +37,7 @@ func TestSetRewardsDestinationAccountValidates(t *testing.T) {
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -51,7 +52,7 @@ func TestSetRewardsDestinationDestinationValidates(t *testing.T) {
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -62,7 +63,7 @@ func TestSetRewardsDestinationSequenceValidates(t *testing.T) {
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -80,7 +81,7 @@ func TestSetRewardsDestinationSignatureValidates(t *testing.T) {
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -121,7 +122,7 @@ func TestSetRewardsDestinationInvalidIfDestinationAlsoSends(t *testing.T) {
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -138,7 +139,7 @@ func TestSetRewardsDestinationInvalidIfSourceAlsoReceives(t *testing.T) {
 	// ...srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -185,7 +186,7 @@ func TestNotifiedDestinationsAreInvalid(t *testing.T) {
 	// srt must be invalid
 	bytes, err := tx.Marshal(srt, TxIDs)
 	require.NoError(t, err)
-	resp := app.CheckTx(bytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: bytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 

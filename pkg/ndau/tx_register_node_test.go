@@ -67,7 +67,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppRegisterNode(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// what about an address which is valid but doesn't already exist?
@@ -76,7 +76,7 @@ func TestRegisterNodeAddressFieldValidates(t *testing.T) {
 	rn = NewRegisterNode(fakeTarget, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
 	ctkBytes, err = tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
-	resp = app.CheckTx(ctkBytes)
+	resp = app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -87,7 +87,7 @@ func TestRegisterNodeInvalidScript(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -119,7 +119,7 @@ func TestValidRegisterNode(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -140,7 +140,7 @@ func TestRegisterNodeMustBeInactive(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -185,7 +185,7 @@ func TestRegisterNodeTargetMustBePrimaryStakerToRulesAccount(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -200,7 +200,7 @@ func TestRulesAccountMustApproveRegisterNode(t *testing.T) {
 	ctkBytes, err := tx.Marshal(rn, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

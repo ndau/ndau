@@ -47,7 +47,7 @@ func TestChangeValidationAddressFieldValidates(t *testing.T) {
 	require.NoError(t, err)
 
 	app := initAppChangeValidation(t)
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
 	// what about an address which is valid but doesn't already exist?
@@ -56,7 +56,7 @@ func TestChangeValidationAddressFieldValidates(t *testing.T) {
 	cv = NewChangeValidation(fakeTarget, []signature.PublicKey{newPublic}, []byte{}, 1, transferPrivate)
 	ctkBytes, err = tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
-	resp = app.CheckTx(ctkBytes)
+	resp = app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
@@ -71,7 +71,7 @@ func TestValidChangeValidation(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -83,7 +83,7 @@ func TestChangeValidationNewTransferKeyNotEqualOwnershipKey(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -130,7 +130,7 @@ func TestChangeValidationNoValidationKeys(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -150,7 +150,7 @@ func TestChangeValidationTooManyValidationKeys(t *testing.T) {
 	ctkBytes, err := tx.Marshal(cv, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(ctkBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: ctkBytes})
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }

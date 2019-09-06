@@ -6,6 +6,7 @@ import (
 
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -34,7 +35,7 @@ func TestIssueIsValidWithValidSignature(t *testing.T) {
 			rfeBytes, err := tx.Marshal(issue, TxIDs)
 			require.NoError(t, err)
 
-			resp := app.CheckTx(rfeBytes)
+			resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 			if resp.Log != "" {
 				t.Log(resp.Log)
 			}
@@ -56,7 +57,7 @@ func TestIssueIsInvalidWithInvalidSignature(t *testing.T) {
 	rfeBytes, err := tx.Marshal(issue, TxIDs)
 	require.NoError(t, err)
 
-	resp := app.CheckTx(rfeBytes)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: rfeBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
