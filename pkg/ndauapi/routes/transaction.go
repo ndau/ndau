@@ -264,7 +264,7 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 		}
 
 		// Use the tx type index if types were given, then exit early.
-		typeNames, ok := r.URL.Query()["types"]
+		typeNames, ok := r.URL.Query()["type"]
 		if ok && len(typeNames) > 0 {
 			result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
 			if err != nil {
