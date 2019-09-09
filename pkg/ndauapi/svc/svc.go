@@ -75,6 +75,7 @@ var dummyTransactionResult = routes.TransactionData{
 	TxHash:      "123abc34099f",
 	TxType:      "Lock",
 	TxData:      dummyLockTx,
+	Timestamp:   dummyTimestamp,
 }
 
 var dummyTransactionList = routes.TransactionList{

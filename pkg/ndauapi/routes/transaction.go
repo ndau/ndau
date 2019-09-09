@@ -12,6 +12,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/tendermint/tendermint/types"
 	"github.com/tinylib/msgp/msgp"
 )
@@ -25,6 +26,7 @@ type TransactionData struct {
 	TxHash      string
 	TxType      string
 	TxData      metatx.Transactable
+	Timestamp   string
 }
 
 // TransactionList is the format we use when writing the result of the transaction list route.
@@ -74,7 +76,7 @@ func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, 
 }
 
 // Build a TransactionData out of raw transaction bytes from the blockchain.
-func buildTransactionData(txbytes []byte, blockheight int64, txoffset int, txhash string) (*TransactionData, error) {
+func buildTransactionData(timestamp string, txbytes []byte, blockheight int64, txoffset int, txhash string) (*TransactionData, error) {
 	// Use this approach to get the Transaction instead of metatx.Unmarshal() with
 	// metatx.AsTransaction() so that we get the same Nonce every time.
 	tx := &metatx.Transaction{}
@@ -98,6 +100,7 @@ func buildTransactionData(txbytes []byte, blockheight int64, txoffset int, txhas
 	txtype := metatx.NameOf(txdata)
 
 	return &TransactionData{
+		Timestamp:   timestamp,
 		BlockHeight: blockheight,
 		TxOffset:    txoffset,
 		TxHash:      txhash,
@@ -138,8 +141,10 @@ func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit i
 			return result, err
 		}
 
+		timestamp := block.Block.Header.Time.Format(constants.TimestampFormat)
 		txoffset := txdata.TxOffset
-		transactionData, err := buildTransactionData(block.Block.Data.Txs[txoffset], blockheight, txoffset, "")
+		txbytes := block.Block.Data.Txs[txoffset]
+		transactionData, err := buildTransactionData(timestamp, txbytes, blockheight, txoffset, "")
 		if err != nil {
 			return result, err
 		}
@@ -151,58 +156,6 @@ func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit i
 	}
 
 	result.NextTxHash = valueData.NextTxHash
-
-	return result, nil
-}
-
-// Start at 'blockheight' (at the tx at 'txoffset' within that block) and fill a list of
-// transactions with a max length of 'limit'.
-// If txoffset is negative, we start with the latest transaction in the block at blockheight.
-func getTransactions(node cfg.TMClient, blockheight int64, txoffset int, limit int) (*TransactionList, error) {
-	// This will default to no transactions and no next tx hash.
-	result := &TransactionList{}
-
-Loop:
-	for h := blockheight; h > 0; h-- {
-		block, err := node.Block(&h)
-		if err != nil {
-			return result, err
-		}
-
-		numTxs := int(block.Block.Header.NumTxs)
-		// If txoffset is negative, we want to start from the last transaction in this block.
-		if txoffset < 0 {
-			txoffset = numTxs - 1
-		}
-		// Work backward through the transaction list since we want reverse chronological order.
-		for i := txoffset; i >= 0; i-- {
-			transactionData, err := buildTransactionData(block.Block.Data.Txs[txoffset], h, i, "")
-			if err != nil {
-				return result, err
-			}
-
-			// If we've already gotten all the transactions we want, break out of both loops.
-			if limit == 0 {
-				// This is where the next page of results would start.
-				result.NextTxHash = transactionData.TxHash
-				break Loop
-			}
-			limit--
-
-			// Search the index per transaction to get its Fee and SIB values.
-			_, _, fee, sib, err := searchTxHash(node, transactionData.TxHash)
-			if err != nil {
-				return result, err
-			}
-			transactionData.Fee = fee
-			transactionData.SIB = sib
-
-			result.Txs = append(result.Txs, *transactionData)
-		}
-
-		// Start with the last transaction in the next block.
-		txoffset = -1
-	}
 
 	return result, nil
 }
@@ -229,7 +182,9 @@ func HandleTransactionFetch(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		result, err := buildTransactionData(block.Data.Txs[txoffset], block.Height, txoffset, txhash)
+		timestamp := block.Header.Time.Format(constants.TimestampFormat)
+		txbytes := block.Data.Txs[txoffset]
+		result, err := buildTransactionData(timestamp, txbytes, block.Height, txoffset, txhash)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("could not build transaction data", err, http.StatusInternalServerError))
 			return
@@ -263,53 +218,11 @@ func HandleTransactionBefore(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		// Use the tx type index if types were given, then exit early.
-		typeNames, ok := r.URL.Query()["type"]
-		if ok && len(typeNames) > 0 {
-			result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
-			if err != nil {
-				reqres.RespondJSON(w, reqres.NewFromErr("could not find transactions", err, http.StatusInternalServerError))
-				return
-			}
-			reqres.RespondJSON(w, reqres.OKResponse(result))
-			return
-		}
-
-		// The remaining code paths iterate tendermint blocks to build the results list.
-		// There are no type filters in this case.  All transactions are returned.
-		var blockheight int64
-		var txoffset int
-		if txhash == "" {
-			// Start with the latest transaction on the blockchain.
-			block, err := cf.Node.Block(nil)
-			if err != nil {
-				reqres.RespondJSON(w, reqres.NewFromErr("could not get latest block", err, http.StatusInternalServerError))
-				return
-			}
-			blockheight = block.Block.Height
-			txoffset = -1 // Negative offset means "start from the latest".
-		} else {
-			// Find the block and txoffset from which to start gathering a page of transactions.
-			var block *types.Block
-			block, txoffset, _, _, err = searchTxHash(cf.Node, txhash)
-			if err != nil {
-				reqres.RespondJSON(w, reqres.NewFromErr("could not find transaction", err, http.StatusInternalServerError))
-				return
-			}
-
-			// The block will be nil if there were empty search results.
-			if block == nil {
-				// Render zero results.  The txoffset is irrelevant in this case.
-				blockheight = 0
-			} else {
-				// We'll render transactions at this height, on or before txoffset.
-				blockheight = block.Height
-			}
-		}
-
-		result, err := getTransactions(cf.Node, blockheight, txoffset, limit)
+		// If no types were given, this will find all transactions.
+		typeNames, _ := r.URL.Query()["type"]
+		result, err := searchTxTypes(cf.Node, txhash, typeNames, limit)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewFromErr("could not get transactions", err, http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr("could not find transactions", err, http.StatusInternalServerError))
 			return
 		}
 

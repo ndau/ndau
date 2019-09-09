@@ -109,14 +109,18 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
 	listValueData := TxListValueData{}
 
-	if len(txTypes) == 0 {
-		// No types given means no results.
-		return listValueData, nil
-	}
-
 	var searchKeys []string
-	for _, t := range txTypes {
-		searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
+	if len(txTypes) == 0 {
+		// No types given means all results.
+		var err error
+		searchKeys, err = search.Client.Keys(formatTxTypeToHeightSearchKey("*"))
+		if err != nil {
+			return listValueData, err
+		}
+	} else {
+		for _, t := range txTypes {
+			searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
+		}
 	}
 
 	// Use a unique key name for each query.
