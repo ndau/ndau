@@ -70,6 +70,7 @@ func dummyParsedTimestamp() types.Timestamp {
 var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 
 var dummyTransactionResult = routes.TransactionData{
+	Timestamp:   dummyTimestamp,
 	BlockHeight: 1234,
 	TxOffset:    3,
 	TxHash:      "123abc34099f",
