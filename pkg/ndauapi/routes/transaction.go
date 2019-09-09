@@ -12,13 +12,13 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/tendermint/tendermint/types"
 	"github.com/tinylib/msgp/msgp"
 )
 
 // TransactionData is the format we use when writing the result of the transaction route.
 type TransactionData struct {
-	Timestamp   string
 	BlockHeight int64
 	TxOffset    int
 	Fee         uint64
@@ -26,6 +26,7 @@ type TransactionData struct {
 	TxHash      string
 	TxType      string
 	TxData      metatx.Transactable
+	Timestamp   string
 }
 
 // TransactionList is the format we use when writing the result of the transaction list route.
@@ -141,8 +142,8 @@ func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit i
 		}
 
 		timestamp := block.Block.Header.Time.Format(constants.TimestampFormat)
-		txbytes := block.Block.Data.Txs[txoffset]
 		txoffset := txdata.TxOffset
+		txbytes := block.Block.Data.Txs[txoffset]
 		transactionData, err := buildTransactionData(timestamp, txbytes, blockheight, txoffset, "")
 		if err != nil {
 			return result, err
