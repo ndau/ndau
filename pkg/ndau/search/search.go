@@ -103,11 +103,17 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 }
 
 // SearchTxTypes returns tx data for a range of transactions on or before the given tx hash.
-// If txHash is "", this will return the latest page of transactions from the blockchain.
+// If txHashOrHeight is "", this will return the latest page of transactions from the blockchain.
+// txHashOrHeight can be a block height.  Transactions in and before that block are returned.
 // If txTypes is empty, this will return zero results.
 // If limit is non-positive, this will return results as if the page size is infinite.
-func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) (TxListValueData, error) {
+func (search *Client) SearchTxTypes(txHashOrHeight string, txTypes []string, limit int) (TxListValueData, error) {
 	listValueData := TxListValueData{}
+
+	// Treat negative as zero (no limit).
+	if limit < 0 {
+		limit = 0
+	}
 
 	var searchKeys []string
 	if len(txTypes) == 0 {
@@ -142,37 +148,62 @@ func (search *Client) SearchTxTypes(txHash string, txTypes []string, limit int) 
 		return listValueData, err
 	}
 
-	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
-	// Use reverse rank since we want transactions in reverse chronological order.
-	// Default is to start from zero (latest transaction) when an empty tx hash is given.
-	var start int64
-	if txHash != "" {
-		start, err = search.Client.ZRevRank(searchKey, txHash)
+	// Check whether we have a hash or height.
+	// Tx hashes are always length 22 which is more digits than can fit in a unit64.
+	// This will fail to convert to uint64 in that case and we'll assume it's a hash.
+	// Same for empty string, which will be treated as "start from latest block".
+	height, err := strconv.ParseUint(txHashOrHeight, 10, 64)
+	if err != nil {
+		height = 0
+	}
+
+	var hashes []string
+	if height > 0 {
+		// This is exclusive, so we add 1.  We'll get all transactions in the input block this
+		// way, not just the first (tx offset 0) transaction.
+		score := float64(height + 1)
+		count = int64(limit)
+		// If not searching all, include one more to get the tx hash for the next page.
+		if count > 0 {
+			count++
+		}
+		hashes, err = search.Client.ZRevRangeByScore(searchKey, score, count)
 		if err != nil {
-			// No error if the hash is bad (not part of the results, invalid, etc).
-			// Just return empty results.
-			return listValueData, nil
+			return listValueData, err
+		}
+	} else {
+		// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
+		// Use reverse rank since we want transactions in reverse chronological order.
+		// Default is to start from zero (latest transaction) when an empty tx hash is given.
+		var start int64
+		if txHashOrHeight != "" {
+			start, err = search.Client.ZRevRank(searchKey, txHashOrHeight)
+			if err != nil {
+				// No error if the hash is bad (not part of the results, invalid, etc).
+				// Just return empty results.
+				return listValueData, nil
+			}
+		}
+
+		var stop int64
+		if limit == 0 {
+			// Zero or negative limit means "unlimited".
+			stop = -1
+		} else {
+			// Like the start rank, the stop rank is inclusive.
+			// We don't subtract one here since we want to get the next tx hash after the page.
+			// If this is more than there are results, all results after the start are returned.
+			stop = start + int64(limit)
+		}
+
+		// Get a page's worth of results from the union.
+		hashes, err = search.Client.ZRevRange(searchKey, start, stop)
+		if err != nil {
+			return listValueData, err
 		}
 	}
 
-	var stop int64
-	if limit <= 0 {
-		// Zero or negative limit means "unlimited".
-		stop = -1
-	} else {
-		// Like the start rank, the stop rank is inclusive.
-		// We don't subtract one here since we want to get the next tx hash after the page.
-		// If this is more than there are results, all results after the start are returned.
-		stop = start + int64(limit)
-	}
-
-	// Get a page's worth of results from the union.
-	hashes, err := search.Client.ZRevRange(searchKey, start, stop)
-	if err != nil {
-		return listValueData, err
-	}
-
-	if limit <= 0 || limit >= len(hashes) {
+	if limit == 0 || limit >= len(hashes) {
 		// We're getting the last page of results, there will be no "next" tx hash.
 		limit = len(hashes)
 	} else {

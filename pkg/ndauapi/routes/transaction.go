@@ -111,6 +111,17 @@ func buildTransactionData(timestamp string, txbytes []byte, blockheight int64, t
 
 // Search the index for the blocks containing the transaction (or those before it) with the given
 // hash and transaction types and page size limit.
+// txhash can be one of the following:
+//   empty string:   start from the last transaction in the latest block on the blockchain
+//   a tx hash:      start from that hash (which might be one of many in a given block)
+//   a block height: start from the last transaction in the block on or before that height
+// The reason we still need the tool API to take a txhash as opposed to always passing a height
+// (which is possible since we have an index that converts txhash to height and txoffset) is
+// because we need a height-txoffset pair to avoid having multiple transactions in a block
+// appearing on adjacent pages.  This is why we always return a NextTxHash, even if the input
+// "hash" is a block height.  It's a way for us to continue where we left off, even if page
+// boundaries are mid-block.  We could pass a height-txoffset pair always, but that would require
+// us to access the txhash-to-height index here.  Instead, it's done under the hood in tool code.
 func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit int) (*TransactionList, error) {
 	result := &TransactionList{}
 
