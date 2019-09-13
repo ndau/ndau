@@ -17,6 +17,16 @@ import (
 	"github.com/tinylib/msgp/msgp"
 )
 
+// TransactionDataDeprecated is the format we use when writing the result of the transaction route.
+type TransactionDataDeprecated struct {
+	BlockHeight int64
+	TxOffset    int
+	Fee         uint64
+	SIB         uint64
+	Tx          *metatx.Transaction
+	TxBytes     []byte
+}
+
 // TransactionData is the format we use when writing the result of the transaction route.
 type TransactionData struct {
 	BlockHeight int64
@@ -169,6 +179,58 @@ func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit i
 	result.NextTxHash = valueData.NextTxHash
 
 	return result, nil
+}
+
+// HandleTransactionFetchDeprecated gets called by the svc for the /transaction endpoint.
+func HandleTransactionFetchDeprecated(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Transaction hashes are query-escaped by default.
+		txhash := bone.GetValue(r, "txhash")
+		if txhash == "" {
+			reqres.RespondJSON(w, reqres.NewAPIError("txhash parameter required", http.StatusBadRequest))
+			return
+		}
+
+		block, txoffset, fee, sib, err := searchTxHash(cf.Node, txhash)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("txhash search failed: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		if block == nil {
+			// The search was valid, but there were no results.
+			reqres.RespondJSON(w, reqres.OKResponse(nil))
+			return
+		}
+
+		if txoffset >= len(block.Data.Txs) {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("tx offset out of range: %d >= %d", txoffset, len(block.Data.Txs)), http.StatusInternalServerError))
+			return
+		}
+
+		txBytes := block.Data.Txs[txoffset]
+
+		// Use this approach to get the Transaction instead of metatx.Unmarshal() with
+		// metatx.AsTransaction() so that we get the same Nonce every time.
+		tx := &metatx.Transaction{}
+		bytesReader := bytes.NewReader(txBytes)
+		msgpReader := msgp.NewReader(bytesReader)
+		err = tx.DecodeMsg(msgpReader)
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not decode tx: %v", err), http.StatusInternalServerError))
+			return
+		}
+
+		result := TransactionDataDeprecated{
+			BlockHeight: block.Height,
+			TxOffset:    txoffset,
+			Fee:         fee,
+			SIB:         sib,
+			Tx:          tx,
+			TxBytes:     txBytes,
+		}
+		reqres.RespondJSON(w, reqres.OKResponse(result))
+	}
 }
 
 // HandleTransactionFetch gets called by the svc for the /transaction endpoint.

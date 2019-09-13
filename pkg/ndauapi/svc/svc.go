@@ -69,6 +69,12 @@ func dummyParsedTimestamp() types.Timestamp {
 
 var dummyLockTx = ndau.NewLock(dummyAddress, 30*types.Day, 1234)
 
+var dummyTransactionResultDeprecated = routes.TransactionDataDeprecated{
+	BlockHeight: 1234,
+	TxOffset:    3,
+	// Assigning to Tx here causes the doc generator to fail, so we leave it nil.
+}
+
 var dummyTransactionResult = routes.TransactionData{
 	BlockHeight: 1234,
 	TxOffset:    3,
@@ -419,7 +425,13 @@ func New(cf cfg.Cfg) *boneful.Service {
 			EAIRate: 60000000000,
 		}}))
 
-	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetch(cf)).
+	svc.Route(svc.GET("/transaction/:txhash").To(routes.HandleTransactionFetchDeprecated(cf)).
+		Doc("This call is deprecated -- please use /transaction/detail.").
+		Operation("DEPRECATED:TransactionByHash").
+		Produces(JSON).
+		Writes(dummyTransactionResultDeprecated))
+
+	svc.Route(svc.GET("/transaction/detail/:txhash").To(routes.HandleTransactionFetch(cf)).
 		Doc("Returns a transaction from the blockchain given its tx hash.").
 		Operation("TransactionByHash").
 		Produces(JSON).
