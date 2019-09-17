@@ -260,3 +260,18 @@ func TestAppSurvivesEmptySignatureBurn(t *testing.T) {
 	// must be invalid because no signatures
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestBurnedQtyIsTracked(t *testing.T) {
+	app, private := initAppTx(t)
+
+	oldTotalBurned := app.GetState().(*backing.State).TotalBurned
+
+	qty := math.Ndau(50) * constants.NapuPerNdau
+	tx := NewBurn(sourceAddress, qty, 1, private)
+
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	newTotalBurned := app.GetState().(*backing.State).TotalBurned
+	require.Equal(t, math.Ndau(oldTotalBurned+qty), newTotalBurned)
+}

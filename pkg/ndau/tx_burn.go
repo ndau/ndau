@@ -3,6 +3,8 @@ package ndau
 import (
 	"errors"
 
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -40,7 +42,11 @@ func (tx *Burn) Apply(appI interface{}) error {
 		return err
 	}
 
-	return app.UpdateState(app.applyTxDetails(tx))
+	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
+		st := stI.(*backing.State)
+		st.TotalBurned += tx.Qty
+		return st, nil
+	})
 }
 
 // GetSource implements Sourcer
