@@ -632,6 +632,30 @@ func NewResolveStake(
 	return tx
 }
 
+// NewBurn creates a new Burn transactable
+//
+// If signing keys are present, the new transactable is signed with all of them
+func NewBurn(
+	target address.Address,
+	qty math.Ndau,
+	sequence uint64,
+	signingKeys ...signature.PrivateKey,
+) *Burn {
+	tx := &Burn{
+		Target:   target,
+		Qty:      qty,
+		Sequence: sequence,
+	}
+	if len(signingKeys) > 0 {
+		bytes := tx.SignableBytes()
+		for _, key := range signingKeys {
+			tx.Signatures = append(tx.Signatures, key.Sign(bytes))
+		}
+	}
+
+	return tx
+}
+
 // NewChangeSchema creates a new ChangeSchema transactable
 //
 // If signing keys are present, the new transactable is signed with all of them

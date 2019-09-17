@@ -40,6 +40,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(24): &SetStakeRules{},
 	metatx.TxID(25): &RecordEndowmentNAV{},
 	metatx.TxID(26): &ResolveStake{},
+	metatx.TxID(27): &Burn{},
 	metatx.TxID(30): &ChangeSchema{},
 }
 
@@ -399,3 +400,14 @@ type ResolveStake struct {
 }
 
 var _ NTransactable = (*ResolveStake)(nil)
+
+// Burn transactions burn the specfied amount of ndau, permanently removing it
+// from circulation.
+type Burn struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*Burn)(nil)
