@@ -18,7 +18,7 @@ type PriceInfo struct {
 	FloorPrice  pricecurve.Nanocent `json:"floorPrice"`
 	TotalIssued types.Ndau          `json:"totalIssued"`
 	TotalNdau   types.Ndau          `json:"totalNdau"`
-	TotalSIB    types.Ndau          `json:"totalSIB"`
+	TotalBurned types.Ndau          `json:"totalBurned"`
 	CurrentSIB  eai.Rate            `json:"sib"`
 }
 
@@ -32,7 +32,7 @@ func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
 	}
 	oci.TotalIssued = summ.TotalIssue
 	oci.TotalNdau = summ.TotalCirculation
-	oci.TotalSIB = summ.TotalBurned
+	oci.TotalBurned = summ.TotalBurned
 
 	sib, _, err := tool.GetSIB(cf.Node)
 	if err != nil {
