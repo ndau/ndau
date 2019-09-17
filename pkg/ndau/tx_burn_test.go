@@ -7,12 +7,14 @@ import (
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestBurnsWhoseQtyLTE0AreInvalid(t *testing.T) {
@@ -274,4 +276,31 @@ func TestBurnedQtyIsTracked(t *testing.T) {
 
 	newTotalBurned := app.GetState().(*backing.State).TotalBurned
 	require.Equal(t, math.Ndau(oldTotalBurned+qty), newTotalBurned)
+}
+
+func TestBurnedQtyDeductedFromTotalNdau(t *testing.T) {
+	app, private := initAppTx(t)
+
+	getTotal := func() math.Ndau {
+		resp := app.Query(abci.RequestQuery{
+			Path: query.SummaryEndpoint,
+			Data: nil,
+		})
+		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		summary := new(query.Summary)
+		_, err := summary.UnmarshalMsg(resp.Value)
+		require.NoError(t, err)
+		return summary.TotalNdau
+	}
+
+	oldTotal := getTotal()
+
+	qty := math.Ndau(50) * constants.NapuPerNdau
+	tx := NewBurn(sourceAddress, qty, 1, private)
+
+	resp := deliverTx(t, app, tx)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	newTotal := getTotal()
+	require.Equal(t, math.Ndau(oldTotal-qty), newTotal)
 }
