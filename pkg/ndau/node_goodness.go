@@ -25,7 +25,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return 0, errors.New("no such account")
 	}
 
-	_, hasNode := state.Nodes[addrS]
+	node, hasNode := state.Nodes[addrS]
 	if !hasNode {
 		return 0, errors.New("no such node")
 	}
@@ -52,6 +52,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		totalStake,
 		app.BlockTime(),
 		app.GetStats(),
+		node,
 	)
 	if err != nil {
 		return 0, errors.Wrap(err, "building goodness vm")

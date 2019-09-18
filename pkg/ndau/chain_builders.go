@@ -104,6 +104,16 @@ func IsChaincode(code []byte) bool {
 	return vm.ConvertToOpcodes(code).IsValid() == nil
 }
 
+var genesis math.Timestamp
+
+func init() {
+	var err error
+	genesis, err = math.ParseTimestamp("2019-05-11T03:46:40.570549Z")
+	if err != nil {
+		panic(err)
+	}
+}
+
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate
 // handler for the given transaction type. All that needs to happen after this is to call Run().
 func BuildVMForTxValidation(
@@ -249,9 +259,13 @@ func BuildVMForExchangeEAI(code []byte, acct backing.AccountData, sib eai.Rate) 
 
 // BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
 //
-// Node goodness functions can currently only use the following three pieces
-// of context to make their decision (bottom to top): address, account data,
-// total stake.
+// Node goodness functions currently use the following pieces of context:
+//   total stake (top)
+//   account data
+//   address
+//   total delegation
+//   vote history for this node
+//   timestamp of most recent RegisterNode
 //
 // All that needs to happen after this is to call Run().
 func BuildVMForNodeGoodness(
@@ -261,6 +275,7 @@ func BuildVMForNodeGoodness(
 	totalStake math.Ndau,
 	ts math.Timestamp,
 	voteStats metast.VoteStats,
+	node backing.Node,
 ) (*vm.ChaincodeVM, error) {
 	addrV, err := chain.ToValue(addr)
 	if err != nil {
@@ -288,6 +303,16 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "votingHistory")
 	}
 
+	rts := node.GetRegistration()
+	if rts == 0 {
+		// zero value means that we should use the genesis date
+		rts = genesis
+	}
+	rtsV, err := chain.ToValue(rts)
+	if err != nil {
+		return nil, errors.Wrap(err, "registration")
+	}
+
 	bin := buildBinary(code, fmt.Sprintf("goodness of %s", addr), "")
 
 	theVM, err := vm.New(*bin)
@@ -300,7 +325,7 @@ func BuildVMForNodeGoodness(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, votingHistoryV, addrV, acctV, totalStakeV)
+	err = theVM.Init(0, rtsV, votingHistoryV, addrV, acctV, totalStakeV)
 	return theVM, err
 }
 
