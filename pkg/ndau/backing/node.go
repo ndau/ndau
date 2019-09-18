@@ -3,6 +3,7 @@ package backing
 import (
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // Node keeps track of nodes in the validator and verifier sets
@@ -14,10 +15,12 @@ import (
 //
 //nomsify Node
 type Node struct {
-	Active             bool
-	DistributionScript []byte
-	TMAddress          string
-	Key                signature.PublicKey
+	Active                 bool
+	DistributionScript     []byte
+	TMAddress              string
+	Key                    signature.PublicKey
+	managedVars            map[string]struct{}
+	managedVarRegistration math.Timestamp
 }
 
 // IsActiveNode is true when the provided address is an active node
