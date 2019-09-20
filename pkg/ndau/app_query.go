@@ -24,6 +24,7 @@ func init() {
 	meta.RegisterQueryHandler(query.AccountListEndpoint, accountListQuery)
 	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
+	meta.RegisterQueryHandler(query.NodesEndpoint, nodesQuery)
 	meta.RegisterQueryHandler(query.SysvarHistoryEndpoint, sysvarHistoryQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
@@ -429,5 +430,24 @@ func sibQuery(appI interface{}, request abci.RequestQuery, response *abci.Respon
 	response.Value, err = resp.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "encoding SIB")
+	}
+}
+
+func nodesQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+	state := app.GetState().(*backing.State)
+
+	nresp := make(query.NodesResponse)
+	for addr, node := range state.Nodes {
+		nresp[addr] = query.NodeExtra{
+			Node:         node,
+			Registration: node.GetRegistration(),
+		}
+	}
+
+	var err error
+	response.Value, err = nresp.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "marshaling node response")
 	}
 }

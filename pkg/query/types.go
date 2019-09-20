@@ -1,6 +1,7 @@
 package query
 
 import (
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
@@ -79,3 +80,13 @@ type SysvarsRequest []string
 
 // SysvarsResponse is the return value from the /sysvars endpoint
 type SysvarsResponse map[string][]byte
+
+// NodeExtra has managed data which would not otherwise be captured by the
+// JSON format of a node
+type NodeExtra struct {
+	Node         backing.Node
+	Registration types.Timestamp
+}
+
+// NodesResponse is the return value from the /nodes endpoint
+type NodesResponse map[string]NodeExtra

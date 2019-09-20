@@ -7,6 +7,7 @@ const (
 	AccountListEndpoint    = "/accountlist"
 	DateRangeEndpoint      = "/daterange"
 	DelegatesEndpoint      = "/delegates"
+	NodesEndpoint          = "/nodes"
 	PrevalidateEndpoint    = "/prevalidate"
 	SearchEndpoint         = "/search"
 	SIBEndpoint            = "/sib"
