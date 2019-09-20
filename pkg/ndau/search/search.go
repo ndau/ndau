@@ -4,10 +4,14 @@ package search
 
 import (
 	"encoding/base64"
+	"fmt"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/pkg/errors"
 )
 
 // SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
@@ -272,4 +276,67 @@ func (search *Client) SearchAccountHistory(
 	}
 
 	return ahr, err
+}
+
+// BlockTime returns the timestamp for the block at a given height
+func (search *Client) BlockTime(height uint64) (time.Time, error) {
+	ts, err := search.Client.Get(
+		formatBlockHeightToTimestampSearchKey(height),
+	)
+	var t time.Time
+	if err != nil {
+		return t, fmt.Errorf("getting timestamp for block %d: %s", height, err)
+	}
+	t, err = time.Parse(constants.TimestampFormat, ts)
+	if err != nil {
+		return t, fmt.Errorf("parsing timestamp for block %d (%s): %s", height, ts, err)
+	}
+	return t, nil
+}
+
+// SearchMostRecentRegisterNode returns tx data for the most recent
+// RegisterNode transactions for the given address.
+func (search *Client) SearchMostRecentRegisterNode(address string) (TxValueData, error) {
+	searchKeys := []string{
+		formatAccountAddressToHeightSearchKey(address),
+		formatTxTypeToHeightSearchKey("RegisterNode"),
+	}
+
+	// Use a unique key name for each query.
+	queryID := formatUniqueUnionSearchKey()
+	// Delete the short-lived union key from the database when we're all done.
+	defer search.Client.Del(queryID)
+
+	// Merge sort all the requested results.
+	count, err := search.Client.ZUnionStore(queryID, searchKeys)
+	if err != nil || count == 0 {
+		// This will return an empty list with no error if the union returned zero count.
+		return TxValueData{}, errors.Wrap(err, "searching redis by composite query")
+	}
+
+	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
+	// Use reverse rank since we want transactions in reverse chronological order.
+	// Default is to start from zero (latest transaction) when an empty tx hash is given.
+
+	// Get a page's worth of results from the union.
+	hashes, err := search.Client.ZRevRange(queryID, 0, -1)
+	if err != nil {
+		return TxValueData{}, err
+	}
+	if len(hashes) == 0 {
+		return TxValueData{}, errors.New("no results")
+	}
+
+	// Pull out transaction data using the tx hash index, for each tx hash in the list.
+	valueData, err := search.SearchTxHash(hashes[0])
+	if err != nil {
+		return TxValueData{}, err
+	}
+
+	// Sanity check.
+	if valueData.BlockHeight <= 0 {
+		return valueData, errors.New("sanity check failed")
+	}
+
+	return valueData, nil
 }
