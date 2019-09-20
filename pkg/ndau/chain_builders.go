@@ -10,6 +10,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -276,6 +277,7 @@ func BuildVMForNodeGoodness(
 	ts math.Timestamp,
 	voteStats metast.VoteStats,
 	node backing.Node,
+	app *App,
 ) (*vm.ChaincodeVM, error) {
 	addrV, err := chain.ToValue(addr)
 	if err != nil {
@@ -305,8 +307,57 @@ func BuildVMForNodeGoodness(
 
 	rts := node.GetRegistration()
 	if rts == 0 {
-		// zero value means that we should use the genesis date
-		rts = genesis
+		if app.IsFeatureActive("NodeRegistrationDate") {
+			// if the registration date isn't set but the app feature is active,
+			// then we've just passed the feature barrier. This means that we
+			// should look up the transaction which registered this node
+			// in redis, and inject the value into noms.
+			//
+			// It's safe to update the noms state even if the tx was invalid,
+			// because this is just inserting data from a previously-valid tx
+			// which the current tx won't overwrite. This function only ever
+			// gets called for NominateNodeReward txs, which doesn't otherwise
+			// update the nodes list.
+
+			// we do this within a function so we can have early returns;
+			// it cleans up the control flow a bit
+			rts = func() math.Timestamp {
+				search := app.GetSearch()
+				if search == nil {
+					return genesis
+				}
+				client := search.(*srch.Client)
+				txdata, err := client.SearchMostRecentRegisterNode(addr.String())
+				if err != nil {
+					return genesis
+				}
+				tts, err := client.BlockTime(txdata.BlockHeight)
+				if err != nil {
+					return genesis
+				}
+				ts, err := math.TimestampFrom(tts)
+				if err != nil {
+					return genesis
+				}
+				return ts
+			}()
+
+			if rts != genesis {
+				app.UpdateState(func(stI metast.State) (metast.State, error) {
+					st := stI.(*backing.State)
+					node := st.Nodes[addr.String()]
+					node.SetRegistration(rts)
+					st.Nodes[addr.String()] = node
+					return st, nil
+				})
+			}
+		} else {
+			// if the registration date isn't set and the app feature is not
+			// active, then we need to pass in something (so the chaincode
+			// doesn't break), but it shouldn't actually change the result.
+			// passing in the genesis date gives us this property.
+			rts = genesis
+		}
 	}
 	rtsV, err := chain.ToValue(rts)
 	if err != nil {

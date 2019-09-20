@@ -53,6 +53,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		app.BlockTime(),
 		app.GetStats(),
 		node,
+		app,
 	)
 	if err != nil {
 		return 0, errors.Wrap(err, "building goodness vm")
