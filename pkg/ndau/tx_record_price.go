@@ -85,6 +85,10 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 
 	var fp pricecurve.Nanocent
 	fp, err = floorPrice(app, nav)
+	if err != nil {
+		err = errors.Wrap(err, "computing floor price")
+		return
+	}
 
 	// get the script used to perform the calculation
 	var sibScript wkt.Bytes
