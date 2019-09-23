@@ -296,7 +296,9 @@ func (search *Client) BlockTime(height uint64) (time.Time, error) {
 
 // SearchMostRecentRegisterNode returns tx data for the most recent
 // RegisterNode transactions for the given address.
-func (search *Client) SearchMostRecentRegisterNode(address string) (TxValueData, error) {
+//
+// Returns a nil for TxValueData if the node has never been registered.
+func (search *Client) SearchMostRecentRegisterNode(address string) (*TxValueData, error) {
 	searchKeys := []string{
 		formatAccountAddressToHeightSearchKey(address),
 		formatTxTypeToHeightSearchKey("RegisterNode"),
@@ -310,8 +312,8 @@ func (search *Client) SearchMostRecentRegisterNode(address string) (TxValueData,
 	// Merge sort all the requested results.
 	count, err := search.Client.ZUnionStore(queryID, searchKeys)
 	if err != nil || count == 0 {
-		// This will return an empty list with no error if the union returned zero count.
-		return TxValueData{}, errors.Wrap(err, "searching redis by composite query")
+		// This will return nil list with no error if the union successfully returned zero count.
+		return nil, errors.Wrap(err, "searching redis by composite query")
 	}
 
 	// Get the rank of the starting tx hash.  If it's not in the list, we have a bad query.
@@ -321,22 +323,22 @@ func (search *Client) SearchMostRecentRegisterNode(address string) (TxValueData,
 	// Get a page's worth of results from the union.
 	hashes, err := search.Client.ZRevRange(queryID, 0, -1)
 	if err != nil {
-		return TxValueData{}, err
+		return nil, err
 	}
 	if len(hashes) == 0 {
-		return TxValueData{}, errors.New("no results")
+		return nil, nil
 	}
 
 	// Pull out transaction data using the tx hash index, for each tx hash in the list.
 	valueData, err := search.SearchTxHash(hashes[0])
 	if err != nil {
-		return TxValueData{}, err
+		return &valueData, err
 	}
 
-	// Sanity check.
+	// What if redis insists on giving us a zero value?
 	if valueData.BlockHeight <= 0 {
-		return valueData, errors.New("sanity check failed")
+		return nil, nil
 	}
 
-	return valueData, nil
+	return &valueData, nil
 }

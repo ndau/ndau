@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
@@ -236,6 +238,66 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, height-1, firstHeight)
 				// Expecting the block after the one we indexed since it's an exclusive upper bound.
 				require.Equal(t, height+1, lastHeight)
+			})
+		})
+
+		t.Run("TestMostRecentRegisterNode", func(t *testing.T) {
+			// precondition: this node has never been registered
+			txData, err := search.SearchMostRecentRegisterNode(targetAddress.String())
+			require.NoError(t, err)
+			require.Nil(t, txData)
+
+			// setup: ensure node can be registered
+			modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+				acct.Balance = 1000 * constants.NapuPerNdau
+				acct.ValidationKeys = []signature.PublicKey{transferPublic}
+			})
+			noderules, _ := getRulesAccount(t, app)
+			err = app.UpdateStateImmediately(app.Stake(
+				1000*constants.NapuPerNdau,
+				targetAddress, noderules, noderules,
+				nil,
+			))
+			require.NoError(t, err)
+
+			// state change: register the node.
+			height := uint64(1024)
+			rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
+			resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height))
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+			// postcondition: MRRN must correctly identify the block height
+			txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+			require.NoError(t, err)
+			require.NotNil(t, txData)
+			require.Equal(t, height, txData.BlockHeight)
+
+			t.Run("Reregister", func(t *testing.T) {
+				// precondition: the node has been deregistered
+				app.UpdateStateImmediately(func(stateI metast.State) (metast.State, error) {
+					state := stateI.(*backing.State)
+					delete(state.Nodes, targetAddress.String())
+					return state, nil
+				})
+
+				// intermediate test: MRRN still reports the most recent register node
+				// tx, even though it no longer applies
+				txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+				require.NoError(t, err)
+				require.NotNil(t, txData)
+				require.Equal(t, height, txData.BlockHeight)
+
+				// state change: register the node.
+				height = 4096
+				rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 2, transferPrivate)
+				resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height))
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+				// postcondition: MRRN must correctly identify the block height
+				txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+				require.NoError(t, err)
+				require.NotNil(t, txData)
+				require.Equal(t, uint64(height), txData.BlockHeight)
 			})
 		})
 	})

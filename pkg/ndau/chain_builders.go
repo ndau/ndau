@@ -328,7 +328,8 @@ func BuildVMForNodeGoodness(
 				}
 				client := search.(*srch.Client)
 				txdata, err := client.SearchMostRecentRegisterNode(addr.String())
-				if err != nil {
+				if err != nil || txdata == nil {
+					// txdata is nil if the node has never been registered
 					return genesis
 				}
 				tts, err := client.BlockTime(txdata.BlockHeight)
