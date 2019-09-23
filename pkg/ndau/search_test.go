@@ -13,9 +13,7 @@ import (
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func withRedis(t *testing.T, test func(port string)) {
@@ -44,22 +42,6 @@ func withRedis(t *testing.T, test func(port string)) {
 	test(port)
 }
 
-func deliverTransaction(t *testing.T, app *App, tx metatx.Transactable) string {
-	txBytes, err := metatx.Marshal(tx, TxIDs)
-	require.NoError(t, err)
-
-	resp := app.CheckTx(abci.RequestCheckTx{Tx: txBytes})
-	if resp.Log != "" {
-		t.Log(resp.Log)
-	}
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	txResponse := app.DeliverTx(abci.RequestDeliverTx{Tx: txBytes})
-	require.Equal(t, "", txResponse.Log)
-
-	return metatx.Hash(tx)
-}
-
 func TestSysvarHistoryIndex(t *testing.T) {
 	withRedis(t, func(port string) {
 		// Create the app and tx factory.
@@ -73,45 +55,27 @@ func TestSysvarHistoryIndex(t *testing.T) {
 
 		// Test incremental indexing.
 		t.Run("TestSysvarHistoryIncrementalIndexing", func(t *testing.T) {
-			// Begin a new block.
-			begin := abci.RequestBeginBlock{Header: abci.Header{
-				Time:   time.Now(),
-				Height: int64(height),
-			}}
-			app.BeginBlock(begin)
-
-			// Deliver an update.
-			t.Run("TestSysvarHistoryIndexingTxUpdate", func(t *testing.T) {
-				privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
-				tx := NewSetSysvar(
-					sysvar,
-					valueBytes,
-					uint64(1),
-					privateKeys[0],
-				)
-				deliverTransaction(t, app, tx)
-			})
-
-			// End the block.
-			end := abci.RequestEndBlock{}
-			app.EndBlock(end)
-
-			// Commit the block.
-			app.Commit()
+			privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
+			tx := NewSetSysvar(
+				sysvar,
+				valueBytes,
+				uint64(1),
+				privateKeys[0],
+			)
+			resp, _ := deliverTxContext(t, app, tx, ddc(t).atHeight(height))
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 		})
 
 		// Test searching.
 		t.Run("TestSysvarHistorySearching", func(t *testing.T) {
 			// Search for the update transaction we indexed.
-			t.Run("TestSysvarHistorySearchingTxUpdate", func(t *testing.T) {
-				hkr, err := app.GetSearch().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
-				require.NoError(t, err)
+			hkr, err := app.GetSearch().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
+			require.NoError(t, err)
 
-				// Should have one result for our test key value pair.
-				require.Equal(t, 1, len(hkr.History))
-				require.Equal(t, height, hkr.History[0].Height)
-				require.Equal(t, valueBytes, hkr.History[0].Value)
-			})
+			// Should have one result for our test key value pair.
+			require.Equal(t, 1, len(hkr.History))
+			require.Equal(t, height, hkr.History[0].Height)
+			require.Equal(t, valueBytes, hkr.History[0].Value)
 		})
 	})
 }
@@ -153,46 +117,31 @@ func TestIndex(t *testing.T) {
 			require.Equal(t, numSysvars, insertCount)
 		})
 
-		// Test incremental indexing.
-		t.Run("TestHashIncrementalIndexing", func(t *testing.T) {
-			// Begin a new block.
-			begin := abci.RequestBeginBlock{
-				Hash: tmBlockHash,
-				Header: abci.Header{
-					Time:   blockTime,
-					Height: int64(height),
-				},
-			}
-			app.BeginBlock(begin)
+		// Deliver some transactions, which should trigger incremental indexing
+		privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
+		ssv := NewSetSysvar(
+			sysvar,
+			valueBytes,
+			uint64(1),
+			privateKeys[0],
+		)
+		txHashSSV = metatx.Hash(ssv)
 
-			// Deliver some transactions.
-			t.Run("TestTxHashIndexing", func(t *testing.T) {
-				privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
-				ssv := NewSetSysvar(
-					sysvar,
-					valueBytes,
-					uint64(1),
-					privateKeys[0],
-				)
-				txHashSSV = deliverTransaction(t, app, ssv)
+		privateKeys = assc[rfeKeys].([]signature.PrivateKey)
+		rfe := NewReleaseFromEndowment(
+			targetAddress,
+			math.Ndau(1),
+			uint64(2),
+			privateKeys[0],
+		)
+		txHashRFE = metatx.Hash(rfe)
 
-				privateKeys = assc[rfeKeys].([]signature.PrivateKey)
-				rfe := NewReleaseFromEndowment(
-					targetAddress,
-					math.Ndau(1),
-					uint64(2),
-					privateKeys[0],
-				)
-				txHashRFE = deliverTransaction(t, app, rfe)
-			})
-
-			// End the block.
-			end := abci.RequestEndBlock{}
-			app.EndBlock(end)
-
-			// Commit the block.
-			app.Commit()
-		})
+		resps, _ := deliverTxsContext(t, app, []metatx.Transactable{
+			ssv, rfe,
+		}, ddc(t).withHash(blockHash).atHeight(height))
+		for _, resp := range resps {
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		}
 
 		// Test searching.
 		t.Run("TestHashSearching", func(t *testing.T) {

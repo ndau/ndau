@@ -2,6 +2,7 @@ package ndau
 
 import (
 	"encoding/hex"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -241,9 +242,11 @@ func deliverTxWithTxFee(t *testing.T, app *App, tx metatx.Transactable) abci.Res
 }
 
 type deliveryContext struct {
-	t          *testing.T
-	ts         math.Timestamp
-	svUpdaters []func(svs map[string][]byte)
+	t           *testing.T
+	ts          math.Timestamp
+	blockHeight uint64
+	blockHash   []byte
+	svUpdaters  []func(svs map[string][]byte)
 }
 
 // default delivery context
@@ -252,15 +255,41 @@ func ddc(t *testing.T) deliveryContext {
 	require.NoError(t, err)
 
 	return deliveryContext{
-		t:          t,
-		ts:         now,
-		svUpdaters: nil,
+		t:           t,
+		ts:          now,
+		blockHeight: 1,
+		blockHash:   randBlockHash(t),
+		svUpdaters:  nil,
 	}
 }
 
 // note: we don't take a pointer, so this copies values, doesn't edit
 func (dc deliveryContext) at(ts math.Timestamp) deliveryContext {
 	dc.ts = ts
+	return dc
+}
+
+// set the block height to be used. Note: this should rarely be necessary;
+// it auto-increments, and anyway block height shouldn't matter for testing
+// except when testing feature gates
+func (dc deliveryContext) atHeight(height uint64) deliveryContext {
+	dc.blockHeight = height
+	return dc
+}
+
+// set the block hash to be used (specified as hexidecimal)
+// must be exactly 20 bytes
+// auto-resets on each block
+// an empty string generates a new random hash
+func (dc deliveryContext) withHash(hash string) deliveryContext {
+	if len(hash) == 0 {
+		dc.blockHash = randBlockHash(dc.t)
+		return dc
+	}
+	hashb, err := hex.DecodeString(hash)
+	require.NoError(dc.t, err)
+	require.Equal(dc.t, 20, len(hashb), "block hash must be exactly 20 bytes")
+	dc.blockHash = hashb
 	return dc
 }
 
@@ -345,9 +374,15 @@ func deliverTxsContext(
 	resps := make([]abci.ResponseDeliverTx, 0, len(txs))
 	var reb abci.ResponseEndBlock
 	dc.Within(app, func() {
-		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{
-			Time: dc.ts.AsTime(),
-		}})
+		app.BeginBlock(abci.RequestBeginBlock{
+			Header: abci.Header{
+				Time:   dc.ts.AsTime(),
+				Height: int64(dc.blockHeight),
+			},
+			Hash: dc.blockHash,
+		})
+		dc.blockHeight++
+		dc.blockHash = randBlockHash(dc.t)
 
 		for _, transactable := range txs {
 			bytes, err := metatx.Marshal(transactable, TxIDs)
@@ -425,4 +460,11 @@ func ensureRecent(t *testing.T, app *App, addr string) {
 		ad.LastEAIUpdate = ts
 		ad.LastWAAUpdate = ts
 	})
+}
+
+func randBlockHash(t *testing.T) []byte {
+	buf := make([]byte, 20)
+	_, err := rand.Read(buf)
+	require.NoError(t, err)
+	return buf
 }
