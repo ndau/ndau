@@ -300,5 +300,51 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, uint64(height), txData.BlockHeight)
 			})
 		})
+
+		t.Run("TestSearchBlockTime", func(t *testing.T) {
+			spairs := []struct {
+				height uint64
+				time   string
+			}{
+				{1021, "2019-05-04T03:02:01Z"},
+				{1022, "2019-05-04T03:05:00Z"},
+				{1023, "2019-05-04T03:08:00Z"},
+			}
+
+			sparsed := make([]struct {
+				height uint64
+				time   time.Time
+			}, len(spairs))
+
+			var err error
+			for idx, spair := range spairs {
+				sparsed[idx].height = spair.height
+				sparsed[idx].time, err = time.Parse(time.RFC3339, spair.time)
+				require.NoError(t, err, "must parse fixed timestamps")
+			}
+
+			// precondition: the search does not know about any block times
+			for _, pair := range sparsed {
+				time, err := search.BlockTime(pair.height)
+				require.NoError(t, err)
+				require.Zero(t, time)
+			}
+
+			// state change: generate blocks at each time/height pair
+			for idx, pair := range sparsed {
+				ts, err := math.TimestampFrom(pair.time)
+				require.NoError(t, err)
+				rfe := NewReleaseFromEndowment(targetAddress, 1, uint64(100+idx), privateKeys...)
+				resp, _ := deliverTxContext(t, app, rfe, ddc(t).at(ts).atHeight(pair.height))
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+			}
+
+			// postcondition: the search knows about all appropriate block times
+			for _, pair := range sparsed {
+				time, err := search.BlockTime(pair.height)
+				require.NoError(t, err)
+				require.Equal(t, pair.time, time)
+			}
+		})
 	})
 }

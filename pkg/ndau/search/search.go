@@ -279,6 +279,7 @@ func (search *Client) SearchAccountHistory(
 }
 
 // BlockTime returns the timestamp for the block at a given height
+// returns the zero value and no error if the block is unknown
 func (search *Client) BlockTime(height uint64) (time.Time, error) {
 	ts, err := search.Client.Get(
 		formatBlockHeightToTimestampSearchKey(height),
@@ -286,6 +287,9 @@ func (search *Client) BlockTime(height uint64) (time.Time, error) {
 	var t time.Time
 	if err != nil {
 		return t, fmt.Errorf("getting timestamp for block %d: %s", height, err)
+	}
+	if ts == "" {
+		return t, nil
 	}
 	t, err = time.Parse(constants.TimestampFormat, ts)
 	if err != nil {
