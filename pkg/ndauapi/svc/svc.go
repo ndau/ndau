@@ -326,7 +326,7 @@ func New(cf cfg.Cfg) *boneful.Service {
 			TargetPrice: 5678 * 1000000000,
 			TotalIssued: 2919000 * 100000000,
 			TotalNdau:   3141593 * 100000000,
-			TotalSIB:    123 * 100000000,
+			TotalBurned: 123 * 100000000,
 			CurrentSIB:  9876543210,
 		}))
 

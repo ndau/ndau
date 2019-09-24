@@ -10,6 +10,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -102,6 +103,22 @@ func ndauVM(VM *vm.ChaincodeVM, timestamp math.Timestamp, seed []byte) error {
 // IsChaincode is true when the supplied bytes appear to be chaincode
 func IsChaincode(code []byte) bool {
 	return vm.ConvertToOpcodes(code).IsValid() == nil
+}
+
+var genesis math.Timestamp
+
+func init() {
+	var err error
+	// this genesis is _not_ the actual genesis timestamp; it is the block time
+	// of block 1. However, there isn't currently a way for external parties
+	// to easily verify the official genesis time, whereas block 1 time is
+	// publicly visible at https://explorer.service.ndau.tech/block/1?node=mainnet
+	// It doesn't really matter which we use, so long as we're consistent;
+	// we therefore pick this one.
+	genesis, err = math.ParseTimestamp("2019-05-11T03:46:40.570549Z")
+	if err != nil {
+		panic(err)
+	}
 }
 
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate
@@ -249,9 +266,13 @@ func BuildVMForExchangeEAI(code []byte, acct backing.AccountData, sib eai.Rate) 
 
 // BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
 //
-// Node goodness functions can currently only use the following three pieces
-// of context to make their decision (bottom to top): address, account data,
-// total stake.
+// Node goodness functions currently use the following pieces of context:
+//   total stake (top)
+//   account data
+//   address
+//   total delegation
+//   vote history for this node
+//   timestamp of most recent RegisterNode
 //
 // All that needs to happen after this is to call Run().
 func BuildVMForNodeGoodness(
@@ -261,6 +282,8 @@ func BuildVMForNodeGoodness(
 	totalStake math.Ndau,
 	ts math.Timestamp,
 	voteStats metast.VoteStats,
+	node backing.Node,
+	app *App,
 ) (*vm.ChaincodeVM, error) {
 	addrV, err := chain.ToValue(addr)
 	if err != nil {
@@ -288,6 +311,66 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "votingHistory")
 	}
 
+	rts := node.GetRegistration()
+	if rts == 0 {
+		if app.IsFeatureActive("NodeRegistrationDate") {
+			// if the registration date isn't set but the app feature is active,
+			// then we've just passed the feature barrier. This means that we
+			// should look up the transaction which registered this node
+			// in redis, and inject the value into noms.
+			//
+			// It's safe to update the noms state even if the tx was invalid,
+			// because this is just inserting data from a previously-valid tx
+			// which the current tx won't overwrite. This function only ever
+			// gets called for NominateNodeReward txs, which doesn't otherwise
+			// update the nodes list.
+
+			// we do this within a function so we can have early returns;
+			// it cleans up the control flow a bit
+			rts = func() math.Timestamp {
+				search := app.GetSearch()
+				if search == nil {
+					return genesis
+				}
+				client := search.(*srch.Client)
+				txdata, err := client.SearchMostRecentRegisterNode(addr.String())
+				if err != nil || txdata == nil {
+					// txdata is nil if the node has never been registered
+					return genesis
+				}
+				tts, err := client.BlockTime(txdata.BlockHeight)
+				if err != nil {
+					return genesis
+				}
+				ts, err := math.TimestampFrom(tts)
+				if err != nil {
+					return genesis
+				}
+				return ts
+			}()
+
+			if rts != genesis {
+				app.UpdateState(func(stI metast.State) (metast.State, error) {
+					st := stI.(*backing.State)
+					node := st.Nodes[addr.String()]
+					node.SetRegistration(rts)
+					st.Nodes[addr.String()] = node
+					return st, nil
+				})
+			}
+		} else {
+			// if the registration date isn't set and the app feature is not
+			// active, then we need to pass in something (so the chaincode
+			// doesn't break), but it shouldn't actually change the result.
+			// passing in the genesis date gives us this property.
+			rts = genesis
+		}
+	}
+	rtsV, err := chain.ToValue(rts)
+	if err != nil {
+		return nil, errors.Wrap(err, "registration")
+	}
+
 	bin := buildBinary(code, fmt.Sprintf("goodness of %s", addr), "")
 
 	theVM, err := vm.New(*bin)
@@ -300,7 +383,7 @@ func BuildVMForNodeGoodness(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, votingHistoryV, addrV, acctV, totalStakeV)
+	err = theVM.Init(0, rtsV, votingHistoryV, addrV, acctV, totalStakeV)
 	return theVM, err
 }
 
