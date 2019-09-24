@@ -12,6 +12,7 @@ import (
 	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 )
 
 // We use these prefixes to help us group keys in the index.  They could prove useful if we ever
@@ -20,6 +21,7 @@ import (
 // NOTE: These must not conflict with dateRangeToHeightSearchKeyPrefix defined in metanode.
 const accountAddressToHeightSearchKeyPrefix = "a:"
 const blockHashToHeightSearchKeyPrefix = "b:"
+const blockHeightToTimestampSearchKeyPrefix = "h:"
 const sysvarKeyToValueSearchKeyPrefix = "s:"
 const txHashToHeightSearchKeyPrefix = "t:"
 const unionPrefix = "u:"
@@ -105,6 +107,10 @@ func formatSysvarKeyToValueSearchKey(key string) string {
 
 func formatBlockHashToHeightSearchKey(hash string) string {
 	return blockHashToHeightSearchKeyPrefix + strings.ToLower(hash)
+}
+
+func formatBlockHeightToTimestampSearchKey(height uint64) string {
+	return fmt.Sprintf("%s%d", blockHeightToTimestampSearchKeyPrefix, height)
 }
 
 func formatTxHashToHeightSearchKey(hash string) string {
@@ -356,6 +362,16 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 
 	blockHashKey := formatBlockHashToHeightSearchKey(search.blockHash)
 	updCount, insCount, err := search.indexKeyValue(blockHashKey, heightValue)
+	updateCount += updCount
+	insertCount += insCount
+	if err != nil {
+		return updateCount, insertCount, err
+	}
+
+	updCount, insCount, err = search.indexKeyValue(
+		formatBlockHeightToTimestampSearchKey(search.blockHeight),
+		search.blockTime.Format(constants.TimestampFormat),
+	)
 	updateCount += updCount
 	insertCount += insCount
 	if err != nil {
