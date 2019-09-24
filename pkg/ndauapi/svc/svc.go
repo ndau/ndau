@@ -297,8 +297,8 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Writes(rpctypes.ResultDumpConsensusState{}))
 
 	svc.Route(svc.GET("/node/nodes").To(routes.GetNodeList(cf)).
-		Operation("NodeList").
-		Doc("Returns a list of all nodes.").
+		Operation("DEPRECATED:NodeList").
+		Doc("deprecated: please use /node/registered-nodes").
 		Produces(JSON).
 		Writes(routes.ResultNodeList{}))
 
