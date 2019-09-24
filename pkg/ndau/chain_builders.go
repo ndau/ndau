@@ -109,6 +109,12 @@ var genesis math.Timestamp
 
 func init() {
 	var err error
+	// this genesis is _not_ the actual genesis timestamp; it is the block time
+	// of block 1. However, there isn't currently a way for external parties
+	// to easily verify the official genesis time, whereas block 1 time is
+	// publicly visible at https://explorer.service.ndau.tech/block/1?node=mainnet
+	// It doesn't really matter which we use, so long as we're consistent;
+	// we therefore pick this one.
 	genesis, err = math.ParseTimestamp("2019-05-11T03:46:40.570549Z")
 	if err != nil {
 		panic(err)
