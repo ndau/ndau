@@ -17,10 +17,10 @@ import (
 //
 //nomsify Node
 type Node struct {
-	Active                 bool
-	DistributionScript     []byte
-	TMAddress              string
-	Key                    signature.PublicKey
+	Active                 bool                `json:"active"`
+	DistributionScript     []byte              `json:"distribution_script"`
+	TMAddress              string              `json:"tm_address"`
+	Key                    signature.PublicKey `json:"public_key"`
 	managedVars            map[string]struct{}
 	managedVarRegistration math.Timestamp
 }

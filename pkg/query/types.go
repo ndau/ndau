@@ -84,8 +84,8 @@ type SysvarsResponse map[string][]byte
 // NodeExtra has managed data which would not otherwise be captured by the
 // JSON format of a node
 type NodeExtra struct {
-	Node         backing.Node
-	Registration types.Timestamp
+	Node         backing.Node    `json:"node"`
+	Registration types.Timestamp `json:"registration"`
 }
 
 // NodesResponse is the return value from the /nodes endpoint

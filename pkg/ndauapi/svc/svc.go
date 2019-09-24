@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -301,6 +302,23 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Doc("deprecated: please use /node/registered-nodes").
 		Produces(JSON).
 		Writes(routes.ResultNodeList{}))
+
+	svc.Route(svc.GET("/node/registered-nodes").To(routes.GetRegisteredNodes(cf)).
+		Operation("RegisteredNodes").
+		Doc("Returns the set of registered nodes, and some information about each").
+		Produces(JSON).
+		Writes(query.NodesResponse{
+			dummyAddress.String(): query.NodeExtra{
+				Node: backing.Node{
+					Active:             true,
+					DistributionScript: []byte{0xa0, 0x00, 0x88},
+					TMAddress:          fmt.Sprintf("%X", []byte(dummyAddress2.String())[:20]),
+					Key:                dummyPublic,
+				},
+				Registration: dummyParsedTimestamp(),
+			},
+		}),
+	)
 
 	svc.Route(svc.GET("/node/:id").To(routes.GetNode(cf)).
 		Operation("NodeID").
