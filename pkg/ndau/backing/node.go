@@ -6,6 +6,8 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
+//go:generate msgp -io=0
+
 // Node keeps track of nodes in the validator and verifier sets
 //
 // Types here are noms-compatible for ease of marshalling and unmarshalling;

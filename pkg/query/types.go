@@ -8,7 +8,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-//go:generate msgp
+//go:generate msgp -io=0
 
 // SysvarHistoricalValue is a value, and the height at which it was set
 type SysvarHistoricalValue struct {
