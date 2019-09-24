@@ -112,6 +112,10 @@ func (app *App) registerNode(
 		node.TMAddress = tma
 		node.Key = ownership
 
+		if app.IsFeatureActive("NodeRegistrationDate") {
+			node.SetRegistration(app.BlockTime())
+		}
+
 		state.Nodes[nodeA.String()] = node
 
 		return state, nil

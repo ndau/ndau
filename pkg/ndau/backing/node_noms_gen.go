@@ -3,10 +3,14 @@ package backing
 import (
 	"fmt"
 	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/attic-labs/noms/go/marshal"
 	nt "github.com/attic-labs/noms/go/types"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	util "github.com/oneiro-ndev/noms-util"
 	"github.com/pkg/errors"
 )
 
@@ -29,15 +33,77 @@ import (
 // value of managedVarSomething will be stored in noms on the next call to MarshalNoms().
 // Until then, all new managedVar fields will retain their "zero" values.
 
+var nodeFieldNames []string
 var nodeStructTemplate nt.StructTemplate
 
 func init() {
-	nodeStructTemplate = nt.MakeStructTemplate("Node", []string{
+	initNodeStructTemplate(nil)
+}
+
+func initNodeStructTemplate(managedFields []string) {
+	nodeFieldNames = []string{
 		"Active",
 		"DistributionScript",
 		"Key",
 		"TMAddress",
-	})
+	}
+	if len(managedFields) > 0 {
+		nodeFieldNames = append(nodeFieldNames, managedFields...)
+		sort.Sort(sort.StringSlice(nodeFieldNames))
+	}
+	nodeStructTemplate = nt.MakeStructTemplate("Node", nodeFieldNames)
+}
+
+func needNodeStructTemplateInit(managedFields []string) bool {
+	// Loop over the full field name list and make sure that every managed var in it also appears
+	// in the given managed field list.  They are both sorted, so the loop is O(linear).
+	i := 0
+	iLimit := len(managedFields)
+	for _, fieldName := range nodeFieldNames {
+		if strings.HasPrefix(fieldName, "managedVar") || strings.HasPrefix(fieldName, "HasmanagedVar") {
+			if i == iLimit || managedFields[i] != fieldName {
+				// We found a managed var in the full list that wasn't in the given list,
+				// or the managed field name in sorted order doesn't match; re-init.
+				return true
+			}
+			i++
+			// Keep going even if i == iLimit, to ensure no other managed vars in the full list.
+		}
+	}
+
+	// Re-init if we didn't find all of the given managed fields in the full list.
+	return i != iLimit
+}
+
+// IsManagedVarSet returns whether the given managed var has ever been set in the Node.
+func (x *Node) IsManagedVarSet(name string) bool {
+	if x.managedVars == nil {
+		return false
+	}
+	_, ok := x.managedVars[name]
+	return ok
+}
+
+// Ensure the managed vars map exists and has the given name set as one of its keys.
+func (x *Node) ensureManagedVar(name string) {
+	if x.managedVars == nil {
+		x.managedVars = make(map[string]struct{})
+	}
+	if _, ok := x.managedVars[name]; !ok {
+		x.managedVars[name] = struct{}{}
+	}
+}
+
+// GetRegistration returns the Node struct's managedVarRegistration value.
+func (x *Node) GetRegistration() math.Timestamp {
+	return x.managedVarRegistration
+}
+
+// SetRegistration sets the Node struct's managedVarRegistration value,
+// and flags it for noms marshaling if this is the first time it's being set.
+func (x *Node) SetRegistration(val math.Timestamp) {
+	x.ensureManagedVar("Registration")
+	x.managedVarRegistration = val
 }
 
 // MarshalNoms implements noms/go/marshal.Marshaler
@@ -56,15 +122,51 @@ func (x Node) MarshalNoms(vrw nt.ValueReadWriter) (nodeValue nt.Value, err error
 		return nil, errors.Wrap(err, "Node.MarshalNoms->Key.MarshalText")
 	}
 
-	values := []nt.Value{
-		// x.Active (bool)
-		nt.Bool(x.Active),
-		// x.DistributionScript ([]byte)
-		nt.String(x.DistributionScript),
-		// x.Key (signature.PublicKey)
-		nt.String(keyString),
-		// x.TMAddress (string)
-		nt.String(x.TMAddress),
+	// x.managedVars (map[string]struct{}->*ast.MapType) is primitive: false
+	// template decompose: x.managedVars (map[string]struct{}->*ast.MapType)
+	// template set:  x.managedVars
+	managedVarsItems := make([]nt.Value, 0, len(x.managedVars))
+	if len(x.managedVars) > 0 {
+		// We need to iterate the set in sorted order, so build []string and sort it first
+		managedVarsSorted := make([]string, 0, len(x.managedVars))
+		for managedVarsItem := range x.managedVars {
+			managedVarsSorted = append(managedVarsSorted, managedVarsItem)
+		}
+		sort.Sort(sort.StringSlice(managedVarsSorted))
+		for _, managedVarsItem := range managedVarsSorted {
+			managedVarsItems = append(
+				managedVarsItems,
+				nt.String(managedVarsItem),
+			)
+		}
+	}
+
+	// x.managedVarRegistration (math.Timestamp->*ast.SelectorExpr) is primitive: true
+
+	var managedFields []string
+
+	values := make([]nt.Value, 0, 6)
+	// x.Active (bool)
+	values = append(values, nt.Bool(x.Active))
+	// x.DistributionScript ([]byte)
+	values = append(values, nt.String(x.DistributionScript))
+	// x.Key (signature.PublicKey)
+	values = append(values, nt.String(keyString))
+	// x.TMAddress (string)
+	values = append(values, nt.String(x.TMAddress))
+	// x.managedVarRegistration (math.Timestamp)
+	if x.IsManagedVarSet("Registration") {
+		managedFields = append(managedFields, "managedVarRegistration")
+		values = append(values, util.Int(x.managedVarRegistration).NomsValue())
+	}
+	// x.managedVars (map[string]struct{})
+	if x.managedVars != nil {
+		managedFields = append(managedFields, "managedVars")
+		values = append(values, nt.NewSet(vrw, managedVarsItems...))
+	}
+
+	if needNodeStructTemplateInit(managedFields) {
+		initNodeStructTemplate(managedFields)
 	}
 
 	return nodeStructTemplate.NewStruct(values), nil
@@ -148,6 +250,44 @@ func (x *Node) UnmarshalNoms(value nt.Value) (err error) {
 			}
 
 			x.Key = keyValue
+		// x.managedVars (map[string]struct{}->*ast.MapType) is primitive: false
+		case "managedVars":
+			// template u_decompose: x.managedVars (map[string]struct{}->*ast.MapType)
+			// template u_set: x.managedVars
+			managedVarsGoSet := make(map[string]struct{})
+			if managedVarsSet, ok := value.(nt.Set); ok {
+				managedVarsSet.Iter(func(managedVarsItem nt.Value) (stop bool) {
+					if managedVarsItemString, ok := managedVarsItem.(nt.String); ok {
+						managedVarsGoSet[string(managedVarsItemString)] = struct{}{}
+					} else {
+						err = fmt.Errorf(
+							"Node.AccountData.UnmarshalNoms expected managedVarsItem to be a nt.String; found %s",
+							reflect.TypeOf(value),
+						)
+					}
+					return err != nil
+				})
+			} else {
+				err = fmt.Errorf(
+					"Node.AccountData.UnmarshalNoms expected managedVars to be a nt.Set; found %s",
+					reflect.TypeOf(value),
+				)
+			}
+
+			x.managedVars = managedVarsGoSet
+		// x.managedVarRegistration (math.Timestamp->*ast.SelectorExpr) is primitive: true
+		case "managedVarRegistration":
+			// template u_decompose: x.managedVarRegistration (math.Timestamp->*ast.SelectorExpr)
+			// template u_primitive: x.managedVarRegistration
+			var managedVarRegistrationValue util.Int
+			managedVarRegistrationValue, err = util.IntFrom(value)
+			if err != nil {
+				err = errors.Wrap(err, "Node.UnmarshalNoms->managedVarRegistration")
+				return
+			}
+			managedVarRegistrationTyped := math.Timestamp(managedVarRegistrationValue)
+
+			x.managedVarRegistration = managedVarRegistrationTyped
 		}
 		stop = err != nil
 		return

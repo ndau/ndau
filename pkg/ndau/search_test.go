@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
+	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
+	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
-
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func withRedis(t *testing.T, test func(port string)) {
@@ -44,22 +44,6 @@ func withRedis(t *testing.T, test func(port string)) {
 	test(port)
 }
 
-func deliverTransaction(t *testing.T, app *App, tx metatx.Transactable) string {
-	txBytes, err := metatx.Marshal(tx, TxIDs)
-	require.NoError(t, err)
-
-	resp := app.CheckTx(abci.RequestCheckTx{Tx: txBytes})
-	if resp.Log != "" {
-		t.Log(resp.Log)
-	}
-	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-
-	txResponse := app.DeliverTx(abci.RequestDeliverTx{Tx: txBytes})
-	require.Equal(t, "", txResponse.Log)
-
-	return metatx.Hash(tx)
-}
-
 func TestSysvarHistoryIndex(t *testing.T) {
 	withRedis(t, func(port string) {
 		// Create the app and tx factory.
@@ -73,45 +57,27 @@ func TestSysvarHistoryIndex(t *testing.T) {
 
 		// Test incremental indexing.
 		t.Run("TestSysvarHistoryIncrementalIndexing", func(t *testing.T) {
-			// Begin a new block.
-			begin := abci.RequestBeginBlock{Header: abci.Header{
-				Time:   time.Now(),
-				Height: int64(height),
-			}}
-			app.BeginBlock(begin)
-
-			// Deliver an update.
-			t.Run("TestSysvarHistoryIndexingTxUpdate", func(t *testing.T) {
-				privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
-				tx := NewSetSysvar(
-					sysvar,
-					valueBytes,
-					uint64(1),
-					privateKeys[0],
-				)
-				deliverTransaction(t, app, tx)
-			})
-
-			// End the block.
-			end := abci.RequestEndBlock{}
-			app.EndBlock(end)
-
-			// Commit the block.
-			app.Commit()
+			privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
+			tx := NewSetSysvar(
+				sysvar,
+				valueBytes,
+				uint64(1),
+				privateKeys[0],
+			)
+			resp, _ := deliverTxContext(t, app, tx, ddc(t).atHeight(height))
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 		})
 
 		// Test searching.
 		t.Run("TestSysvarHistorySearching", func(t *testing.T) {
 			// Search for the update transaction we indexed.
-			t.Run("TestSysvarHistorySearchingTxUpdate", func(t *testing.T) {
-				hkr, err := app.GetSearch().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
-				require.NoError(t, err)
+			hkr, err := app.GetSearch().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
+			require.NoError(t, err)
 
-				// Should have one result for our test key value pair.
-				require.Equal(t, 1, len(hkr.History))
-				require.Equal(t, height, hkr.History[0].Height)
-				require.Equal(t, valueBytes, hkr.History[0].Value)
-			})
+			// Should have one result for our test key value pair.
+			require.Equal(t, 1, len(hkr.History))
+			require.Equal(t, height, hkr.History[0].Height)
+			require.Equal(t, valueBytes, hkr.History[0].Value)
 		})
 	})
 }
@@ -153,46 +119,31 @@ func TestIndex(t *testing.T) {
 			require.Equal(t, numSysvars, insertCount)
 		})
 
-		// Test incremental indexing.
-		t.Run("TestHashIncrementalIndexing", func(t *testing.T) {
-			// Begin a new block.
-			begin := abci.RequestBeginBlock{
-				Hash: tmBlockHash,
-				Header: abci.Header{
-					Time:   blockTime,
-					Height: int64(height),
-				},
-			}
-			app.BeginBlock(begin)
+		// Deliver some transactions, which should trigger incremental indexing
+		privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
+		ssv := NewSetSysvar(
+			sysvar,
+			valueBytes,
+			uint64(1),
+			privateKeys[0],
+		)
+		txHashSSV = metatx.Hash(ssv)
 
-			// Deliver some transactions.
-			t.Run("TestTxHashIndexing", func(t *testing.T) {
-				privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
-				ssv := NewSetSysvar(
-					sysvar,
-					valueBytes,
-					uint64(1),
-					privateKeys[0],
-				)
-				txHashSSV = deliverTransaction(t, app, ssv)
+		privateKeys = assc[rfeKeys].([]signature.PrivateKey)
+		rfe := NewReleaseFromEndowment(
+			targetAddress,
+			math.Ndau(1),
+			uint64(2),
+			privateKeys[0],
+		)
+		txHashRFE = metatx.Hash(rfe)
 
-				privateKeys = assc[rfeKeys].([]signature.PrivateKey)
-				rfe := NewReleaseFromEndowment(
-					targetAddress,
-					math.Ndau(1),
-					uint64(2),
-					privateKeys[0],
-				)
-				txHashRFE = deliverTransaction(t, app, rfe)
-			})
-
-			// End the block.
-			end := abci.RequestEndBlock{}
-			app.EndBlock(end)
-
-			// Commit the block.
-			app.Commit()
-		})
+		resps, _ := deliverTxsContext(t, app, []metatx.Transactable{
+			ssv, rfe,
+		}, ddc(t).withHash(blockHash).atHeight(height))
+		for _, resp := range resps {
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		}
 
 		// Test searching.
 		t.Run("TestHashSearching", func(t *testing.T) {
@@ -288,6 +239,112 @@ func TestIndex(t *testing.T) {
 				// Expecting the block after the one we indexed since it's an exclusive upper bound.
 				require.Equal(t, height+1, lastHeight)
 			})
+		})
+
+		t.Run("TestMostRecentRegisterNode", func(t *testing.T) {
+			// precondition: this node has never been registered
+			txData, err := search.SearchMostRecentRegisterNode(targetAddress.String())
+			require.NoError(t, err)
+			require.Nil(t, txData)
+
+			// setup: ensure node can be registered
+			modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
+				acct.Balance = 1000 * constants.NapuPerNdau
+				acct.ValidationKeys = []signature.PublicKey{transferPublic}
+			})
+			noderules, _ := getRulesAccount(t, app)
+			err = app.UpdateStateImmediately(app.Stake(
+				1000*constants.NapuPerNdau,
+				targetAddress, noderules, noderules,
+				nil,
+			))
+			require.NoError(t, err)
+
+			// state change: register the node.
+			height := uint64(1024)
+			rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
+			resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height))
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+			// postcondition: MRRN must correctly identify the block height
+			txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+			require.NoError(t, err)
+			require.NotNil(t, txData)
+			require.Equal(t, height, txData.BlockHeight)
+
+			t.Run("Reregister", func(t *testing.T) {
+				// precondition: the node has been deregistered
+				app.UpdateStateImmediately(func(stateI metast.State) (metast.State, error) {
+					state := stateI.(*backing.State)
+					delete(state.Nodes, targetAddress.String())
+					return state, nil
+				})
+
+				// intermediate test: MRRN still reports the most recent register node
+				// tx, even though it no longer applies
+				txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+				require.NoError(t, err)
+				require.NotNil(t, txData)
+				require.Equal(t, height, txData.BlockHeight)
+
+				// state change: register the node.
+				height = 4096
+				rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 2, transferPrivate)
+				resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height))
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+				// postcondition: MRRN must correctly identify the block height
+				txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+				require.NoError(t, err)
+				require.NotNil(t, txData)
+				require.Equal(t, uint64(height), txData.BlockHeight)
+			})
+		})
+
+		t.Run("TestSearchBlockTime", func(t *testing.T) {
+			spairs := []struct {
+				height uint64
+				time   string
+			}{
+				{1021, "2019-05-04T03:02:01Z"},
+				{1022, "2019-05-04T03:05:00Z"},
+				{1023, "2019-05-04T03:08:00Z"},
+			}
+
+			sparsed := make([]struct {
+				height uint64
+				time   time.Time
+			}, len(spairs))
+
+			var err error
+			for idx, spair := range spairs {
+				sparsed[idx].height = spair.height
+				sparsed[idx].time, err = time.Parse(time.RFC3339, spair.time)
+				require.NoError(t, err, "must parse fixed timestamps")
+			}
+
+			// precondition: the search does not know about any block times
+			for _, pair := range sparsed {
+				time, err := search.BlockTime(pair.height)
+				require.NoError(t, err)
+				require.Zero(t, time)
+			}
+
+			// state change: generate blocks at each time/height pair
+			for idx, pair := range sparsed {
+				ts, err := math.TimestampFrom(pair.time)
+				require.NoError(t, err)
+				rfe := NewReleaseFromEndowment(targetAddress, 1, uint64(100+idx), privateKeys...)
+				resp, _ := deliverTxContext(t, app, rfe, ddc(t).at(ts).atHeight(pair.height))
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+			}
+
+			// postcondition: the search knows about all appropriate block times
+			for _, pair := range sparsed {
+				time, err := search.BlockTime(pair.height)
+				require.NoError(t, err)
+				require.Equal(t, pair.time, time)
+			}
 		})
 	})
 }

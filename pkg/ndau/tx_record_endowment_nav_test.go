@@ -37,10 +37,13 @@ func initAppRecordEndowmentNAVWithIndex(t *testing.T, indexAddr string, indexVer
 	require.NoError(t, err)
 	assc[recordEndowmentNAVKeys], err = MockSystemAccount(app, recordEndowmentNAVAddr)
 
-	// ensure special acct contains exactly 1 napu so balance test works
+	// special acct contains exactly 1 ndau
 	modify(t, recordEndowmentNAVAddr.String(), app, func(ad *backing.AccountData) {
-		ad.Balance = 1
+		ad.Balance = 1 * constants.NapuPerNdau
 	})
+
+	// reset the last summary so we recalculate on each test run
+	lastSummary.BlockHeight = ^uint64(0)
 
 	return app, assc
 }
@@ -93,7 +96,7 @@ func TestRecordEndowmentNAVIsValidOnlyWithSufficientTxFee(t *testing.T) {
 	privateKeys := assc[recordEndowmentNAVKeys].([]signature.PrivateKey)
 
 	txFeeAddr := address.Address{}
-	err := app.System(sv.ReleaseFromEndowmentAddressName, &txFeeAddr)
+	err := app.System(sv.RecordEndowmentNAVAddressName, &txFeeAddr)
 	require.NoError(t, err)
 
 	// with a tx fee of 1, only the first tx should succeed
