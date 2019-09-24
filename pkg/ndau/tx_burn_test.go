@@ -301,6 +301,12 @@ func TestBurnedQtyDeductedFromTotalNdau(t *testing.T) {
 	resp := deliverTx(t, app, tx)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
+	// normally, Commit is immediately followed by a new BeginBlock which resets
+	// the block height, which would cause the summary to update. However, in
+	// this case, it doesn't, because we haven't manually begun a block. Therefore,
+	// let's just force recalculation of the summary
+	lastSummary.BlockHeight = ^uint64(0)
+
 	newTotal := getTotal()
 	require.Equal(t, math.Ndau(oldTotal-qty), newTotal)
 }
