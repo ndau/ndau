@@ -2,6 +2,7 @@ package ndau
 
 import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -15,7 +16,13 @@ import (
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	err := tx.Node.Revalidate()
+	var maxValidators wkt.Uint64
+	err := app.System(sv.NodeMaxValidators, &maxValidators)
+	if err == nil {
+		return errors.New("CVC disallowed when MAX_VALIDATORS is set")
+	}
+
+	err = tx.Node.Revalidate()
 	if err != nil {
 		return errors.Wrap(err, "node address")
 	}

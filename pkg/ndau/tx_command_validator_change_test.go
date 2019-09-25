@@ -7,6 +7,7 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
@@ -327,5 +328,36 @@ func TestCVCNodeMustBeActive(t *testing.T) {
 	)
 
 	resp := deliverTx(t, app, cvc)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+}
+
+func TestCVCIsInvalidWhenMaxValidatorsSet(t *testing.T) {
+	app, assc := initAppCVC(t)
+	privateKeys := assc[cvcKeys].([]signature.PrivateKey)
+
+	cvc := NewCommandValidatorChange(
+		nodeAddress,
+		1,
+		1,
+		privateKeys...,
+	)
+
+	// ensure the tx _would_ be valid
+	cvcBytes, err := metatx.Marshal(cvc, TxIDs)
+	require.NoError(t, err)
+	resp := app.CheckTx(abci.RequestCheckTx{Tx: cvcBytes})
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// set the sysvar
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		var err error
+		state.Sysvars[sv.NodeMaxValidators], err = wkt.Uint64(100).MarshalMsg(nil)
+		require.NoError(t, err)
+		return state, nil
+	})
+
+	// ensure the tx is not valid
+	resp = app.CheckTx(abci.RequestCheckTx{Tx: cvcBytes})
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
