@@ -86,17 +86,24 @@ func (tx *CommandValidatorChange) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// ToValidator converts this tx into a TM-style ValidatorUpdate struct
-func (tx *CommandValidatorChange) ToValidator(state *backing.State) (*abci.ValidatorUpdate, error) {
-	node, ok := state.Nodes[tx.Node.String()]
-	if !ok || !node.Active {
+// create an abci.ValidatorUpdate with 0 power for a given node
+func validatorUpdateFor(state *backing.State, node string) (*abci.ValidatorUpdate, error) {
+	n, ok := state.Nodes[node]
+	if !ok || !n.Active {
 		return nil, errors.New("node must be active")
 	}
-	if !signature.SameAlgorithm(node.Key.Algorithm(), signature.Ed25519) {
+	if !signature.SameAlgorithm(n.Key.Algorithm(), signature.Ed25519) {
 		return nil, errors.New("node key must be an Ed25519")
 	}
-	vu := abci.Ed25519ValidatorUpdate(node.Key.KeyBytes(), tx.Power)
+	vu := abci.Ed25519ValidatorUpdate(n.Key.KeyBytes(), 0)
 	return &vu, nil
+}
+
+// ToValidator converts this tx into a TM-style ValidatorUpdate struct
+func (tx *CommandValidatorChange) ToValidator(state *backing.State) (*abci.ValidatorUpdate, error) {
+	vu, err := validatorUpdateFor(state, tx.Node.String())
+	vu.Power = tx.Power
+	return vu, err
 }
 
 // ExtendSignatures implements Signable

@@ -6,10 +6,12 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -35,6 +37,7 @@ func initAppUnregisterNode(t *testing.T) *App {
 
 		state.Nodes[targetAddress.String()] = backing.Node{
 			Active: true,
+			Key:    targetPublic,
 		}
 
 		return state, nil
@@ -126,4 +129,23 @@ func TestUnregisterNodeDeductsTxFee(t *testing.T) {
 		}
 		require.Equal(t, expect, code.ReturnCode(resp.Code))
 	}
+}
+
+func TestUnregisterNodeRemovesValidatorPower(t *testing.T) {
+	app := initAppUnregisterNode(t)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		var err error
+		state.Sysvars[sv.NodeMaxValidators], err = wkt.Uint64(10).MarshalMsg(nil)
+		require.NoError(t, err)
+		return state, nil
+	})
+
+	rn := NewUnregisterNode(targetAddress, 1, transferPrivate)
+	resp, reb := deliverTxContext(t, app, rn, ddc(t))
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, reb.ValidatorUpdates)
+
+	expectVU := abci.Ed25519ValidatorUpdate(targetPublic.KeyBytes(), 0)
+	require.Equal(t, reb.ValidatorUpdates[0], expectVU)
 }

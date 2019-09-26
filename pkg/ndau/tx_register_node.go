@@ -65,6 +65,12 @@ func (tx *RegisterNode) Validate(appI interface{}) error {
 		return errors.New("ownership key did not generate node address")
 	}
 
+	// node key must be ed25519 for now because that's the only kind we
+	// currently know how to generate validator updates for
+	if !signature.SameAlgorithm(signature.Ed25519, tx.Ownership.Algorithm()) {
+		return errors.New("node ownership keys must be ed25519")
+	}
+
 	_, err = TMAddress(tx.Ownership)
 	if err != nil {
 		return errors.Wrap(err, "generating TM address from ownership key")

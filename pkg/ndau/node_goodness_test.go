@@ -1,6 +1,7 @@
 package ndau
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func initAppNodeGoodness(t *testing.T, goodnesses ...uint64) (*App, []goodnessPair) {
@@ -107,4 +109,59 @@ func TestNodeGoodnessExpandsTiesAppropriately(t *testing.T) {
 	winner, err = app.SelectByGoodness(^uint64(0))
 	require.NoError(t, err)
 	require.Equal(t, gs[2].addr, winner.String())
+}
+
+func TestNodeGoodnessAndValidatorSets(t *testing.T) {
+	type gst struct {
+		name string
+		gs   []uint64
+		eo   int
+	}
+
+	cases := []gst{
+		{name: "empty", gs: []uint64{}},
+		{name: "one", gs: []uint64{1}},
+		{name: "two", gs: []uint64{1, 1}, eo: 2},
+		{name: "powers", gs: []uint64{1, 2, 4, 8, 16, 32}},
+		{name: "revpowers", gs: []uint64{32, 16, 8, 4, 2, 1}},
+	}
+
+	t.Run("BeforeSysvar", func(t *testing.T) {
+		for _, tcase := range cases {
+			t.Run(tcase.name, func(t *testing.T) {
+				app, _ := initAppNodeGoodness(t, tcase.gs...)
+				reb := app.EndBlock(abci.RequestEndBlock{})
+				require.Empty(t, reb.ValidatorUpdates)
+			})
+		}
+	})
+	t.Run("WithSysvar", func(t *testing.T) {
+		for _, tcase := range cases {
+			t.Run(tcase.name, func(t *testing.T) {
+				for _, svValue := range []uint64{1, 2, 4} {
+					t.Run(fmt.Sprint(svValue), func(t *testing.T) {
+						expect := int(svValue)
+						if tcase.eo > 0 {
+							expect = tcase.eo
+						}
+						if len(tcase.gs) < expect {
+							expect = len(tcase.gs)
+						}
+
+						app, _ := initAppNodeGoodness(t, tcase.gs...)
+						app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+							state := stI.(*backing.State)
+							var err error
+							state.Sysvars[sv.NodeMaxValidators], err = wkt.Uint64(svValue).MarshalMsg(nil)
+							require.NoError(t, err)
+							return state, nil
+						})
+
+						reb := app.EndBlock(abci.RequestEndBlock{})
+						require.Equal(t, expect, len(reb.ValidatorUpdates))
+					})
+				}
+			})
+		}
+	})
 }
