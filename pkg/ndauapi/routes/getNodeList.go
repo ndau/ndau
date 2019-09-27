@@ -95,3 +95,17 @@ func getNodes(
 		}
 	}
 }
+
+// GetRegisteredNodes gets the list of registered nodes in the network
+func GetRegisteredNodes(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		nodes, err := tool.RegisteredNodes(cf.Node)
+
+		if err != nil {
+			reqres.RespondJSON(w, reqres.NewFromErr("getting registered nodes from ndau tool", err, http.StatusInternalServerError))
+			return
+		}
+
+		reqres.RespondJSON(w, reqres.OKResponse(nodes))
+	}
+}

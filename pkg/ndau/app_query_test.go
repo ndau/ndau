@@ -230,3 +230,28 @@ func TestPrevalidateReportsCorrectSIB(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, math.Ndau(constants.NapuPerNdau), sib)
 }
+
+func TestQueryNodes(t *testing.T) {
+	// precondition: a node is registered
+	// we can't use the current year, because that would raise the eai rate over 2
+	ensureTargetAddressSyncd(t)
+	app := initAppRegisterNode(t)
+	rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
+	resp := deliverTx(t, app, rn)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	// postcondition: the nodes query returns only that node
+	qresp := app.Query(abci.RequestQuery{
+		Path: query.NodesEndpoint,
+	})
+	require.Equal(t, code.OK, code.ReturnCode(qresp.Code))
+
+	var nodes query.NodesResponse
+	leftover, err := nodes.UnmarshalMsg(qresp.Value)
+	require.NoError(t, err)
+	require.Empty(t, leftover)
+	require.NotEmpty(t, nodes)
+
+	require.Contains(t, nodes, targetAddress.String())
+	require.NotZero(t, nodes[targetAddress.String()])
+}

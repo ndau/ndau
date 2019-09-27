@@ -1,13 +1,14 @@
 package query
 
 import (
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-//go:generate msgp
+//go:generate msgp -io=0
 
 // SysvarHistoricalValue is a value, and the height at which it was set
 type SysvarHistoricalValue struct {
@@ -79,3 +80,13 @@ type SysvarsRequest []string
 
 // SysvarsResponse is the return value from the /sysvars endpoint
 type SysvarsResponse map[string][]byte
+
+// NodeExtra has managed data which would not otherwise be captured by the
+// JSON format of a node
+type NodeExtra struct {
+	Node         backing.Node    `json:"node"`
+	Registration types.Timestamp `json:"registration"`
+}
+
+// NodesResponse is the return value from the /nodes endpoint
+type NodesResponse map[string]NodeExtra

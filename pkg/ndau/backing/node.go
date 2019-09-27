@@ -6,6 +6,8 @@ import (
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
+//go:generate msgp -io=0
+
 // Node keeps track of nodes in the validator and verifier sets
 //
 // Types here are noms-compatible for ease of marshalling and unmarshalling;
@@ -15,10 +17,10 @@ import (
 //
 //nomsify Node
 type Node struct {
-	Active                 bool
-	DistributionScript     []byte
-	TMAddress              string
-	Key                    signature.PublicKey
+	Active                 bool                `json:"active"`
+	DistributionScript     []byte              `json:"distribution_script"`
+	TMAddress              string              `json:"tm_address"`
+	Key                    signature.PublicKey `json:"public_key"`
 	managedVars            map[string]struct{}
 	managedVarRegistration math.Timestamp
 }

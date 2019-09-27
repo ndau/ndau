@@ -4,23 +4,31 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 
 // NodeResponse represents a response from the nodes call.
+//
+// This type is DEPRECATED
 type NodeResponse struct {
 	Err   error
 	Nodes []p2p.DefaultNodeInfo
 }
 
 // NodesClient is the interface required by the Nodes function
+//
+// This type is DEPRECATED
 type NodesClient interface {
 	client.StatusClient
 	client.NetworkClient
 }
 
 // Nodes returns NodeInfo asyncronously.
+//
+// This function is DEPRECATED
 func Nodes(node NodesClient) chan NodeResponse {
 	var wg sync.WaitGroup
 	wg.Add(2) // going to make 2 requests
@@ -61,4 +69,18 @@ func Nodes(node NodesClient) chan NodeResponse {
 	}()
 
 	return respCh
+}
+
+// RegisteredNodes returns the nodes which have registered themselves on the blockchain
+func RegisteredNodes(node client.ABCIClient) (query.NodesResponse, error) {
+	resp, err := node.ABCIQuery(query.NodesEndpoint, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing abci query")
+	}
+	nresp := make(query.NodesResponse)
+	_, err = nresp.UnmarshalMsg(resp.Response.Value)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshaling response")
+	}
+	return nresp, nil
 }

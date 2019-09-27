@@ -34,6 +34,7 @@ func TestRouting(t *testing.T) {
 		rt{"GET", "/node/abci", "/node/abci"},
 		rt{"GET", "/node/consensus", "/node/consensus"},
 		rt{"GET", "/node/nodes", "/node/nodes"},
+		rt{"GET", "/node/registered-nodes", "/node/registered-nodes"},
 		rt{"GET", "/node/ad349f", "/node/:id"},
 		rt{"GET", "/price/height/10888", "/price/height/:height"},
 		rt{"GET", "/price/history", "/price/history"},
