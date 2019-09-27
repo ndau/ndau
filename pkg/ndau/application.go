@@ -40,7 +40,7 @@ type App struct {
 	quitPending bool
 
 	// goodnessFunc enables mocking out the goodness function as required for testing
-	// in normal operations, it should always remain the default\
+	// in normal operations, it should always remain the default
 	goodnessFunc func(string) (int64, error)
 }
 
