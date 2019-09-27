@@ -204,3 +204,36 @@ func TestRulesAccountMustApproveRegisterNode(t *testing.T) {
 	t.Log(resp.Log)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestRegisterNodeMustBeEd25519(t *testing.T) {
+	// all the register node initialization assumes we're registering the
+	// target node, which isn't appropriate in this case. We have to do it by hand.
+	app, _ := initApp(t)
+	app.InitChain(abci.RequestInitChain{})
+
+	pubkey, pvtkey, err := signature.Generate(signature.Secp256k1, nil)
+	require.NoError(t, err)
+	addr, err := address.Generate(address.KindNdau, pubkey.KeyBytes())
+	require.NoError(t, err)
+
+	ensureRecent(t, app, addr.String())
+	modify(t, addr.String(), app, func(acct *backing.AccountData) {
+		acct.Balance = 1000 * constants.NapuPerNdau
+		acct.ValidationKeys = []signature.PublicKey{pubkey}
+	})
+
+	// ensure node is primary staker to node rules account
+	noderules, _ := getRulesAccount(t, app)
+	err = app.UpdateStateImmediately(app.Stake(
+		1000*constants.NapuPerNdau,
+		addr, noderules, noderules,
+		nil,
+	))
+	require.NoError(t, err)
+
+	// now let's create a RegisterNode tx
+	rn := NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, pubkey, 1, pvtkey)
+	resp := deliverTx(t, app, rn)
+	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
+	require.Contains(t, resp.Log, "ed25519")
+}

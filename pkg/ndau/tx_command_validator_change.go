@@ -2,6 +2,7 @@ package ndau
 
 import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -15,7 +16,13 @@ import (
 func (tx *CommandValidatorChange) Validate(appI interface{}) error {
 	app := appI.(*App)
 
-	err := tx.Node.Revalidate()
+	var maxValidators wkt.Uint64
+	err := app.System(sv.NodeMaxValidators, &maxValidators)
+	if err == nil {
+		return errors.New("CVC disallowed when MAX_VALIDATORS is set")
+	}
+
+	err = tx.Node.Revalidate()
 	if err != nil {
 		return errors.Wrap(err, "node address")
 	}
@@ -79,17 +86,24 @@ func (tx *CommandValidatorChange) GetSignatures() []signature.Signature {
 	return tx.Signatures
 }
 
-// ToValidator converts this tx into a TM-style ValidatorUpdate struct
-func (tx *CommandValidatorChange) ToValidator(state *backing.State) (*abci.ValidatorUpdate, error) {
-	node, ok := state.Nodes[tx.Node.String()]
-	if !ok || !node.Active {
+// create an abci.ValidatorUpdate with 0 power for a given node
+func validatorUpdateFor(state *backing.State, node string) (*abci.ValidatorUpdate, error) {
+	n, ok := state.Nodes[node]
+	if !ok || !n.Active {
 		return nil, errors.New("node must be active")
 	}
-	if !signature.SameAlgorithm(node.Key.Algorithm(), signature.Ed25519) {
+	if !signature.SameAlgorithm(n.Key.Algorithm(), signature.Ed25519) {
 		return nil, errors.New("node key must be an Ed25519")
 	}
-	vu := abci.Ed25519ValidatorUpdate(node.Key.KeyBytes(), tx.Power)
+	vu := abci.Ed25519ValidatorUpdate(n.Key.KeyBytes(), 0)
 	return &vu, nil
+}
+
+// ToValidator converts this tx into a TM-style ValidatorUpdate struct
+func (tx *CommandValidatorChange) ToValidator(state *backing.State) (*abci.ValidatorUpdate, error) {
+	vu, err := validatorUpdateFor(state, tx.Node.String())
+	vu.Power = tx.Power
+	return vu, err
 }
 
 // ExtendSignatures implements Signable

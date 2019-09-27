@@ -38,6 +38,10 @@ type App struct {
 	// It instructs the application to exit with a particular exit code
 	// before beginning the next block.
 	quitPending bool
+
+	// goodnessFunc enables mocking out the goodness function as required for testing
+	// in normal operations, it should always remain the default
+	goodnessFunc func(string) (int64, error)
 }
 
 // NewApp prepares a new Ndau App
@@ -61,10 +65,11 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	}
 
 	app := App{
-		metaapp,
-		config,
-		false,
+		App:         metaapp,
+		config:      config,
+		quitPending: false,
 	}
+	app.goodnessFunc = app.goodnessOf
 	app.App.SetChild(&app)
 
 	if indexVersion >= 0 {
