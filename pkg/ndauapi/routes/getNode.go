@@ -5,14 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tendermint/tendermint/p2p"
-
 	"github.com/go-zoo/bone"
-	"github.com/sirupsen/logrus"
-
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/sirupsen/logrus"
+	"github.com/tendermint/tendermint/p2p"
 )
 
 // Time to wait for tendermint to respond.
@@ -33,33 +31,34 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 		ch := tool.Nodes(cf.Node)
 		var nodes []p2p.DefaultNodeInfo
 
-		for {
-			select {
-			case nr, open := <-ch:
-				// check error first
-				if nr.Err != nil {
-					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
-					return
-				}
-
-				// add nodes to response
-				nodes = append(nodes, nr.Nodes...)
-				if !open { // send response when channel closed
-					for i := range nodes {
-						if string(nodes[i].ID()) == nodeID {
-							reqres.RespondJSON(w, reqres.OKResponse(nodes[i]))
-							return
-						}
-					}
-					// if not found
-					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not find node: %v", nodeID), http.StatusNotFound))
-				}
-			case <-time.After(defaultTendermintTimeout):
-				logrus.Warn("Timeout fetching cf.Node info.")
-				reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node info", http.StatusInternalServerError))
+		select {
+		case nr, open := <-ch:
+			// check error first
+			if nr.Err != nil {
+				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("error fetching node info: %v", nr.Err), http.StatusInternalServerError))
 				return
-
 			}
+
+			// add nodes to response
+			nodes = append(nodes, nr.Nodes...)
+			if !open { // send response when channel closed
+				for i := range nodes {
+					if string(nodes[i].ID()) == nodeID {
+						reqres.RespondJSON(w, reqres.OKResponse(nodes[i]))
+						return
+					}
+				}
+				// if not found
+				reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not find node: %v", nodeID), http.StatusNotFound))
+				return
+			}
+		case <-time.After(defaultTendermintTimeout):
+			logrus.Warn("Timeout fetching cf.Node info.")
+			reqres.RespondJSON(w, reqres.NewAPIError("timed out fetching node info", http.StatusInternalServerError))
+			return
+
 		}
+
 	}
+
 }
