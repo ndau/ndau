@@ -62,6 +62,7 @@ func GetNode(cf cfg.Cfg) http.HandlerFunc {
 					}
 					// if not found
 					reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not find node: %v", nodeID), http.StatusNotFound))
+					return
 				}
 			case <-time.After(defaultTendermintTimeout):
 				logrus.Warn("Timeout fetching cf.Node info.")
