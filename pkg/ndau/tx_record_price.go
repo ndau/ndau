@@ -15,6 +15,7 @@ import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -183,3 +184,10 @@ func (tx *RecordPrice) GetSignatures() []signature.Signature {
 func (tx *RecordPrice) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
+
+// GetPrice implements search.PriceIndexable
+func (tx *RecordPrice) GetPrice() pricecurve.Nanocent {
+	return tx.MarketPrice
+}
+
+var _ search.PriceIndexable = (*RecordPrice)(nil)

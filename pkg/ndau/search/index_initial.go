@@ -13,11 +13,11 @@ package search
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/attic-labs/noms/go/datas"
 	"github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // IndexBlockchain fills the index with data from the blockchain,
@@ -34,7 +34,7 @@ func (search *Client) IndexBlockchain(
 	// TODO: We really should be using block time when indexing below, but we don't store block
 	// timestamps in noms.  So we must eventually write the external ndauindexer app.  Then we
 	// would remove this entire function since it would replace the initial indexing below.
-	search.blockTime = time.Time{}
+	search.blockTime = math.Timestamp(0)
 	search.blockHash = ""
 	search.blockHeight = 0
 	search.nextHeight = 0

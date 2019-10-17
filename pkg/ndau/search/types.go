@@ -51,12 +51,6 @@ type SysvarHistoryParams struct {
 	Limit       int    `json:"limit"`
 }
 
-// ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
-type ValueData struct {
-	Height      uint64 `msg:"h"`
-	ValueBase64 string `msg:"v"`
-}
-
 // AccountHistoryParams is a json-friendly struct for the /account/history endpoint.
 type AccountHistoryParams struct {
 	Address     string `json:"addr"`
@@ -71,31 +65,10 @@ type AccountListParams struct {
 	Limit   int    `json:"limit"`
 }
 
-// TxValueData is used for data about a particular transaction.
-type TxValueData struct {
-	BlockHeight uint64 `json:"height" msg:"h"`
-	TxOffset    int    `json:"offset" msg:"o"`
-	Fee         uint64 `json:"fee" msg:"f"`
-	SIB         uint64 `json:"sib" msg:"s"`
-}
-
-// TxListValueData is used for data about a list of transactions.
-type TxListValueData struct {
-	Txs        []TxValueData `json:"txs" msg:"t"`
-	NextTxHash string        `json:"next" msg:"n"`
-}
-
-// AccountTxValueData is like TxValueData that stores account balance at the associated block.
-// We could index a Ref target hash, but that would use more space than just storing the balance.
-type AccountTxValueData struct {
-	BlockHeight uint64     `msg:"h"`
-	TxOffset    int        `msg:"o"`
-	Balance     types.Ndau `msg:"b"`
-}
-
-// AccountHistoryResponse is the return value from the account history endpoint.
-type AccountHistoryResponse struct {
-	Txs []AccountTxValueData `msg:"t"`
+// ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
+type ValueData struct {
+	Height      uint64 `msg:"h"`
+	ValueBase64 string `msg:"v"`
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
@@ -117,6 +90,14 @@ func (valueData *ValueData) Unmarshal(searchValue string) error {
 	return errors.Wrap(err, "decoding msgp")
 }
 
+// TxValueData is used for data about a particular transaction.
+type TxValueData struct {
+	BlockHeight uint64 `json:"height" msg:"h"`
+	TxOffset    int    `json:"offset" msg:"o"`
+	Fee         uint64 `json:"fee" msg:"f"`
+	SIB         uint64 `json:"sib" msg:"s"`
+}
+
 // Marshal the value data into a search value string to index it with its search key string.
 func (valueData *TxValueData) Marshal() string {
 	m, err := valueData.MarshalMsg(nil)
@@ -134,6 +115,12 @@ func (valueData *TxValueData) Unmarshal(searchValue string) error {
 	}
 	_, err = valueData.UnmarshalMsg(bytes)
 	return errors.Wrap(err, "decoding msgp")
+}
+
+// TxListValueData is used for data about a list of transactions.
+type TxListValueData struct {
+	Txs        []TxValueData `json:"txs" msg:"t"`
+	NextTxHash string        `json:"next" msg:"n"`
 }
 
 // Marshal the value data into a search value string to index it with its search key string.
@@ -155,6 +142,14 @@ func (valueData *TxListValueData) Unmarshal(searchValue string) error {
 	return errors.Wrap(err, "decoding msgp")
 }
 
+// AccountTxValueData is like TxValueData that stores account balance at the associated block.
+// We could index a Ref target hash, but that would use more space than just storing the balance.
+type AccountTxValueData struct {
+	BlockHeight uint64     `msg:"h"`
+	TxOffset    int        `msg:"o"`
+	Balance     types.Ndau `msg:"b"`
+}
+
 // Marshal the value data into a search value string to index it with its search key string.
 func (valueData *AccountTxValueData) Marshal() string {
 	m, err := valueData.MarshalMsg(nil)
@@ -172,6 +167,11 @@ func (valueData *AccountTxValueData) Unmarshal(searchValue string) error {
 	}
 	_, err = valueData.UnmarshalMsg(bytes)
 	return errors.Wrap(err, "decoding msgp")
+}
+
+// AccountHistoryResponse is the return value from the account history endpoint.
+type AccountHistoryResponse struct {
+	Txs []AccountTxValueData `msg:"t"`
 }
 
 // Marshal the account history response into something we can pass over RPC.

@@ -14,27 +14,14 @@ package search
 import (
 	"encoding/base64"
 	"fmt"
-	"strings"
-	"time"
 
 	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
-
-// We use these prefixes to help us group keys in the index.  They could prove useful if we ever
-// want to do things like "wipe all hash-to-height keys" without affecting any other keys.  The
-// prefixes also give us some sanity, so that we completely avoid inter-index key conflicts.
-// NOTE: These must not conflict with dateRangeToHeightSearchKeyPrefix defined in metanode.
-const accountAddressToHeightSearchKeyPrefix = "a:"
-const blockHashToHeightSearchKeyPrefix = "b:"
-const blockHeightToTimestampSearchKeyPrefix = "h:"
-const sysvarKeyToValueSearchKeyPrefix = "s:"
-const txHashToHeightSearchKeyPrefix = "t:"
-const unionPrefix = "u:"
-const txTypeToHeightSearchKeyPrefix = "y:"
 
 // This is used to be able to give transactions a float64 score in a sorted set where the integer
 // part of the score is the block height, and the fractional part contains the tx offset within
@@ -44,26 +31,6 @@ const txTypeToHeightSearchKeyPrefix = "y:"
 // Float determinism is not a concern here since we just want each transaction to have a unique
 // and well-defined order on the blockchain when compared to other transactions.
 const maxTxsPerBlock = 1000
-
-// AppIndexable is an app which can help index its transactions.
-//
-// It's really only a thing in order to avoid circular imports; it will always
-// in actuality be an ndau.App
-type AppIndexable interface {
-	GetAccountAddresses(tx metatx.Transactable) ([]string, error)
-	GetState() metastate.State
-	CalculateTxFeeNapu(tx metatx.Transactable) (uint64, error)
-	CalculateTxSIBNapu(tx metatx.Transactable) (uint64, error)
-}
-
-// SysvarIndexable is a Transactable that has sysar data that we want to index.
-type SysvarIndexable interface {
-	metatx.Transactable
-
-	// We use separate methods (instead of a struct to house the data) to avoid extra memory use.
-	GetName() string
-	GetValue() []byte
-}
 
 // Client is a search Client that implements IncrementalIndexer.
 type Client struct {
@@ -82,8 +49,11 @@ type Client struct {
 	// Used for indexing the block hash at the current height.
 	blockHash string
 
+	// Used for indexing price at current height
+	price pricecurve.Nanocent
+
 	// These pertain to the current block we're indexing.
-	blockTime   time.Time
+	blockTime   math.Timestamp
 	blockHeight uint64
 
 	// The next height we will index after the current incremental/initial indexing completes.
@@ -101,42 +71,12 @@ func NewClient(address string, version int, app AppIndexable) (search *Client, e
 	search.sysvarKeyToValueData = nil
 	search.app = app
 	search.txs = nil
-	search.blockTime = time.Time{}
+	search.blockTime = math.Timestamp(0)
 	search.blockHash = ""
 	search.blockHeight = 0
 	search.nextHeight = 0
 
 	return search, nil
-}
-
-// Helper function for generating unique search sysvar keys within the redis database.
-func formatSysvarKeyToValueSearchKey(key string) string {
-	return sysvarKeyToValueSearchKeyPrefix + key
-}
-
-func formatBlockHashToHeightSearchKey(hash string) string {
-	return blockHashToHeightSearchKeyPrefix + strings.ToLower(hash)
-}
-
-func formatBlockHeightToTimestampSearchKey(height uint64) string {
-	return fmt.Sprintf("%s%d", blockHeightToTimestampSearchKeyPrefix, height)
-}
-
-func formatTxHashToHeightSearchKey(hash string) string {
-	return txHashToHeightSearchKeyPrefix + hash
-}
-
-func formatUniqueUnionSearchKey() string {
-	// Use time now to effectively guarantee uniqueness for every caller.
-	return fmt.Sprintf("%s%d", unionPrefix, time.Now().UnixNano())
-}
-
-func formatTxTypeToHeightSearchKey(typeName string) string {
-	return txTypeToHeightSearchKeyPrefix + strings.ToLower(typeName)
-}
-
-func formatAccountAddressToHeightSearchKey(addr string) string {
-	return accountAddressToHeightSearchKeyPrefix + addr
 }
 
 // Index all the key-value pairs in the search's sysvarKeyToValueData mapping, then clear the map.
@@ -217,9 +157,10 @@ func (search *Client) onIndexingComplete(
 	// No need to keep this data around any longer.
 	search.sysvarKeyToValueData = nil
 	search.txs = nil
-	search.blockTime = time.Time{}
+	search.blockTime = math.Timestamp(0)
 	search.blockHash = ""
 	search.blockHeight = 0
+	search.price = 0
 
 	// Save this off so the next initial scan will only go this far.
 	search.Client.SetNextHeight(search.nextHeight)
@@ -283,7 +224,7 @@ func (search *Client) indexTxType(txType, txHash string, blockHeight uint64, txO
 		return 0, 0, fmt.Errorf("Tx offset out of range: %d >= %d", txOffset, maxTxsPerBlock)
 	}
 
-	searchKey := formatTxTypeToHeightSearchKey(txType)
+	searchKey := fmtTxTypeToHeight(txType)
 	score := float64(blockHeight) + float64(txOffset)/float64(maxTxsPerBlock)
 	count, err := search.Client.ZAdd(searchKey, score, txHash)
 	if err != nil {
@@ -311,7 +252,7 @@ func (search *Client) indexState(
 	for key, value := range st.Sysvars {
 		valueBase64 := base64.StdEncoding.EncodeToString(value)
 
-		searchKey := formatSysvarKeyToValueSearchKey(key)
+		searchKey := fmtSysvarKeyToValue(key)
 
 		// Detect the first time we've encountered this key.
 		data, hasValue := search.sysvarKeyToValueData[searchKey]
@@ -369,7 +310,7 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 
 	heightValue := fmt.Sprintf("%d", search.blockHeight)
 
-	blockHashKey := formatBlockHashToHeightSearchKey(search.blockHash)
+	blockHashKey := fmtBlockHashToHeight(search.blockHash)
 	updCount, insCount, err := search.indexKeyValue(blockHashKey, heightValue)
 	updateCount += updCount
 	insertCount += insCount
@@ -378,8 +319,8 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 	}
 
 	updCount, insCount, err = search.indexKeyValue(
-		formatBlockHeightToTimestampSearchKey(search.blockHeight),
-		search.blockTime.Format(constants.TimestampFormat),
+		fmtHeightToTimestamp(search.blockHeight),
+		search.blockTime.String(),
 	)
 	updateCount += updCount
 	insertCount += insCount
@@ -394,7 +335,7 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 	for txOffset, tx := range search.txs {
 		// Index transaction hash.
 		txHash := metatx.Hash(tx)
-		searchKey := formatTxHashToHeightSearchKey(txHash)
+		searchKey := fmtTxHashToHeight(txHash)
 		valueData.TxOffset = txOffset
 		valueData.Fee, err = search.app.CalculateTxFeeNapu(tx)
 		if err != nil {
@@ -437,7 +378,7 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		for _, addr := range addresses {
 			acct, hasAccount := search.app.GetState().(*backing.State).Accounts[addr]
 			if hasAccount {
-				searchKey := formatAccountAddressToHeightSearchKey(addr)
+				searchKey := fmtAddressToHeight(addr)
 				acctValueData.Balance = acct.Balance
 				searchValue := acctValueData.Marshal()
 
@@ -448,6 +389,29 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 				if err != nil {
 					return updateCount, insertCount, err
 				}
+			}
+		}
+	}
+
+	// record the price at this block, if any
+	if search.price != 0 {
+		v := fmt.Sprint(search.price)
+		for _, k := range []string{
+			fmtPriceHeightKey(search.blockHeight),
+			fmtPriceTimeKey(search.blockTime),
+		} {
+			// record the price with the appropriate key
+			updCount, insCount, err := search.indexKeyValue(k, v)
+			updateCount += updCount
+			insertCount += insCount
+			if err != nil {
+				return updateCount, insertCount, err
+			}
+			// add to the list of price keys
+			insCnt, err := search.Client.ZAdd(priceKeysetKey, float64(search.blockHeight), k)
+			insertCount += int(insCnt)
+			if err != nil {
+				return updateCount, insertCount, err
 			}
 		}
 	}

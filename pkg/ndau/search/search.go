@@ -31,7 +31,7 @@ func (search *Client) SearchSysvarHistory(
 ) (khr *query.SysvarHistoryResponse, err error) {
 	khr = new(query.SysvarHistoryResponse)
 
-	searchKey := formatSysvarKeyToValueSearchKey(sysvar)
+	searchKey := fmtSysvarKeyToValue(sysvar)
 
 	// We'll reuse this for unmarshaling data into it.
 	valueData := &ValueData{}
@@ -81,7 +81,7 @@ func (search *Client) SearchSysvarHistory(
 // SearchBlockHash returns the height of the given block hash.
 // Returns 0 and no error if the given block hash was not found in the index.
 func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
-	searchKey := formatBlockHashToHeightSearchKey(blockHash)
+	searchKey := fmtBlockHashToHeight(blockHash)
 
 	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
@@ -99,7 +99,7 @@ func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 // SearchTxHash returns tx data for the given tx hash.
 func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 	valueData := TxValueData{}
-	searchKey := formatTxHashToHeightSearchKey(txHash)
+	searchKey := fmtTxHashToHeight(txHash)
 
 	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
@@ -132,13 +132,13 @@ func (search *Client) SearchTxTypes(txHashOrHeight string, txTypes []string, lim
 	if len(txTypes) == 0 {
 		// No types given means all results.
 		var err error
-		searchKeys, err = search.Client.Keys(formatTxTypeToHeightSearchKey("*"))
+		searchKeys, err = search.Client.Keys(fmtTxTypeToHeight("*"))
 		if err != nil {
 			return listValueData, err
 		}
 	} else {
 		for _, t := range txTypes {
-			searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
+			searchKeys = append(searchKeys, fmtTxTypeToHeight(t))
 		}
 	}
 
@@ -149,7 +149,7 @@ func (search *Client) SearchTxTypes(txHashOrHeight string, txTypes []string, lim
 	// However, once we have higher volume, the latest page will be ever-changing.  And, in a low
 	// volume ecosystem, there are likely not going to be many simultaneous queries.  So current
 	// implementation uses a short-lived union key and we DELETE it, rather than EXPIRE it.
-	searchKey := formatUniqueUnionSearchKey()
+	searchKey := fmtUnion()
 
 	// Delete the short-lived union key from the database when we're all done.
 	defer search.Client.Del(searchKey)
@@ -249,7 +249,7 @@ func (search *Client) SearchAccountHistory(
 ) (ahr *AccountHistoryResponse, err error) {
 	ahr = new(AccountHistoryResponse)
 
-	searchKey := formatAccountAddressToHeightSearchKey(addr)
+	searchKey := fmtAddressToHeight(addr)
 
 	err = search.Client.SScan(searchKey, func(searchValue string) error {
 		valueData := AccountTxValueData{}
@@ -291,7 +291,7 @@ func (search *Client) SearchAccountHistory(
 // returns the zero value and no error if the block is unknown
 func (search *Client) BlockTime(height uint64) (time.Time, error) {
 	ts, err := search.Client.Get(
-		formatBlockHeightToTimestampSearchKey(height),
+		fmtHeightToTimestamp(height),
 	)
 	var t time.Time
 	if err != nil {
@@ -313,12 +313,12 @@ func (search *Client) BlockTime(height uint64) (time.Time, error) {
 // Returns a nil for TxValueData if the node has never been registered.
 func (search *Client) SearchMostRecentRegisterNode(address string) (*TxValueData, error) {
 	searchKeys := []string{
-		formatAccountAddressToHeightSearchKey(address),
-		formatTxTypeToHeightSearchKey("RegisterNode"),
+		fmtAddressToHeight(address),
+		fmtTxTypeToHeight("RegisterNode"),
 	}
 
 	// Use a unique key name for each query.
-	queryID := formatUniqueUnionSearchKey()
+	queryID := fmtUnion()
 	// Delete the short-lived union key from the database when we're all done.
 	defer search.Client.Del(queryID)
 
