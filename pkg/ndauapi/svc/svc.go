@@ -308,11 +308,11 @@ func New(cf cfg.Cfg) *boneful.Service {
 
 	svc.Route(svc.GET("/node/nodes").To(routes.GetNodeList(cf)).
 		Operation("DEPRECATED:NodeList").
-		Doc("deprecated: please use /node/registered-nodes").
+		Doc("deprecated: please use /node/registerednodes").
 		Produces(JSON).
 		Writes(routes.ResultNodeList{}))
 
-	svc.Route(svc.GET("/node/registered-nodes").To(routes.GetRegisteredNodes(cf)).
+	svc.Route(svc.GET("/node/registerednodes").To(routes.GetRegisteredNodes(cf)).
 		Operation("RegisteredNodes").
 		Doc("Returns the set of registered nodes, and some information about each").
 		Produces(JSON).
