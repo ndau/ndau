@@ -16,11 +16,10 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/pkg/errors"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
@@ -289,18 +288,18 @@ func (search *Client) SearchAccountHistory(
 
 // BlockTime returns the timestamp for the block at a given height
 // returns the zero value and no error if the block is unknown
-func (search *Client) BlockTime(height uint64) (time.Time, error) {
+func (search *Client) BlockTime(height uint64) (math.Timestamp, error) {
 	ts, err := search.Client.Get(
 		fmtHeightToTimestamp(height),
 	)
-	var t time.Time
+	var t math.Timestamp
 	if err != nil {
 		return t, fmt.Errorf("getting timestamp for block %d: %s", height, err)
 	}
 	if ts == "" {
 		return t, nil
 	}
-	t, err = time.Parse(constants.TimestampFormat, ts)
+	t, err = math.ParseTimestamp(ts)
 	if err != nil {
 		return t, fmt.Errorf("parsing timestamp for block %d (%s): %s", height, ts, err)
 	}

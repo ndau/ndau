@@ -322,13 +322,13 @@ func TestIndex(t *testing.T) {
 
 			sparsed := make([]struct {
 				height uint64
-				time   time.Time
+				time   math.Timestamp
 			}, len(spairs))
 
 			var err error
 			for idx, spair := range spairs {
 				sparsed[idx].height = spair.height
-				sparsed[idx].time, err = time.Parse(time.RFC3339, spair.time)
+				sparsed[idx].time, err = math.ParseTimestamp(spair.time)
 				require.NoError(t, err, "must parse fixed timestamps")
 			}
 
@@ -341,10 +341,8 @@ func TestIndex(t *testing.T) {
 
 			// state change: generate blocks at each time/height pair
 			for idx, pair := range sparsed {
-				ts, err := math.TimestampFrom(pair.time)
-				require.NoError(t, err)
 				rfe := NewReleaseFromEndowment(targetAddress, 1, uint64(100+idx), privateKeys...)
-				resp, _ := deliverTxContext(t, app, rfe, ddc(t).at(ts).atHeight(pair.height))
+				resp, _ := deliverTxContext(t, app, rfe, ddc(t).at(pair.time).atHeight(pair.height))
 				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 			}
 
