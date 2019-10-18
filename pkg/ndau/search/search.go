@@ -402,7 +402,7 @@ func (search *Client) SearchMarketPrice(params PriceQueryParams) (PriceQueryResu
 	// convert output into a nice format
 	out := PriceQueryResults{
 		Items: make([]PriceQueryResult, 0, iqty),
-		More:  params.Limit != 0 && len(ks) > int(2*params.Limit),
+		More:  params.Limit != 0 && len(ks) > int(params.Limit),
 	}
 	for i, k := range ks {
 		if uint(i) >= iqty {
