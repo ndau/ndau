@@ -395,27 +395,23 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 
 	// record the market price at this block, if any
 	if search.marketPrice != 0 {
-		v := fmt.Sprint(search.marketPrice)
-		for _, k := range []string{
-			fmtMarketPriceHeightKey(search.blockHeight),
-			fmtMarketPriceTimeKey(search.blockTime),
-		} {
-			// record the price with the appropriate key
-			updCount, insCount, err := search.indexKeyValue(k, v)
-			updateCount += updCount
-			insertCount += insCount
-			if err != nil {
-				return updateCount, insertCount, err
-			}
-			// add to the list of price keys
-			// using the timestamp as score means we can search by timestamp
-			// ranges directly, and also by block height range by going throguh
-			// the height to timestamp indirection
-			insCnt, err := search.Client.ZAdd(marketPriceKeysetKey, float64(search.blockTime), k)
-			insertCount += int(insCnt)
-			if err != nil {
-				return updateCount, insertCount, err
-			}
+		k := fmtMarketPriceKey(search.blockHeight, search.blockTime)
+		v := fmt.Sprint(int64(search.marketPrice))
+		// record the price with the appropriate key
+		updCount, insCount, err := search.indexKeyValue(k, v)
+		updateCount += updCount
+		insertCount += insCount
+		if err != nil {
+			return updateCount, insertCount, err
+		}
+		// add to the list of price keys
+		// using the timestamp as score means we can search by timestamp
+		// ranges directly, and also by block height range by going throguh
+		// the height to timestamp indirection
+		insCnt, err := search.Client.ZAdd(marketPriceKeysetKey, float64(search.blockTime), k)
+		insertCount += int(insCnt)
+		if err != nil {
+			return updateCount, insertCount, err
 		}
 	}
 

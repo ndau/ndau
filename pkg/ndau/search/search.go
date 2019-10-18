@@ -17,9 +17,11 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/go-redis/redis"
 	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/pkg/errors"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/pkg/errors"
 )
 
 // SearchSysvarHistory returns value history for the given sysvar using an index under the hood.
@@ -353,4 +355,103 @@ func (search *Client) SearchMostRecentRegisterNode(address string) (*TxValueData
 	}
 
 	return &valueData, nil
+}
+
+// SearchMarketPrice searches for market price records
+//
+// In the parameters:
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+func (search *Client) SearchMarketPrice(params PriceQueryParams) (PriceQueryResults, error) {
+	// setup search options
+	var zropts redis.ZRangeBy
+	if after := params.After.GetTimestamp(search); after != 0 {
+		// leading paren in query causes exclusive semantics
+		zropts.Min = fmt.Sprintf("(%v", float64(after))
+	} else {
+		zropts.Min = "-inf"
+	}
+	if before := params.Before.GetTimestamp(search); before != 0 {
+		// leading paren in query causes exclusive semantics
+		zropts.Max = fmt.Sprintf("(%v", float64(before))
+	} else {
+		zropts.Max = "+inf"
+	}
+
+	var iqty uint
+	if params.Limit != 0 {
+		// we add one so we can tell if extra elements exist
+		zropts.Count = int64(params.Limit + 1)
+		iqty = params.Limit
+	}
+
+	// execute query
+	ks, err := search.Client.Inner().ZRangeByScore(
+		marketPriceKeysetKey,
+		zropts,
+	).Result()
+	if err != nil {
+		return PriceQueryResults{}, errors.Wrap(err, "querying redis")
+	}
+	if iqty == 0 {
+		iqty = uint(len(ks))
+	}
+
+	// convert output into a nice format
+	out := PriceQueryResults{
+		Items: make([]PriceQueryResult, 0, iqty),
+		More:  params.Limit != 0 && len(ks) > int(2*params.Limit),
+	}
+	for i, k := range ks {
+		if uint(i) >= iqty {
+			// don't append the extra to the output
+			break
+		}
+		// extract height and timestamp from key
+		var h uint64
+		var tss string
+		_, err := fmt.Sscanf(k, marketPriceKeyFmt, &h, &tss)
+		if err != nil {
+			return out, errors.Wrap(
+				err,
+				fmt.Sprintf(
+					"parsing market price zset key '%s' (idx %d)",
+					k,
+					i,
+				),
+			)
+		}
+		// parse real timestamp
+		ts, err := math.ParseTimestamp(tss)
+		if err != nil {
+			return out, errors.Wrap(
+				err,
+				fmt.Sprintf(
+					"parsing zset key timestamp '%s' (idx %d)",
+					tss,
+					i,
+				),
+			)
+		}
+		// get price as string since we know its key
+		ps, err := search.Client.Inner().Get(k).Result()
+		if err != nil {
+			return out, errors.Wrap(err, fmt.Sprintf("getting redis key '%s' (zset idx %d)", k, i))
+		}
+		// parse real price
+		p, err := strconv.ParseInt(ps, 10, 64)
+		if err != nil {
+			return out, errors.Wrap(err, fmt.Sprintf("parsing stored price '%s' as int (zset idx %d)", ps, i))
+		}
+		// append this row
+		out.Items = append(out.Items, PriceQueryResult{
+			Price:     pricecurve.Nanocent(p),
+			Height:    h,
+			Timestamp: ts,
+		})
+	}
+
+	return out, nil
 }

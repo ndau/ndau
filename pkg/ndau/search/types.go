@@ -14,7 +14,9 @@ package search
 import (
 	"encoding/base64"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -63,6 +65,60 @@ type AccountListParams struct {
 	Address string `json:"addr"`
 	After   string `json:"after"`
 	Limit   int    `json:"limit"`
+}
+
+// RangeEndpoint is a json-friendly struct for choosing the end of a range
+//
+// At most one of (`Height`, `Timestamp`) should ever be set. If both are set,
+// `Timestamp` takes precedence.
+type RangeEndpoint struct {
+	Height    uint64         `json:"block_height,omitempty"`
+	Timestamp math.Timestamp `json:"timestamp,omitempty"`
+}
+
+// GetTimestamp gets and caches the timestamp from this range endpoint,
+// whether originally specified or implied by the block height.
+func (r RangeEndpoint) GetTimestamp(search *Client) math.Timestamp {
+	if r.Timestamp != 0 {
+		return r.Timestamp
+	}
+	if r.Height != 0 {
+		// worst case, we get the zero value; just ignore the error
+		r.Timestamp, _ = search.BlockTime(r.Height)
+		return r.Timestamp
+	}
+	// if we got a zero value, return a zero value
+	// this is useful for special-casing indefinite ranges
+	return 0
+}
+
+// PriceQueryParams is a json-friendly struct for querying price history
+//
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+type PriceQueryParams struct {
+	After  RangeEndpoint `json:"after,omitempty"`
+	Before RangeEndpoint `json:"before,omitempty"`
+	Limit  uint          `json:"limit,omitempty"`
+}
+
+// PriceQueryResult is a json-friendly struct returning price history data
+type PriceQueryResult struct {
+	Price     pricecurve.Nanocent `json:"price_nanocents"`
+	PriceS    string              `json:"price,omitempty"`
+	Height    uint64              `json:"block_height"`
+	Timestamp math.Timestamp      `json:"timestamp"`
+}
+
+// PriceQueryResults encapsulates a set of price history data
+//
+// It is _not_ json-friendly; More should be replaced with Next at the API level
+// More is true when more results exist than were returned
+type PriceQueryResults struct {
+	Items []PriceQueryResult `json:"-"`
+	More  bool               `json:"-"`
 }
 
 // ValueData is used for skipping duplicate key value pairs while iterating the blockchain.
