@@ -39,15 +39,15 @@ func fmtHeightToTimestamp(height uint64) string {
 	return fmt.Sprintf("%s%d", heightToTimestampPrefix, height)
 }
 
-const priceKeysetKey = "priceKeys"
-const priceKeysetPrefix = "price:"
+const marketPriceKeysetKey = "marketPriceKeys"
+const marketPriceKeysetPrefix = "market.price:"
 
-func fmtPriceTimeKey(timestamp math.Timestamp) string {
-	return fmt.Sprintf("%sts:%s", priceKeysetPrefix, timestamp.String())
+func fmtMarketPriceTimeKey(timestamp math.Timestamp) string {
+	return fmt.Sprintf("%sts:%s", marketPriceKeysetPrefix, timestamp.String())
 }
 
-func fmtPriceHeightKey(height uint64) string {
-	return fmt.Sprintf("%sh:%d", priceKeysetPrefix, height)
+func fmtMarketPriceHeightKey(height uint64) string {
+	return fmt.Sprintf("%sh:%d", marketPriceKeysetPrefix, height)
 }
 
 const sysvarKeyToValuePrefix = "sysvar.key:value:"

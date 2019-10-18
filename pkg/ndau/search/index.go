@@ -49,8 +49,8 @@ type Client struct {
 	// Used for indexing the block hash at the current height.
 	blockHash string
 
-	// Used for indexing price at current height
-	price pricecurve.Nanocent
+	// Used for indexing market price at current height
+	marketPrice pricecurve.Nanocent
 
 	// These pertain to the current block we're indexing.
 	blockTime   math.Timestamp
@@ -160,7 +160,7 @@ func (search *Client) onIndexingComplete(
 	search.blockTime = math.Timestamp(0)
 	search.blockHash = ""
 	search.blockHeight = 0
-	search.price = 0
+	search.marketPrice = 0
 
 	// Save this off so the next initial scan will only go this far.
 	search.Client.SetNextHeight(search.nextHeight)
@@ -393,12 +393,12 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		}
 	}
 
-	// record the price at this block, if any
-	if search.price != 0 {
-		v := fmt.Sprint(search.price)
+	// record the market price at this block, if any
+	if search.marketPrice != 0 {
+		v := fmt.Sprint(search.marketPrice)
 		for _, k := range []string{
-			fmtPriceHeightKey(search.blockHeight),
-			fmtPriceTimeKey(search.blockTime),
+			fmtMarketPriceHeightKey(search.blockHeight),
+			fmtMarketPriceTimeKey(search.blockTime),
 		} {
 			// record the price with the appropriate key
 			updCount, insCount, err := search.indexKeyValue(k, v)
@@ -408,7 +408,10 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 				return updateCount, insertCount, err
 			}
 			// add to the list of price keys
-			insCnt, err := search.Client.ZAdd(priceKeysetKey, float64(search.blockHeight), k)
+			// using the timestamp as score means we can search by timestamp
+			// ranges directly, and also by block height range by going throguh
+			// the height to timestamp indirection
+			insCnt, err := search.Client.ZAdd(marketPriceKeysetKey, float64(search.blockTime), k)
 			insertCount += int(insCnt)
 			if err != nil {
 				return updateCount, insertCount, err

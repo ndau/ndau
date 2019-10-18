@@ -185,9 +185,9 @@ func (tx *RecordPrice) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
 
-// GetPrice implements search.PriceIndexable
-func (tx *RecordPrice) GetPrice() pricecurve.Nanocent {
+// GetMarketPrice implements search.MarketPriceIndexable
+func (tx *RecordPrice) GetMarketPrice() pricecurve.Nanocent {
 	return tx.MarketPrice
 }
 
-var _ search.PriceIndexable = (*RecordPrice)(nil)
+var _ search.MarketPriceIndexable = (*RecordPrice)(nil)

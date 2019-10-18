@@ -52,11 +52,11 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 			}
 		}
 
-	case PriceIndexable:
+	case MarketPriceIndexable:
 		// if there are multiple RecordPrice txs in a block, the later ones
 		// will overwrite the earlier. This is fine; they all share the same
 		// block time anyway.
-		search.price = indexable.GetPrice()
+		search.marketPrice = indexable.GetMarketPrice()
 	}
 
 	return nil
