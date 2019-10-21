@@ -20,11 +20,13 @@ import (
 	"github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/oneiro-ndev/ndau/pkg/ndau"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -357,22 +359,45 @@ func New(cf cfg.Cfg) *boneful.Service {
 			CurrentSIB:  9876543210,
 		}))
 
-	svc.Route(svc.GET("/price/height/:height").To(routes.HandlePriceHeight(cf)).
-		Operation("PriceHeight").
-		Doc("Returns the collection of price data as of a specific ndau block height.").
-		Param(boneful.PathParameter("height", "Height from the ndau chain.").DataType("int").Required(true)).
-		Produces(JSON).
-		Writes(routes.PriceInfo{}))
-
-	svc.Route(svc.GET("/price/history").To(routes.HandlePriceHistory(cf)).
+	svc.Route(svc.POST("/price/target/history").To(routes.HandlePriceTargetHistory(cf)).
 		Operation("PriceHistory").
-		Doc("Returns an array of data from the order chain at periodic intervals over time, sorted chronologically.").
-		Param(boneful.QueryParameter("limit", "Maximum number of values to return; default=100, max=1000.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("period", "Duration between samples (ex: 1d, 5m); default=1d.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("before", "Timestamp (ISO 8601) to end (exclusive); default=now.").DataType("string").Required(true)).
-		Param(boneful.QueryParameter("after", "Timestamp (ISO 8601) to start (inclusive); default=before-(limit*period).").DataType("string").Required(true)).
+		Doc("Returns an array of data at each change point of the target price over time, sorted chronologically.").
+		Consumes(JSON).
+		Reads(srch.PriceQueryParams{
+			After:  srch.RangeEndpoint{Height: 1234},
+			Before: srch.RangeEndpoint{Timestamp: 20 * types.Year},
+			Limit:  1,
+		}).
 		Produces(JSON).
-		Writes([]routes.PriceHistoryRecord{}))
+		Writes(routes.PriceHistoryResults{
+			Items: []srch.PriceQueryResult{
+				srch.PriceQueryResult{
+					Price:     20 * pricecurve.Dollar,
+					Height:    1235,
+					Timestamp: 19*types.Year + 8*types.Month + 12*types.Day,
+				},
+			},
+		}))
+
+	svc.Route(svc.POST("/price/market/history").To(routes.HandlePriceMarketHistory(cf)).
+		Operation("PriceHistory").
+		Doc("Returns an array of data at each change point of the target price over time, sorted chronologically.").
+		Consumes(JSON).
+		Reads(srch.PriceQueryParams{
+			After:  srch.RangeEndpoint{Height: 1234},
+			Before: srch.RangeEndpoint{Timestamp: 20 * types.Year},
+			Limit:  1,
+		}).
+		Produces(JSON).
+		Writes(routes.PriceHistoryResults{
+			Items: []srch.PriceQueryResult{
+				srch.PriceQueryResult{
+					Price:     20 * pricecurve.Dollar,
+					Height:    1235,
+					Timestamp: 19*types.Year + 8*types.Month + 12*types.Day,
+				},
+			},
+		}))
 
 	svc.Route(svc.GET("/state/delegates").To(routes.HandleStateDelegates(cf)).
 		Operation("StateDelegates").
