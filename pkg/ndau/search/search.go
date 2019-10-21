@@ -365,6 +365,31 @@ func (search *Client) SearchMostRecentRegisterNode(address string) (*TxValueData
 // The zero value of Before and After are treated as open-ended ranges.
 // The zero value of Limit returns all results.
 func (search *Client) SearchMarketPrice(params PriceQueryParams) (PriceQueryResults, error) {
+	return search.searchPrice(params, marketPriceKeysetKey, marketPriceKeyFmt)
+}
+
+// SearchTargetPrice searches for target price records
+//
+// In the parameters:
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+func (search *Client) SearchTargetPrice(params PriceQueryParams) (PriceQueryResults, error) {
+	return search.searchPrice(params, targetPriceKeysetKey, targetPriceKeyFmt)
+}
+
+// searchPrice searches for market price records
+//
+// In the parameters:
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+func (search *Client) searchPrice(
+	params PriceQueryParams,
+	key, kfmt string,
+) (PriceQueryResults, error) {
 	// setup search options
 	var zropts redis.ZRangeBy
 	if after := params.After.GetTimestamp(search); after != 0 {
@@ -388,10 +413,7 @@ func (search *Client) SearchMarketPrice(params PriceQueryParams) (PriceQueryResu
 	}
 
 	// execute query
-	ks, err := search.Client.Inner().ZRangeByScore(
-		marketPriceKeysetKey,
-		zropts,
-	).Result()
+	ks, err := search.Client.Inner().ZRangeByScore(key, zropts).Result()
 	if err != nil {
 		return PriceQueryResults{}, errors.Wrap(err, "querying redis")
 	}
@@ -412,12 +434,12 @@ func (search *Client) SearchMarketPrice(params PriceQueryParams) (PriceQueryResu
 		// extract height and timestamp from key
 		var h uint64
 		var tss string
-		_, err := fmt.Sscanf(k, marketPriceKeyFmt, &h, &tss)
+		_, err := fmt.Sscanf(k, kfmt, &h, &tss)
 		if err != nil {
 			return out, errors.Wrap(
 				err,
 				fmt.Sprintf(
-					"parsing market price zset key '%s' (idx %d)",
+					"parsing price zset key '%s' (idx %d)",
 					k,
 					i,
 				),

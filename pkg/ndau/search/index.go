@@ -49,8 +49,13 @@ type Client struct {
 	// Used for indexing the block hash at the current height.
 	blockHash string
 
-	// Used for indexing market price at current height
+	// Used for indexing prices at current height
+	//
+	// if there are multiple updates for either of these in a block, the later
+	// ones will overwrite the earlier. This is fine; they all share the same
+	// block time anyway.
 	marketPrice pricecurve.Nanocent
+	targetPrice pricecurve.Nanocent
 
 	// These pertain to the current block we're indexing.
 	blockTime   math.Timestamp
@@ -161,6 +166,7 @@ func (search *Client) onIndexingComplete(
 	search.blockHash = ""
 	search.blockHeight = 0
 	search.marketPrice = 0
+	search.targetPrice = 0
 
 	// Save this off so the next initial scan will only go this far.
 	search.Client.SetNextHeight(search.nextHeight)
@@ -409,6 +415,28 @@ func (search *Client) index() (updateCount int, insertCount int, err error) {
 		// ranges directly, and also by block height range by going throguh
 		// the height to timestamp indirection
 		insCnt, err := search.Client.ZAdd(marketPriceKeysetKey, float64(search.blockTime), k)
+		insertCount += int(insCnt)
+		if err != nil {
+			return updateCount, insertCount, err
+		}
+	}
+
+	// record the target price at this block, if any
+	if search.targetPrice != 0 {
+		k := fmtTargetPriceKey(search.blockHeight, search.blockTime)
+		v := fmt.Sprint(int64(search.targetPrice))
+		// record the price with the appropriate key
+		updCount, insCount, err := search.indexKeyValue(k, v)
+		updateCount += updCount
+		insertCount += insCount
+		if err != nil {
+			return updateCount, insertCount, err
+		}
+		// add to the list of price keys
+		// using the timestamp as score means we can search by timestamp
+		// ranges directly, and also by block height range by going throguh
+		// the height to timestamp indirection
+		insCnt, err := search.Client.ZAdd(targetPriceKeysetKey, float64(search.blockTime), k)
 		insertCount += int(insCnt)
 		if err != nil {
 			return updateCount, insertCount, err

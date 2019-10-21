@@ -191,3 +191,8 @@ func (tx *RecordPrice) GetMarketPrice() pricecurve.Nanocent {
 }
 
 var _ search.MarketPriceIndexable = (*RecordPrice)(nil)
+
+// UpdatedTargetPrice implements search.TargetPriceIndexable
+func (*RecordPrice) UpdatedTargetPrice() {}
+
+var _ search.TargetPriceIndexable = (*RecordPrice)(nil)

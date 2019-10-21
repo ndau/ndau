@@ -54,6 +54,15 @@ func fmtSysvarKeyToValue(key string) string {
 	return sysvarKeyToValuePrefix + key
 }
 
+const (
+	targetPriceKeysetKey = "targetPriceKeys"
+	targetPriceKeyFmt    = "target.price:%d:%s"
+)
+
+func fmtTargetPriceKey(height uint64, timestamp math.Timestamp) string {
+	return fmt.Sprintf(targetPriceKeyFmt, height, timestamp)
+}
+
 const txHashToHeightPrefix = "tx.hash:height:"
 
 func fmtTxHashToHeight(hash string) string {

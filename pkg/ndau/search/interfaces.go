@@ -35,9 +35,17 @@ type SysvarIndexable interface {
 	GetValue() []byte
 }
 
-// MarketPriceIndexable is a Transactable that has price data that we want to index
+// MarketPriceIndexable is a Transactable that has updated the market price
 type MarketPriceIndexable interface {
 	metatx.Transactable
 
 	GetMarketPrice() pricecurve.Nanocent
+}
+
+// TargetPriceIndexable is a marker interface for a Transactable, indicating
+// that this tx has updated the target price.
+type TargetPriceIndexable interface {
+	metatx.Transactable
+
+	UpdatedTargetPrice()
 }

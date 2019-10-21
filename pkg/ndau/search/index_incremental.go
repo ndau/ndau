@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
@@ -31,11 +32,12 @@ func (search *Client) OnBeginBlock(height uint64, blockTime math.Timestamp, tmHa
 }
 
 // OnDeliverTx grabs the fields out of this transaction to index when the block is committed.
-func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
+func (search *Client) OnDeliverTx(appI interface{}, tx metatx.Transactable) error {
 	search.txs = append(search.txs, tx)
 
-	switch indexable := tx.(type) {
-	case SysvarIndexable:
+	app := appI.(AppIndexable)
+
+	if indexable, ok := tx.(SysvarIndexable); ok {
 		key := indexable.GetName()
 		valueBase64 := base64.StdEncoding.EncodeToString(indexable.GetValue())
 
@@ -51,12 +53,15 @@ func (search *Client) OnDeliverTx(tx metatx.Transactable) error {
 				ValueBase64: valueBase64,
 			}
 		}
+	}
 
-	case MarketPriceIndexable:
-		// if there are multiple RecordPrice txs in a block, the later ones
-		// will overwrite the earlier. This is fine; they all share the same
-		// block time anyway.
+	if indexable, ok := tx.(MarketPriceIndexable); ok {
 		search.marketPrice = indexable.GetMarketPrice()
+	}
+
+	if _, ok := tx.(TargetPriceIndexable); ok {
+		state := app.GetState().(*backing.State)
+		search.targetPrice = state.TargetPrice
 	}
 
 	return nil
