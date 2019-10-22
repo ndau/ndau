@@ -18,6 +18,8 @@ const (
 	DelegatesEndpoint      = "/delegates"
 	NodesEndpoint          = "/nodes"
 	PrevalidateEndpoint    = "/prevalidate"
+	PriceTargetEndpoint    = "/price/target"
+	PriceMarketEndpoint    = "/price/market"
 	SearchEndpoint         = "/search"
 	SIBEndpoint            = "/sib"
 	SummaryEndpoint        = "/summary"

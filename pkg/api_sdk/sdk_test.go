@@ -257,19 +257,15 @@ func TestPrevalidate(t *testing.T) {
 	})
 }
 
-func TestPriceAt(t *testing.T) {
-	setup(t, func(client *sdk.Client) {
-		_, err := client.PriceAt(1)
-		require.NoError(t, err)
-	})
-}
-
 func TestPriceInfo(t *testing.T) {
 	setup(t, func(client *sdk.Client) {
 		_, err := client.PriceInfo()
 		require.NoError(t, err)
 	})
 }
+
+// price history is not tested here because it requires a full stack, which
+// is not available in this testing context.
 
 func TestSend(t *testing.T) {
 	setup(t, func(client *sdk.Client) {
