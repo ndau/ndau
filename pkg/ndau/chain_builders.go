@@ -347,11 +347,7 @@ func BuildVMForNodeGoodness(
 					// txdata is nil if the node has never been registered
 					return genesis
 				}
-				tts, err := client.BlockTime(txdata.BlockHeight)
-				if err != nil {
-					return genesis
-				}
-				ts, err := math.TimestampFrom(tts)
+				ts, err := client.BlockTime(txdata.BlockHeight)
 				if err != nil {
 					return genesis
 				}

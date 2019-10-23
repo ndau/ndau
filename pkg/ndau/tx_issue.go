@@ -12,6 +12,7 @@ package ndau
 import (
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
@@ -76,3 +77,8 @@ func (tx *Issue) GetSignatures() []signature.Signature {
 func (tx *Issue) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
+
+// UpdatedTargetPrice implements search.TargetPriceIndexable
+func (*Issue) UpdatedTargetPrice() {}
+
+var _ search.TargetPriceIndexable = (*Issue)(nil)

@@ -34,13 +34,15 @@ func init() {
 	meta.RegisterQueryHandler(query.DateRangeEndpoint, dateRangeQuery)
 	meta.RegisterQueryHandler(query.DelegatesEndpoint, delegatesQuery)
 	meta.RegisterQueryHandler(query.NodesEndpoint, nodesQuery)
-	meta.RegisterQueryHandler(query.SysvarHistoryEndpoint, sysvarHistoryQuery)
 	meta.RegisterQueryHandler(query.PrevalidateEndpoint, prevalidateQuery)
+	meta.RegisterQueryHandler(query.PriceMarketEndpoint, priceQuery)
+	meta.RegisterQueryHandler(query.PriceTargetEndpoint, priceQuery)
 	meta.RegisterQueryHandler(query.SearchEndpoint, searchQuery)
 	meta.RegisterQueryHandler(query.SIBEndpoint, sibQuery)
 	meta.RegisterQueryHandler(query.SummaryEndpoint, summaryQuery)
-	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
+	meta.RegisterQueryHandler(query.SysvarHistoryEndpoint, sysvarHistoryQuery)
 	meta.RegisterQueryHandler(query.SysvarsEndpoint, sysvarsQuery)
+	meta.RegisterQueryHandler(query.VersionEndpoint, versionQuery)
 }
 
 func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -458,5 +460,42 @@ func nodesQuery(appI interface{}, request abci.RequestQuery, response *abci.Resp
 	response.Value, err = nresp.MarshalMsg(nil)
 	if err != nil {
 		app.QueryError(err, response, "marshaling node response")
+	}
+}
+
+func priceQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
+	app := appI.(*App)
+	search := app.GetSearch().(*srch.Client)
+
+	// chose the appropriate search function
+	var sf func(params srch.PriceQueryParams) (srch.PriceQueryResults, error)
+	switch request.Path {
+	case query.PriceMarketEndpoint:
+		sf = search.SearchMarketPrice
+	case query.PriceTargetEndpoint:
+		sf = search.SearchTargetPrice
+	}
+
+	// unpack params
+	var pqp srch.PriceQueryParams
+	if len(request.Data) > 0 {
+		_, err := pqp.After.Timestamp.UnmarshalMsg(request.Data)
+		if err != nil {
+			app.QueryError(err, response, "unmarshaling query params")
+			return
+		}
+	}
+
+	// perform search
+	pqr, err := sf(pqp)
+	if err != nil {
+		app.QueryError(err, response, "searching for price data")
+		return
+	}
+
+	// pack response
+	response.Value, err = pqr.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "marshaling price data results")
 	}
 }

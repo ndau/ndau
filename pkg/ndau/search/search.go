@@ -16,10 +16,11 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +32,7 @@ func (search *Client) SearchSysvarHistory(
 ) (khr *query.SysvarHistoryResponse, err error) {
 	khr = new(query.SysvarHistoryResponse)
 
-	searchKey := formatSysvarKeyToValueSearchKey(sysvar)
+	searchKey := fmtSysvarKeyToValue(sysvar)
 
 	// We'll reuse this for unmarshaling data into it.
 	valueData := &ValueData{}
@@ -81,7 +82,7 @@ func (search *Client) SearchSysvarHistory(
 // SearchBlockHash returns the height of the given block hash.
 // Returns 0 and no error if the given block hash was not found in the index.
 func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
-	searchKey := formatBlockHashToHeightSearchKey(blockHash)
+	searchKey := fmtBlockHashToHeight(blockHash)
 
 	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
@@ -99,7 +100,7 @@ func (search *Client) SearchBlockHash(blockHash string) (uint64, error) {
 // SearchTxHash returns tx data for the given tx hash.
 func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 	valueData := TxValueData{}
-	searchKey := formatTxHashToHeightSearchKey(txHash)
+	searchKey := fmtTxHashToHeight(txHash)
 
 	searchValue, err := search.Client.Get(searchKey)
 	if err != nil {
@@ -132,13 +133,13 @@ func (search *Client) SearchTxTypes(txHashOrHeight string, txTypes []string, lim
 	if len(txTypes) == 0 {
 		// No types given means all results.
 		var err error
-		searchKeys, err = search.Client.Keys(formatTxTypeToHeightSearchKey("*"))
+		searchKeys, err = search.Client.Keys(fmtTxTypeToHeight("*"))
 		if err != nil {
 			return listValueData, err
 		}
 	} else {
 		for _, t := range txTypes {
-			searchKeys = append(searchKeys, formatTxTypeToHeightSearchKey(t))
+			searchKeys = append(searchKeys, fmtTxTypeToHeight(t))
 		}
 	}
 
@@ -149,7 +150,7 @@ func (search *Client) SearchTxTypes(txHashOrHeight string, txTypes []string, lim
 	// However, once we have higher volume, the latest page will be ever-changing.  And, in a low
 	// volume ecosystem, there are likely not going to be many simultaneous queries.  So current
 	// implementation uses a short-lived union key and we DELETE it, rather than EXPIRE it.
-	searchKey := formatUniqueUnionSearchKey()
+	searchKey := fmtUnion()
 
 	// Delete the short-lived union key from the database when we're all done.
 	defer search.Client.Del(searchKey)
@@ -249,7 +250,7 @@ func (search *Client) SearchAccountHistory(
 ) (ahr *AccountHistoryResponse, err error) {
 	ahr = new(AccountHistoryResponse)
 
-	searchKey := formatAccountAddressToHeightSearchKey(addr)
+	searchKey := fmtAddressToHeight(addr)
 
 	err = search.Client.SScan(searchKey, func(searchValue string) error {
 		valueData := AccountTxValueData{}
@@ -289,18 +290,18 @@ func (search *Client) SearchAccountHistory(
 
 // BlockTime returns the timestamp for the block at a given height
 // returns the zero value and no error if the block is unknown
-func (search *Client) BlockTime(height uint64) (time.Time, error) {
+func (search *Client) BlockTime(height uint64) (math.Timestamp, error) {
 	ts, err := search.Client.Get(
-		formatBlockHeightToTimestampSearchKey(height),
+		fmtHeightToTimestamp(height),
 	)
-	var t time.Time
+	var t math.Timestamp
 	if err != nil {
 		return t, fmt.Errorf("getting timestamp for block %d: %s", height, err)
 	}
 	if ts == "" {
 		return t, nil
 	}
-	t, err = time.Parse(constants.TimestampFormat, ts)
+	t, err = math.ParseTimestamp(ts)
 	if err != nil {
 		return t, fmt.Errorf("parsing timestamp for block %d (%s): %s", height, ts, err)
 	}
@@ -313,12 +314,12 @@ func (search *Client) BlockTime(height uint64) (time.Time, error) {
 // Returns a nil for TxValueData if the node has never been registered.
 func (search *Client) SearchMostRecentRegisterNode(address string) (*TxValueData, error) {
 	searchKeys := []string{
-		formatAccountAddressToHeightSearchKey(address),
-		formatTxTypeToHeightSearchKey("RegisterNode"),
+		fmtAddressToHeight(address),
+		fmtTxTypeToHeight("RegisterNode"),
 	}
 
 	// Use a unique key name for each query.
-	queryID := formatUniqueUnionSearchKey()
+	queryID := fmtUnion()
 	// Delete the short-lived union key from the database when we're all done.
 	defer search.Client.Del(queryID)
 
@@ -354,4 +355,125 @@ func (search *Client) SearchMostRecentRegisterNode(address string) (*TxValueData
 	}
 
 	return &valueData, nil
+}
+
+// SearchMarketPrice searches for market price records
+//
+// In the parameters:
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+func (search *Client) SearchMarketPrice(params PriceQueryParams) (PriceQueryResults, error) {
+	return search.searchPrice(params, marketPriceKeysetKey, marketPriceKeyFmt)
+}
+
+// SearchTargetPrice searches for target price records
+//
+// In the parameters:
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+func (search *Client) SearchTargetPrice(params PriceQueryParams) (PriceQueryResults, error) {
+	return search.searchPrice(params, targetPriceKeysetKey, targetPriceKeyFmt)
+}
+
+// searchPrice searches for market price records
+//
+// In the parameters:
+// Before and After have exclusive semantics.
+//
+// The zero value of Before and After are treated as open-ended ranges.
+// The zero value of Limit returns all results.
+func (search *Client) searchPrice(
+	params PriceQueryParams,
+	key, kfmt string,
+) (PriceQueryResults, error) {
+	// setup search options
+	var zropts redis.ZRangeBy
+	if after := params.After.GetTimestamp(search); after != 0 {
+		// leading paren in query causes exclusive semantics
+		zropts.Min = fmt.Sprintf("(%v", float64(after))
+	} else {
+		zropts.Min = "-inf"
+	}
+	if before := params.Before.GetTimestamp(search); before != 0 {
+		// leading paren in query causes exclusive semantics
+		zropts.Max = fmt.Sprintf("(%v", float64(before))
+	} else {
+		zropts.Max = "+inf"
+	}
+
+	var iqty uint
+	if params.Limit != 0 {
+		// we add one so we can tell if extra elements exist
+		zropts.Count = int64(params.Limit + 1)
+		iqty = params.Limit
+	}
+
+	// execute query
+	ks, err := search.Client.Inner().ZRangeByScore(key, zropts).Result()
+	if err != nil {
+		return PriceQueryResults{}, errors.Wrap(err, "querying redis")
+	}
+	if iqty == 0 {
+		iqty = uint(len(ks))
+	}
+
+	// convert output into a nice format
+	out := PriceQueryResults{
+		Items: make([]PriceQueryResult, 0, iqty),
+		More:  params.Limit != 0 && len(ks) > int(params.Limit),
+	}
+	for i, k := range ks {
+		if uint(i) >= iqty {
+			// don't append the extra to the output
+			break
+		}
+		// extract height and timestamp from key
+		var h uint64
+		var tss string
+		_, err := fmt.Sscanf(k, kfmt, &h, &tss)
+		if err != nil {
+			return out, errors.Wrap(
+				err,
+				fmt.Sprintf(
+					"parsing price zset key '%s' (idx %d)",
+					k,
+					i,
+				),
+			)
+		}
+		// parse real timestamp
+		ts, err := math.ParseTimestamp(tss)
+		if err != nil {
+			return out, errors.Wrap(
+				err,
+				fmt.Sprintf(
+					"parsing zset key timestamp '%s' (idx %d)",
+					tss,
+					i,
+				),
+			)
+		}
+		// get price as string since we know its key
+		ps, err := search.Client.Inner().Get(k).Result()
+		if err != nil {
+			return out, errors.Wrap(err, fmt.Sprintf("getting redis key '%s' (zset idx %d)", k, i))
+		}
+		// parse real price
+		p, err := strconv.ParseInt(ps, 10, 64)
+		if err != nil {
+			return out, errors.Wrap(err, fmt.Sprintf("parsing stored price '%s' as int (zset idx %d)", ps, i))
+		}
+		// append this row
+		out.Items = append(out.Items, PriceQueryResult{
+			Price:     pricecurve.Nanocent(p),
+			Height:    h,
+			Timestamp: ts,
+		})
+	}
+
+	return out, nil
 }

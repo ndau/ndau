@@ -21,9 +21,12 @@ import (
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 )
 
@@ -106,26 +109,26 @@ func TestIndex(t *testing.T) {
 		tmBlockHash := []byte("abcdefghijklmnopqrst") // 20 bytes
 		blockHash := fmt.Sprintf("%x", tmBlockHash)   // 40 characters
 		var txHashSSV, txHashRFE string
-		blockTime := time.Now()
+		blockTime, err := math.TimestampFrom(time.Now())
+		require.NoError(t, err)
 
 		search := app.GetSearch().(*srch.Client)
 
 		// Ensure Redis is empty.
-		err := search.FlushDB()
+		err = search.FlushDB()
 		require.NoError(t, err)
 
 		// Test initial indexing.
 		t.Run("TestHashInitialIndexing", func(t *testing.T) {
-			updateCount, insertCount, err := search.IndexBlockchain(app.GetDB(), app.GetDS())
+			_, insertCount, err := search.IndexBlockchain(app.GetDB(), app.GetDS())
 			require.NoError(t, err)
 
 			// Number of sysvars present in noms.
 			state := app.GetState().(*backing.State)
 			numSysvars := len(state.Sysvars)
 
-			// There should be nothing indexed outside of sysvars.
-			require.Equal(t, 0, updateCount)
-			require.Equal(t, numSysvars, insertCount)
+			// The sysvars should all be inserted
+			require.GreaterOrEqual(t, insertCount, numSysvars)
 		})
 
 		// Deliver some transactions, which should trigger incremental indexing
@@ -240,7 +243,7 @@ func TestIndex(t *testing.T) {
 			})
 
 			t.Run("TestDateRangeSearching", func(t *testing.T) {
-				timeString := blockTime.Format(time.RFC3339)
+				timeString := blockTime.String()
 				firstHeight, lastHeight, err := search.SearchDateRange(timeString, timeString)
 				require.NoError(t, err)
 				// Expecting the block before the one we indexed since it's flooring to current day.
@@ -322,13 +325,13 @@ func TestIndex(t *testing.T) {
 
 			sparsed := make([]struct {
 				height uint64
-				time   time.Time
+				time   math.Timestamp
 			}, len(spairs))
 
 			var err error
 			for idx, spair := range spairs {
 				sparsed[idx].height = spair.height
-				sparsed[idx].time, err = time.Parse(time.RFC3339, spair.time)
+				sparsed[idx].time, err = math.ParseTimestamp(spair.time)
 				require.NoError(t, err, "must parse fixed timestamps")
 			}
 
@@ -341,10 +344,8 @@ func TestIndex(t *testing.T) {
 
 			// state change: generate blocks at each time/height pair
 			for idx, pair := range sparsed {
-				ts, err := math.TimestampFrom(pair.time)
-				require.NoError(t, err)
 				rfe := NewReleaseFromEndowment(targetAddress, 1, uint64(100+idx), privateKeys...)
-				resp, _ := deliverTxContext(t, app, rfe, ddc(t).at(ts).atHeight(pair.height))
+				resp, _ := deliverTxContext(t, app, rfe, ddc(t).at(pair.time).atHeight(pair.height))
 				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 			}
 
@@ -354,6 +355,174 @@ func TestIndex(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, pair.time, time)
 			}
+		})
+
+		t.Run("TestMarketPriceSearch", func(t *testing.T) {
+			// setup: generate but do not yet send some RecordPrice txs
+			rpAddr := address.Address{}
+			err := app.System(sv.RecordPriceAddressName, &rpAddr)
+			require.NoError(t, err)
+			rpPrivate, err := MockSystemAccount(app, rpAddr)
+			require.NoError(t, err)
+
+			type pair struct {
+				ts math.Timestamp
+				tx *RecordPrice
+			}
+
+			pairs := []pair{
+				{1*math.Year + 1*math.Month + 1*math.Day, NewRecordPrice(5*pricecurve.Dollar, 1, rpPrivate...)},
+				{1*math.Year + 5*math.Month + 16*math.Day, NewRecordPrice(12*pricecurve.Dollar, 2, rpPrivate...)},
+			}
+
+			// precondition: search does not know about any market price data
+			priceResult, err := search.SearchMarketPrice(srch.PriceQueryParams{})
+			require.NoError(t, err)
+			require.Empty(t, priceResult.Items)
+			require.False(t, priceResult.More, "must not have unreturned items")
+
+			// state change: deliver the RecordPrice txs
+			for idx, pair := range pairs {
+				deliverTxContext(t, app, pair.tx, ddc(t).at(pair.ts).atHeight(23+(uint64(idx)*15)))
+			}
+
+			// postcondition: search can find the market price data
+			t.Run("Unlimited", func(t *testing.T) {
+				t.Parallel()
+				priceResult, err := search.SearchMarketPrice(srch.PriceQueryParams{})
+				require.NoError(t, err)
+				require.Equal(t, len(pairs), len(priceResult.Items))
+				require.False(t, priceResult.More, "must not have unreturned items")
+				for idx := range pairs {
+					require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
+					require.Equal(t, pairs[idx].tx.MarketPrice, priceResult.Items[idx].Price)
+					require.NotZero(t, priceResult.Items[idx].Height)
+				}
+				require.NotEqual(t, priceResult.Items[0].Height, priceResult.Items[1].Height)
+			})
+			t.Run("Limited", func(t *testing.T) {
+				t.Parallel()
+				priceResult, err := search.SearchMarketPrice(srch.PriceQueryParams{
+					Limit: 1,
+				})
+				require.NoError(t, err)
+				require.Equal(t, 1, len(priceResult.Items))
+				require.True(t, priceResult.More, "must have unreturned items")
+				idx := 0 // endpoint interates fwd through history
+				require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
+				require.Equal(t, pairs[idx].tx.MarketPrice, priceResult.Items[idx].Price)
+				// get subsequent results
+				priceResult, err = search.SearchMarketPrice(srch.PriceQueryParams{
+					After: srch.RangeEndpoint{Timestamp: priceResult.Items[idx].Timestamp},
+				})
+				require.NoError(t, err)
+				require.Equal(t, 1, len(priceResult.Items))
+				require.False(t, priceResult.More, "must not have unreturned items")
+				require.Equal(t, pairs[1].ts, priceResult.Items[idx].Timestamp)
+				require.Equal(t, pairs[1].tx.MarketPrice, priceResult.Items[idx].Price)
+			})
+		})
+
+		t.Run("TestTargetPriceSearch", func(t *testing.T) {
+			// setup: generate but do not yet send some txs
+			rfeAddr := address.Address{}
+			err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
+			require.NoError(t, err)
+			privateKeys = assc[rfeKeys].([]signature.PrivateKey)
+			modify(t, rfeAddr.String(), app, func(ad *backing.AccountData) {
+				ad.Sequence = 5
+			})
+
+			renavAddr := address.Address{}
+			err = app.System(sv.RecordEndowmentNAVAddressName, &renavAddr)
+			require.NoError(t, err)
+			renavPvt, err := MockSystemAccount(app, renavAddr)
+			require.NoError(t, err)
+
+			rpAddr := address.Address{}
+			err = app.System(sv.RecordPriceAddressName, &rpAddr)
+			require.NoError(t, err)
+			rpPrivate, err := MockSystemAccount(app, rpAddr)
+			require.NoError(t, err)
+
+			type pair struct {
+				ts  math.Timestamp
+				txs []metatx.Transactable
+				tgt pricecurve.Nanocent
+			}
+
+			qty := math.Ndau(100 * constants.NapuPerNdau)
+			pairs := []pair{
+				{ts: 2*math.Year + 1*math.Month + 1*math.Day, txs: []metatx.Transactable{
+					NewReleaseFromEndowment(targetAddress, qty, 10, privateKeys...),
+					NewIssue(qty, 11, privateKeys...),
+				}},
+				{ts: 2*math.Year + 5*math.Month + 16*math.Day, txs: []metatx.Transactable{
+					NewRecordEndowmentNAV(10*1000*pricecurve.Dollar, 12, renavPvt...),
+				}},
+				{ts: 2*math.Year + 10*math.Month + 23*math.Day, txs: []metatx.Transactable{
+					NewRecordPrice(22*pricecurve.Dollar, 20, rpPrivate...),
+				}},
+			}
+
+			search.Client.FlushDB()
+
+			// precondition: search does not know about any target price data
+			priceResult, err := search.SearchTargetPrice(srch.PriceQueryParams{})
+			require.NoError(t, err)
+			require.Empty(t, priceResult.Items)
+			require.False(t, priceResult.More, "must not have unreturned items")
+
+			// state change: deliver the RecordPrice txs
+			for idx, pair := range pairs {
+				resps, _ := deliverTxsContext(t, app, pair.txs, ddc(t).at(pair.ts).atHeight(230+(uint64(idx)*15)))
+				for txidx, resp := range resps {
+					require.Equal(t,
+						code.OK, code.ReturnCode(resp.Code),
+						fmt.Sprintf("idx: %d; txidx: %d", idx, txidx),
+					)
+				}
+				pairs[idx].tgt = app.GetState().(*backing.State).TargetPrice
+			}
+
+			// postcondition: search can find the target price data
+			t.Run("Unlimited", func(t *testing.T) {
+				t.Parallel()
+				priceResult, err := search.SearchTargetPrice(srch.PriceQueryParams{})
+				require.NoError(t, err)
+				require.Equal(t, len(pairs), len(priceResult.Items))
+				require.False(t, priceResult.More, "must not have unreturned items")
+				for idx := range pairs {
+					require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
+					require.Equal(t, pairs[idx].tgt, priceResult.Items[idx].Price)
+					require.NotZero(t, priceResult.Items[idx].Height)
+					if idx > 0 {
+						require.NotEqual(t, priceResult.Items[idx-1].Height, priceResult.Items[idx].Height)
+					}
+				}
+			})
+			t.Run("Limited", func(t *testing.T) {
+				t.Parallel()
+				priceResult, err := search.SearchTargetPrice(srch.PriceQueryParams{
+					Limit: 1,
+				})
+				require.NoError(t, err)
+				require.Equal(t, 1, len(priceResult.Items))
+				require.True(t, priceResult.More, "must have unreturned items")
+				idx := 0 // endpoint interates fwd through history
+				require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
+				require.Equal(t, pairs[idx].tgt, priceResult.Items[idx].Price)
+				// get subsequent results
+				priceResult, err = search.SearchTargetPrice(srch.PriceQueryParams{
+					After: srch.RangeEndpoint{Timestamp: priceResult.Items[idx].Timestamp},
+					Limit: 1,
+				})
+				require.NoError(t, err)
+				require.Equal(t, 1, len(priceResult.Items))
+				require.True(t, priceResult.More, "must have unreturned items")
+				require.Equal(t, pairs[1].ts, priceResult.Items[idx].Timestamp)
+				require.Equal(t, pairs[1].tgt, priceResult.Items[idx].Price)
+			})
 		})
 	})
 }

@@ -14,6 +14,7 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
@@ -90,3 +91,8 @@ func (tx *RecordEndowmentNAV) GetSignatures() []signature.Signature {
 func (tx *RecordEndowmentNAV) ExtendSignatures(sa []signature.Signature) {
 	tx.Signatures = append(tx.Signatures, sa...)
 }
+
+// UpdatedTargetPrice implements search.TargetPriceIndexable
+func (*RecordEndowmentNAV) UpdatedTargetPrice() {}
+
+var _ search.TargetPriceIndexable = (*RecordEndowmentNAV)(nil)
