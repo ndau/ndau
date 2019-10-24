@@ -231,6 +231,12 @@ func (z *AccountHistoryResponse) DecodeMsg(dc *msgp.Reader) (err error) {
 					}
 				}
 			}
+		case "m":
+			z.More, err = dc.ReadBool()
+			if err != nil {
+				err = msgp.WrapError(err, "More")
+				return
+			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -244,9 +250,9 @@ func (z *AccountHistoryResponse) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *AccountHistoryResponse) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 1
+	// map header, size 2
 	// write "t"
-	err = en.Append(0x81, 0xa1, 0x74)
+	err = en.Append(0x82, 0xa1, 0x74)
 	if err != nil {
 		return
 	}
@@ -288,15 +294,25 @@ func (z *AccountHistoryResponse) EncodeMsg(en *msgp.Writer) (err error) {
 			return
 		}
 	}
+	// write "m"
+	err = en.Append(0xa1, 0x6d)
+	if err != nil {
+		return
+	}
+	err = en.WriteBool(z.More)
+	if err != nil {
+		err = msgp.WrapError(err, "More")
+		return
+	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *AccountHistoryResponse) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 1
+	// map header, size 2
 	// string "t"
-	o = append(o, 0x81, 0xa1, 0x74)
+	o = append(o, 0x82, 0xa1, 0x74)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Txs)))
 	for za0001 := range z.Txs {
 		// map header, size 3
@@ -314,6 +330,9 @@ func (z *AccountHistoryResponse) MarshalMsg(b []byte) (o []byte, err error) {
 			return
 		}
 	}
+	// string "m"
+	o = append(o, 0xa1, 0x6d)
+	o = msgp.AppendBool(o, z.More)
 	return
 }
 
@@ -389,6 +408,12 @@ func (z *AccountHistoryResponse) UnmarshalMsg(bts []byte) (o []byte, err error) 
 					}
 				}
 			}
+		case "m":
+			z.More, bts, err = msgp.ReadBoolBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "More")
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -407,6 +432,7 @@ func (z *AccountHistoryResponse) Msgsize() (s int) {
 	for za0001 := range z.Txs {
 		s += 1 + 2 + msgp.Uint64Size + 2 + msgp.IntSize + 2 + z.Txs[za0001].Balance.Msgsize()
 	}
+	s += 2 + msgp.BoolSize
 	return
 }
 

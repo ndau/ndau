@@ -281,8 +281,10 @@ func (search *Client) SearchAccountHistory(
 		return ahr.Txs[n].BlockHeight > afterHeight
 	})
 	ahr.Txs = ahr.Txs[offsetStart:]
+	// if we need to truncate the list, notify the caller that we've done so
 	if limit > 0 && len(ahr.Txs) > limit {
 		ahr.Txs = ahr.Txs[:limit]
+		ahr.More = true
 	}
 
 	return ahr, err

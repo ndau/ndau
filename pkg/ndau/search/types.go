@@ -227,7 +227,8 @@ func (valueData *AccountTxValueData) Unmarshal(searchValue string) error {
 
 // AccountHistoryResponse is the return value from the account history endpoint.
 type AccountHistoryResponse struct {
-	Txs []AccountTxValueData `msg:"t"`
+	Txs  []AccountTxValueData `msg:"t"`
+	More bool                 `msg:"m"`
 }
 
 // Marshal the account history response into something we can pass over RPC.

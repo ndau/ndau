@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/go-zoo/bone"
@@ -41,6 +42,7 @@ type AccountHistoryItem struct {
 // AccountHistoryItems is used by the account history endpoint to return balance historical data.
 type AccountHistoryItems struct {
 	Items []AccountHistoryItem
+	Next  string
 }
 
 // HandleAccount returns a HandlerFunc that returns information about a single account
@@ -189,6 +191,18 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 				Height:    blockheight,
 			}
 			result.Items = append(result.Items, item)
+		}
+
+		if ahr.More && len(result.Items) > 0 {
+			next, err := url.Parse(".")
+			if err != nil {
+				reqres.RespondJSON(w, reqres.NewFromErr("could not parse identity url", err, http.StatusInternalServerError))
+				return
+			}
+			query := r.URL.Query()
+			query.Set("after", fmt.Sprint(result.Items[len(result.Items)-1].Height))
+			next.RawQuery = query.Encode()
+			result.Next = r.URL.ResolveReference(next).String()
 		}
 
 		reqres.RespondJSON(w, reqres.OKResponse(result))
