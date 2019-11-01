@@ -32,23 +32,30 @@ func (app *App) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	reb := app.App.EndBlock(req)
 
+	logger := app.DecoratedLogger().WithFields(log.Fields{
+		"method": "ndau.App.EndBlock",
+	})
+
 	// if sv.NodeMaxValidators is set, then the top n nodes by goodness
 	// must be assigned voting power proportional to their goodness.
 	// All other nodes must be assigned 0 voting power.
 	var maxValidators wkt.Uint64
 	err := app.System(sv.NodeMaxValidators, &maxValidators)
 	if err == nil {
+		logger = logger.WithField("endblock.max_validators", maxValidators)
 		// get goodnesses
 		gs, _ := nodeGoodnesses(app)
 		// filter down the top n
 		gs = topNGoodnesses(gs, int(maxValidators))
-		// for each remainin goodness, create a corresponding validator update
+
+		logger = logger.WithField("endblock.len_gs", len(gs))
+
+		// for each remaining goodness, create a corresponding validator update
 		state := app.GetState().(*backing.State)
 		for _, g := range gs {
 			vu, err := validatorUpdateFor(state, g.addr)
 			if err != nil {
-				app.DecoratedLogger().WithFields(log.Fields{
-					"method":   "ndau.App.EndBlock",
+				logger.WithError(err).WithFields(log.Fields{
 					"node":     g.addr,
 					"goodness": g.goodness,
 				}).Error("creating validator update")
@@ -57,6 +64,10 @@ func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 			vu.Power = int64(g.goodness)
 			reb.ValidatorUpdates = append(reb.ValidatorUpdates, *vu)
 		}
+		logger.WithField("endblock.len_vus", len(reb.ValidatorUpdates))
+		logger.Info("updated node validation power")
+	} else {
+		logger.WithError(err).Info("could not get max validators sysvar; skipping updates")
 	}
 
 	return reb
