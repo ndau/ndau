@@ -10,6 +10,7 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"log"
 	"sort"
 
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
@@ -19,7 +20,7 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/unsigned"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	logger "github.com/sirupsen/logrus"
 )
 
 func (app *App) goodnessOf(addrS string) (int64, error) {
@@ -87,16 +88,17 @@ type goodnessPair struct {
 	goodness uint64
 }
 
-func nodeGoodnesses(app *App, logger *log.Entry) ([]goodnessPair, uint64) {
+func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
 	state := app.GetState().(*backing.State)
 	var goodnessSum uint64
 	goodnesses := make([]goodnessPair, 0, len(state.Nodes))
 	for addr, node := range state.Nodes {
+		log.Println("nodegood 1 = ", node, addr)
 		if !node.Active {
 			continue
 		}
 		goodness, err := app.goodnessFunc(addr)
-		logger = logger.WithField("endblock.goodness", goodness)
+		log.Println("nodegood 2 = ", goodness, err)
 		if err == nil && goodness > 0 {
 			goodnessSum += uint64(goodness)
 			goodnesses = append(
@@ -141,7 +143,7 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 		return address.Address{}, errors.New("no nodes in nodes list")
 	}
 
-	goodnesses, goodnessSum := nodeGoodnesses(app, nil)
+	goodnesses, goodnessSum := nodeGoodnesses(app)
 
 	var maxRewarded wkt.Uint64
 	err := app.System(sv.NodeRewardMaxRewarded, &maxRewarded)
@@ -183,7 +185,7 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 		}
 		goodnessSum = next
 	}
-	app.DecoratedLogger().WithFields(log.Fields{
+	app.DecoratedLogger().WithFields(logger.Fields{
 		"index":          index,
 		"goodnessSum":    goodnessSum,
 		"goodnesses.len": len(goodnesses),

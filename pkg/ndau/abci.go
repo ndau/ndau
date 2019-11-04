@@ -44,7 +44,7 @@ func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	if err == nil {
 		logger = logger.WithField("endblock.max_validators", maxValidators)
 		// get goodnesses
-		gs, _ := nodeGoodnesses(app, logger)
+		gs, _ := nodeGoodnesses(app)
 		logger = logger.WithField("endblock.len_gs", len(gs))
 		// filter down the top n
 		gs = topNGoodnesses(gs, int(maxValidators))
