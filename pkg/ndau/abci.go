@@ -65,8 +65,8 @@ func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 			vu.Power = int64(g.goodness)
 			reb.ValidatorUpdates = append(reb.ValidatorUpdates, *vu)
 		}
-		logger.WithField("endblock.len_vus", len(reb.ValidatorUpdates))
-		logger.Info("updated node validation power")
+		logger = logger.WithField("endblock.len_vus", len(reb.ValidatorUpdates))
+		logger.Info("updated node validation power jsg")
 	} else {
 		logger.WithError(err).Info("could not get max validators sysvar; skipping updates")
 	}
