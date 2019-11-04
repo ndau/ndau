@@ -44,11 +44,12 @@ func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	if err == nil {
 		logger = logger.WithField("endblock.max_validators", maxValidators)
 		// get goodnesses
-		gs, _ := nodeGoodnesses(app)
+		gs, _ := nodeGoodnesses(app, logger)
+		logger = logger.WithField("endblock.len_gs", len(gs))
 		// filter down the top n
 		gs = topNGoodnesses(gs, int(maxValidators))
 
-		logger = logger.WithField("endblock.len_gs", len(gs))
+		logger = logger.WithField("endblock.len_top_gs", len(gs))
 
 		// for each remaining goodness, create a corresponding validator update
 		state := app.GetState().(*backing.State)

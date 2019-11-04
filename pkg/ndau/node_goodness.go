@@ -87,7 +87,7 @@ type goodnessPair struct {
 	goodness uint64
 }
 
-func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
+func nodeGoodnesses(app *App, *log.Entry) ([]goodnessPair, uint64) {
 	state := app.GetState().(*backing.State)
 	var goodnessSum uint64
 	goodnesses := make([]goodnessPair, 0, len(state.Nodes))
@@ -96,6 +96,7 @@ func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
 			continue
 		}
 		goodness, err := app.goodnessFunc(addr)
+		logger = logger.WithField("endblock.goodness", goodness)
 		if err == nil && goodness > 0 {
 			goodnessSum += uint64(goodness)
 			goodnesses = append(
@@ -140,7 +141,7 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 		return address.Address{}, errors.New("no nodes in nodes list")
 	}
 
-	goodnesses, goodnessSum := nodeGoodnesses(app)
+	goodnesses, goodnessSum := nodeGoodnesses(app, nil)
 
 	var maxRewarded wkt.Uint64
 	err := app.System(sv.NodeRewardMaxRewarded, &maxRewarded)
