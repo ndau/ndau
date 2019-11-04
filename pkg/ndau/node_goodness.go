@@ -87,7 +87,7 @@ type goodnessPair struct {
 	goodness uint64
 }
 
-func nodeGoodnesses(app *App, *log.Entry) ([]goodnessPair, uint64) {
+func nodeGoodnesses(app *App, logger *log.Entry) ([]goodnessPair, uint64) {
 	state := app.GetState().(*backing.State)
 	var goodnessSum uint64
 	goodnesses := make([]goodnessPair, 0, len(state.Nodes))
