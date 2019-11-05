@@ -187,3 +187,12 @@ func (s *State) PayReward(
 	s.Accounts[srcAddress.String()] = srcAccount
 	return []address.Address{srcAddress}, nil
 }
+
+// TotalDelegationTo computes the total amount of ndau delegated to a particular node
+func (s *State) TotalDelegationTo(node address.Address) math.Ndau {
+	out := math.Ndau(0)
+	for delegateS := range s.Delegates[node.String()] {
+		out += s.Accounts[delegateS].Balance
+	}
+	return out
+}

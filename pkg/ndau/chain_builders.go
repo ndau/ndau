@@ -309,6 +309,12 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "totalStake")
 	}
 
+	totalDelegation := app.GetState().(*backing.State).TotalDelegationTo(addr)
+	totalDelegationV, err := chain.ToValue(totalDelegation)
+	if err != nil {
+		return nil, errors.Wrap(err, "totalDelegation")
+	}
+
 	var votingHistory []metast.NodeRoundStats
 	for _, round := range voteStats.History {
 		if nrs, ok := round.Validators[addr.String()]; ok {
@@ -388,7 +394,7 @@ func BuildVMForNodeGoodness(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, rtsV, votingHistoryV, addrV, acctV, totalStakeV)
+	err = theVM.Init(0, rtsV, votingHistoryV, totalDelegationV, addrV, acctV, totalStakeV)
 	return theVM, err
 }
 

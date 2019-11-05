@@ -10,17 +10,21 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
+	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
 	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -32,6 +36,9 @@ func initAppNodeGoodness(t *testing.T, goodnesses ...uint64) (*App, []goodnessPa
 	out := make([]goodnessPair, 0, len(goodnesses))
 	rules, _ := getRulesAccount(t, app)
 	const stakeQty = 1000 * constants.NapuPerNdau
+	now, err := math.TimestampFrom(time.Now())
+	require.NoError(t, err)
+
 	for range goodnesses {
 		pubkey, pvtkey, err := signature.Generate(signature.Ed25519, nil)
 		require.NoError(t, err)
@@ -43,13 +50,14 @@ func initAppNodeGoodness(t *testing.T, goodnesses ...uint64) (*App, []goodnessPa
 		})
 		ensureRecent(t, app, addr.String())
 
-		var tx NTransactable
-		tx = NewStake(addr, rules, rules, stakeQty, 1, pvtkey)
-		resp := deliverTx(t, app, tx)
-		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-		tx = NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, pubkey, 2, pvtkey)
-		resp = deliverTx(t, app, tx)
-		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		txs := []metatx.Transactable{
+			NewStake(addr, rules, rules, stakeQty, 1, pvtkey),
+			NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, pubkey, 2, pvtkey),
+		}
+		resps, _ := deliverTxsContext(t, app, txs, ddc(t).at(now-math.Year))
+		for _, resp := range resps {
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		}
 
 		out = append(out, goodnessPair{
 			addr: addr.String(),
@@ -172,5 +180,38 @@ func TestNodeGoodnessAndValidatorSets(t *testing.T) {
 				}
 			})
 		}
+	})
+}
+
+func TestNodeGoodnesses(t *testing.T) {
+	app, gs := initAppNodeGoodness(t, 1, 1)
+	// we use the real node goodness function here, meaning that we can't predict
+	// the value of the node goodnesses, just that we will have the correct qty
+	app.goodnessFunc = app.goodnessOf
+	// set the real goodness function
+	script := "oAAsDgZBJgAQpdToACwrtXy1TJMrAgBBRgUmABCl1OgARgUmABCl1OgARg8FGkIOA0AOA4IAe4IBfAVwe5AJcHyQQAUhFCECQsSKIBCPIRQhAkImABCl1OgACUZJJgAQpdToAEAmABCl1OgARg4DJgAQpdToAEaIgAAAYHmJIQKOII+IgAEAYHqKIQWOII+I"
+	scriptB, err := base64.StdEncoding.DecodeString(script)
+	require.NoError(t, err)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		var err error
+		state.Sysvars[sv.NodeGoodnessFuncName], err = wkt.Bytes(scriptB).MarshalMsg(nil)
+		require.NoError(t, err)
+		return state, nil
+	})
+	// begin block to set the current block time
+	app.BeginBlock(abci.RequestBeginBlock{
+		Header: abci.Header{
+			Time: time.Now(),
+		},
+	})
+
+	gs, sum := nodeGoodnesses(app)
+	require.NotEmpty(t, gs)
+	require.NotZero(t, sum)
+
+	t.Run("topn", func(t *testing.T) {
+		gs = topNGoodnesses(gs, 5)
+		require.NotEmpty(t, gs)
 	})
 }
