@@ -304,6 +304,11 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "acct")
 	}
 
+	balV, err := chain.ToValue(acct.Balance)
+	if err != nil {
+		return nil, errors.Wrap(err, "balance")
+	}
+
 	totalStakeV, err := chain.ToValue(totalStake)
 	if err != nil {
 		return nil, errors.Wrap(err, "totalStake")
@@ -388,7 +393,7 @@ func BuildVMForNodeGoodness(
 	}
 
 	// goodness functions all use the default handler
-	err = theVM.Init(0, rtsV, votingHistoryV, addrV, acctV, totalStakeV)
+	err = theVM.Init(0, rtsV, votingHistoryV, balV, addrV, acctV, totalStakeV)
 	return theVM, err
 }
 
