@@ -10,6 +10,7 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sort"
 	"testing"
@@ -173,4 +174,26 @@ func TestNodeGoodnessAndValidatorSets(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestNodeGoodnesses(t *testing.T) {
+	app, gs := initAppNodeGoodness(t, 1, 1)
+	// we use the real node goodness function here, meaning that we can't predict
+	// the value of the node goodnesses, just that we will have the correct qty
+	app.goodnessFunc = app.goodnessOf
+	// set the real goodness function
+	script := "oAAsDgZBJgAQpdToACwrtXy1TJMrAgBBRgUmABCl1OgARgUmABCl1OgARg8FGkIOA0AOA4IAe4IBfAVwe5AJcHyQQAUhFCECQsSKIBCPIRQhAkImABCl1OgACUZJJgAQpdToAEAmABCl1OgARg4DJgAQpdToAEaIgAAAYHmJIQKOII+IgAEAYHqKIQWOII+I"
+	scriptB, err := base64.StdEncoding.DecodeString(script)
+	require.NoError(t, err)
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		var err error
+		state.Sysvars[sv.NodeGoodnessFuncName], err = wkt.Bytes(scriptB).MarshalMsg(nil)
+		require.NoError(t, err)
+		return state, nil
+	})
+
+	gs, sum := nodeGoodnesses(app)
+	require.NotEmpty(t, gs)
+	require.NotZero(t, sum)
 }
