@@ -209,4 +209,9 @@ func TestNodeGoodnesses(t *testing.T) {
 	gs, sum := nodeGoodnesses(app)
 	require.NotEmpty(t, gs)
 	require.NotZero(t, sum)
+
+	t.Run("topn", func(t *testing.T) {
+		gs = topNGoodnesses(gs, 5)
+		require.NotEmpty(t, gs)
+	})
 }
