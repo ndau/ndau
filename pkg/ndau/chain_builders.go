@@ -361,12 +361,12 @@ func BuildVMForNodeGoodness(
 			}()
 
 			if rts != genesis {
-				app.UpdateState(func(stI metast.State) (metast.State, error) {
+				app.Defer(func(stI metast.State) metast.State {
 					st := stI.(*backing.State)
 					node := st.Nodes[addr.String()]
 					node.SetRegistration(rts)
 					st.Nodes[addr.String()] = node
-					return st, nil
+					return st
 				})
 			}
 		} else {
