@@ -67,6 +67,14 @@ type Config struct {
 	// Map whose keys are features,
 	// and whose values are the mainnet block height at which the feature becomes active.
 	Features map[string]uint64
+
+	// PostgresConnection is the connection string to a postgres db.
+	//
+	// It should contain, at minimum: host, port, username, database
+	PostgresConnection *string
+
+	// PostgresPasswordPath is the path to a file containing the postgres user password
+	PostgresPasswordPath *string
 }
 
 // DefaultConfig creates a new config object with sensible defaults

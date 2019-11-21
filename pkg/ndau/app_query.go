@@ -16,7 +16,6 @@ import (
 	"sort"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
-	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
@@ -72,32 +71,32 @@ func accountQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 func accountHistoryQuery(
 	appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery,
 ) {
-	app := appI.(*App)
+	// app := appI.(*App)
 
-	search := app.GetSearch()
-	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
-		return
-	}
-	client := search.(*srch.Client)
+	// search := app.GetIndexer()
+	// if search == nil {
+	// 	app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+	// 	return
+	// }
+	// client := search.(*srch.Client)
 
-	var params srch.AccountHistoryParams
-	err := json.Unmarshal(request.GetData(), &params)
-	if err != nil {
-		app.QueryError(
-			errors.New("Cannot decode search params json"), response, "invalid search query")
-		return
-	}
+	// var params srch.AccountHistoryParams
+	// err := json.Unmarshal(request.GetData(), &params)
+	// if err != nil {
+	// 	app.QueryError(
+	// 		errors.New("Cannot decode search params json"), response, "invalid search query")
+	// 	return
+	// }
 
-	// The address was already validated by the caller.
-	ahr, err := client.SearchAccountHistory(params.Address, params.AfterHeight, params.Limit)
-	if err != nil {
-		app.QueryError(err, response, "account history search fail")
-		return
-	}
+	// // The address was already validated by the caller.
+	// ahr, err := client.SearchAccountHistory(params.Address, params.AfterHeight, params.Limit)
+	// if err != nil {
+	// 	app.QueryError(err, response, "account history search fail")
+	// 	return
+	// }
 
-	ahBytes := []byte(ahr.Marshal())
-	response.Value = ahBytes
+	// ahBytes := []byte(ahr.Marshal())
+	// response.Value = ahBytes
 }
 
 func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -153,29 +152,29 @@ func accountListQuery(appI interface{}, request abci.RequestQuery, response *abc
 }
 
 func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
-	app := appI.(*App)
+	// app := appI.(*App)
 
-	search := app.GetSearch()
-	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
-		return
-	}
-	client := search.(*srch.Client)
+	// search := app.GetIndexer()
+	// if search == nil {
+	// 	app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+	// 	return
+	// }
+	// client := search.(*srch.Client)
 
-	paramsString := string(request.GetData())
-	var req metasrch.DateRangeRequest
-	req.Unmarshal(paramsString)
+	// paramsString := string(request.GetData())
+	// var req metasrch.DateRangeRequest
+	// req.Unmarshal(paramsString)
 
-	firstHeight, lastHeight, err :=
-		client.Client.SearchDateRange(req.FirstTimestamp, req.LastTimestamp)
-	if err != nil {
-		app.QueryError(err, response, "date range search fail")
-		return
-	}
+	// firstHeight, lastHeight, err :=
+	// 	client.Client.SearchDateRange(req.FirstTimestamp, req.LastTimestamp)
+	// if err != nil {
+	// 	app.QueryError(err, response, "date range search fail")
+	// 	return
+	// }
 
-	result := metasrch.DateRangeResult{FirstHeight: firstHeight, LastHeight: lastHeight}
-	ahBytes := []byte(result.Marshal())
-	response.Value = ahBytes
+	// result := metasrch.DateRangeResult{FirstHeight: firstHeight, LastHeight: lastHeight}
+	// ahBytes := []byte(result.Marshal())
+	// response.Value = ahBytes
 }
 
 func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -222,51 +221,51 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 }
 
 func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
-	app := appI.(*App)
+	// app := appI.(*App)
 
-	search := app.GetSearch()
-	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
-		return
-	}
-	client := search.(*srch.Client)
+	// search := app.GetIndexer()
+	// if search == nil {
+	// 	app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+	// 	return
+	// }
+	// client := search.(*srch.Client)
 
-	var params srch.QueryParams
-	err := json.Unmarshal(request.GetData(), &params)
-	if err != nil {
-		app.QueryError(
-			errors.New("Cannot decode search params json"), response, "invalid search query")
-		return
-	}
+	// var params srch.QueryParams
+	// err := json.Unmarshal(request.GetData(), &params)
+	// if err != nil {
+	// 	app.QueryError(
+	// 		errors.New("Cannot decode search params json"), response, "invalid search query")
+	// 	return
+	// }
 
-	switch params.Command {
-	case srch.HeightByBlockHashCommand:
-		height, err := client.SearchBlockHash(params.Hash)
-		if err != nil {
-			app.QueryError(err, response, "height by block hash search fail")
-			return
-		}
-		value := fmt.Sprintf("%d", height)
-		response.Value = []byte(value)
-	case srch.HeightByTxHashCommand:
-		valueData, err := client.SearchTxHash(params.Hash)
-		if err != nil {
-			app.QueryError(err, response, "height by tx hash search fail")
-			return
-		}
-		value := valueData.Marshal()
-		response.Value = []byte(value)
-	case srch.HeightsByTxTypesCommand:
-		valueData, err := client.SearchTxTypes(params.Hash, params.Types, params.Limit)
-		if err != nil {
-			app.QueryError(err, response, "heights by tx types search fail")
-			return
-		}
-		value := valueData.Marshal()
-		response.Value = []byte(value)
-	default:
-		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
-	}
+	// switch params.Command {
+	// case srch.HeightByBlockHashCommand:
+	// 	height, err := client.SearchBlockHash(params.Hash)
+	// 	if err != nil {
+	// 		app.QueryError(err, response, "height by block hash search fail")
+	// 		return
+	// 	}
+	// 	value := fmt.Sprintf("%d", height)
+	// 	response.Value = []byte(value)
+	// case srch.HeightByTxHashCommand:
+	// 	valueData, err := client.SearchTxHash(params.Hash)
+	// 	if err != nil {
+	// 		app.QueryError(err, response, "height by tx hash search fail")
+	// 		return
+	// 	}
+	// 	value := valueData.Marshal()
+	// 	response.Value = []byte(value)
+	// case srch.HeightsByTxTypesCommand:
+	// 	valueData, err := client.SearchTxTypes(params.Hash, params.Types, params.Limit)
+	// 	if err != nil {
+	// 		app.QueryError(err, response, "heights by tx types search fail")
+	// 		return
+	// 	}
+	// 	value := valueData.Marshal()
+	// 	response.Value = []byte(value)
+	// default:
+	// 	app.QueryError(errors.New("Invalid query"), response, "invalid search params")
+	// }
 }
 
 var lastSummary query.Summary
@@ -357,32 +356,32 @@ func sysvarsQuery(appI interface{}, request abci.RequestQuery, response *abci.Re
 func sysvarHistoryQuery(
 	appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery,
 ) {
-	app := appI.(*App)
+	// app := appI.(*App)
 
-	search := app.GetSearch()
-	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
-		return
-	}
-	client := search.(*srch.Client)
+	// search := app.GetIndexer()
+	// if search == nil {
+	// 	app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+	// 	return
+	// }
+	// client := search.(*srch.Client)
 
-	var params srch.SysvarHistoryParams
-	err := json.Unmarshal(request.GetData(), &params)
-	if err != nil {
-		app.QueryError(
-			errors.New("Cannot decode search params json"), response, "invalid search query")
-		return
-	}
+	// var params srch.SysvarHistoryParams
+	// err := json.Unmarshal(request.GetData(), &params)
+	// if err != nil {
+	// 	app.QueryError(
+	// 		errors.New("Cannot decode search params json"), response, "invalid search query")
+	// 	return
+	// }
 
-	khr, err := client.SearchSysvarHistory(params.Name, params.AfterHeight, params.Limit)
-	if err != nil {
-		app.QueryError(err, response, "sysvar history search fail")
-		return
-	}
+	// khr, err := client.SearchSysvarHistory(params.Name, params.AfterHeight, params.Limit)
+	// if err != nil {
+	// 	app.QueryError(err, response, "sysvar history search fail")
+	// 	return
+	// }
 
-	khBytes, err := khr.MarshalMsg(nil)
-	response.Value = khBytes
-	app.QueryError(err, response, "sysvar history byte serialization fail")
+	// khBytes, err := khr.MarshalMsg(nil)
+	// response.Value = khBytes
+	// app.QueryError(err, response, "sysvar history byte serialization fail")
 }
 
 func delegatesQuery(appI interface{}, _ abci.RequestQuery, response *abci.ResponseQuery) {
@@ -464,38 +463,38 @@ func nodesQuery(appI interface{}, request abci.RequestQuery, response *abci.Resp
 }
 
 func priceQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
-	app := appI.(*App)
-	search := app.GetSearch().(*srch.Client)
+	// app := appI.(*App)
+	// search := app.GetIndexer().(*srch.Client)
 
-	// chose the appropriate search function
-	var sf func(params srch.PriceQueryParams) (srch.PriceQueryResults, error)
-	switch request.Path {
-	case query.PriceMarketEndpoint:
-		sf = search.SearchMarketPrice
-	case query.PriceTargetEndpoint:
-		sf = search.SearchTargetPrice
-	}
+	// // chose the appropriate search function
+	// var sf func(params srch.PriceQueryParams) (srch.PriceQueryResults, error)
+	// switch request.Path {
+	// case query.PriceMarketEndpoint:
+	// 	sf = search.SearchMarketPrice
+	// case query.PriceTargetEndpoint:
+	// 	sf = search.SearchTargetPrice
+	// }
 
-	// unpack params
-	var pqp srch.PriceQueryParams
-	if len(request.Data) > 0 {
-		_, err := pqp.After.Timestamp.UnmarshalMsg(request.Data)
-		if err != nil {
-			app.QueryError(err, response, "unmarshaling query params")
-			return
-		}
-	}
+	// // unpack params
+	// var pqp srch.PriceQueryParams
+	// if len(request.Data) > 0 {
+	// 	_, err := pqp.After.Timestamp.UnmarshalMsg(request.Data)
+	// 	if err != nil {
+	// 		app.QueryError(err, response, "unmarshaling query params")
+	// 		return
+	// 	}
+	// }
 
-	// perform search
-	pqr, err := sf(pqp)
-	if err != nil {
-		app.QueryError(err, response, "searching for price data")
-		return
-	}
+	// // perform search
+	// pqr, err := sf(pqp)
+	// if err != nil {
+	// 	app.QueryError(err, response, "searching for price data")
+	// 	return
+	// }
 
-	// pack response
-	response.Value, err = pqr.MarshalMsg(nil)
-	if err != nil {
-		app.QueryError(err, response, "marshaling price data results")
-	}
+	// // pack response
+	// response.Value, err = pqr.MarshalMsg(nil)
+	// if err != nil {
+	// 	app.QueryError(err, response, "marshaling price data results")
+	// }
 }

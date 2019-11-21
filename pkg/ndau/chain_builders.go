@@ -18,8 +18,8 @@ import (
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 	"github.com/oneiro-ndev/ndaumath/pkg/eai"
@@ -343,11 +343,11 @@ func BuildVMForNodeGoodness(
 			// we do this within a function so we can have early returns;
 			// it cleans up the control flow a bit
 			rts = func() math.Timestamp {
-				search := app.GetSearch()
-				if search == nil {
+				idxr := app.GetIndexer()
+				if idxr == nil {
 					return genesis
 				}
-				client := search.(*srch.Client)
+				client := idxr.(*srch.Client)
 				txdata, err := client.SearchMostRecentRegisterNode(addr.String())
 				if err != nil || txdata == nil {
 					// txdata is nil if the node has never been registered

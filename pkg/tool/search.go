@@ -12,7 +12,6 @@ package tool
 import (
 	"encoding/json"
 
-	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	"github.com/pkg/errors"
@@ -44,17 +43,17 @@ func GetSearchResults(node client.ABCIClient, params search.QueryParams) (
 func SearchDateRange(node client.ABCIClient, first, last string) (
 	uint64, uint64, error,
 ) {
-	request := metasrch.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
+	// request := metasrch.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
 
-	// perform the query
-	res, err := node.ABCIQuery(query.DateRangeEndpoint, []byte(request.Marshal()))
-	if err != nil {
-		return 0, 0, err
-	}
+	// // perform the query
+	// res, err := node.ABCIQuery(query.DateRangeEndpoint, []byte(request.Marshal()))
+	// if err != nil {
+	// 	return 0, 0, err
+	// }
 
-	// parse the response
-	searchValue := string(res.Response.GetValue())
-	var result metasrch.DateRangeResult
-	result.Unmarshal(searchValue)
-	return result.FirstHeight, result.LastHeight, nil
+	// // parse the response
+	// searchValue := string(res.Response.GetValue())
+	// var result metasrch.DateRangeResult
+	// result.Unmarshal(searchValue)
+	// return result.FirstHeight, result.LastHeight, nil
 }
