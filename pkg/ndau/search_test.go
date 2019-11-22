@@ -10,6 +10,7 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os/exec"
@@ -109,10 +110,10 @@ func TestIndex(t *testing.T) {
 		tmBlockHash := []byte("abcdefghijklmnopqrst") // 20 bytes
 		blockHash := fmt.Sprintf("%x", tmBlockHash)   // 40 characters
 		var txHashSSV, txHashRFE string
-		_, err := math.TimestampFrom(time.Now())
+		blockTime, err := math.TimestampFrom(time.Now())
 		require.NoError(t, err)
 
-		search := app.GetIndexer().(*srch.Client)
+		client := app.GetIndexer().(*srch.Client)
 
 		// Ensure Redis is empty.
 		// err = search.FlushDB()
@@ -120,11 +121,19 @@ func TestIndex(t *testing.T) {
 
 		// Test initial indexing.
 		t.Run("TestHashInitialIndexing", func(t *testing.T) {
-			err := search.IndexBlockchain(app.GetDB(), app.GetDS())
+			err := client.IndexBlockchain(app.GetDB(), app.GetDS())
 			require.NoError(t, err)
 
 			// Number of sysvars present in noms.
-			// TODO: check this
+			state := app.GetState().(*backing.State)
+			stateSysvars := len(state.Sysvars)
+			var idxSysvars int
+			err = client.Postgres.QueryRow(
+				context.Background(),
+				"SELECT COUNT(*) FROM systemvariables WHERE height=0",
+			).Scan(&idxSysvars)
+			require.NoError(t, err)
+			require.Equal(t, stateSysvars, idxSysvars)
 		})
 
 		// Deliver some transactions, which should trigger incremental indexing
@@ -156,20 +165,20 @@ func TestIndex(t *testing.T) {
 		// Test searching.
 		t.Run("TestHashSearching", func(t *testing.T) {
 			t.Run("TestBlockHashSearching", func(t *testing.T) {
-				heightResult, err := search.SearchBlockHash(blockHash)
+				heightResult, err := client.SearchBlockHash(blockHash)
 				require.NoError(t, err)
 				require.Equal(t, height, heightResult)
 			})
 
 			t.Run("TestTxHashSearchingSSV", func(t *testing.T) {
-				vd, err := search.SearchTxHash(txHashSSV)
+				vd, err := client.SearchTxHash(txHashSSV)
 				require.NoError(t, err)
 				require.Equal(t, height, vd.BlockHeight)
 				require.Equal(t, txOffsetSSV, vd.TxOffset)
 			})
 
 			t.Run("TestTxHashSearchingRFE", func(t *testing.T) {
-				vd, err := search.SearchTxHash(txHashRFE)
+				vd, err := client.SearchTxHash(txHashRFE)
 				require.NoError(t, err)
 				require.Equal(t, height, vd.BlockHeight)
 				require.Equal(t, txOffsetRFE, vd.TxOffset)
@@ -182,7 +191,7 @@ func TestIndex(t *testing.T) {
 				txHashNext := txHashSSV
 
 				// The first page should return the latest (RFE) transaction.
-				vd, err := search.SearchTxTypes("", txTypes, 1)
+				vd, err := client.SearchTxTypes("", txTypes, 1)
 				require.NoError(t, err)
 				require.Equal(t, 1, len(vd.Txs))
 				require.Equal(t, txHashNext, vd.NextTxHash)
@@ -190,7 +199,7 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, txOffsetRFE, vd.Txs[0].TxOffset)
 
 				// The second page should return the first (SSV) transaction.
-				vd, err = search.SearchTxTypes(txHashNext, txTypes, 1)
+				vd, err = client.SearchTxTypes(txHashNext, txTypes, 1)
 				require.NoError(t, err)
 				require.Equal(t, 1, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
@@ -200,7 +209,7 @@ func TestIndex(t *testing.T) {
 
 			t.Run("TestTxTypeSearchingTransfer", func(t *testing.T) {
 				txTypes := []string{"Transfer"}
-				vd, err := search.SearchTxTypes("", txTypes, 1)
+				vd, err := client.SearchTxTypes("", txTypes, 1)
 				require.NoError(t, err)
 				require.Equal(t, 0, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
@@ -208,28 +217,28 @@ func TestIndex(t *testing.T) {
 
 			t.Run("TestTxTypeSearchingInvalid", func(t *testing.T) {
 				txTypes := []string{"ReleaseFromEndowment"}
-				vd, err := search.SearchTxTypes("invalid-hash", txTypes, 1)
+				vd, err := client.SearchTxTypes("invalid-hash", txTypes, 1)
 				require.NoError(t, err)
 				require.Equal(t, 0, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
 			})
 
 			t.Run("TestTxTypeSearchingEmpty", func(t *testing.T) {
-				vd, err := search.SearchTxTypes("invalid-hash", []string{}, 1)
+				vd, err := client.SearchTxTypes("invalid-hash", []string{}, 1)
 				require.NoError(t, err)
 				require.Equal(t, 0, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
 			})
 
 			t.Run("TestTxTypeSearchingNil", func(t *testing.T) {
-				vd, err := search.SearchTxTypes("invalid-hash", nil, 1)
+				vd, err := client.SearchTxTypes("invalid-hash", nil, 1)
 				require.NoError(t, err)
 				require.Equal(t, 0, len(vd.Txs))
 				require.Equal(t, "", vd.NextTxHash)
 			})
 
 			t.Run("TestAccountSearching", func(t *testing.T) {
-				ahr, err := search.SearchAccountHistory(targetAddress.String(), 0, 0)
+				ahr, err := client.SearchAccountHistory(targetAddress.String(), 0, 0)
 				require.NoError(t, err)
 				require.Equal(t, 1, len(ahr.Txs))
 				valueData := ahr.Txs[0]
@@ -238,20 +247,19 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, math.Ndau(1), valueData.Balance)
 			})
 
-			// t.Run("TestDateRangeSearching", func(t *testing.T) {
-			// 	timeString := blockTime.String()
-			// 	firstHeight, lastHeight, err := search.SearchDateRange(timeString, timeString)
-			// 	require.NoError(t, err)
-			// 	// Expecting the block before the one we indexed since it's flooring to current day.
-			// 	require.Equal(t, height-1, firstHeight)
-			// 	// Expecting the block after the one we indexed since it's an exclusive upper bound.
-			// 	require.Equal(t, height+1, lastHeight)
-			// })
+			t.Run("TestDateRangeSearching", func(t *testing.T) {
+				firstHeight, lastHeight, err := client.SearchDateRange(blockTime, blockTime)
+				require.NoError(t, err)
+				// Expecting the block before the one we indexed since it's flooring to current day.
+				require.Equal(t, height-1, firstHeight)
+				// Expecting the block after the one we indexed since it's an exclusive upper bound.
+				require.Equal(t, height+1, lastHeight)
+			})
 		})
 
 		t.Run("TestMostRecentRegisterNode", func(t *testing.T) {
 			// precondition: this node has never been registered
-			txData, err := search.SearchMostRecentRegisterNode(targetAddress.String())
+			txData, err := client.SearchMostRecentRegisterNode(targetAddress.String())
 			require.NoError(t, err)
 			require.Nil(t, txData)
 
@@ -275,7 +283,7 @@ func TestIndex(t *testing.T) {
 			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 			// postcondition: MRRN must correctly identify the block height
-			txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+			txData, err = client.SearchMostRecentRegisterNode(targetAddress.String())
 			require.NoError(t, err)
 			require.NotNil(t, txData)
 			require.Equal(t, height, txData.BlockHeight)
@@ -290,7 +298,7 @@ func TestIndex(t *testing.T) {
 
 				// intermediate test: MRRN still reports the most recent register node
 				// tx, even though it no longer applies
-				txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+				txData, err = client.SearchMostRecentRegisterNode(targetAddress.String())
 				require.NoError(t, err)
 				require.NotNil(t, txData)
 				require.Equal(t, height, txData.BlockHeight)
@@ -302,7 +310,7 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 				// postcondition: MRRN must correctly identify the block height
-				txData, err = search.SearchMostRecentRegisterNode(targetAddress.String())
+				txData, err = client.SearchMostRecentRegisterNode(targetAddress.String())
 				require.NoError(t, err)
 				require.NotNil(t, txData)
 				require.Equal(t, uint64(height), txData.BlockHeight)
@@ -333,7 +341,7 @@ func TestIndex(t *testing.T) {
 
 			// precondition: the search does not know about any block times
 			for _, pair := range sparsed {
-				time, err := search.BlockTime(pair.height)
+				time, err := client.BlockTime(pair.height)
 				require.NoError(t, err)
 				require.Zero(t, time)
 			}
@@ -347,7 +355,7 @@ func TestIndex(t *testing.T) {
 
 			// postcondition: the search knows about all appropriate block times
 			for _, pair := range sparsed {
-				time, err := search.BlockTime(pair.height)
+				time, err := client.BlockTime(pair.height)
 				require.NoError(t, err)
 				require.Equal(t, pair.time, time)
 			}
@@ -372,7 +380,7 @@ func TestIndex(t *testing.T) {
 			}
 
 			// precondition: search does not know about any market price data
-			priceResult, err := search.SearchMarketPrice(srch.PriceQueryParams{})
+			priceResult, err := client.SearchMarketPrice(srch.PriceQueryParams{})
 			require.NoError(t, err)
 			require.Empty(t, priceResult.Items)
 			require.False(t, priceResult.More, "must not have unreturned items")
@@ -385,7 +393,7 @@ func TestIndex(t *testing.T) {
 			// postcondition: search can find the market price data
 			t.Run("Unlimited", func(t *testing.T) {
 				t.Parallel()
-				priceResult, err := search.SearchMarketPrice(srch.PriceQueryParams{})
+				priceResult, err := client.SearchMarketPrice(srch.PriceQueryParams{})
 				require.NoError(t, err)
 				require.Equal(t, len(pairs), len(priceResult.Items))
 				require.False(t, priceResult.More, "must not have unreturned items")
@@ -398,7 +406,7 @@ func TestIndex(t *testing.T) {
 			})
 			t.Run("Limited", func(t *testing.T) {
 				t.Parallel()
-				priceResult, err := search.SearchMarketPrice(srch.PriceQueryParams{
+				priceResult, err := client.SearchMarketPrice(srch.PriceQueryParams{
 					Limit: 1,
 				})
 				require.NoError(t, err)
@@ -408,7 +416,7 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
 				require.Equal(t, pairs[idx].tx.MarketPrice, priceResult.Items[idx].Price)
 				// get subsequent results
-				priceResult, err = search.SearchMarketPrice(srch.PriceQueryParams{
+				priceResult, err = client.SearchMarketPrice(srch.PriceQueryParams{
 					After: srch.RangeEndpoint{Timestamp: priceResult.Items[idx].Timestamp},
 				})
 				require.NoError(t, err)
@@ -464,7 +472,7 @@ func TestIndex(t *testing.T) {
 			// search.Client.FlushDB()
 
 			// precondition: search does not know about any target price data
-			priceResult, err := search.SearchTargetPrice(srch.PriceQueryParams{})
+			priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{})
 			require.NoError(t, err)
 			require.Empty(t, priceResult.Items)
 			require.False(t, priceResult.More, "must not have unreturned items")
@@ -484,7 +492,7 @@ func TestIndex(t *testing.T) {
 			// postcondition: search can find the target price data
 			t.Run("Unlimited", func(t *testing.T) {
 				t.Parallel()
-				priceResult, err := search.SearchTargetPrice(srch.PriceQueryParams{})
+				priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{})
 				require.NoError(t, err)
 				require.Equal(t, len(pairs), len(priceResult.Items))
 				require.False(t, priceResult.More, "must not have unreturned items")
@@ -499,7 +507,7 @@ func TestIndex(t *testing.T) {
 			})
 			t.Run("Limited", func(t *testing.T) {
 				t.Parallel()
-				priceResult, err := search.SearchTargetPrice(srch.PriceQueryParams{
+				priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{
 					Limit: 1,
 				})
 				require.NoError(t, err)
@@ -509,7 +517,7 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
 				require.Equal(t, pairs[idx].tgt, priceResult.Items[idx].Price)
 				// get subsequent results
-				priceResult, err = search.SearchTargetPrice(srch.PriceQueryParams{
+				priceResult, err = client.SearchTargetPrice(srch.PriceQueryParams{
 					After: srch.RangeEndpoint{Timestamp: priceResult.Items[idx].Timestamp},
 					Limit: 1,
 				})
