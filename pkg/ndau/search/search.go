@@ -356,3 +356,22 @@ func (client *Client) searchPrice(
 	}
 	return
 }
+
+// SearchDateRange returns the first and last block heights for the given ISO-3339 date range.
+// The first is inclusive, the last is exclusive.
+func (client *Client) SearchDateRange(f, l math.Timestamp) (first uint64, last uint64, err error) {
+	err = client.postgres.QueryRow(
+		context.Background(),
+		"SELECT MIN(height) AS first, MAX(height) AS last"+
+			"FROM blocks WHERE block_time >= $1 AND block_time < $2",
+		f.AsTime(), l.AsTime(),
+	).Scan(&first, &last)
+
+	if err == pgx.ErrNoRows {
+		err = nil
+		first = 0
+		last = 0
+	}
+
+	return
+}

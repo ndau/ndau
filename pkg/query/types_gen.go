@@ -115,6 +115,136 @@ func (z *AccountListQueryResponse) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
+func (z *DateRangeRequest) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 2
+	// string "FirstTimestamp"
+	o = append(o, 0x82, 0xae, 0x46, 0x69, 0x72, 0x73, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70)
+	o, err = z.FirstTimestamp.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "FirstTimestamp")
+		return
+	}
+	// string "LastTimestamp"
+	o = append(o, 0xad, 0x4c, 0x61, 0x73, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70)
+	o, err = z.LastTimestamp.MarshalMsg(o)
+	if err != nil {
+		err = msgp.WrapError(err, "LastTimestamp")
+		return
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *DateRangeRequest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "FirstTimestamp":
+			bts, err = z.FirstTimestamp.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "FirstTimestamp")
+				return
+			}
+		case "LastTimestamp":
+			bts, err = z.LastTimestamp.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "LastTimestamp")
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *DateRangeRequest) Msgsize() (s int) {
+	s = 1 + 15 + z.FirstTimestamp.Msgsize() + 14 + z.LastTimestamp.Msgsize()
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z DateRangeResult) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 2
+	// string "FirstHeight"
+	o = append(o, 0x82, 0xab, 0x46, 0x69, 0x72, 0x73, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	o = msgp.AppendUint64(o, z.FirstHeight)
+	// string "LastHeight"
+	o = append(o, 0xaa, 0x4c, 0x61, 0x73, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74)
+	o = msgp.AppendUint64(o, z.LastHeight)
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *DateRangeResult) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 uint32
+	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	for zb0001 > 0 {
+		zb0001--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "FirstHeight":
+			z.FirstHeight, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "FirstHeight")
+				return
+			}
+		case "LastHeight":
+			z.LastHeight, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "LastHeight")
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z DateRangeResult) Msgsize() (s int) {
+	s = 1 + 12 + msgp.Uint64Size + 11 + msgp.Uint64Size
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *DelegateList) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 2

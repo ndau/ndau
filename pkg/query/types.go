@@ -99,3 +99,15 @@ type NodeExtra struct {
 
 // NodesResponse is the return value from the /nodes endpoint
 type NodesResponse map[string]NodeExtra
+
+// DateRangeRequest is used for passing date range query terms over endpoints.
+type DateRangeRequest struct {
+	FirstTimestamp types.Timestamp
+	LastTimestamp  types.Timestamp
+}
+
+// DateRangeResult is used for returning search results for the date range endpoint.
+type DateRangeResult struct {
+	FirstHeight uint64
+	LastHeight  uint64
+}
