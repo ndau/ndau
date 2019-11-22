@@ -29,7 +29,7 @@ func (client *Client) IndexBlockchain(
 ) (err error) {
 	// what's the greatest block height we've already indexed?
 	var maxHeightAlreadyIndexed uint64
-	err = client.postgres.QueryRow(context.Background(), "SELECT MAX(height) FROM blocks").
+	err = client.Postgres.QueryRow(context.Background(), "SELECT MAX(height) FROM blocks").
 		Scan(&maxHeightAlreadyIndexed)
 	if err != nil && err != pgx.ErrNoRows {
 		return errors.Wrap(err, "querying max height already indexed")
@@ -70,7 +70,7 @@ func (client *Client) IndexBlockchain(
 // Index all the sysvar key-value pairs in the given state at the current client.height.
 func (client *Client) indexInitialSysvars(st *backing.State) (err error) {
 	for key, value := range st.Sysvars {
-		_, err = client.postgres.Exec(
+		_, err = client.Postgres.Exec(
 			context.Background(),
 			"INSERT INTO systemvariables(height, key, value) "+
 				"VALUES ($1, $2)",

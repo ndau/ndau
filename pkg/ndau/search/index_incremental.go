@@ -37,7 +37,7 @@ func (client *Client) BeginBlock(
 ) {
 	client.height = uint64(request.Header.Height)
 	client.sequence = 0
-	_, err := client.postgres.Exec(
+	_, err := client.Postgres.Exec(
 		context.Background(),
 		"INSERT INTO blocks(height, block_time, hash) VALUES ($1, $2, $3)",
 		request.Header.Height,
@@ -62,7 +62,7 @@ func (client *Client) DeliverTx(
 	fee, _ := client.app.CalculateTxFeeNapu(tx)
 	sib, _ := client.app.CalculateTxSIBNapu(tx)
 
-	_, err := client.postgres.Exec(
+	_, err := client.Postgres.Exec(
 		context.Background(),
 		"INSERT INTO transactions(name, hash, height, sequence, data, fee, sib) "+
 			"VALUES ($1, $2, $3, $4, $5, $6, $7)",
@@ -83,7 +83,7 @@ func (client *Client) DeliverTx(
 	// but we know that postgres will always be on the same physical machine as
 	// the node software, so it is probably worth it to cache it ahead of time.
 	var txRow uint64
-	err = client.postgres.QueryRow(
+	err = client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT id FROM transactions WHERE height=$1 AND sequence=$2 LIMIT 1",
 		client.height,
@@ -97,7 +97,7 @@ func (client *Client) DeliverTx(
 	}
 	for _, addr := range accountsAffected {
 		if ad, ok := state.Accounts[addr]; ok {
-			_, err = client.postgres.Exec(
+			_, err = client.Postgres.Exec(
 				context.Background(),
 				"INSERT INTO accounts(address, data, tx) "+
 					"VALUES ($1, $2, $3)",
@@ -110,7 +110,7 @@ func (client *Client) DeliverTx(
 	}
 
 	if indexable, ok := tx.(SysvarIndexable); ok {
-		_, err = client.postgres.Exec(
+		_, err = client.Postgres.Exec(
 			context.Background(),
 			"INSERT INTO systemvariables(key, value, height, tx) "+
 				"VALUES ($1, $2, $3, $4)",
@@ -125,7 +125,7 @@ func (client *Client) DeliverTx(
 	}
 
 	if indexable, ok := tx.(MarketPriceIndexable); ok {
-		_, err = client.postgres.Exec(
+		_, err = client.Postgres.Exec(
 			context.Background(),
 			"INSERT INTO marketprices(tx, price) VALUES ($1, $2)",
 			txRow,
@@ -137,7 +137,7 @@ func (client *Client) DeliverTx(
 	}
 
 	if _, ok := tx.(TargetPriceIndexable); ok {
-		_, err = client.postgres.Exec(
+		_, err = client.Postgres.Exec(
 			context.Background(),
 			"INSERT INTO targetprices(tx, price) VALUES ($1, $2)",
 			txRow,

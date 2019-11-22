@@ -33,14 +33,14 @@ func (client *Client) SearchSysvarHistory(
 
 	var rows pgx.Rows
 	if limit > 0 {
-		rows, err = client.postgres.Query(
+		rows, err = client.Postgres.Query(
 			context.Background(),
 			"SELECT key, value FROM systemvariables WHERE height>=$1 "+
 				"ORDER BY height ASC",
 			minHeight,
 		)
 	} else {
-		rows, err = client.postgres.Query(
+		rows, err = client.Postgres.Query(
 			context.Background(),
 			"SELECT height, value FROM systemvariables WHERE height>=$1 "+
 				"ORDER BY height ASC LIMIT $2",
@@ -72,7 +72,7 @@ func (client *Client) SearchSysvarHistory(
 // Returns 0 and no error if the given block hash was not found in the index.
 func (client *Client) SearchBlockHash(blockHash string) (uint64, error) {
 	var height uint64
-	err := client.postgres.QueryRow(
+	err := client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT height FROM blocks WHERE hash=$1 LIMIT 1",
 		blockHash,
@@ -85,7 +85,7 @@ func (client *Client) SearchBlockHash(blockHash string) (uint64, error) {
 
 // SearchTxHash returns tx data for the given tx hash.
 func (client *Client) SearchTxHash(txHash string) (txvd TxValueData, err error) {
-	err = client.postgres.QueryRow(
+	err = client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT height, sequence, fee, sib FROM transactions WHERE hash=$1 LIMIT 1",
 		txHash,
@@ -133,7 +133,7 @@ func (client *Client) SearchTxTypes(
 
 	// perform the query
 	var rows pgx.Rows
-	rows, err = client.postgres.Query(
+	rows, err = client.Postgres.Query(
 		context.Background(),
 		query,
 		txHashOrHeight,
@@ -183,7 +183,7 @@ func (client *Client) SearchAccountHistory(
 
 	// perform the query
 	var rows pgx.Rows
-	rows, err = client.postgres.Query(
+	rows, err = client.Postgres.Query(
 		context.Background(),
 		query,
 		addr,
@@ -217,7 +217,7 @@ func (client *Client) SearchAccountHistory(
 // returns the zero value and no error if the block is unknown
 func (client *Client) BlockTime(height uint64) (ts math.Timestamp, err error) {
 	var t time.Time
-	err = client.postgres.QueryRow(
+	err = client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT block_time FROM blocks WHERE height=$1 LIMIT 1",
 		height,
@@ -237,7 +237,7 @@ func (client *Client) BlockTime(height uint64) (ts math.Timestamp, err error) {
 func (client *Client) SearchMostRecentRegisterNode(address string) (txvd *TxValueData, err error) {
 	txvd = new(TxValueData)
 
-	err = client.postgres.QueryRow(
+	err = client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT height, sequence, fee, sib FROM transactions "+
 			"WHERE name='RegisterNode' AND (data->'node')=$1 "+
@@ -318,7 +318,7 @@ func (client *Client) searchPrice(
 
 	// perform the query
 	var rows pgx.Rows
-	rows, err = client.postgres.Query(
+	rows, err = client.Postgres.Query(
 		context.Background(),
 		query,
 		table,
@@ -360,7 +360,7 @@ func (client *Client) searchPrice(
 // SearchDateRange returns the first and last block heights for the given ISO-3339 date range.
 // The first is inclusive, the last is exclusive.
 func (client *Client) SearchDateRange(f, l math.Timestamp) (first uint64, last uint64, err error) {
-	err = client.postgres.QueryRow(
+	err = client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT MIN(height) AS first, MAX(height) AS last"+
 			"FROM blocks WHERE block_time >= $1 AND block_time < $2",

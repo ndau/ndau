@@ -19,11 +19,8 @@ import (
 
 // Client is a search Client that implements metaapp.Indexer.
 type Client struct {
-	// postgres is a database connection
-	// If the appropriate fields are configured in the configuration, this will be
-	// populated at initialization. Otherwise, it will be nil.
-	// Therefore, all usages have to take the possibility of nility into consideration.
-	postgres *pgx.Conn
+	// Postgres is a database connection
+	Postgres *pgx.Conn
 
 	// Used for getting account data to index.
 	app AppIndexable
@@ -39,7 +36,7 @@ func NewClient(config *pgx.ConnConfig, app AppIndexable) (client *Client, err er
 		app: app,
 	}
 
-	client.postgres, err = pgx.ConnectConfig(context.Background(), config)
+	client.Postgres, err = pgx.ConnectConfig(context.Background(), config)
 	err = errors.Wrap(err, "connecting to postgres")
 	return
 }
