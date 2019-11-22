@@ -13,6 +13,7 @@ package search
 
 import (
 	"context"
+	"fmt"
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -38,8 +39,10 @@ func (client *Client) BeginBlock(
 	client.sequence = 0
 	_, err := client.postgres.Exec(
 		context.Background(),
-		"INSERT INTO blocks(height, block_time) VALUES ($1, $2)",
-		request.Header.Height, request.Header.Time,
+		"INSERT INTO blocks(height, block_time, hash) VALUES ($1, $2, $3)",
+		request.Header.Height,
+		request.Header.Time,
+		fmt.Sprintf("%x", request.Hash),
 	)
 	if err != nil {
 		panic(err)
@@ -82,7 +85,7 @@ func (client *Client) DeliverTx(
 	var txRow uint64
 	err = client.postgres.QueryRow(
 		context.Background(),
-		"SELECT id FROM transactions WHERE block=$1 AND sequence=$2 LIMIT 1",
+		"SELECT id FROM transactions WHERE height=$1 AND sequence=$2 LIMIT 1",
 		client.height,
 		client.sequence,
 	).Scan(&txRow)
