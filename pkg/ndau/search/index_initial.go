@@ -56,30 +56,32 @@ func (client *Client) IndexBlockchain(
 			panic(fmt.Sprintf("invalid height found in noms: %d >= %d", height, lastHeight))
 		}
 
-		// NOTE: This is currently a no-op since we didn't pull anything out of noms to put into
-		// the search client struct before calling index().  We keep this here in case we do find
-		// more that we want to index that also can be pulled from noms before this line.
-		_, _, err := client.index()
-		if err != nil {
-			return err
-		}
-
 		// Index sysvar key-value history, which we pull from noms.
-		st := stI.(*backing.State)
-		_, _, err = client.indexState(st)
-		return err
+		// this is broken out into a function mainly for ease of reading/separation
+		// of concerns: the logic around here is all about iterating through noms;
+		// the logic there is about actually performing appropriate indexing
+		client.height = height
+		return client.indexInitialSysvars(stI.(*backing.State))
 	})
-	if err != nil && !state.IsStopIteration(err) {
-		return errors.Wrap(err, "iterating noms history")
-	}
+	// if the returned error was nil, this preserves its nility
+	return errors.Wrap(err, "iterating noms history")
+}
 
-	// We don't need to check for dupes if this is the first initial scan (minHeightToIndex
-	// == 0) since we will have just completed indexing the entire blockchain and have filtered
-	// out all the dupes from adjacent (and within) blocks using sysvarKeyToValueData map.
-	// We also don't need to check for dupes if we didn't index anything this time
-	// (minHeightToIndex == search.nextHeight), although that check is just for completeness
-	// since sysvarKeyToValueData will be empty in that case.
-	_, _, err = client.onIndexingComplete(false)
+// Index all the sysvar key-value pairs in the given state at the current client.height.
+func (client *Client) indexInitialSysvars(st *backing.State) (err error) {
+	for key, value := range st.Sysvars {
+		_, err = client.postgres.Exec(
+			context.Background(),
+			"INSERT INTO systemvariables(height, key, value) "+
+				"VALUES ($1, $2)",
+			client.height,
+			key,
+			value,
+		)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("%s@%d", key, client.height))
+		}
+	}
 
 	return
 }

@@ -16,6 +16,7 @@ import (
 
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -23,16 +24,18 @@ import (
 
 // InitChain implements metaapp.Indexer
 func (client *Client) InitChain(abci.RequestInitChain, abci.ResponseInitChain, metast.State) {
-	// noop
+	// noop, but if we ever want to keep track of validator updates, we can't
+	// forget to handle this initial case returned here
 }
 
 // BeginBlock implements metaapp.Indexer
 func (client *Client) BeginBlock(
 	request abci.RequestBeginBlock,
 	response abci.ResponseBeginBlock,
-	state metast.State,
+	stI metast.State,
 ) {
 	client.height = uint64(request.Header.Height)
+	client.sequence = 0
 	_, err := client.postgres.Exec(
 		context.Background(),
 		"INSERT INTO blocks(height, block_time) VALUES ($1, $2)",
@@ -45,78 +48,121 @@ func (client *Client) BeginBlock(
 
 // DeliverTx implements metaapp.Indexer
 func (client *Client) DeliverTx(
-	abci.RequestDeliverTx,
-	abci.ResponseDeliverTx,
-	metatx.Transactable,
-	metast.State,
+	request abci.RequestDeliverTx,
+	response abci.ResponseDeliverTx,
+	tx metatx.Transactable,
+	stI metast.State,
 ) {
-	// TODO!
+	defer func() { client.sequence++ }()
+	// we can't handle errors in these calculations, and worst case, we get
+	// a zero back, so... we just discard potential errors
+	fee, _ := client.app.CalculateTxFeeNapu(tx)
+	sib, _ := client.app.CalculateTxSIBNapu(tx)
+
+	_, err := client.postgres.Exec(
+		context.Background(),
+		"INSERT INTO transactions(name, hash, height, sequence, data, fee, sib) "+
+			"VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		metatx.NameOf(tx),
+		metatx.Hash(tx),
+		client.height,
+		client.sequence,
+		tx,
+		fee,
+		sib,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// a few other tables need the tx row.
+	// In high-latency systems, it might be faster to fetch this as a subquery,
+	// but we know that postgres will always be on the same physical machine as
+	// the node software, so it is probably worth it to cache it ahead of time.
+	var txRow uint64
+	err = client.postgres.QueryRow(
+		context.Background(),
+		"SELECT id FROM transactions WHERE block=$1 AND sequence=$2 LIMIT 1",
+		client.height,
+		client.sequence,
+	).Scan(&txRow)
+
+	state := stI.(*backing.State)
+	accountsAffected, err := client.app.GetAccountAddresses(tx)
+	if err != nil {
+		return // not worth a panic
+	}
+	for _, addr := range accountsAffected {
+		if ad, ok := state.Accounts[addr]; ok {
+			_, err = client.postgres.Exec(
+				context.Background(),
+				"INSERT INTO accounts(address, data, tx) "+
+					"VALUES ($1, $2, $3)",
+				addr, ad, txRow,
+			)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	if indexable, ok := tx.(SysvarIndexable); ok {
+		_, err = client.postgres.Exec(
+			context.Background(),
+			"INSERT INTO systemvariables(key, value, height, tx) "+
+				"VALUES ($1, $2, $3, $4)",
+			indexable.GetName(),
+			indexable.GetValue(),
+			client.height,
+			txRow,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if indexable, ok := tx.(MarketPriceIndexable); ok {
+		_, err = client.postgres.Exec(
+			context.Background(),
+			"INSERT INTO marketprices(tx, price) VALUES ($1, $2)",
+			txRow,
+			indexable.GetMarketPrice(),
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if _, ok := tx.(TargetPriceIndexable); ok {
+		_, err = client.postgres.Exec(
+			context.Background(),
+			"INSERT INTO targetprices(tx, price) VALUES ($1, $2)",
+			txRow,
+			state.TargetPrice,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 // EndBlock implements metaapp.Indexer
 func (client *Client) EndBlock(
-	abci.RequestEndBlock,
-	abci.ResponseEndBlock,
-	metast.State,
+	request abci.RequestEndBlock,
+	response abci.ResponseEndBlock,
+	stI metast.State,
 ) {
-	// TODO!
+	// noop, but if we ever want to keep track of validator updates, this is
+	// the place to do it
 }
 
 // Commit implements metaapp.Indexer
 func (client *Client) Commit(
-	abci.ResponseCommit,
-	metast.State,
+	response abci.ResponseCommit,
+	stI metast.State,
 ) {
-	// TODO!
+	// noop
+	// if in the future we want to update the block's table with the apphash,
+	// this is the best place to do it. We'll need to update the schema to grant
+	// update permissions to the node user, though.
 }
-
-// // OnDeliverTx grabs the fields out of this transaction to index when the block is committed.
-// func (search *Client) OnDeliverTx(appI interface{}, tx metatx.Transactable) error {
-// 	search.txs = append(search.txs, tx)
-
-// 	app := appI.(AppIndexable)
-
-// 	if indexable, ok := tx.(SysvarIndexable); ok {
-// 		key := indexable.GetName()
-// 		valueBase64 := base64.StdEncoding.EncodeToString(indexable.GetValue())
-
-// 		searchKey := fmtSysvarKeyToValue(key)
-// 		data, hasValue := search.sysvarKeyToValueData[searchKey]
-// 		if hasValue {
-// 			// Override whatever value was there before for this block.
-// 			// We only want one k-v pair per block height in our index: the one for the latest value.
-// 			data.ValueBase64 = valueBase64
-// 		} else {
-// 			search.sysvarKeyToValueData[searchKey] = &ValueData{
-// 				Height:      search.blockHeight,
-// 				ValueBase64: valueBase64,
-// 			}
-// 		}
-// 	}
-
-// 	if indexable, ok := tx.(MarketPriceIndexable); ok {
-// 		search.marketPrice = indexable.GetMarketPrice()
-// 	}
-
-// 	if _, ok := tx.(TargetPriceIndexable); ok {
-// 		state := app.GetState().(*backing.State)
-// 		search.targetPrice = state.TargetPrice
-// 	}
-
-// 	return nil
-// }
-
-// // OnCommit indexes all the transaction data we collected since the last BeginBlock().
-// func (search *Client) OnCommit() error {
-// 	_, _, err := search.index()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// We don't need to check for dupes in the new block since we filtered them out by using the
-// 	// sysvarKeyToValueData map.  However we do need to check for dupes from values in earlier
-// 	// blocks.
-// 	_, _, err = search.onIndexingComplete(true)
-
-// 	return err
-// }

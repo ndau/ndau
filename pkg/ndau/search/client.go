@@ -28,7 +28,9 @@ type Client struct {
 	// Used for getting account data to index.
 	app AppIndexable
 
-	height uint64
+	// these values capture the position of a tx within a block
+	height   uint64
+	sequence uint64
 }
 
 // NewClient is a factory method for Client.
