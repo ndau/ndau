@@ -14,6 +14,7 @@ import (
 
 	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
 	"github.com/oneiro-ndev/ndau/pkg/query"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )
@@ -39,21 +40,24 @@ func GetSearchResults(node client.ABCIClient, params search.QueryParams) (
 	return searchValue, nil
 }
 
-// SearchDateRange returns the first and last block heights for the given ISO-3339 date range.
-func SearchDateRange(node client.ABCIClient, first, last string) (
+// SearchDateRange returns the first and last block heights for the given date range.
+func SearchDateRange(node client.ABCIClient, first, last math.Timestamp) (
 	uint64, uint64, error,
 ) {
-	// request := metasrch.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
+	request := query.DateRangeRequest{FirstTimestamp: first, LastTimestamp: last}
 
-	// // perform the query
-	// res, err := node.ABCIQuery(query.DateRangeEndpoint, []byte(request.Marshal()))
-	// if err != nil {
-	// 	return 0, 0, err
-	// }
+	// perform the query
+	data, err := request.MarshalMsg(nil)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "marshaling request")
+	}
+	res, err := node.ABCIQuery(query.DateRangeEndpoint, data)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "querying date range endpoint")
+	}
 
-	// // parse the response
-	// searchValue := string(res.Response.GetValue())
-	// var result metasrch.DateRangeResult
-	// result.Unmarshal(searchValue)
-	// return result.FirstHeight, result.LastHeight, nil
+	// parse the response
+	var result query.DateRangeResult
+	_, err = result.UnmarshalMsg(res.Response.Value)
+	return result.FirstHeight, result.LastHeight, nil
 }
