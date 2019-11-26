@@ -468,18 +468,20 @@ func TestTargetPriceSearch(t *testing.T) {
 	// this test needs an empty DB, so we generate a new one
 	withPG(t, func(uri string) {
 		// Create the app and tx factory.
-		app, assc := initApp(t, IMAArg{"dburi", uri})
+		app, _ := initApp(t, IMAArg{"dburi", uri})
 		client := app.GetIndexer().(*srch.Client)
 
-		// setup: generate but do not yet send some txs
+		// setup
 		rfeAddr := address.Address{}
 		err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
 		require.NoError(t, err)
-		privateKeys := assc[rfeKeys].([]signature.PrivateKey)
+		privateKeys, err := MockSystemAccount(app, rfeAddr)
+		require.NoError(t, err)
 		modify(t, rfeAddr.String(), app, func(ad *backing.AccountData) {
 			ad.Sequence = 5
 		})
 
+		// setup: generate but do not yet send some txs
 		renavAddr := address.Address{}
 		err = app.System(sv.RecordEndowmentNAVAddressName, &renavAddr)
 		require.NoError(t, err)
