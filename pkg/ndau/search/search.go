@@ -36,16 +36,16 @@ func (client *Client) SearchSysvarHistory(
 	if limit > 0 {
 		rows, err = client.Postgres.Query(
 			context.Background(),
-			"SELECT key, value FROM systemvariables WHERE height>=$1 "+
-				"ORDER BY height ASC",
-			minHeight,
+			"SELECT COALESCE(height, 0), value FROM systemvariables WHERE height>=$1 "+
+				"ORDER BY height ASC NULLS FIRST LIMIT $2",
+			minHeight, limit,
 		)
 	} else {
 		rows, err = client.Postgres.Query(
 			context.Background(),
-			"SELECT height, value FROM systemvariables WHERE height>=$1 "+
-				"ORDER BY height ASC LIMIT $2",
-			minHeight, limit,
+			"SELECT COALESCE(height, 0), value FROM systemvariables WHERE height>=$1 "+
+				"ORDER BY height ASC NULLS FIRST",
+			minHeight,
 		)
 	}
 	if err != nil {
