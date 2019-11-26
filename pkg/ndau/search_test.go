@@ -10,9 +10,10 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"math/rand"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -31,36 +32,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func withRedis(t *testing.T, test func(port string)) {
-	// Start redis server on a non-default (test) port.  Using a non-standard port means we
-	// probably won't conflict with any other redis server currently running.  It also means we
-	// disable persistence by not loading the default redis.conf file.  That way we don't have to
-	// .gitignore it, and we don't have to force-wipe the index from the last time we ran the
-	// tests.  We get a fresh test every time.
-	portn := 7000 + rand.Intn(1024)
-	port := fmt.Sprint(portn)
-	cmd := exec.Command("redis-server", "--port", port)
-	cmd.Start()
-
-	// If redis isn't installed, we'll skip the test.
-	if cmd.Process == nil {
-		t.Skip("Unable to launch redis server; is it installed and in your $PATH?")
+// Start postgres server on a non-default (test) port.  Using a non-standard port means we
+// probably won't conflict with any other db server currently running.
+func withPG(t *testing.T, test func(uri string)) {
+	// if the db config file doesn't exist; skip the test:
+	// this file is the schema, and postgres is no good without a schema
+	schema := os.ExpandEnv(
+		"$GOPATH/src/github.com/oneiro-ndev/commands/docker/image/postgres-init/1.ndau.sql",
+	)
+	_, err := os.Stat(schema)
+	if os.IsNotExist(err) {
+		t.Skip("schema not found; skipping DB test")
 	}
+	require.NoError(t, err)
+
+	// -w configures the duration in seconds before the database cleans itself up
+	// it defaults to 60, which is too short for interactive debugging
+	pgt := exec.Command("pg_tmp", "-w", "3600")
+	var pgtOut bytes.Buffer
+	pgt.Stdout = &pgtOut
+	err = pgt.Run()
+	require.NoError(t, err, "staring temporary postgres")
+	uri := pgtOut.String()
 
 	// Kill this process when the test exits, success or failure.
-	defer cmd.Process.Kill()
+	defer exec.Command("pg_tmp", "stop").Run()
 
-	// Give it some time to ready itself.
-	time.Sleep(time.Second)
+	// run the schema definition
+	err = exec.Command("psql", uri, "-f", schema).Run()
+	require.NoError(t, err)
 
 	// run the test
-	test(port)
+	test(uri)
 }
 
 func TestSysvarHistoryIndex(t *testing.T) {
-	withRedis(t, func(port string) {
+	withPG(t, func(uri string) {
 		// Create the app and tx factory.
-		app, assc := initAppRFEWithIndex(t, "localhost:"+port, 0)
+		app, _ := initApp(t, IMAArg{"dburi", uri})
+
+		// setup
+		sysvarAddr := address.Address{}
+		err := app.System(sv.SetSysvarAddressName, &sysvarAddr)
+		require.NoError(t, err)
+		privateKeys, err := MockSystemAccount(app, sysvarAddr)
+		require.NoError(t, err)
 
 		// Test data.
 		sysvar := "sysvar"
@@ -70,7 +86,6 @@ func TestSysvarHistoryIndex(t *testing.T) {
 
 		// Test incremental indexing.
 		t.Run("TestSysvarHistoryIncrementalIndexing", func(t *testing.T) {
-			privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
 			tx := NewSetSysvar(
 				sysvar,
 				valueBytes,
@@ -96,9 +111,24 @@ func TestSysvarHistoryIndex(t *testing.T) {
 }
 
 func TestIndex(t *testing.T) {
-	withRedis(t, func(port string) {
+	withPG(t, func(uri string) {
 		// Create the app and tx factory.
-		app, assc := initAppRFEWithIndex(t, "localhost:"+port, 0)
+		app, _ := initApp(t, IMAArg{"dburi", uri})
+
+		// setup
+		sysvarAddr := address.Address{}
+		err := app.System(sv.SetSysvarAddressName, &sysvarAddr)
+		require.NoError(t, err)
+		privateKeys, err := MockSystemAccount(app, sysvarAddr)
+		require.NoError(t, err)
+		rfeAddr := address.Address{}
+		err = app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
+		require.NoError(t, err)
+		err = app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+			st := stI.(*backing.State)
+			st.Accounts[rfeAddr.String()] = st.Accounts[sysvarAddr.String()]
+			return st, nil
+		})
 
 		// Test data.
 		sysvar := "sysvar"
@@ -114,10 +144,6 @@ func TestIndex(t *testing.T) {
 		require.NoError(t, err)
 
 		client := app.GetIndexer().(*srch.Client)
-
-		// Ensure Redis is empty.
-		// err = search.FlushDB()
-		// require.NoError(t, err)
 
 		// Test initial indexing.
 		t.Run("TestHashInitialIndexing", func(t *testing.T) {
@@ -137,7 +163,6 @@ func TestIndex(t *testing.T) {
 		})
 
 		// Deliver some transactions, which should trigger incremental indexing
-		privateKeys := assc[sysvarKeys].([]signature.PrivateKey)
 		ssv := NewSetSysvar(
 			sysvar,
 			valueBytes,
@@ -146,7 +171,6 @@ func TestIndex(t *testing.T) {
 		)
 		txHashSSV = metatx.Hash(ssv)
 
-		privateKeys = assc[rfeKeys].([]signature.PrivateKey)
 		rfe := NewReleaseFromEndowment(
 			targetAddress,
 			math.Ndau(1),
@@ -158,8 +182,8 @@ func TestIndex(t *testing.T) {
 		resps, _ := deliverTxsContext(t, app, []metatx.Transactable{
 			ssv, rfe,
 		}, ddc(t).withHash(blockHash).atHeight(height))
-		for _, resp := range resps {
-			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+		for idx, resp := range resps {
+			require.Equal(t, code.OK, code.ReturnCode(resp.Code), fmt.Sprintf("idx %d", idx))
 		}
 
 		// Test searching.
@@ -248,12 +272,25 @@ func TestIndex(t *testing.T) {
 			})
 
 			t.Run("TestDateRangeSearching", func(t *testing.T) {
-				firstHeight, lastHeight, err := client.SearchDateRange(blockTime, blockTime)
-				require.NoError(t, err)
-				// Expecting the block before the one we indexed since it's flooring to current day.
-				require.Equal(t, height-1, firstHeight)
-				// Expecting the block after the one we indexed since it's an exclusive upper bound.
-				require.Equal(t, height+1, lastHeight)
+				t.Run("NoBlocksInRange", func(t *testing.T) {
+					// the early portion of the range is inclusive, but the last is
+					// exclusive. Since we pass in the same value both times,
+					// we can't get any results.
+					firstHeight, lastHeight, err := client.SearchDateRange(blockTime, blockTime)
+					require.NoError(t, err)
+					require.Zero(t, firstHeight)
+					require.Zero(t, lastHeight)
+				})
+				t.Run("ExpandedRange", func(t *testing.T) {
+					// pick a date range encompassing the current day
+					start := blockTime % math.Day
+					end := ((blockTime / math.Day) + 1) * math.Day
+					// Expecting the block after the one we indexed since it's an exclusive upper bound.
+					firstHeight, lastHeight, err := client.SearchDateRange(start, end)
+					require.NoError(t, err)
+					require.Equal(t, height, firstHeight, "first")
+					require.Equal(t, height, lastHeight, "last")
+				})
 			})
 		})
 
@@ -392,7 +429,6 @@ func TestIndex(t *testing.T) {
 
 			// postcondition: search can find the market price data
 			t.Run("Unlimited", func(t *testing.T) {
-				t.Parallel()
 				priceResult, err := client.SearchMarketPrice(srch.PriceQueryParams{})
 				require.NoError(t, err)
 				require.Equal(t, len(pairs), len(priceResult.Items))
@@ -405,7 +441,6 @@ func TestIndex(t *testing.T) {
 				require.NotEqual(t, priceResult.Items[0].Height, priceResult.Items[1].Height)
 			})
 			t.Run("Limited", func(t *testing.T) {
-				t.Parallel()
 				priceResult, err := client.SearchMarketPrice(srch.PriceQueryParams{
 					Limit: 1,
 				})
@@ -426,107 +461,110 @@ func TestIndex(t *testing.T) {
 				require.Equal(t, pairs[1].tx.MarketPrice, priceResult.Items[idx].Price)
 			})
 		})
+	})
+}
 
-		t.Run("TestTargetPriceSearch", func(t *testing.T) {
-			// setup: generate but do not yet send some txs
-			rfeAddr := address.Address{}
-			err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
-			require.NoError(t, err)
-			privateKeys = assc[rfeKeys].([]signature.PrivateKey)
-			modify(t, rfeAddr.String(), app, func(ad *backing.AccountData) {
-				ad.Sequence = 5
-			})
+func TestTargetPriceSearch(t *testing.T) {
+	// this test needs an empty DB, so we generate a new one
+	withPG(t, func(uri string) {
+		// Create the app and tx factory.
+		app, assc := initApp(t, IMAArg{"dburi", uri})
+		client := app.GetIndexer().(*srch.Client)
 
-			renavAddr := address.Address{}
-			err = app.System(sv.RecordEndowmentNAVAddressName, &renavAddr)
-			require.NoError(t, err)
-			renavPvt, err := MockSystemAccount(app, renavAddr)
-			require.NoError(t, err)
+		// setup: generate but do not yet send some txs
+		rfeAddr := address.Address{}
+		err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
+		require.NoError(t, err)
+		privateKeys := assc[rfeKeys].([]signature.PrivateKey)
+		modify(t, rfeAddr.String(), app, func(ad *backing.AccountData) {
+			ad.Sequence = 5
+		})
 
-			rpAddr := address.Address{}
-			err = app.System(sv.RecordPriceAddressName, &rpAddr)
-			require.NoError(t, err)
-			rpPrivate, err := MockSystemAccount(app, rpAddr)
-			require.NoError(t, err)
+		renavAddr := address.Address{}
+		err = app.System(sv.RecordEndowmentNAVAddressName, &renavAddr)
+		require.NoError(t, err)
+		renavPvt, err := MockSystemAccount(app, renavAddr)
+		require.NoError(t, err)
 
-			type pair struct {
-				ts  math.Timestamp
-				txs []metatx.Transactable
-				tgt pricecurve.Nanocent
+		rpAddr := address.Address{}
+		err = app.System(sv.RecordPriceAddressName, &rpAddr)
+		require.NoError(t, err)
+		rpPrivate, err := MockSystemAccount(app, rpAddr)
+		require.NoError(t, err)
+
+		type pair struct {
+			ts  math.Timestamp
+			txs []metatx.Transactable
+			tgt pricecurve.Nanocent
+		}
+
+		qty := math.Ndau(100 * constants.NapuPerNdau)
+		pairs := []pair{
+			{ts: 2*math.Year + 1*math.Month + 1*math.Day, txs: []metatx.Transactable{
+				NewReleaseFromEndowment(targetAddress, qty, 10, privateKeys...),
+				NewIssue(qty, 11, privateKeys...),
+			}},
+			{ts: 2*math.Year + 5*math.Month + 16*math.Day, txs: []metatx.Transactable{
+				NewRecordEndowmentNAV(10*1000*pricecurve.Dollar, 12, renavPvt...),
+			}},
+			{ts: 2*math.Year + 10*math.Month + 23*math.Day, txs: []metatx.Transactable{
+				NewRecordPrice(22*pricecurve.Dollar, 20, rpPrivate...),
+			}},
+		}
+
+		// precondition: search does not know about any target price data
+		priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{})
+		require.NoError(t, err)
+		require.Empty(t, priceResult.Items)
+		require.False(t, priceResult.More, "must not have unreturned items")
+
+		// state change: deliver the RecordPrice txs
+		for idx, pair := range pairs {
+			resps, _ := deliverTxsContext(t, app, pair.txs, ddc(t).at(pair.ts).atHeight(230+(uint64(idx)*15)))
+			for txidx, resp := range resps {
+				require.Equal(t,
+					code.OK, code.ReturnCode(resp.Code),
+					fmt.Sprintf("idx: %d; txidx: %d", idx, txidx),
+				)
 			}
+			pairs[idx].tgt = app.GetState().(*backing.State).TargetPrice
+		}
 
-			qty := math.Ndau(100 * constants.NapuPerNdau)
-			pairs := []pair{
-				{ts: 2*math.Year + 1*math.Month + 1*math.Day, txs: []metatx.Transactable{
-					NewReleaseFromEndowment(targetAddress, qty, 10, privateKeys...),
-					NewIssue(qty, 11, privateKeys...),
-				}},
-				{ts: 2*math.Year + 5*math.Month + 16*math.Day, txs: []metatx.Transactable{
-					NewRecordEndowmentNAV(10*1000*pricecurve.Dollar, 12, renavPvt...),
-				}},
-				{ts: 2*math.Year + 10*math.Month + 23*math.Day, txs: []metatx.Transactable{
-					NewRecordPrice(22*pricecurve.Dollar, 20, rpPrivate...),
-				}},
-			}
-
-			// search.Client.FlushDB()
-
-			// precondition: search does not know about any target price data
+		// postcondition: search can find the target price data
+		t.Run("Unlimited", func(t *testing.T) {
 			priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{})
 			require.NoError(t, err)
-			require.Empty(t, priceResult.Items)
+			require.Equal(t, len(pairs), len(priceResult.Items))
 			require.False(t, priceResult.More, "must not have unreturned items")
-
-			// state change: deliver the RecordPrice txs
-			for idx, pair := range pairs {
-				resps, _ := deliverTxsContext(t, app, pair.txs, ddc(t).at(pair.ts).atHeight(230+(uint64(idx)*15)))
-				for txidx, resp := range resps {
-					require.Equal(t,
-						code.OK, code.ReturnCode(resp.Code),
-						fmt.Sprintf("idx: %d; txidx: %d", idx, txidx),
-					)
-				}
-				pairs[idx].tgt = app.GetState().(*backing.State).TargetPrice
-			}
-
-			// postcondition: search can find the target price data
-			t.Run("Unlimited", func(t *testing.T) {
-				t.Parallel()
-				priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{})
-				require.NoError(t, err)
-				require.Equal(t, len(pairs), len(priceResult.Items))
-				require.False(t, priceResult.More, "must not have unreturned items")
-				for idx := range pairs {
-					require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
-					require.Equal(t, pairs[idx].tgt, priceResult.Items[idx].Price)
-					require.NotZero(t, priceResult.Items[idx].Height)
-					if idx > 0 {
-						require.NotEqual(t, priceResult.Items[idx-1].Height, priceResult.Items[idx].Height)
-					}
-				}
-			})
-			t.Run("Limited", func(t *testing.T) {
-				t.Parallel()
-				priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{
-					Limit: 1,
-				})
-				require.NoError(t, err)
-				require.Equal(t, 1, len(priceResult.Items))
-				require.True(t, priceResult.More, "must have unreturned items")
-				idx := 0 // endpoint interates fwd through history
+			for idx := range pairs {
 				require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
 				require.Equal(t, pairs[idx].tgt, priceResult.Items[idx].Price)
-				// get subsequent results
-				priceResult, err = client.SearchTargetPrice(srch.PriceQueryParams{
-					After: srch.RangeEndpoint{Timestamp: priceResult.Items[idx].Timestamp},
-					Limit: 1,
-				})
-				require.NoError(t, err)
-				require.Equal(t, 1, len(priceResult.Items))
-				require.True(t, priceResult.More, "must have unreturned items")
-				require.Equal(t, pairs[1].ts, priceResult.Items[idx].Timestamp)
-				require.Equal(t, pairs[1].tgt, priceResult.Items[idx].Price)
+				require.NotZero(t, priceResult.Items[idx].Height)
+				if idx > 0 {
+					require.NotEqual(t, priceResult.Items[idx-1].Height, priceResult.Items[idx].Height)
+				}
+			}
+		})
+		t.Run("Limited", func(t *testing.T) {
+			priceResult, err := client.SearchTargetPrice(srch.PriceQueryParams{
+				Limit: 1,
 			})
+			require.NoError(t, err)
+			require.Equal(t, 1, len(priceResult.Items))
+			require.True(t, priceResult.More, "must have unreturned items")
+			idx := 0 // endpoint interates fwd through history
+			require.Equal(t, pairs[idx].ts, priceResult.Items[idx].Timestamp)
+			require.Equal(t, pairs[idx].tgt, priceResult.Items[idx].Price)
+			// get subsequent results
+			priceResult, err = client.SearchTargetPrice(srch.PriceQueryParams{
+				After: srch.RangeEndpoint{Timestamp: priceResult.Items[idx].Timestamp},
+				Limit: 1,
+			})
+			require.NoError(t, err)
+			require.Equal(t, 1, len(priceResult.Items))
+			require.True(t, priceResult.More, "must have unreturned items")
+			require.Equal(t, pairs[1].ts, priceResult.Items[idx].Timestamp)
+			require.Equal(t, pairs[1].tgt, priceResult.Items[idx].Price)
 		})
 	})
 }

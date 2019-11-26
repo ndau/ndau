@@ -97,6 +97,10 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 		if err != nil {
 			return &app, errors.Wrap(err, "parsing postgres connection string ("+*config.PostgresConnection+")")
 		}
+
+		// we always want to connect to the "ndau" db
+		pgcfg.Database = "ndau"
+
 		if config.PostgresPasswordPath != nil && *config.PostgresPasswordPath != "" {
 			pwdata, err := ioutil.ReadFile(*config.PostgresPasswordPath)
 			if err != nil {
@@ -123,20 +127,19 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 	return &app, nil
 }
 
-// InitMockApp creates an empty test application, which is mainly useful for testing.
+// An IMAArg is an argument to the InitMockApp function
 //
-// This uses a freshly-generated chaos config and an in-memory noms.
-func InitMockApp() (app *App, assc generator.Associated, err error) {
-	return InitMockAppWithIndex("", -1)
+// This is used for mock app customization, but it's an advanced feature.
+// In general, most users should never have to care about this.
+type IMAArg struct {
+	Name  string
+	Value interface{}
 }
 
-// InitMockAppWithIndex creates an empty test application with indexing and search capability,
-// which is mainly useful for testing.
+// InitMockApp creates an empty test application, which is mainly useful for testing.
 //
-// This uses a freshly-generated chaos config and an in-memory noms.
-func InitMockAppWithIndex(indexAddr string, indexVersion int) (
-	app *App, assc generator.Associated, err error,
-) {
+// This uses a freshly-generated config and an in-memory noms.
+func InitMockApp(args ...IMAArg) (app *App, assc generator.Associated, err error) {
 	var gfilepath, asscpath string
 
 	gfilepath, asscpath, err = generator.GenerateIn("")
@@ -153,6 +156,23 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	conf, err = config.LoadDefault(configfile.Name())
 	if err != nil {
 		return
+	}
+	// do we have a postgres URI?
+	for _, arg := range args {
+		switch arg.Name {
+		case "dburi":
+			if val, ok := arg.Value.(string); ok {
+				conf.PostgresConnection = &val
+			} else {
+				err = fmt.Errorf("dburi expects string value; found %T", arg.Value)
+			}
+		case "dbpwf":
+			if val, ok := arg.Value.(string); ok {
+				conf.PostgresPasswordPath = &val
+			} else {
+				err = fmt.Errorf("dbpwf expects string value; found %T", arg.Value)
+			}
+		}
 	}
 
 	app, err = NewAppSilent("", *conf)

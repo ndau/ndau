@@ -13,6 +13,7 @@ package search
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx"
@@ -50,6 +51,7 @@ func (client *Client) SearchSysvarHistory(
 	if err != nil {
 		return nil, errors.Wrap(err, "querying system variables")
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var height uint64
@@ -109,26 +111,31 @@ func (client *Client) SearchTxTypes(
 ) (lvd TxListValueData, err error) {
 	// construct the query
 	query := "SELECT height, sequence, fee, sib, hash FROM transactions "
-	hasfilter := false
-	if txHashOrHeight != "" {
-		if !hasfilter {
-			query += "WHERE "
-			hasfilter = true
-		}
-		query += "(hash=$1 OR height::text=$1) "
-	}
-	if len(txTypes) > 0 {
-		if hasfilter {
+	haswhere := false
+	args := make([]interface{}, 0, 5)
+	where := func(clause string) {
+		if haswhere {
 			query += "AND "
 		} else {
 			query += "WHERE "
-			hasfilter = true
+			haswhere = true
 		}
-		query += "(name IN $2) "
+		query += clause
 	}
-	query += "ORDER BY height DESC "
+	if txHashOrHeight != "" {
+		where("(hash=$%d OR height::text=$%d) ")
+		args = append(args, txHashOrHeight)
+		query = fmt.Sprintf(query, len(args), len(args))
+	}
+	if len(txTypes) > 0 {
+		where("(name = ANY ($%d)) ")
+		args = append(args, txTypes)
+		query = fmt.Sprintf(query, len(args))
+	}
+	query += "ORDER BY height DESC, sequence DESC "
 	if limit > 0 {
-		query += "LIMIT $3 "
+		args = append(args, limit+1)
+		query += fmt.Sprintf("LIMIT $%d ", len(args))
 	}
 
 	// perform the query
@@ -136,13 +143,12 @@ func (client *Client) SearchTxTypes(
 	rows, err = client.Postgres.Query(
 		context.Background(),
 		query,
-		txHashOrHeight,
-		txTypes,
-		limit+1,
+		args...,
 	)
 	if err != nil {
 		err = errors.Wrap(err, query)
 	}
+	defer rows.Close()
 
 	// build the results
 	count := 0
@@ -154,7 +160,7 @@ func (client *Client) SearchTxTypes(
 			err = errors.Wrap(err, "scanning transactions")
 			return
 		}
-		if count >= limit {
+		if limit > 0 && count >= limit {
 			lvd.NextTxHash = hash
 			return
 		}
@@ -174,11 +180,13 @@ func (client *Client) SearchAccountHistory(
 ) (ahr *AccountHistoryResponse, err error) {
 	ahr = new(AccountHistoryResponse)
 
-	query := "SELECT block, sequence, accounts.data->'balance' AS balance " +
+	var args = []interface{}{addr, afterHeight}
+	query := "SELECT height, sequence, accounts.data->'balance' AS balance " +
 		"FROM accounts JOIN transactions ON accounts.tx=transactions.id " +
-		"WHERE accounts.address=$1 AND block>$2 "
+		"WHERE accounts.address=$1 AND height>$2 "
 	if limit > 0 {
 		query += "LIMIT $3 "
+		args = append(args, limit+1)
 	}
 
 	// perform the query
@@ -186,13 +194,12 @@ func (client *Client) SearchAccountHistory(
 	rows, err = client.Postgres.Query(
 		context.Background(),
 		query,
-		addr,
-		afterHeight,
-		limit+1,
+		args...,
 	)
 	if err != nil {
 		err = errors.Wrap(err, query)
 	}
+	defer rows.Close()
 
 	// build the results
 	count := 0
@@ -203,7 +210,7 @@ func (client *Client) SearchAccountHistory(
 			err = errors.Wrap(err, "scanning transactions")
 			return
 		}
-		if count >= limit {
+		if limit > 0 && count >= limit {
 			ahr.More = true
 			return
 		}
@@ -225,6 +232,10 @@ func (client *Client) BlockTime(height uint64) (ts math.Timestamp, err error) {
 	if err != nil {
 		err = errors.Wrap(err, "querying block time")
 	}
+	var zt time.Time
+	if t == zt {
+		return math.Timestamp(0), nil
+	}
 	ts, err = math.TimestampFrom(t)
 	err = errors.Wrap(err, "converting to ndau time")
 	return
@@ -240,8 +251,8 @@ func (client *Client) SearchMostRecentRegisterNode(address string) (txvd *TxValu
 	err = client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT height, sequence, fee, sib FROM transactions "+
-			"WHERE name='RegisterNode' AND (data->'node')=$1 "+
-			"ORDER BY block DESC, sequence DESC LIMIT 1",
+			"WHERE name='RegisterNode' AND (data->>'node')=$1 "+
+			"ORDER BY height DESC, sequence DESC LIMIT 1",
 		address,
 	).Scan(&txvd.BlockHeight, &txvd.TxOffset, &txvd.Fee, &txvd.SIB)
 
@@ -286,34 +297,50 @@ func (client *Client) searchPrice(
 	params PriceQueryParams,
 	table string,
 ) (out PriceQueryResults, err error) {
+	// this is a complicated query with a lot of parameterization, so we end up
+	// doing quite a lot of string formatting, because postgres complains about
+	// variables for the table name, and receiving a different number of parameters
+	// than are called for in the query
 	query := "SELECT price, b.height, block_time " +
-		"FROM $1 AS p " +
+		fmt.Sprintf("FROM %s AS p ", table) +
 		"INNER JOIN transactions AS tx ON p.tx=tx.id " +
 		"INNER JOIN blocks AS b on b.height=tx.height "
 	haswhere := false
+	args := make([]interface{}, 0, 5)
 	where := func(clause string) {
 		if haswhere {
 			query += "AND "
 		} else {
 			query += "WHERE "
+			haswhere = true
 		}
 		query += clause
 	}
 	if params.After.Timestamp > 0 {
-		where("block_time>$2 ")
+		where("block_time>$%d ")
+		args = append(args, params.After.Timestamp.AsTime())
+		query = fmt.Sprintf(query, len(args))
 	}
 	if params.After.Height > 0 {
-		where("b.height>$3 ")
+		where("b.height>$%d ")
+		args = append(args, params.After.Height)
+		query = fmt.Sprintf(query, len(args))
 	}
 	if params.Before.Timestamp > 0 {
-		where("block_time<$4 ")
+		where("block_time<$%d ")
+		args = append(args, params.Before.Timestamp.AsTime())
+		query = fmt.Sprintf(query, len(args))
 	}
 	if params.Before.Height > 0 {
-		where("b.height<$5 ")
+		where("b.height<$%d ")
+		args = append(args, params.Before.Height)
+		query = fmt.Sprintf(query, len(args))
 	}
 	query += "ORDER BY tx.height, tx.sequence "
 	if params.Limit > 0 {
-		query += "LIMIT $6 "
+		query += "LIMIT $%d "
+		args = append(args, params.Limit+1)
+		query = fmt.Sprintf(query, len(args))
 	}
 
 	// perform the query
@@ -321,16 +348,13 @@ func (client *Client) searchPrice(
 	rows, err = client.Postgres.Query(
 		context.Background(),
 		query,
-		table,
-		params.After.Timestamp.AsTime(),
-		params.After.Height,
-		params.Before.Timestamp.AsTime(),
-		params.Before.Height,
-		params.Limit+1,
+		args...,
 	)
 	if err != nil {
 		err = errors.Wrap(err, query)
+		return
 	}
+	defer rows.Close()
 
 	// build the results
 	count := uint(0)
@@ -347,7 +371,7 @@ func (client *Client) searchPrice(
 			err = errors.Wrap(err, "converting timestamp")
 			return
 		}
-		if count >= params.Limit {
+		if params.Limit > 0 && count >= params.Limit {
 			out.More = true
 			return
 		}
@@ -359,19 +383,15 @@ func (client *Client) searchPrice(
 
 // SearchDateRange returns the first and last block heights for the given ISO-3339 date range.
 // The first is inclusive, the last is exclusive.
+// Returns 0, 0, nil if no blocks lie within the specified range.
 func (client *Client) SearchDateRange(f, l math.Timestamp) (first uint64, last uint64, err error) {
 	err = client.Postgres.QueryRow(
 		context.Background(),
-		"SELECT MIN(height) AS first, MAX(height) AS last"+
+		"SELECT "+
+			"COALESCE(MIN(height), 0) AS first, "+
+			"COALESCE(MAX(height), 0) AS last "+
 			"FROM blocks WHERE block_time >= $1 AND block_time < $2",
 		f.AsTime(), l.AsTime(),
 	).Scan(&first, &last)
-
-	if err == pgx.ErrNoRows {
-		err = nil
-		first = 0
-		last = 0
-	}
-
 	return
 }

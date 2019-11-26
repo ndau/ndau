@@ -31,13 +31,7 @@ import (
 const recordEndowmentNAVKeys = "recordEndowmentNAV private keys"
 
 func initAppRecordEndowmentNAV(t *testing.T) (*App, generator.Associated) {
-	return initAppRecordEndowmentNAVWithIndex(t, "", -1)
-}
-
-func initAppRecordEndowmentNAVWithIndex(t *testing.T, indexAddr string, indexVersion int) (
-	*App, generator.Associated,
-) {
-	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
+	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	// fetch the RecordEndowmentNAV address system variable

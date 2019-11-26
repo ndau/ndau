@@ -34,13 +34,7 @@ const (
 )
 
 func initAppRFE(t *testing.T) (*App, generator.Associated) {
-	return initAppRFEWithIndex(t, "", -1)
-}
-
-func initAppRFEWithIndex(t *testing.T, indexAddr string, indexVersion int) (
-	*App, generator.Associated,
-) {
-	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
+	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	// Fetch the sysvar address system variable.

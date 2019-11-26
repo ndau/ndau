@@ -70,7 +70,7 @@ type Config struct {
 
 	// PostgresConnection is the connection string to a postgres db.
 	//
-	// It should contain, at minimum: host, port, username, database
+	// It should contain, at minimum: host, port, username
 	PostgresConnection *string
 
 	// PostgresPasswordPath is the path to a file containing the postgres user password

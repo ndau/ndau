@@ -29,13 +29,7 @@ import (
 const recordPriceKeys = "recordPrice private keys"
 
 func initAppRecordPrice(t *testing.T) (*App, generator.Associated) {
-	return initAppRecordPriceWithIndex(t, "", -1)
-}
-
-func initAppRecordPriceWithIndex(t *testing.T, indexAddr string, indexVersion int) (
-	*App, generator.Associated,
-) {
-	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
+	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	// fetch the RecordPrice address system variable
