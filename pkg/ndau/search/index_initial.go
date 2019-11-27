@@ -52,7 +52,7 @@ func (client *Client) IndexBlockchain(
 		// Make sure we're iterating from the head block to genesis.
 		// It's expected, however, to get multiple height-0 entries for system variables.
 		// And also at height 1 for unit tests.
-		if height > lastHeight || height == lastHeight && height > 1 {
+		if (height > lastHeight && lastHeight > 0) || (height == lastHeight && height > 1) {
 			// Indexing logic relies on this, but more importantly, this indicates
 			// a serious problem in the blockchain if the height increases as we
 			// crawl the blockchain from the head to the genesis block.
