@@ -12,7 +12,7 @@ package search
 import (
 	"context"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	metaapp "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	"github.com/pkg/errors"
 )

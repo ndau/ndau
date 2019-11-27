@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/oneiro-ndev/ndau/pkg/query"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"

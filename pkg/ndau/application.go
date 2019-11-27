@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"

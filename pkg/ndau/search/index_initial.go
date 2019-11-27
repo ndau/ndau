@@ -16,7 +16,7 @@ import (
 	"fmt"
 
 	"github.com/attic-labs/noms/go/datas"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/pkg/errors"
