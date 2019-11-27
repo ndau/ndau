@@ -5,9 +5,15 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/attic-labs/noms v0.0.0-20191120090945-2420b9965afb
+	github.com/fortytw2/leaktest v1.3.0 // indirect
+	github.com/go-kit/kit v0.9.0 // indirect
 	github.com/go-zoo/bone v1.3.0
+	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/jackc/pgx/v4 v4.1.2
 	github.com/kentquirk/boneful v1.1.1
+	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
+	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/oneiro-ndev/chaincode v1.2.5
 	github.com/oneiro-ndev/json2msgp v1.1.0
@@ -20,10 +26,16 @@ require (
 	github.com/oneiro-ndev/writers v1.1.0
 	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/client_golang v0.9.3 // indirect
+	github.com/rs/cors v1.7.0 // indirect
 	github.com/sigurn/crc16 v0.0.0-20160107003519-da416fad5162 // indirect
 	github.com/sigurn/utils v0.0.0-20190728110027-e1fefb11a144 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
-	github.com/tendermint/tendermint v0.32.8
+	github.com/stumble/gorocksdb v0.0.3 // indirect
+	github.com/tendermint/tendermint v0.32.3
+	github.com/tendermint/tm-db v0.2.0 // indirect
 	github.com/tinylib/msgp v1.1.0
+	google.golang.org/grpc v1.25.1 // indirect
+	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
