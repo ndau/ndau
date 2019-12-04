@@ -21,23 +21,21 @@ import (
 
 // GetSearchResults returns search results for a given search query.
 func GetSearchResults(node client.ABCIClient, params search.QueryParams) (
-	string, error,
+	[]byte, error,
 ) {
 	// encode the query
 	ahpj, err := json.Marshal(params)
 	if err != nil {
-		return "", errors.Wrap(err, "marshaling params")
+		return nil, errors.Wrap(err, "marshaling params")
 	}
 
 	// perform the query
 	res, err := node.ABCIQuery(query.SearchEndpoint, ahpj)
 	if err != nil {
-		return "", errors.Wrap(err, "performing query")
+		return nil, errors.Wrap(err, "performing query")
 	}
 
-	// parse the response
-	searchValue := string(res.Response.GetValue())
-	return searchValue, nil
+	return res.Response.GetValue(), nil
 }
 
 // SearchDateRange returns the first and last block heights for the given date range.

@@ -94,9 +94,12 @@ func accountHistoryQuery(
 		app.QueryError(err, response, "account history search fail")
 		return
 	}
-
-	ahBytes := []byte(ahr.Marshal())
-	response.Value = ahBytes
+	response.Value, err = ahr.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "marshaling response")
+		return
+	}
+	return
 }
 
 func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -255,16 +258,22 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 			app.QueryError(err, response, "height by tx hash search fail")
 			return
 		}
-		value := valueData.Marshal()
-		response.Value = []byte(value)
+		response.Value, err = valueData.MarshalMsg(nil)
+		if err != nil {
+			app.QueryError(err, response, "marshaling response")
+			return
+		}
 	case srch.HeightsByTxTypesCommand:
 		valueData, err := client.SearchTxTypes(params.Hash, params.Types, params.Limit)
 		if err != nil {
 			app.QueryError(err, response, "heights by tx types search fail")
 			return
 		}
-		value := valueData.Marshal()
-		response.Value = []byte(value)
+		response.Value, err = valueData.MarshalMsg(nil)
+		if err != nil {
+			app.QueryError(err, response, "marshaling response")
+			return
+		}
 	default:
 		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 	}

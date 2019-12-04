@@ -66,7 +66,7 @@ func GetAccountHistory(node client.ABCIClient, params search.AccountHistoryParam
 
 	// parse the response
 	ahr := new(search.AccountHistoryResponse)
-	err = ahr.Unmarshal(string(res.Response.GetValue()))
+	_, err = ahr.UnmarshalMsg(res.Response.GetValue())
 	return ahr, res, err
 }
 

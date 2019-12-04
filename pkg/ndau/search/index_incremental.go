@@ -94,7 +94,7 @@ func (client *Client) DeliverTx(
 	state := stI.(*backing.State)
 	accountsAffected, err = client.app.GetAccountAddresses(tx)
 	if err != nil {
-		return // not worth a panic
+		return
 	}
 	for _, addr := range accountsAffected {
 		if ad, ok := state.Accounts[addr]; ok {

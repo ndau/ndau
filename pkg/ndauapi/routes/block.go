@@ -435,7 +435,7 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		blockheight, err := strconv.ParseInt(searchValue, 10, 64)
+		blockheight, err := strconv.ParseInt(string(searchValue), 10, 64)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
 			return

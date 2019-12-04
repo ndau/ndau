@@ -70,7 +70,7 @@ func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, 
 		return nil, -1, 0, 0, err
 	}
 
-	err = valueData.Unmarshal(searchValue)
+	_, err = valueData.UnmarshalMsg(searchValue)
 	if err != nil {
 		return nil, -1, 0, 0, err
 	}
@@ -157,7 +157,7 @@ func searchTxTypes(node cfg.TMClient, txhash string, typeNames []string, limit i
 		return result, err
 	}
 
-	err = valueData.Unmarshal(searchValue)
+	_, err = valueData.UnmarshalMsg(searchValue)
 	if err != nil {
 		return result, err
 	}
