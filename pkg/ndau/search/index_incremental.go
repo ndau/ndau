@@ -21,12 +21,11 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-// TODO: can we push those panics back somehow, maybe get some kind of reattempt?
-
 // InitChain implements metaapp.Indexer
-func (client *Client) InitChain(abci.RequestInitChain, abci.ResponseInitChain, metast.State) {
+func (client *Client) InitChain(abci.RequestInitChain, abci.ResponseInitChain, metast.State) (err error) {
 	// noop, but if we ever want to keep track of validator updates, we can't
 	// forget to handle this initial case returned here
+	return
 }
 
 // BeginBlock implements metaapp.Indexer
@@ -34,19 +33,17 @@ func (client *Client) BeginBlock(
 	request abci.RequestBeginBlock,
 	response abci.ResponseBeginBlock,
 	stI metast.State,
-) {
+) (err error) {
 	client.height = uint64(request.Header.Height)
 	client.sequence = 0
-	_, err := client.Postgres.Exec(
+	_, err = client.Postgres.Exec(
 		context.Background(),
 		"INSERT INTO blocks(height, block_time, hash) VALUES ($1, $2, $3)",
 		request.Header.Height,
 		request.Header.Time,
 		fmt.Sprintf("%x", request.Hash),
 	)
-	if err != nil {
-		panic(err)
-	}
+	return
 }
 
 // DeliverTx implements metaapp.Indexer
@@ -55,14 +52,14 @@ func (client *Client) DeliverTx(
 	response abci.ResponseDeliverTx,
 	tx metatx.Transactable,
 	stI metast.State,
-) {
+) (err error) {
 	defer func() { client.sequence++ }()
 	// we can't handle errors in these calculations, and worst case, we get
 	// a zero back, so... we just discard potential errors
 	fee, _ := client.app.CalculateTxFeeNapu(tx)
 	sib, _ := client.app.CalculateTxSIBNapu(tx)
 
-	_, err := client.Postgres.Exec(
+	_, err = client.Postgres.Exec(
 		context.Background(),
 		"INSERT INTO transactions(name, hash, height, sequence, data, fee, sib) "+
 			"VALUES ($1, $2, $3, $4, $5, $6, $7)",
@@ -75,7 +72,7 @@ func (client *Client) DeliverTx(
 		sib,
 	)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	// a few other tables need the tx row.
@@ -89,9 +86,13 @@ func (client *Client) DeliverTx(
 		client.height,
 		client.sequence,
 	).Scan(&txRow)
+	if err != nil {
+		return
+	}
 
+	var accountsAffected []string
 	state := stI.(*backing.State)
-	accountsAffected, err := client.app.GetAccountAddresses(tx)
+	accountsAffected, err = client.app.GetAccountAddresses(tx)
 	if err != nil {
 		return // not worth a panic
 	}
@@ -104,7 +105,7 @@ func (client *Client) DeliverTx(
 				addr, ad, txRow,
 			)
 			if err != nil {
-				panic(err)
+				return
 			}
 		}
 	}
@@ -120,7 +121,7 @@ func (client *Client) DeliverTx(
 			txRow,
 		)
 		if err != nil {
-			panic(err)
+			return
 		}
 	}
 
@@ -132,7 +133,7 @@ func (client *Client) DeliverTx(
 			indexable.GetMarketPrice(),
 		)
 		if err != nil {
-			panic(err)
+			return
 		}
 	}
 
@@ -144,9 +145,11 @@ func (client *Client) DeliverTx(
 			state.TargetPrice,
 		)
 		if err != nil {
-			panic(err)
+			return
 		}
 	}
+
+	return
 }
 
 // EndBlock implements metaapp.Indexer
@@ -154,18 +157,20 @@ func (client *Client) EndBlock(
 	request abci.RequestEndBlock,
 	response abci.ResponseEndBlock,
 	stI metast.State,
-) {
+) (err error) {
 	// noop, but if we ever want to keep track of validator updates, this is
 	// the place to do it
+	return
 }
 
 // Commit implements metaapp.Indexer
 func (client *Client) Commit(
 	response abci.ResponseCommit,
 	stI metast.State,
-) {
+) (err error) {
 	// noop
 	// if in the future we want to update the block's table with the apphash,
 	// this is the best place to do it. We'll need to update the schema to grant
 	// update permissions to the node user, though.
+	return
 }
