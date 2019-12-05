@@ -348,12 +348,7 @@ func BuildVMForNodeGoodness(
 					return genesis
 				}
 				client := idxr.(*srch.Client)
-				txdata, err := client.SearchMostRecentRegisterNode(addr.String())
-				if err != nil || txdata == nil {
-					// txdata is nil if the node has never been registered
-					return genesis
-				}
-				ts, err := client.BlockTime(txdata.BlockHeight)
+				ts, err := client.SearchMostRecentRegisterNode(addr.String())
 				if err != nil {
 					return genesis
 				}

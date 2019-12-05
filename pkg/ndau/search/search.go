@@ -244,21 +244,31 @@ func (client *Client) BlockTime(height uint64) (ts math.Timestamp, err error) {
 // SearchMostRecentRegisterNode returns tx data for the most recent
 // RegisterNode transactions for the given address.
 //
-// Returns a nil for TxValueData if the node has never been registered.
-func (client *Client) SearchMostRecentRegisterNode(address string) (txvd *TxValueData, err error) {
-	txvd = new(TxValueData)
-
+// Returns the epoch date and no error if the node has never been registered.
+func (client *Client) SearchMostRecentRegisterNode(address string) (ts math.Timestamp, err error) {
+	var tts *time.Time
 	err = client.Postgres.QueryRow(
 		context.Background(),
-		"SELECT height, sequence, fee, sib FROM transactions "+
+		"SELECT block_time FROM "+
+			"blocks INNER JOIN transactions "+
+			"ON blocks.height=transactions.height "+
 			"WHERE name='RegisterNode' AND (data->>'node')=$1 "+
-			"ORDER BY height DESC, sequence DESC LIMIT 1",
+			"ORDER BY transactions.height DESC, transactions.sequence DESC "+
+			"LIMIT 1 ",
 		address,
-	).Scan(&txvd.BlockHeight, &txvd.TxOffset, &txvd.Fee, &txvd.SIB)
+	).Scan(&tts)
 
 	if err == pgx.ErrNoRows {
 		err = nil
-		txvd = nil
+	}
+	if err != nil {
+		err = errors.Wrap(err, "querying db")
+		return
+	}
+
+	if tts != nil {
+		ts, err = math.TimestampFrom(*tts)
+		err = errors.Wrap(err, "converting timestamp")
 	}
 
 	return

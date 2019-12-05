@@ -296,34 +296,73 @@ func TestIndex(t *testing.T) {
 
 		t.Run("TestMostRecentRegisterNode", func(t *testing.T) {
 			// precondition: this node has never been registered
-			txData, err := client.SearchMostRecentRegisterNode(targetAddress.String())
+			ts, err := client.SearchMostRecentRegisterNode(targetAddress.String())
 			require.NoError(t, err)
-			require.Nil(t, txData)
+			require.Zero(t, ts)
 
 			// setup: ensure node can be registered
-			modify(t, targetAddress.String(), app, func(acct *backing.AccountData) {
-				acct.Balance = 1000 * constants.NapuPerNdau
-				acct.ValidationKeys = []signature.PublicKey{transferPublic}
-			})
 			noderules, _ := getRulesAccount(t, app)
-			err = app.UpdateStateImmediately(app.Stake(
-				1000*constants.NapuPerNdau,
-				targetAddress, noderules, noderules,
-				nil,
-			))
-			require.NoError(t, err)
+			setupFor := func(addr address.Address) {
+				modify(t, addr.String(), app, func(acct *backing.AccountData) {
+					acct.Balance = 1000 * constants.NapuPerNdau
+					acct.ValidationKeys = []signature.PublicKey{transferPublic}
+				})
+				ensureRecent(t, app, addr.String())
+				err = app.UpdateStateImmediately(app.Stake(
+					1000*constants.NapuPerNdau,
+					addr, noderules, noderules,
+					nil,
+				))
+				require.NoError(t, err)
+			}
+			setupFor(targetAddress)
 
 			// state change: register the node.
-			height := uint64(1024)
-			rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 1, transferPrivate)
-			resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height))
-			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+			var targetRNTime math.Timestamp = 19*math.Year + 11*math.Month + 7*math.Day
+			var seq uint64 = 1
+			register := func(addr address.Address, ownership signature.PublicKey, height uint64, txTime math.Timestamp) {
+				rn := NewRegisterNode(addr, []byte{0xa0, 0x00, 0x88}, ownership, seq, transferPrivate)
+				resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height).at(txTime))
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+				seq++
+			}
+			register(targetAddress, targetPublic, 1024, targetRNTime)
 
-			// postcondition: MRRN must correctly identify the block height
-			txData, err = client.SearchMostRecentRegisterNode(targetAddress.String())
+			// postcondition: MRRN must correctly identify the block time
+			ts, err = client.SearchMostRecentRegisterNode(targetAddress.String())
 			require.NoError(t, err)
-			require.NotNil(t, txData)
-			require.Equal(t, height, txData.BlockHeight)
+			require.Equal(t, targetRNTime, ts)
+
+			t.Run("FilterAddress", func(t *testing.T) {
+				// precondition: there are at least 2 RegisterNode txs,
+				// of different accounts, at different times
+				setupFor(childAddress)
+				childRNTime := targetRNTime + 6*math.Month
+				register(childAddress, childPublic, 2048, childRNTime)
+
+				// setup: cases associate properly
+				type tc struct {
+					name   string
+					addr   address.Address
+					rnTime math.Timestamp
+				}
+				cases := []tc{
+					{"target", targetAddress, targetRNTime},
+					{"child", childAddress, childRNTime},
+				}
+
+				// no state change
+
+				// postcondition: SearchMRRN returns the correct value for each
+				// individual address, proving that address filtering works
+				for _, tc := range cases {
+					t.Run(tc.name, func(t *testing.T) {
+						ts, err = client.SearchMostRecentRegisterNode(tc.addr.String())
+						require.NoError(t, err)
+						require.Equal(t, tc.rnTime, ts)
+					})
+				}
+			})
 
 			t.Run("Reregister", func(t *testing.T) {
 				// precondition: the node has been deregistered
@@ -335,22 +374,18 @@ func TestIndex(t *testing.T) {
 
 				// intermediate test: MRRN still reports the most recent register node
 				// tx, even though it no longer applies
-				txData, err = client.SearchMostRecentRegisterNode(targetAddress.String())
+				ts, err = client.SearchMostRecentRegisterNode(targetAddress.String())
 				require.NoError(t, err)
-				require.NotNil(t, txData)
-				require.Equal(t, height, txData.BlockHeight)
+				require.Equal(t, targetRNTime, ts)
 
 				// state change: register the node.
-				height = 4096
-				rn := NewRegisterNode(targetAddress, []byte{0xa0, 0x00, 0x88}, targetPublic, 2, transferPrivate)
-				resp, _ := deliverTxContext(t, app, rn, ddc(t).atHeight(height))
-				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+				targetRNTime += math.Year + 12*math.Hour
+				register(targetAddress, targetPublic, 4096, targetRNTime)
 
-				// postcondition: MRRN must correctly identify the block height
-				txData, err = client.SearchMostRecentRegisterNode(targetAddress.String())
+				// postcondition: MRRN must correctly identify the block time
+				ts, err = client.SearchMostRecentRegisterNode(targetAddress.String())
 				require.NoError(t, err)
-				require.NotNil(t, txData)
-				require.Equal(t, uint64(height), txData.BlockHeight)
+				require.Equal(t, targetRNTime, ts)
 			})
 		})
 
