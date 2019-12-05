@@ -43,15 +43,9 @@ import (
 
 var nodeFieldNames []string
 var nodeStructTemplate nt.StructTemplate
-var nodeRegDate math.Timestamp
 
 func init() {
 	initNodeStructTemplate(nil)
-	var err error
-	nodeRegDate, err = math.ParseTimestamp("2019-08-21T19:53:01.965125Z")
-	if err != nil {
-		panic(err)
-	}
 }
 
 func initNodeStructTemplate(managedFields []string) {
@@ -110,12 +104,7 @@ func (x *Node) ensureManagedVar(name string) {
 
 // GetRegistration returns the Node struct's managedVarRegistration value.
 func (x *Node) GetRegistration() math.Timestamp {
-	nodeReg := x.managedVarRegistration
-	// if nodeReg is not set, set it to original node reg date
-	if nodeReg == 0 {
-		nodeReg = nodeRegDate
-	}
-	return nodeReg
+	return x.managedVarRegistration
 }
 
 // SetRegistration sets the Node struct's managedVarRegistration value,
