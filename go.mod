@@ -12,7 +12,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/oneiro-ndev/chaincode v1.2.5
 	github.com/oneiro-ndev/json2msgp v1.1.0
-	github.com/oneiro-ndev/metanode v1.9.2-0.20191204140225-31108ad30997
+	github.com/oneiro-ndev/metanode v1.9.2-0.20191205141522-2aaae5d0e15b
 	github.com/oneiro-ndev/msgp-well-known-types v0.1.2
 	github.com/oneiro-ndev/mt19937_64 v0.0.0-20181210114828-3f74adc550ba // indirect
 	github.com/oneiro-ndev/ndaumath v1.3.8-0.20191127105348-0532865ae1f1

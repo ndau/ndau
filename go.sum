@@ -209,8 +209,8 @@ github.com/oneiro-ndev/chaincode v1.2.5 h1:gn9hjMAgA28mwXnM8R0e2HqJl1NOF+XSNKoDf
 github.com/oneiro-ndev/chaincode v1.2.5/go.mod h1:ICVL1s88/nO1nUAzrcl/H7T5RGH8wmIQAg7SriWmauM=
 github.com/oneiro-ndev/json2msgp v1.1.0 h1:oauMNpBXunZD3Kav53+1neVjrwR/iIf9f+peqzG7Qlo=
 github.com/oneiro-ndev/json2msgp v1.1.0/go.mod h1:MQO3HkRQwGqfvqeaorDmIzDpveqNYjQNEzZqDLXeokw=
-github.com/oneiro-ndev/metanode v1.9.2-0.20191204140225-31108ad30997 h1:NLz1pi4UlVlBMpPavvjjOtvKSKvBFbZ2zmJSQOzjWPU=
-github.com/oneiro-ndev/metanode v1.9.2-0.20191204140225-31108ad30997/go.mod h1:C6ZhFxLLZU0/2LYVFbqeBA0punbkuBq9GUoY66jeHw0=
+github.com/oneiro-ndev/metanode v1.9.2-0.20191205141522-2aaae5d0e15b h1:Qt5oYrFz/RC7bPIX90/WO2nBXldXYZWT9x7BU5Jieg8=
+github.com/oneiro-ndev/metanode v1.9.2-0.20191205141522-2aaae5d0e15b/go.mod h1:C6ZhFxLLZU0/2LYVFbqeBA0punbkuBq9GUoY66jeHw0=
 github.com/oneiro-ndev/msgp-well-known-types v0.1.2 h1:pYVwVhP1eeIalNC3RCqLnHrOkTtn/It8/nATb1Ip7k0=
 github.com/oneiro-ndev/msgp-well-known-types v0.1.2/go.mod h1:6B29AjwNYczu2o1lWtNDf3jhwJ8v+5WCbAPf9RKGmjk=
 github.com/oneiro-ndev/mt19937_64 v0.0.0-20181210114828-3f74adc550ba h1:7waWPonQpxQthfpesqt3pog78dsn1S+EFxgbqIObYmA=
