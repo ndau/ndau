@@ -18,12 +18,27 @@ import (
 	"github.com/tinylib/msgp/msgp"
 )
 
+// NoSuchSysvar is raised when the sysvar is not present
+type NoSuchSysvar struct {
+	name string
+}
+
+func (nss NoSuchSysvar) Error() string {
+	return fmt.Sprintf("sysvar %s does not exist", nss.name)
+}
+
+// IsNoSuchSysvar is true when an error occurs because the sysvar does not exist
+func IsNoSuchSysvar(err error) bool {
+	_, ok := err.(NoSuchSysvar)
+	return ok
+}
+
 // System retrieves a named system variable.
 func (app *App) System(name string, value msgp.Unmarshaler) (err error) {
 	state := app.GetState().(*backing.State)
 	bytes, exists := state.Sysvars[name]
 	if !exists {
-		return fmt.Errorf("Sysvar %s does not exist", name)
+		return NoSuchSysvar{name}
 	}
 	var leftovers []byte
 	leftovers, err = value.UnmarshalMsg(bytes)
