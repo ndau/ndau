@@ -30,11 +30,12 @@ func (app *App) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 
 // EndBlock updates the validator set, compositing its behavior with metanode's
 func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
-	reb := app.App.EndBlock(req)
-
 	logger := app.DecoratedLogger().WithFields(log.Fields{
 		"method": "ndau.App.EndBlock",
 	})
+	logger.Info("EndBlock called")
+
+	reb := app.App.EndBlock(req)
 
 	// if sv.NodeMaxValidators is set, then the top n nodes by goodness
 	// must be assigned voting power proportional to their goodness.
