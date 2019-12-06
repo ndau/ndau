@@ -84,7 +84,6 @@ func (app *App) EndBlock(req abci.RequestEndBlock) (reb abci.ResponseEndBlock) {
 		"endblock.len_vus": len(reb.ValidatorUpdates),
 		"endblock.status":  "complete",
 		"endblock.vus":     reb.ValidatorUpdates,
-		"state.nodes":      state.Nodes,
 	})
 
 	return
