@@ -348,7 +348,10 @@ func BuildVMForNodeGoodness(
 					return genesis
 				}
 				client := idxr.(*srch.Client)
-				ts, err := client.SearchMostRecentRegisterNode(addr.String())
+				// our intention was to use SearchMostRecentRegisterNode, but
+				// our implementation had a bug, and now we have to replicate
+				// that bug forevermore.
+				ts, err := client.SearchMostRecentRegisterNodeEver()
 				if err != nil {
 					return genesis
 				}

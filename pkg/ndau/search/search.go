@@ -241,8 +241,8 @@ func (client *Client) BlockTime(height uint64) (ts math.Timestamp, err error) {
 	return
 }
 
-// SearchMostRecentRegisterNode returns tx data for the most recent
-// RegisterNode transactions for the given address.
+// SearchMostRecentRegisterNode returns the block time for the most recent
+// RegisterNode transaction for the given address.
 //
 // Returns the epoch date and no error if the node has never been registered.
 func (client *Client) SearchMostRecentRegisterNode(address string) (ts math.Timestamp, err error) {
@@ -256,6 +256,41 @@ func (client *Client) SearchMostRecentRegisterNode(address string) (ts math.Time
 			"ORDER BY transactions.height DESC, transactions.sequence DESC "+
 			"LIMIT 1 ",
 		address,
+	).Scan(&tts)
+
+	if err == pgx.ErrNoRows {
+		err = nil
+	}
+	if err != nil {
+		err = errors.Wrap(err, "querying db")
+		return
+	}
+
+	if tts != nil {
+		ts, err = math.TimestampFrom(*tts)
+		err = errors.Wrap(err, "converting timestamp")
+	}
+
+	return
+}
+
+// SearchMostRecentRegisterNodeEver returns tx data for the most recent
+// RegisterNode transaction.
+//
+// This replicates a bug we used to have in Redis, which chose the most recent
+// RegisterNode tx regardless of address. It's not recommended for general use.
+//
+// Returns the epoch date and no error if the node has never been registered.
+func (client *Client) SearchMostRecentRegisterNodeEver() (ts math.Timestamp, err error) {
+	var tts *time.Time
+	err = client.Postgres.QueryRow(
+		context.Background(),
+		"SELECT block_time FROM "+
+			"blocks INNER JOIN transactions "+
+			"ON blocks.height=transactions.height "+
+			"WHERE name='RegisterNode' "+
+			"ORDER BY transactions.height DESC, transactions.sequence DESC "+
+			"LIMIT 1 ",
 	).Scan(&tts)
 
 	if err == pgx.ErrNoRows {
