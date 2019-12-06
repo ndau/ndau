@@ -83,6 +83,7 @@ func (app *App) EndBlock(req abci.RequestEndBlock) (reb abci.ResponseEndBlock) {
 	logger = logger.WithFields(log.Fields{
 		"endblock.len_vus": len(reb.ValidatorUpdates),
 		"endblock.status":  "complete",
+		"endblock.vus":     reb.ValidatorUpdates,
 	})
 
 	return
