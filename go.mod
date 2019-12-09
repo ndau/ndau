@@ -17,7 +17,7 @@ require (
 	github.com/oneiro-ndev/mt19937_64 v0.0.0-20181210114828-3f74adc550ba // indirect
 	github.com/oneiro-ndev/ndaumath v1.3.8-0.20191127105348-0532865ae1f1
 	github.com/oneiro-ndev/noms-util v0.0.0-20190226204556-89919acd3bae
-	github.com/oneiro-ndev/system_vars v1.5.2
+	github.com/oneiro-ndev/system_vars v1.5.3
 	github.com/oneiro-ndev/writers v1.1.0
 	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
