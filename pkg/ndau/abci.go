@@ -60,6 +60,7 @@ func (app *App) EndBlock(req abci.RequestEndBlock) (reb abci.ResponseEndBlock) {
 
 	logger = logger.WithField("endblock.max_validators", maxValidators)
 	// get goodnesses
+	// this isn't an ignored error; just a field we don't happen to need here
 	gs, _ := nodeGoodnesses(app)
 	// filter down the top n
 	gs = topNGoodnesses(gs, int(maxValidators))
