@@ -316,6 +316,9 @@ func (app *App) applyTxDetails(tx NTransactable) func(metast.State) (metast.Stat
 			if err != nil {
 				return stI, errors.Wrap(err, "updating weighted average age")
 			}
+			if app.IsFeatureActive("UpdateWAAUpdateDateInDetails") {
+				source.LastWAAUpdate = app.BlockTime()
+			}
 		}
 
 		logger := app.GetLogger().WithFields(log.Fields{
