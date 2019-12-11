@@ -522,3 +522,22 @@ func TestTransferDestFieldValidates(t *testing.T) {
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
+
+func TestTransfersUpdateSourceWAA(t *testing.T) {
+	app, private := initAppTx(t)
+	if !app.IsFeatureActive("UpdateWAAUpdateDateInDetails") {
+		t.Skip("this is only true when UpdateWAAUpdateDateInDetails is active")
+	}
+
+	ad, _ := app.getAccount(sourceAddress)
+	oldWAA := ad.WeightedAverageAge
+	oldWAAUpdate := ad.LastWAAUpdate
+
+	tr := generateTransfer(t, 50, 1, []signature.PrivateKey{private})
+	resp := deliverTx(t, app, tr)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	ad, _ = app.getAccount(sourceAddress)
+	require.NotEqual(t, oldWAA, ad.WeightedAverageAge)
+	require.NotEqual(t, oldWAAUpdate, ad.LastWAAUpdate)
+}
