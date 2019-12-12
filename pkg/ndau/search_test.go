@@ -70,10 +70,12 @@ func TestSysvarHistoryIndex(t *testing.T) {
 	withPG(t, func(uri string) {
 		// Create the app and tx factory.
 		app, _ := initApp(t, IMAArg{"dburi", uri})
+		err := app.InitializeDB()
+		require.NoError(t, err)
 
 		// setup
 		sysvarAddr := address.Address{}
-		err := app.System(sv.SetSysvarAddressName, &sysvarAddr)
+		err = app.System(sv.SetSysvarAddressName, &sysvarAddr)
 		require.NoError(t, err)
 		privateKeys, err := MockSystemAccount(app, sysvarAddr)
 		require.NoError(t, err)
@@ -94,18 +96,18 @@ func TestSysvarHistoryIndex(t *testing.T) {
 			)
 			resp, _ := deliverTxContext(t, app, tx, ddc(t).atHeight(height))
 			require.Equal(t, code.OK, code.ReturnCode(resp.Code))
-		})
 
-		// Test searching.
-		t.Run("TestSysvarHistorySearching", func(t *testing.T) {
-			// Search for the update transaction we indexed.
-			hkr, err := app.GetIndexer().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
-			require.NoError(t, err)
+			// Test searching.
+			t.Run("TestSysvarHistorySearching", func(t *testing.T) {
+				// Search for the update transaction we indexed.
+				hkr, err := app.GetIndexer().(*srch.Client).SearchSysvarHistory(sysvar, 0, 0)
+				require.NoError(t, err)
 
-			// Should have one result for our test key value pair.
-			require.Equal(t, 1, len(hkr.History))
-			require.Equal(t, height, hkr.History[0].Height)
-			require.Equal(t, valueBytes, hkr.History[0].Value)
+				// Should have one result for our test key value pair.
+				require.Equal(t, 1, len(hkr.History))
+				require.Equal(t, height, hkr.History[0].Height)
+				require.Equal(t, valueBytes, hkr.History[0].Value)
+			})
 		})
 	})
 }
@@ -114,10 +116,12 @@ func TestIndex(t *testing.T) {
 	withPG(t, func(uri string) {
 		// Create the app and tx factory.
 		app, _ := initApp(t, IMAArg{"dburi", uri})
+		err := app.InitializeDB()
+		require.NoError(t, err)
 
 		// setup
 		sysvarAddr := address.Address{}
-		err := app.System(sv.SetSysvarAddressName, &sysvarAddr)
+		err = app.System(sv.SetSysvarAddressName, &sysvarAddr)
 		require.NoError(t, err)
 		privateKeys, err := MockSystemAccount(app, sysvarAddr)
 		require.NoError(t, err)
@@ -504,11 +508,13 @@ func TestTargetPriceSearch(t *testing.T) {
 	withPG(t, func(uri string) {
 		// Create the app and tx factory.
 		app, _ := initApp(t, IMAArg{"dburi", uri})
+		err := app.InitializeDB()
+		require.NoError(t, err)
 		client := app.GetIndexer().(*srch.Client)
 
 		// setup
 		rfeAddr := address.Address{}
-		err := app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
+		err = app.System(sv.ReleaseFromEndowmentAddressName, &rfeAddr)
 		require.NoError(t, err)
 		privateKeys, err := MockSystemAccount(app, rfeAddr)
 		require.NoError(t, err)

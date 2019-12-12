@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/oneiro-ndev/ndau/pkg/query"
+	qtypes "github.com/oneiro-ndev/ndau/pkg/query"
 	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -29,25 +29,52 @@ import (
 // Pass in 0,0 for the paging params to get the entire history.
 func (client *Client) SearchSysvarHistory(
 	sysvar string, minHeight uint64, limit int,
-) (khr *query.SysvarHistoryResponse, err error) {
-	khr = new(query.SysvarHistoryResponse)
+) (khr *qtypes.SysvarHistoryResponse, err error) {
+	khr = new(qtypes.SysvarHistoryResponse)
 
-	var rows pgx.Rows
-	if limit > 0 {
-		rows, err = client.Postgres.Query(
-			context.Background(),
-			"SELECT COALESCE(height, 0), value FROM systemvariables WHERE height>=$1 "+
-				"ORDER BY height ASC NULLS FIRST LIMIT $2",
-			minHeight, limit,
-		)
-	} else {
-		rows, err = client.Postgres.Query(
-			context.Background(),
-			"SELECT COALESCE(height, 0), value FROM systemvariables WHERE height>=$1 "+
-				"ORDER BY height ASC NULLS FIRST",
-			minHeight,
-		)
+	// construct the query
+	query := "SELECT COALESCE(height, 0), value FROM systemvariables "
+	haswhere := false
+	args := make([]interface{}, 0, 5)
+	where := func(clause string) {
+		if haswhere {
+			query += "AND "
+		} else {
+			query += "WHERE "
+			haswhere = true
+		}
+		query += clause
 	}
+
+	// height
+	where("height>=$%d ")
+	args = append(args, minHeight)
+	query = fmt.Sprintf(query, len(args))
+
+	// name
+	if sysvar != "" {
+		where("key=$%d ")
+		args = append(args, sysvar)
+		query = fmt.Sprintf(query, len(args))
+	}
+
+	// ordering
+	query += "ORDER BY height ASC NULLS FIRST "
+
+	// limit
+	if limit > 0 {
+		query += "LIMIT $%d "
+		args = append(args, limit)
+		query = fmt.Sprintf(query, len(args))
+	}
+
+	// perform query
+	var rows pgx.Rows
+	rows, err = client.Postgres.Query(
+		context.Background(),
+		query,
+		args...,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying system variables")
 	}
@@ -61,7 +88,7 @@ func (client *Client) SearchSysvarHistory(
 			err = errors.Wrap(err, "scanning sysvar row")
 			return
 		}
-		khr.History = append(khr.History, query.SysvarHistoricalValue{
+		khr.History = append(khr.History, qtypes.SysvarHistoricalValue{
 			Height: height,
 			Value:  value,
 		})

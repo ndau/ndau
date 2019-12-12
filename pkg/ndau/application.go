@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jackc/pgx/v4"
@@ -83,48 +84,66 @@ func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogge
 	app.goodnessFunc = app.goodnessOf
 	app.App.SetChild(&app)
 
-	logger = app.DecoratedLogger()
+	app.DecoratedLogger().Info("app initialization complete")
+	return &app, nil
+}
+
+// InitializeDB initializes the indexing database according to the app's configuration
+//
+// This is separate from app creation because there are cases when we need
+// to run a temporary app and don't need or want to bring up the indexing DB.
+func (app *App) InitializeDB() error {
+
+	if app.config.PostgresConnection == nil || *app.config.PostgresConnection == "" {
+		return errors.New("cannot initialize DB; not configured")
+	}
+
+	confstr := *app.config.PostgresConnection
+
+	pgcfg, err := pgx.ParseConfig(confstr)
+	if err != nil {
+		return errors.Wrap(err, "parsing postgres connection string ("+confstr+")")
+	}
+
+	// we always want to connect to the "ndau" db
+	pgcfg.Database = "ndau"
+
+	if app.config.PostgresPasswordPath != nil && *app.config.PostgresPasswordPath != "" {
+		pwdata, err := ioutil.ReadFile(*app.config.PostgresPasswordPath)
+		if err != nil {
+			return errors.Wrap(err, "reading postgres password file")
+		}
+		pgcfg.Password = strings.TrimSpace(string(pwdata))
+	}
+	idxr, err := search.NewClient(pgcfg, app)
+	if err != nil {
+		return errors.Wrap(err, "initializing indexer")
+	}
+	app.SetIndexer(idxr)
+
+	// Log initial indexing in case it takes a long time
+	logger := app.DecoratedLogger()
 	defer func() {
 		if err == nil {
-			logger.Info("app initialization complete")
+			logger.Info("performed initial blockchain indexing")
 		} else {
-			logger.WithError(err).Warn("error starting app")
+			logger.WithError(err).Error("problem performing initial blockchain indexing")
 		}
 	}()
 
-	if config.PostgresConnection != nil && *config.PostgresConnection != "" {
-		pgcfg, err := pgx.ParseConfig(*config.PostgresConnection)
-		if err != nil {
-			return &app, errors.Wrap(err, "parsing postgres connection string ("+*config.PostgresConnection+")")
-		}
+	start := time.Now()
 
-		// we always want to connect to the "ndau" db
-		pgcfg.Database = "ndau"
+	// Perform initial indexing.
+	err = idxr.IndexBlockchain(app.GetDB(), app.GetDS())
 
-		if config.PostgresPasswordPath != nil && *config.PostgresPasswordPath != "" {
-			pwdata, err := ioutil.ReadFile(*config.PostgresPasswordPath)
-			if err != nil {
-				return &app, errors.Wrap(err, "reading postgres password file")
-			}
-			pgcfg.Password = strings.TrimSpace(string(pwdata))
-		}
-		idxr, err := search.NewClient(pgcfg, &app)
-		if err != nil {
-			return &app, errors.Wrap(err, "initializing indexer")
-		}
-		app.SetIndexer(idxr)
+	duration := time.Since(start)
+	logger = logger.WithField("index.elapsed.ns", duration.Nanoseconds())
 
-		// Log initial indexing in case it takes a long time
-		logger.Info("beginning initial indexing")
-
-		// Perform initial indexing.
-		err = idxr.IndexBlockchain(app.GetDB(), app.GetDS())
-		if err != nil {
-			return &app, errors.Wrap(err, "performing initial indexing")
-		}
+	if err != nil {
+		return errors.Wrap(err, "performing initial indexing")
 	}
 
-	return &app, nil
+	return nil
 }
 
 // An IMAArg is an argument to the InitMockApp function
