@@ -449,7 +449,11 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 
 		block, err := cf.Node.Block(&blockheight)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("failed to get block @ %d", blockheight), err, http.StatusInternalServerError))
+			return
+		}
+		if block == nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("nil block @ %d", blockheight), http.StatusInternalServerError))
 			return
 		}
 
