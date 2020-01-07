@@ -14,6 +14,7 @@ package search
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -104,7 +105,10 @@ func (client *Client) SearchBlockHash(blockHash string) (uint64, error) {
 	err := client.Postgres.QueryRow(
 		context.Background(),
 		"SELECT height FROM blocks WHERE hash=$1 LIMIT 1",
-		blockHash,
+		// The hash is always lowercase
+		// see https://github.com/oneiro-ndev/ndau/blob/eb3a75f08ca46cd1a686271157eb459447e0f2c8/pkg/ndau/search/index_incremental.go#L41-L44
+		// so we always lowercase the search input, in case it's not also lowercase
+		strings.ToLower(blockHash),
 	).Scan(&height)
 	if err == pgx.ErrNoRows {
 		err = nil
