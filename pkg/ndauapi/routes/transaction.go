@@ -22,6 +22,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
 	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/types"
 	"github.com/tinylib/msgp/msgp"
 )
@@ -64,15 +65,17 @@ func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, 
 		Hash:    txhash,
 	}
 
-	valueData := search.TxValueData{}
 	searchValue, err := tool.GetSearchResults(node, params)
 	if err != nil {
-		return nil, -1, 0, 0, err
+		return nil, -1, 0, 0, errors.Wrap(err, "searching for tx by hash")
 	}
 
-	_, err = valueData.UnmarshalMsg(searchValue)
-	if err != nil {
-		return nil, -1, 0, 0, err
+	valueData := search.TxValueData{}
+	if len(searchValue) > 0 {
+		_, err = valueData.UnmarshalMsg(searchValue)
+		if err != nil {
+			return nil, -1, 0, 0, errors.Wrap(err, "unmarshaling search results")
+		}
 	}
 	blockheight := int64(valueData.BlockHeight)
 	txoffset := valueData.TxOffset
@@ -84,7 +87,7 @@ func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, 
 
 	block, err := node.Block(&blockheight)
 	if err != nil {
-		return nil, -1, 0, 0, err
+		return nil, -1, 0, 0, errors.Wrap(err, "getting block data")
 	}
 
 	if txoffset >= int(block.Block.Header.NumTxs) {
