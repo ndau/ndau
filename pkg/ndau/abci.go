@@ -29,46 +29,62 @@ func (app *App) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 }
 
 // EndBlock updates the validator set, compositing its behavior with metanode's
-func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
-	reb := app.App.EndBlock(req)
-
+func (app *App) EndBlock(req abci.RequestEndBlock) (reb abci.ResponseEndBlock) {
+	var err error
 	logger := app.DecoratedLogger().WithFields(log.Fields{
 		"method": "ndau.App.EndBlock",
 	})
+	defer func() {
+		if err == nil {
+			logger.Info("exited successfully")
+		} else {
+			logger.WithError(err).Warn("exited with problems")
+		}
+	}()
+
+	reb = app.App.EndBlock(req)
 
 	// if sv.NodeMaxValidators is set, then the top n nodes by goodness
 	// must be assigned voting power proportional to their goodness.
 	// All other nodes must be assigned 0 voting power.
 	var maxValidators wkt.Uint64
-	err := app.System(sv.NodeMaxValidators, &maxValidators)
-	if err == nil {
-		logger = logger.WithField("endblock.max_validators", maxValidators)
-		// get goodnesses
-		gs, _ := nodeGoodnesses(app)
-		// filter down the top n
-		gs = topNGoodnesses(gs, int(maxValidators))
-
-		logger = logger.WithField("endblock.len_gs", len(gs))
-
-		// for each remaining goodness, create a corresponding validator update
-		state := app.GetState().(*backing.State)
-		for _, g := range gs {
-			vu, err := validatorUpdateFor(state, g.addr)
-			if err != nil {
-				logger.WithError(err).WithFields(log.Fields{
-					"node":     g.addr,
-					"goodness": g.goodness,
-				}).Error("creating validator update")
-				continue
-			}
-			vu.Power = int64(g.goodness)
-			reb.ValidatorUpdates = append(reb.ValidatorUpdates, *vu)
-		}
-		logger.WithField("endblock.len_vus", len(reb.ValidatorUpdates))
-		logger.Info("updated node validation power")
-	} else {
-		logger.WithError(err).Info("could not get max validators sysvar; skipping updates")
+	err = app.System(sv.NodeMaxValidators, &maxValidators)
+	if IsNoSuchSysvar(err) {
+		logger = logger.WithField("endblock.status", "max_validators not set; skipping")
+		err = nil
+		return
+	}
+	if err != nil {
+		return
 	}
 
-	return reb
+	logger = logger.WithField("endblock.max_validators", maxValidators)
+	// get goodnesses
+	// this isn't an ignored error; just a field we don't happen to need here
+	gs, _ := nodeGoodnesses(app)
+	// filter down the top n
+	gs = topNGoodnesses(gs, int(maxValidators))
+
+	logger = logger.WithField("endblock.len_gs", len(gs))
+
+	// for each remaining goodness, create a corresponding validator update
+	state := app.GetState().(*backing.State)
+	for _, g := range gs {
+		vu, err := validatorUpdateFor(state, g.addr)
+		if err != nil {
+			logger.WithError(err).WithFields(log.Fields{
+				"node":     g.addr,
+				"goodness": g.goodness,
+			}).Error("creating validator update")
+			continue
+		}
+		vu.Power = int64(g.goodness)
+		reb.ValidatorUpdates = append(reb.ValidatorUpdates, *vu)
+	}
+	logger = logger.WithFields(log.Fields{
+		"endblock.len_vus": len(reb.ValidatorUpdates),
+		"endblock.status":  "complete",
+	})
+
+	return
 }

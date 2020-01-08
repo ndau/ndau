@@ -7,7 +7,7 @@
 // https://www.apache.org/licenses/LICENSE-2.0.txt
 // - -- --- ---- -----
 
-// This file contains the basic definition for an ABCI Application.
+// This file contains the basic definition for the ndau ABCI Application.
 //
 // Interface: https://godoc.org/github.com/tendermint/tendermint/abci/types#Application
 
@@ -17,8 +17,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/jackc/pgx/v4"
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
 	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
@@ -54,20 +57,20 @@ type App struct {
 }
 
 // NewApp prepares a new Ndau App
-func NewApp(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
-	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, nil)
+func NewApp(dbSpec string, config config.Config) (*App, error) {
+	return NewAppWithLogger(dbSpec, config, nil)
 }
 
 // NewAppSilent prepares a new Ndau App which doesn't log
-func NewAppSilent(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
+func NewAppSilent(dbSpec string, config config.Config) (*App, error) {
 	logger := log.New()
 	logger.Out = ioutil.Discard
 
-	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, logger)
+	return NewAppWithLogger(dbSpec, config, logger)
 }
 
 // NewAppWithLogger prepares a new Ndau App with the specified logger
-func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config config.Config, logger log.FieldLogger) (*App, error) {
+func NewAppWithLogger(dbSpec string, config config.Config, logger log.FieldLogger) (*App, error) {
 	metaapp, err := meta.NewAppWithLogger(dbSpec, "ndau", new(backing.State), TxIDs, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewApp failed to create metaapp")
@@ -81,51 +84,81 @@ func NewAppWithLogger(dbSpec string, indexAddr string, indexVersion int, config 
 	app.goodnessFunc = app.goodnessOf
 	app.App.SetChild(&app)
 
-	if indexVersion >= 0 {
-		// Set up ndau-specific search client.
-		search, err := search.NewClient(indexAddr, indexVersion, &app)
-		if err != nil {
-			return nil, errors.Wrap(err, "NewApp unable to init search client")
-		}
+	app.DecoratedLogger().Info("app initialization complete")
+	return &app, nil
+}
 
-		// Log initial indexing in case it takes a long time, people can see why.
-		metaapp.GetLogger().WithFields(log.Fields{
-			"search.indexVersion": indexVersion,
-		}).Info("ndau waiting for initial indexing to complete")
+// InitializeDB initializes the indexing database according to the app's configuration
+//
+// This is separate from app creation because there are cases when we need
+// to run a temporary app and don't need or want to bring up the indexing DB.
+func (app *App) InitializeDB() error {
 
-		// Perform initial indexing.
-		updateCount, insertCount, err := search.IndexBlockchain(
-			metaapp.GetDB(), metaapp.GetDS())
-		if err != nil {
-			return nil, errors.Wrap(err, "NewApp unable to perform initial indexing")
-		}
-
-		// It might be useful to see what kind of results came from the initial indexing.
-		metaapp.GetLogger().WithFields(log.Fields{
-			"search.updateCount": updateCount,
-			"search.insertCount": insertCount,
-		}).Info("ndau initial indexing complete")
-
-		metaapp.SetSearch(search)
+	if app.config.PostgresConnection == nil || *app.config.PostgresConnection == "" {
+		return errors.New("cannot initialize DB; not configured")
 	}
 
-	return &app, nil
+	confstr := *app.config.PostgresConnection
+
+	pgcfg, err := pgx.ParseConfig(confstr)
+	if err != nil {
+		return errors.Wrap(err, "parsing postgres connection string ("+confstr+")")
+	}
+
+	// we always want to connect to the "ndau" db
+	pgcfg.Database = "ndau"
+
+	if app.config.PostgresPasswordPath != nil && *app.config.PostgresPasswordPath != "" {
+		pwdata, err := ioutil.ReadFile(*app.config.PostgresPasswordPath)
+		if err != nil {
+			return errors.Wrap(err, "reading postgres password file")
+		}
+		pgcfg.Password = strings.TrimSpace(string(pwdata))
+	}
+	idxr, err := search.NewClient(pgcfg, app)
+	if err != nil {
+		return errors.Wrap(err, "initializing indexer")
+	}
+	app.SetIndexer(idxr)
+
+	// Log initial indexing in case it takes a long time
+	logger := app.DecoratedLogger()
+	defer func() {
+		if err == nil {
+			logger.Info("performed initial blockchain indexing")
+		} else {
+			logger.WithError(err).Error("problem performing initial blockchain indexing")
+		}
+	}()
+
+	start := time.Now()
+
+	// Perform initial indexing.
+	err = idxr.IndexBlockchain(app.GetDB(), app.GetDS())
+
+	duration := time.Since(start)
+	logger = logger.WithField("index.elapsed.ns", duration.Nanoseconds())
+
+	if err != nil {
+		return errors.Wrap(err, "performing initial indexing")
+	}
+
+	return nil
+}
+
+// An IMAArg is an argument to the InitMockApp function
+//
+// This is used for mock app customization, but it's an advanced feature.
+// In general, most users should never have to care about this.
+type IMAArg struct {
+	Name  string
+	Value interface{}
 }
 
 // InitMockApp creates an empty test application, which is mainly useful for testing.
 //
-// This uses a freshly-generated chaos config and an in-memory noms.
-func InitMockApp() (app *App, assc generator.Associated, err error) {
-	return InitMockAppWithIndex("", -1)
-}
-
-// InitMockAppWithIndex creates an empty test application with indexing and search capability,
-// which is mainly useful for testing.
-//
-// This uses a freshly-generated chaos config and an in-memory noms.
-func InitMockAppWithIndex(indexAddr string, indexVersion int) (
-	app *App, assc generator.Associated, err error,
-) {
+// This uses a freshly-generated config and an in-memory noms.
+func InitMockApp(args ...IMAArg) (app *App, assc generator.Associated, err error) {
 	var gfilepath, asscpath string
 
 	gfilepath, asscpath, err = generator.GenerateIn("")
@@ -143,8 +176,25 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	if err != nil {
 		return
 	}
+	// do we have a postgres URI?
+	for _, arg := range args {
+		switch arg.Name {
+		case "dburi":
+			if val, ok := arg.Value.(string); ok {
+				conf.PostgresConnection = &val
+			} else {
+				err = fmt.Errorf("dburi expects string value; found %T", arg.Value)
+			}
+		case "dbpwf":
+			if val, ok := arg.Value.(string); ok {
+				conf.PostgresPasswordPath = &val
+			} else {
+				err = fmt.Errorf("dbpwf expects string value; found %T", arg.Value)
+			}
+		}
+	}
 
-	app, err = NewAppSilent("", indexAddr, indexVersion, *conf)
+	app, err = NewAppSilent("", *conf)
 	if err != nil {
 		return
 	}

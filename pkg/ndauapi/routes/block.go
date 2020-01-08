@@ -24,6 +24,7 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
 	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
 	"github.com/oneiro-ndev/ndau/pkg/tool"
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -269,12 +270,12 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, node cfg.TMCli
 		return
 	}
 
-	firstTime, err := time.Parse(time.RFC3339, first)
+	firstTime, err := math.ParseTimestamp(first)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("first is not a valid timestamp", http.StatusBadRequest))
 		return
 	}
-	lastTime, err := time.Parse(time.RFC3339, last)
+	lastTime, err := math.ParseTimestamp(last)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError("last is not a valid timestamp", http.StatusBadRequest))
 		return
@@ -291,67 +292,17 @@ func handleBlockDateRange(w http.ResponseWriter, r *http.Request, node cfg.TMCli
 	// can be repeated with the same timestamps, but the "after" parameter can vary
 	// to page the results.
 	if after != "" {
-		aftertime, err := time.Parse(time.RFC3339, after)
+		aftertime, err := math.ParseTimestamp(after)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("after must be a timestamp", err, http.StatusBadRequest))
 			return
 		}
-		if aftertime.After(firstTime) {
+		if aftertime > firstTime {
 			firstTime = aftertime
 		}
 	}
 
-	firstBlockHeight := int64(1)
-	firstBlock, err := node.Block(&firstBlockHeight)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get first block: %v", err), http.StatusBadRequest))
-		return
-	}
-
-	lastBlock, err := node.Block(nil)
-	if err != nil {
-		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get last block: %v", err), http.StatusBadRequest))
-		return
-	}
-
-	// Make sure the range is within the existing block range or the dates won't be indexed.
-	var firstBlockTime, lastBlockTime time.Time
-	if firstBlock != nil && firstBlock.Block != nil {
-		firstBlockTime = firstBlock.Block.Header.Time
-	}
-	if lastBlock != nil && lastBlock.Block != nil {
-		lastBlockTime = lastBlock.Block.Header.Time
-	}
-
-	if firstTime.Before(firstBlockTime) {
-		// We don't index anything before the first block, clip the first time to its time.
-		firstTime = firstBlockTime
-		first = firstTime.Format(time.RFC3339)
-	}
-
-	if firstTime.After(lastBlockTime) {
-		// Nothing is after the last block, return zero results.
-		reqres.RespondJSON(w, reqres.OKResponse(nil))
-		return
-	}
-
-	// Last block time is an exclusive timestamp param, so we check on-or-before the first time.
-	if !lastTime.After(firstTime) {
-		// Degenerate range means empty search results.
-		reqres.RespondJSON(w, reqres.OKResponse(nil))
-		return
-	}
-
-	// We don't check for equality here, since if the time were equal to the last block time, we'd
-	// want to skip inclusion of the last block in the results.  However, since we don't index
-	// every timestamp (we use a fraction of a day granularity), this is "overly correct".  But
-	// there is value in this code not knowing about the underlying granularity constraints.
-	if lastTime.After(lastBlockTime) {
-		// Use the empty string to mean "return everything up to the newest block".
-		last = ""
-	}
-
-	firstHeight, lastHeight, err := tool.SearchDateRange(node, first, last)
+	firstHeight, lastHeight, err := tool.SearchDateRange(node, firstTime, lastTime)
 	if err != nil {
 		reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("Error fetching address history: %s", err), http.StatusInternalServerError))
 		return
@@ -484,7 +435,7 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		blockheight, err := strconv.ParseInt(searchValue, 10, 64)
+		blockheight, err := strconv.ParseInt(string(searchValue), 10, 64)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not parse search results: %v", err), http.StatusInternalServerError))
 			return
@@ -498,7 +449,11 @@ func HandleBlockHash(cf cfg.Cfg) http.HandlerFunc {
 
 		block, err := cf.Node.Block(&blockheight)
 		if err != nil {
-			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("could not get block: %v", err), http.StatusInternalServerError))
+			reqres.RespondJSON(w, reqres.NewFromErr(fmt.Sprintf("failed to get block @ %d", blockheight), err, http.StatusInternalServerError))
+			return
+		}
+		if block == nil {
+			reqres.RespondJSON(w, reqres.NewAPIError(fmt.Sprintf("nil block @ %d", blockheight), http.StatusInternalServerError))
 			return
 		}
 

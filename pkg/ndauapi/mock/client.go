@@ -26,7 +26,7 @@ import (
 func Client(t *testing.T, fixtures ...func(abcitypes.Application)) cfg.TMClient {
 	ndauconf, err := config.DefaultConfig()
 	require.NoError(t, err)
-	app, err := ndau.NewAppSilent("mem", "", -1, *ndauconf)
+	app, err := ndau.NewAppSilent("mem", *ndauconf)
 	require.NoError(t, err)
 
 	c := client{

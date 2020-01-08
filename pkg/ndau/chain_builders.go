@@ -343,17 +343,12 @@ func BuildVMForNodeGoodness(
 			// we do this within a function so we can have early returns;
 			// it cleans up the control flow a bit
 			rts = func() math.Timestamp {
-				search := app.GetSearch()
-				if search == nil {
+				idxr := app.GetIndexer()
+				if idxr == nil {
 					return genesis
 				}
-				client := search.(*srch.Client)
-				txdata, err := client.SearchMostRecentRegisterNode(addr.String())
-				if err != nil || txdata == nil {
-					// txdata is nil if the node has never been registered
-					return genesis
-				}
-				ts, err := client.BlockTime(txdata.BlockHeight)
+				client := idxr.(*srch.Client)
+				ts, err := client.SearchMostRecentRegisterNode(addr.String())
 				if err != nil {
 					return genesis
 				}

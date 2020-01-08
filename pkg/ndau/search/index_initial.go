@@ -12,100 +12,85 @@ package search
 // The public API for initial indexing of the blockchain.
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/attic-labs/noms/go/datas"
+	"github.com/jackc/pgx/v4"
 	"github.com/oneiro-ndev/metanode/pkg/meta/state"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/pkg/errors"
 )
 
 // IndexBlockchain fills the index with data from the blockchain,
 // from the head block down to just before the last block we indexed.
-func (search *Client) IndexBlockchain(
+func (client *Client) IndexBlockchain(
 	db datas.Database, ds datas.Dataset,
-) (updateCount int, insertCount int, err error) {
-	updateCount = 0
-	insertCount = 0
+) (err error) {
+	// what's the greatest block height we've already indexed?
+	var maxHeightAlreadyIndexed uint64
+	err = client.Postgres.QueryRow(
+		context.Background(),
+		"SELECT COALESCE(MAX(height), 0) FROM blocks",
+	).
+		Scan(&maxHeightAlreadyIndexed)
+	if err != nil && err != pgx.ErrNoRows {
+		return errors.Wrap(err, "querying max height already indexed")
+	}
 
-	// Start fresh.  It should already be zero'd out upon entry.
-	search.sysvarKeyToValueData = make(map[string]*ValueData)
-	search.txs = nil
-	// TODO: We really should be using block time when indexing below, but we don't store block
-	// timestamps in noms.  So we must eventually write the external ndauindexer app.  Then we
-	// would remove this entire function since it would replace the initial indexing below.
-	search.blockTime = math.Timestamp(0)
-	search.blockHash = ""
-	search.blockHeight = 0
-	search.nextHeight = 0
-
-	// The height encountered on the previous iteration of the loop below.
-	lastHeight := search.nextHeight
-
-	// One more than the height we indexed to the last time we indexed the blockchain.
-	// In other words, it's the height we want to index to this time.
-	minHeightToIndex := search.Client.GetNextHeight()
+	var lastHeight uint64
 
 	example := backing.State{}
 	err = state.IterHistory(db, ds, &example, func(stI state.State, height uint64) error {
-		// Save off the max height that we'll index up to by the end of the iteration.
-		if search.nextHeight == 0 {
-			// This assumes we're iterating blocks in order from the head to genesis.
-			search.nextHeight = height + 1
-			lastHeight = search.nextHeight
-		}
-
+		// keep track of the last height viewed
+		defer func() { lastHeight = height }()
 		// If we've reached the last height we indexed to, we can stop here.
-		if height < minHeightToIndex {
-			// This assumes we're iterating blocks in order from the head to genesis.
+		if height <= maxHeightAlreadyIndexed && maxHeightAlreadyIndexed > 0 {
 			return state.StopIteration()
 		}
 
 		// Make sure we're iterating from the head block to genesis.
 		// It's expected, however, to get multiple height-0 entries for system variables.
 		// And also at height 1 for unit tests.
-		if height > lastHeight || height == lastHeight && height > 1 {
+		if (height > lastHeight && lastHeight > 0) || (height == lastHeight && height > 1) {
 			// Indexing logic relies on this, but more importantly, this indicates
 			// a serious problem in the blockchain if the height increases as we
 			// crawl the blockchain from the head to the genesis block.
-			panic(fmt.Sprintf("Invalid height found in noms: %d >= %d", height, lastHeight))
-		}
-		lastHeight = height
-
-		// The indexing code below uses this to know the current height.
-		search.blockHeight = height
-
-		// NOTE: This is currently a no-op since we didn't pull anything out of noms to put into
-		// the search client struct before calling index().  We keep this here in case we do find
-		// more that we want to index that also can be pulled from noms before this line.
-		updCount, insCount, err := search.index()
-		updateCount += updCount
-		insertCount += insCount
-		if err != nil {
-			return err
+			panic(fmt.Sprintf("invalid height found in noms: %d >= %d", height, lastHeight))
 		}
 
 		// Index sysvar key-value history, which we pull from noms.
-		st := stI.(*backing.State)
-		updCount, insCount, err = search.indexState(st)
-		updateCount += updCount
-		insertCount += insCount
-		return err
+		// this is broken out into a function mainly for ease of reading/separation
+		// of concerns: the logic around here is all about iterating through noms;
+		// the logic there is about actually performing appropriate indexing
+		client.height = height
+		return client.indexInitialSysvars(stI.(*backing.State))
 	})
-	if err != nil && !state.IsStopIteration(err) {
-		return updateCount, insertCount, err
+	// if the returned error was nil, this preserves its nility
+	return errors.Wrap(err, "iterating noms history")
+}
+
+// Index all the sysvar key-value pairs in the given state at the current client.height.
+func (client *Client) indexInitialSysvars(st *backing.State) (err error) {
+	for key, value := range st.Sysvars {
+		// note that for this initial indexing, we manually dedupe; we expect
+		// to see more than one entry at height 0, and there's no point inserting
+		// redundant initial sysvar data
+		_, err = client.Postgres.Exec(
+			context.Background(),
+			"INSERT INTO systemvariables(height, key, value) "+
+				"SELECT $1, $2, $3 "+
+				"WHERE NOT EXISTS ("+
+				"SELECT key FROM systemvariables WHERE height=$1 AND key=$2 AND value=$3"+
+				")",
+			client.height,
+			key,
+			value,
+		)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("%s@%d", key, client.height))
+		}
 	}
 
-	// We don't need to check for dupes if this is the first initial scan (minHeightToIndex
-	// == 0) since we will have just completed indexing the entire blockchain and have filtered
-	// out all the dupes from adjacent (and within) blocks using sysvarKeyToValueData map.
-	// We also don't need to check for dupes if we didn't index anything this time
-	// (minHeightToIndex == search.nextHeight), although that check is just for completeness
-	// since sysvarKeyToValueData will be empty in that case.
-	checkForDupes := 0 < minHeightToIndex && minHeightToIndex < search.nextHeight
-	updCount, insCount, err := search.onIndexingComplete(checkForDupes)
-	updateCount += updCount
-	insertCount += insCount
-
-	return updateCount, insertCount, err
+	return
 }

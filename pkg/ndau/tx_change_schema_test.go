@@ -30,10 +30,6 @@ const changeSchemaKeys = "changeSchema private keys"
 
 var hasQuit bool
 
-func initAppChangeSchema(t *testing.T) (*App, generator.Associated) {
-	return initAppChangeSchemaWithIndex(t, "", -1)
-}
-
 func getChangeSchemaAddr(t *testing.T, app *App) (addr address.Address) {
 	// fetch the ChangeSchema address system variable
 	err := app.System(sv.ChangeSchemaAddressName, &addr)
@@ -41,10 +37,8 @@ func getChangeSchemaAddr(t *testing.T, app *App) (addr address.Address) {
 	return
 }
 
-func initAppChangeSchemaWithIndex(t *testing.T, indexAddr string, indexVersion int) (
-	*App, generator.Associated,
-) {
-	app, assc := initAppWithIndex(t, indexAddr, indexVersion)
+func initAppChangeSchema(t *testing.T) (*App, generator.Associated) {
+	app, assc := initApp(t)
 	app.InitChain(abci.RequestInitChain{})
 
 	// fetch the ChangeSchema address system variable

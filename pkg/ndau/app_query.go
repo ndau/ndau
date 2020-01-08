@@ -16,7 +16,6 @@ import (
 	"sort"
 
 	meta "github.com/oneiro-ndev/metanode/pkg/meta/app"
-	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
 	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
@@ -74,7 +73,7 @@ func accountHistoryQuery(
 ) {
 	app := appI.(*App)
 
-	search := app.GetSearch()
+	search := app.GetIndexer()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
@@ -95,9 +94,12 @@ func accountHistoryQuery(
 		app.QueryError(err, response, "account history search fail")
 		return
 	}
-
-	ahBytes := []byte(ahr.Marshal())
-	response.Value = ahBytes
+	response.Value, err = ahr.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "marshaling response")
+		return
+	}
+	return
 }
 
 func accountListQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -155,27 +157,29 @@ func accountListQuery(appI interface{}, request abci.RequestQuery, response *abc
 func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	search := app.GetSearch()
+	search := app.GetIndexer()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
 	}
 	client := search.(*srch.Client)
 
-	paramsString := string(request.GetData())
-	var req metasrch.DateRangeRequest
-	req.Unmarshal(paramsString)
+	var req query.DateRangeRequest
+	_, err := req.UnmarshalMsg(request.Data)
 
 	firstHeight, lastHeight, err :=
-		client.Client.SearchDateRange(req.FirstTimestamp, req.LastTimestamp)
+		client.SearchDateRange(req.FirstTimestamp, req.LastTimestamp)
 	if err != nil {
 		app.QueryError(err, response, "date range search fail")
 		return
 	}
 
-	result := metasrch.DateRangeResult{FirstHeight: firstHeight, LastHeight: lastHeight}
-	ahBytes := []byte(result.Marshal())
-	response.Value = ahBytes
+	result := query.DateRangeResult{FirstHeight: firstHeight, LastHeight: lastHeight}
+	response.Value, err = result.MarshalMsg(nil)
+	if err != nil {
+		app.QueryError(err, response, "marshaling results")
+	}
+	return
 }
 
 func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -224,7 +228,7 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
 
-	search := app.GetSearch()
+	search := app.GetIndexer()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
@@ -254,16 +258,22 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 			app.QueryError(err, response, "height by tx hash search fail")
 			return
 		}
-		value := valueData.Marshal()
-		response.Value = []byte(value)
+		response.Value, err = valueData.MarshalMsg(nil)
+		if err != nil {
+			app.QueryError(err, response, "marshaling response")
+			return
+		}
 	case srch.HeightsByTxTypesCommand:
 		valueData, err := client.SearchTxTypes(params.Hash, params.Types, params.Limit)
 		if err != nil {
 			app.QueryError(err, response, "heights by tx types search fail")
 			return
 		}
-		value := valueData.Marshal()
-		response.Value = []byte(value)
+		response.Value, err = valueData.MarshalMsg(nil)
+		if err != nil {
+			app.QueryError(err, response, "marshaling response")
+			return
+		}
 	default:
 		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
 	}
@@ -359,7 +369,7 @@ func sysvarHistoryQuery(
 ) {
 	app := appI.(*App)
 
-	search := app.GetSearch()
+	search := app.GetIndexer()
 	if search == nil {
 		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
 		return
@@ -465,7 +475,7 @@ func nodesQuery(appI interface{}, request abci.RequestQuery, response *abci.Resp
 
 func priceQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
 	app := appI.(*App)
-	search := app.GetSearch().(*srch.Client)
+	search := app.GetIndexer().(*srch.Client)
 
 	// chose the appropriate search function
 	var sf func(params srch.PriceQueryParams) (srch.PriceQueryResults, error)
