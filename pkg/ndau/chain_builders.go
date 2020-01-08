@@ -359,10 +359,8 @@ func BuildVMForNodeGoodness(
 				}
 				return ts
 			}()
-			// JSG commenting this, don't commit the reg date to the state, it's unsafe to do it with the
-			// "Defer" mechanism that we're using, and until we have time to fix it, just
-			// search for the reg date each time we calculate node goodness
-			/* 			if rts != genesis {
+
+			if rts != genesis {
 				app.Defer(func(stI metast.State) metast.State {
 					st := stI.(*backing.State)
 					node := st.Nodes[addr.String()]
@@ -370,7 +368,7 @@ func BuildVMForNodeGoodness(
 					st.Nodes[addr.String()] = node
 					return st
 				})
-			} */
+			}
 		} else {
 			// if the registration date isn't set and the app feature is not
 			// active, then we need to pass in something (so the chaincode
