@@ -356,13 +356,50 @@ func BuildVMForNodeGoodness(
 			}()
 
 			if rts != genesis {
-				app.Defer(func(stI metast.State) metast.State {
-					st := stI.(*backing.State)
-					node := st.Nodes[addr.String()]
-					node.SetRegistration(rts)
-					st.Nodes[addr.String()] = node
-					return st
-				})
+				// Let's talk about this function signature, because it's a bit
+				// crazy app.Defer takes a closure, which must have the
+				// signature
+				//
+				//   func(stI metast.State) metast.State
+				//
+				// meaning that it mutates the state without the possibility of
+				// failure. It's a closure so that it can refer to variables
+				// from outside its own definition.
+				//
+				// However, it turns out not to work to just write the closure
+				// directly. That has to do with the way go handles closures:
+				// they reference the local environment, but don't copy
+				// anything. What does that mean for us?
+				//
+				// Go is smart enough to notice that addr and rts are
+				// referenced within the closure, which escapes the local
+				// context, so it puts them on the heap. Thing is, this whole
+				// function building the VM happens within an outer loop; we're
+				// rarely interested in node goodness in isolation; it's only
+				// interesting when comparing a bunch of nodes.
+				//
+				// You can see what happens next: it reuses the same heap
+				// addresses. The upshot is that when the deferred functions
+				// are called, it only actually works for the final node.
+				//
+				// The solution is to take advantage of another property of
+				// go's memory design: function arguments are copied. We
+				// therefore construct a tiny closure accepting addr and rts,
+				// and call it in-place. The function call copies the current
+				// values of addr and rts, and returns a new closure with the
+				// signature we need. Because calling the outer function
+				// generates and returns a new closure each time, the enclosed
+				// variables no longer share heap addresses. This should solve
+				// that problem.
+				app.Defer(func(addr address.Address, rts math.Timestamp) func(stI metast.State) metast.State {
+					return func(stI metast.State) metast.State {
+						st := stI.(*backing.State)
+						node := st.Nodes[addr.String()]
+						node.SetRegistration(rts)
+						st.Nodes[addr.String()] = node
+						return st
+					}
+				}(addr, rts))
 			}
 		} else {
 			// if the registration date isn't set and the app feature is not
