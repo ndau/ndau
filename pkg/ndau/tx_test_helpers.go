@@ -285,11 +285,11 @@ type deliveryContext struct {
 }
 
 // default delivery context
-func ddc(t *testing.T) deliveryContext {
+func ddc(t *testing.T) *deliveryContext {
 	now, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 
-	return deliveryContext{
+	return &deliveryContext{
 		t:           t,
 		ts:          now,
 		blockHeight: 1,
@@ -299,42 +299,42 @@ func ddc(t *testing.T) deliveryContext {
 }
 
 // note: we don't take a pointer, so this copies values, doesn't edit
-func (dc deliveryContext) at(ts math.Timestamp) deliveryContext {
+func (dc deliveryContext) at(ts math.Timestamp) *deliveryContext {
 	dc.ts = ts
-	return dc
+	return &dc
 }
 
 // set the block height to be used. Note: this should rarely be necessary;
 // it auto-increments, and anyway block height shouldn't matter for testing
 // except when testing feature gates
-func (dc deliveryContext) atHeight(height uint64) deliveryContext {
+func (dc deliveryContext) atHeight(height uint64) *deliveryContext {
 	dc.blockHeight = height
-	return dc
+	return &dc
 }
 
 // set the block hash to be used (specified as hexidecimal)
 // must be exactly 20 bytes
 // auto-resets on each block
 // an empty string generates a new random hash
-func (dc deliveryContext) withHash(hash string) deliveryContext {
+func (dc deliveryContext) withHash(hash string) *deliveryContext {
 	if len(hash) == 0 {
 		dc.blockHash = randBlockHash(dc.t)
-		return dc
+		return &dc
 	}
 	hashb, err := hex.DecodeString(hash)
 	require.NoError(dc.t, err)
 	require.Equal(dc.t, 20, len(hashb), "block hash must be exactly 20 bytes")
 	dc.blockHash = hashb
-	return dc
+	return &dc
 }
 
 // add an updater to the list of system variable updaters
-func (dc deliveryContext) with(updater func(map[string][]byte)) deliveryContext {
+func (dc deliveryContext) with(updater func(map[string][]byte)) *deliveryContext {
 	dc.svUpdaters = append(dc.svUpdaters, updater)
-	return dc
+	return &dc
 }
 
-func (dc deliveryContext) withExchangeAccount(addr address.Address) deliveryContext {
+func (dc deliveryContext) withExchangeAccount(addr address.Address) *deliveryContext {
 	return dc.with(func(sysvars map[string][]byte) {
 		accountAttributes := sv.AccountAttributes{}
 		aab, ok := sysvars[sv.AccountAttributesName]
@@ -389,11 +389,33 @@ func (dc deliveryContext) Within(app *App, inner func()) {
 	})
 }
 
+// be careful when using this function: things can get weird if you don't
+// do the ABCI sequence correctly, and nothing here provides an automatic
+// EndBlock or Commit
+func (dc *deliveryContext) beginBlock(app *App) {
+	app.BeginBlock(abci.RequestBeginBlock{
+		Header: abci.Header{
+			Time:   dc.ts.AsTime(),
+			Height: int64(dc.blockHeight),
+		},
+		Hash: dc.blockHash,
+	})
+	dc.incr()
+}
+
+// auto-increment the context's height, timestamp, and hash:
+// those should never be equal for any two distinct blocks
+func (dc *deliveryContext) incr() {
+	dc.blockHeight++
+	dc.ts++
+	dc.blockHash = randBlockHash(dc.t)
+}
+
 func deliverTxContext(
 	t *testing.T,
 	app *App,
 	tx metatx.Transactable,
-	dc deliveryContext,
+	dc *deliveryContext,
 ) (abci.ResponseDeliverTx, abci.ResponseEndBlock) {
 	resps, reb := deliverTxsContext(t, app, []metatx.Transactable{tx}, dc)
 	require.Equal(t, 1, len(resps), "single transaction must produce single response")
@@ -404,20 +426,12 @@ func deliverTxsContext(
 	t *testing.T,
 	app *App,
 	txs []metatx.Transactable,
-	dc deliveryContext,
+	dc *deliveryContext,
 ) ([]abci.ResponseDeliverTx, abci.ResponseEndBlock) {
 	resps := make([]abci.ResponseDeliverTx, 0, len(txs))
 	var reb abci.ResponseEndBlock
 	dc.Within(app, func() {
-		app.BeginBlock(abci.RequestBeginBlock{
-			Header: abci.Header{
-				Time:   dc.ts.AsTime(),
-				Height: int64(dc.blockHeight),
-			},
-			Hash: dc.blockHash,
-		})
-		dc.blockHeight++
-		dc.blockHash = randBlockHash(dc.t)
+		dc.beginBlock(app)
 
 		for _, transactable := range txs {
 			bytes, err := metatx.Marshal(transactable, TxIDs)

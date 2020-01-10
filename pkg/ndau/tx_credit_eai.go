@@ -440,7 +440,7 @@ func (app *App) recalculateWAAs(stateI metast.State) (metast.State, error) {
 						"FROM transactions AS tx "+
 						"INNER JOIN accounts AS acct "+
 						"ON acct.tx = tx.id "+
-						"INNER JOIN blocks AS block"+
+						"INNER JOIN blocks AS block "+
 						"ON block.height = tx.height "+
 						"WHERE address = $1 "+
 						"ORDER BY tx.height, tx.sequence ",
