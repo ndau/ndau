@@ -338,15 +338,15 @@ var goodnessCache goodnessCacheT
 // BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
 //
 // Node goodness functions currently use the following pieces of context:
-//   stake fraction (top)
+//   stake (top)
 //   account data
 //   address
-//   delegation fraction
+//   delegation
 //   vote history for this node
 //   timestamp of most recent RegisterNode
 //
 // stake and delegation are not the literal numbers, but instead ratios:
-// this account's, vs the total global amount, scaled by goodnessDenominator
+// this account's, vs the total global amount.
 //
 // All that needs to happen after this is to call Run().
 func BuildVMForNodeGoodness(
