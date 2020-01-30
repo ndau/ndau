@@ -10,7 +10,9 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"sort"
 
@@ -352,6 +354,7 @@ var goodnessCache goodnessCacheT
 func BuildVMForNodeGoodness(
 	code []byte,
 	addr address.Address,
+	tmAddress string,
 	acct backing.AccountData,
 	totalStake math.Ndau,
 	ts math.Timestamp,
@@ -386,10 +389,16 @@ func BuildVMForNodeGoodness(
 
 	var votingHistory []metast.NodeRoundStats
 	for _, round := range voteStats.History {
-		if nrs, ok := round.Validators[addr.String()]; ok {
+		tmAddrBytes, err := hex.DecodeString(tmAddress)
+		if err != nil {
+			return nil, errors.Wrap(err, "tmAddress")
+		}
+		tmB64Address := base64.StdEncoding.EncodeToString(tmAddrBytes)
+		if nrs, ok := round.Validators[tmB64Address]; ok {
 			votingHistory = append(votingHistory, nrs)
 		}
 	}
+
 	votingHistoryV, err := chain.ToValue(votingHistory)
 	if err != nil {
 		return nil, errors.Wrap(err, "votingHistory")
