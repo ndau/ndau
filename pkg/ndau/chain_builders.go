@@ -10,7 +10,9 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"sort"
 
@@ -273,20 +275,86 @@ func BuildVMForExchangeEAI(code []byte, acct backing.AccountData, sib eai.Rate) 
 	return theVM, nil
 }
 
+const goodnessDenominator = 10000
+
+// NOTE: this goodness cache is essential for performance, but it uses height
+// to clear the cache. This means it will misbehave if the node goodness is
+// calculated twice within the same block, but within that block between those
+// two calculations, the actual total stake or total delegation changes.
+type goodnessCacheT struct {
+	height          uint64
+	totalStake      math.Ndau
+	totalDelegation math.Ndau
+}
+
+func (gc *goodnessCacheT) update(app *App) {
+	if app.Height() != gc.height {
+		gc.height = app.Height()
+
+		gc.totalDelegation = 0
+		gc.totalStake = 0
+
+		state := app.GetState().(*backing.State)
+		for _, ad := range state.Accounts {
+			if ad.DelegationNode != nil {
+				gc.totalDelegation += ad.Balance
+			}
+
+			for _, hold := range ad.Holds {
+				if hold.Stake != nil {
+					gc.totalStake += hold.Qty
+				}
+			}
+		}
+	}
+}
+
+func (gc *goodnessCacheT) TotalStake(app *App) math.Ndau {
+	gc.update(app)
+	return gc.totalStake
+}
+
+func (gc *goodnessCacheT) TotalDelegation(app *App) math.Ndau {
+	gc.update(app)
+	return gc.totalDelegation
+}
+
+func (gc *goodnessCacheT) AdjustStake(app *App, stake math.Ndau) math.Ndau {
+	denom := gc.TotalStake(app) / goodnessDenominator
+	if denom == 0 {
+		denom = 1
+	}
+	return stake / denom
+}
+
+func (gc *goodnessCacheT) AdjustDelegation(app *App, delegation math.Ndau) math.Ndau {
+	denom := gc.TotalDelegation(app) / goodnessDenominator
+	if denom == 0 {
+		denom = 1
+	}
+	return delegation / denom
+}
+
+var goodnessCache goodnessCacheT
+
 // BuildVMForNodeGoodness builds a VM that it sets up to calculate node goodness.
 //
-// Node goodness functions currently use the following pieces of context:
-//   total stake (top)
+// Node goodness functions  use the following pieces of context:
+//   stake ratio (top)
 //   account data
 //   address
-//   total delegation
+//   delegation ratio
 //   vote history for this node
 //   timestamp of most recent RegisterNode
+//
+// stake and delegation are not the literal numbers, but instead ratios:
+// this account's, vs the total global amount.
 //
 // All that needs to happen after this is to call Run().
 func BuildVMForNodeGoodness(
 	code []byte,
 	addr address.Address,
+	tmAddress string,
 	acct backing.AccountData,
 	totalStake math.Ndau,
 	ts math.Timestamp,
@@ -304,12 +372,16 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "acct")
 	}
 
+	// adjust total stake into an appropriate ratio
+	totalStake = goodnessCache.AdjustStake(app, totalStake)
 	totalStakeV, err := chain.ToValue(totalStake)
 	if err != nil {
 		return nil, errors.Wrap(err, "totalStake")
 	}
 
 	totalDelegation := app.GetState().(*backing.State).TotalDelegationTo(addr)
+	// adjust total delegation into an appropriate ratio
+	totalDelegation = goodnessCache.AdjustDelegation(app, totalDelegation)
 	totalDelegationV, err := chain.ToValue(totalDelegation)
 	if err != nil {
 		return nil, errors.Wrap(err, "totalDelegation")
@@ -317,10 +389,16 @@ func BuildVMForNodeGoodness(
 
 	var votingHistory []metast.NodeRoundStats
 	for _, round := range voteStats.History {
-		if nrs, ok := round.Validators[addr.String()]; ok {
+		tmAddrBytes, err := hex.DecodeString(tmAddress)
+		if err != nil {
+			return nil, errors.Wrap(err, "tmAddress")
+		}
+		tmB64Address := base64.StdEncoding.EncodeToString(tmAddrBytes)
+		if nrs, ok := round.Validators[tmB64Address]; ok {
 			votingHistory = append(votingHistory, nrs)
 		}
 	}
+
 	votingHistoryV, err := chain.ToValue(votingHistory)
 	if err != nil {
 		return nil, errors.Wrap(err, "votingHistory")
@@ -359,8 +437,10 @@ func BuildVMForNodeGoodness(
 				}
 				return ts
 			}()
-
-			if rts != genesis {
+			// JSG commenting this, don't commit the reg date to the state, it's unsafe to do it with the
+			// "Defer" mechanism that we're using, and until we have time to fix it, just
+			// search for the reg date each time we calculate node goodness
+			/* 			if rts != genesis {
 				app.Defer(func(stI metast.State) metast.State {
 					st := stI.(*backing.State)
 					node := st.Nodes[addr.String()]
@@ -368,7 +448,7 @@ func BuildVMForNodeGoodness(
 					st.Nodes[addr.String()] = node
 					return st
 				})
-			}
+			} */
 		} else {
 			// if the registration date isn't set and the app feature is not
 			// active, then we need to pass in something (so the chaincode

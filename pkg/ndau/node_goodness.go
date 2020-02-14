@@ -58,6 +58,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 	vm, err := BuildVMForNodeGoodness(
 		script,
 		addr,
+		node.TMAddress,
 		acct,
 		totalStake,
 		app.BlockTime(),
