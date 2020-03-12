@@ -10,7 +10,7 @@ package tool
 // - -- --- ---- -----
 
 import (
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 

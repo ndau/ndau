@@ -11,11 +11,11 @@ package backing
 
 import (
 	nt "github.com/attic-labs/noms/go/types"
-	meta "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	meta "github.com/ndau/metanode/pkg/meta/state"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/eai"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // State is primarily a set of accounts

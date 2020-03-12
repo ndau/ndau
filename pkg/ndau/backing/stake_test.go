@@ -12,8 +12,8 @@ package backing
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/address"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 

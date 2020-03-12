@@ -12,9 +12,9 @@ package ndau
 import (
 	"testing"
 
-	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	metast "github.com/ndau/metanode/pkg/meta/state"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/signature"
 	"github.com/stretchr/testify/require"
 )
 

@@ -12,9 +12,9 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
+	"github.com/ndau/metanode/pkg/meta/app/code"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/constants"
 	"github.com/stretchr/testify/require"
 )
 

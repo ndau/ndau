@@ -14,8 +14,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau"
 )
 
 // TxNames returns a list of all of the valid transaction names, plus some synonyms.

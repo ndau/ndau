@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/rpc/client"

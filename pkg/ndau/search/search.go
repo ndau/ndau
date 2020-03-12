@@ -18,9 +18,9 @@ import (
 	"strconv"
 
 	"github.com/go-redis/redis"
-	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndau/pkg/query"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 

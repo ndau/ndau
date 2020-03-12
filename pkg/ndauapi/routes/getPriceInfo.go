@@ -12,12 +12,12 @@ package routes
 import (
 	"net/http"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/reqres"
+	"github.com/ndau/ndau/pkg/tool"
+	"github.com/ndau/ndaumath/pkg/eai"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	"github.com/ndau/ndaumath/pkg/types"
 )
 
 // PriceInfo returns data about some direct and derived quantities of ndau price information.

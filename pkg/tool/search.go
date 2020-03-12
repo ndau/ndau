@@ -12,9 +12,9 @@ package tool
 import (
 	"encoding/json"
 
-	metasrch "github.com/oneiro-ndev/metanode/pkg/meta/search"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndau/pkg/query"
+	metasrch "github.com/ndau/metanode/pkg/meta/search"
+	"github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )

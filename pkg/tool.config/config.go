@@ -22,12 +22,12 @@ import (
 
 	"github.com/BurntSushi/toml"
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/key"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	"github.com/oneiro-ndev/ndaumath/pkg/words"
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/key"
+	"github.com/ndau/ndaumath/pkg/signature"
+	"github.com/ndau/ndaumath/pkg/words"
+	generator "github.com/ndau/system_vars/pkg/genesis.generator"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 

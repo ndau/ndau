@@ -10,7 +10,7 @@ package sdk
 // - -- --- ---- -----
 
 import (
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/pkg/errors"
 )
 

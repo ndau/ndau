@@ -12,12 +12,12 @@ package ndau
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/metanode/pkg/meta/app/code"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/constants"
+	"github.com/ndau/ndaumath/pkg/signature"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 

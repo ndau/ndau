@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
 )
 
 var txnames map[string]metatx.Transactable

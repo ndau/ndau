@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // We use these prefixes to help us group keys in the index.  They could prove useful if we ever

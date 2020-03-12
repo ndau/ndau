@@ -10,12 +10,12 @@ package ndau
 // - -- --- ---- -----
 
 import (
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/msgp-well-known-types/wkt"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/signature"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"

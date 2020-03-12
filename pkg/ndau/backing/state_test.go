@@ -13,8 +13,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/types"
 )
 
 func randomState(t *testing.T, qty types.Ndau, rewardsTarget bool) (address.Address, State) {

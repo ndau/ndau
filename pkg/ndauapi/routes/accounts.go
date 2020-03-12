@@ -18,17 +18,17 @@ import (
 	"strconv"
 
 	"github.com/go-zoo/bone"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/reqres"
+	"github.com/ndau/ndau/pkg/query"
+	"github.com/ndau/ndau/pkg/tool"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/constants"
+	"github.com/ndau/ndaumath/pkg/types"
 )
 
 // AccountHistoryItem is used by the account history endpoint to return balance historical data.

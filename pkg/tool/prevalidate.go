@@ -14,11 +14,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	"github.com/oneiro-ndev/ndau/pkg/query"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/metanode/pkg/meta/app/code"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau"
+	"github.com/ndau/ndau/pkg/query"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"

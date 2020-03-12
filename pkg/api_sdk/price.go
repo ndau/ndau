@@ -12,8 +12,8 @@ package sdk
 import (
 	"encoding/json"
 
-	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	srch "github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndau/pkg/ndauapi/routes"
 	"github.com/pkg/errors"
 )
 

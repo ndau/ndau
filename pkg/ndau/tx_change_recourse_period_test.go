@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/metanode/pkg/meta/app/code"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 

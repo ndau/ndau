@@ -13,9 +13,9 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/reqres"
+	"github.com/ndau/ndau/pkg/tool"
 )
 
 // VersionResult is returned from the /version request; it retrieves

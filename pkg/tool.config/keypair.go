@@ -12,7 +12,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
+	"github.com/ndau/ndaumath/pkg/signature"
 )
 
 // A Keypair holds a pair of keys

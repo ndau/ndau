@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -13,9 +13,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/signature"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 )
 
 // ChangeSchemaExitCode is returned when the ndaunode exits due to ChangeSchema

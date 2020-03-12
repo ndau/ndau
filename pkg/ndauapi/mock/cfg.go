@@ -12,8 +12,8 @@ package mock
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/writers/pkg/testwriter"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/writers/pkg/testwriter"
 	"github.com/sirupsen/logrus"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )

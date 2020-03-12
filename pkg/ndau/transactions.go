@@ -10,11 +10,11 @@ package ndau
 // - -- --- ---- -----
 
 import (
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	"github.com/ndau/ndaumath/pkg/signature"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // We disable tests because every transaction except GTValidatorChange
@@ -312,7 +312,7 @@ var _ NTransactable = (*Unstake)(nil)
 
 // An Issue transaction is the second half of the primary sales process.
 //
-// See https://github.com/oneiro-ndev/ndau/issues/229 for details.
+// See https://github.com/ndau/ndau/issues/229 for details.
 //
 // The signatures are checked against an account specified by the
 // ReleaseFromEndowmentAddress system variable. That account also specifes

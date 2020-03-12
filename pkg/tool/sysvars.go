@@ -14,8 +14,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"

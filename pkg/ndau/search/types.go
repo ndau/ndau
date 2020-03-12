@@ -14,9 +14,9 @@ package search
 import (
 	"encoding/base64"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	"github.com/oneiro-ndev/ndaumath/pkg/types"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	"github.com/ndau/ndaumath/pkg/types"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/pkg/errors"
 )
 

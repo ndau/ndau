@@ -14,9 +14,9 @@ package search
 import (
 	"encoding/base64"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // OnBeginBlock resets our local cache for incrementally indexing the block at the given height.

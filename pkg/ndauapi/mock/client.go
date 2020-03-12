@@ -12,9 +12,9 @@ package mock
 import (
 	"testing"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/config"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndau"
+	"github.com/ndau/ndau/pkg/ndau/config"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	tmmock "github.com/tendermint/tendermint/rpc/client/mock"

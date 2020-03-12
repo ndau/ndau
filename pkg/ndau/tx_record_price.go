@@ -12,17 +12,17 @@ package ndau
 import (
 	"fmt"
 
-	metast "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	"github.com/oneiro-ndev/ndaumath/pkg/signed"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	metast "github.com/ndau/metanode/pkg/meta/state"
+	"github.com/ndau/msgp-well-known-types/wkt"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/constants"
+	"github.com/ndau/ndaumath/pkg/eai"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	"github.com/ndau/ndaumath/pkg/signature"
+	"github.com/ndau/ndaumath/pkg/signed"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 

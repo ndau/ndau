@@ -12,8 +12,8 @@ package routes_test
 import (
 	"encoding/base64"
 
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau"
 )
 
 func b64(b []byte) string {

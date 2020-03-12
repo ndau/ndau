@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	config "github.com/oneiro-ndev/ndau/pkg/tool.config"
+	config "github.com/ndau/ndau/pkg/tool.config"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -56,7 +56,7 @@ func createNdauBlock(t *testing.T) string {
 	acctName := accountAndNamespaceString
 
 	goDir := getGoDir(t)
-	ndauTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/ndau", goDir)
+	ndauTool := fmt.Sprintf("%s/src/github.com/ndau/commands/ndau", goDir)
 
 	acctCmd := exec.Command(ndauTool, "account", "new", acctName)
 	acctStderr, err := acctCmd.StderrPipe()
@@ -125,7 +125,7 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	value = fmt.Sprintf("integrationtestvalue%d", valnum)
 
 	goDir := getGoDir(t)
-	chaosTool := fmt.Sprintf("%s/src/github.com/oneiro-ndev/commands/chaos", goDir)
+	chaosTool := fmt.Sprintf("%s/src/github.com/ndau/commands/chaos", goDir)
 
 	// Create a test namespace.
 	namespaceCmd := exec.Command(chaosTool, "id", "new", namespace)

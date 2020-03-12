@@ -10,7 +10,7 @@ package sdk
 // - -- --- ---- -----
 
 import (
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/routes"
+	"github.com/ndau/ndau/pkg/ndauapi/routes"
 	"github.com/pkg/errors"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )

@@ -15,9 +15,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/reqres"
+	"github.com/ndau/ndau/pkg/tool"
 	"github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/p2p"
 )

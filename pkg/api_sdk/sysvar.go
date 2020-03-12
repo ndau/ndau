@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/oneiro-ndev/json2msgp"
-	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/ndau/json2msgp"
+	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tinylib/msgp/msgp"
 )

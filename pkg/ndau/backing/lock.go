@@ -12,8 +12,8 @@ package backing
 import (
 	"errors"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/eai"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 //go:generate msgp

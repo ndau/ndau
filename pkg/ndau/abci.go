@@ -10,9 +10,9 @@ package ndau
 // - -- --- ---- -----
 
 import (
-	"github.com/oneiro-ndev/msgp-well-known-types/wkt"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	"github.com/ndau/msgp-well-known-types/wkt"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 	log "github.com/sirupsen/logrus"
 	abci "github.com/tendermint/tendermint/abci/types"
 )

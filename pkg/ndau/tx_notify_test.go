@@ -13,14 +13,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	tx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/constants"
-	"github.com/oneiro-ndev/ndaumath/pkg/eai"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/metanode/pkg/meta/app/code"
+	tx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/constants"
+	"github.com/ndau/ndaumath/pkg/eai"
+	"github.com/ndau/ndaumath/pkg/signature"
+	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -126,7 +126,7 @@ func TestNotifyDeductsTxFee(t *testing.T) {
 
 func TestNotifyProperlyEndsLock(t *testing.T) {
 	// inspired by a Real Bug!
-	// https://github.com/oneiro-ndev/exchanges/blob/master/samples/btcec-secp256k1/ndau-test.sh
+	// https://github.com/ndau/exchanges/blob/master/samples/btcec-secp256k1/ndau-test.sh
 	now, err := math.TimestampFrom(time.Now())
 	require.NoError(t, err)
 

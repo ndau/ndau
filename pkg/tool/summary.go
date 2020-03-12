@@ -10,8 +10,8 @@ package tool
 // - -- --- ---- -----
 
 import (
-	"github.com/oneiro-ndev/metanode/pkg/meta/app/code"
-	"github.com/oneiro-ndev/ndau/pkg/query"
+	"github.com/ndau/metanode/pkg/meta/app/code"
+	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 	rpctypes "github.com/tendermint/tendermint/rpc/core/types"

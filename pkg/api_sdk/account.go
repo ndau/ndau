@@ -13,10 +13,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndau/pkg/query"
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndau/pkg/query"
+	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/pkg/errors"
 )
 
@@ -111,7 +111,7 @@ func GetAccountList(node *Client, after string, limit int) (*query.AccountListQu
 // visited. This is unavoidable.
 func (c *Client) GetAccountListBatch() ([]address.Address, error) {
 	// nearly verbatim from
-	// https://github.com/oneiro-ndev/ndau/blob/9198f7d7520854e68462de08d59daac93fe8a829/pkg/tool/account.go#L100-L150
+	// https://github.com/ndau/ndau/blob/9198f7d7520854e68462de08d59daac93fe8a829/pkg/tool/account.go#L100-L150
 	var (
 		accts = make([]string, 0)
 		after = ""

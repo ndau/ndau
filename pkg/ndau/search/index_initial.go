@@ -15,9 +15,9 @@ import (
 	"fmt"
 
 	"github.com/attic-labs/noms/go/datas"
-	"github.com/oneiro-ndev/metanode/pkg/meta/state"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/metanode/pkg/meta/state"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // IndexBlockchain fills the index with data from the blockchain,

@@ -17,11 +17,11 @@ import (
 	"strings"
 
 	"github.com/go-zoo/bone"
-	"github.com/oneiro-ndev/json2msgp"
-	"github.com/oneiro-ndev/ndau/pkg/ndau"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
+	"github.com/ndau/json2msgp"
+	"github.com/ndau/ndau/pkg/ndau"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/reqres"
+	"github.com/ndau/ndau/pkg/tool"
 	"github.com/pkg/errors"
 )
 

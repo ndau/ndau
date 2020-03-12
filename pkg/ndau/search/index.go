@@ -15,12 +15,12 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	metasearch "github.com/oneiro-ndev/metanode/pkg/meta/search"
-	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	metasearch "github.com/ndau/metanode/pkg/meta/search"
+	metastate "github.com/ndau/metanode/pkg/meta/state"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // This is used to be able to give transactions a float64 score in a sorted set where the integer

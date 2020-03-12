@@ -13,11 +13,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/oneiro-ndev/chaincode/pkg/vm"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
-	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/chaincode/pkg/vm"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndau/pkg/ndau/backing"
+	"github.com/ndau/ndaumath/pkg/bitset256"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 func asm(s string) []byte {

@@ -14,10 +14,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	srch "github.com/oneiro-ndev/ndau/pkg/ndau/search"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/cfg"
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/reqres"
-	"github.com/oneiro-ndev/ndau/pkg/tool"
+	srch "github.com/ndau/ndau/pkg/ndau/search"
+	"github.com/ndau/ndau/pkg/ndauapi/cfg"
+	"github.com/ndau/ndau/pkg/ndauapi/reqres"
+	"github.com/ndau/ndau/pkg/tool"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 

@@ -10,9 +10,9 @@ package search
 // - -- --- ---- -----
 
 import (
-	metastate "github.com/oneiro-ndev/metanode/pkg/meta/state"
-	metatx "github.com/oneiro-ndev/metanode/pkg/meta/transaction"
-	"github.com/oneiro-ndev/ndaumath/pkg/pricecurve"
+	metastate "github.com/ndau/metanode/pkg/meta/state"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/ndaumath/pkg/pricecurve"
 )
 
 // AppIndexable is an app which can help index its transactions.

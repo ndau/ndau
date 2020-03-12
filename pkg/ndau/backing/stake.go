@@ -10,8 +10,8 @@ package backing
 // - -- --- ---- -----
 
 import (
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/address"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 //go:generate msgp

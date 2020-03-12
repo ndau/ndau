@@ -9,7 +9,7 @@ package backing
 // https://www.apache.org/licenses/LICENSE-2.0.txt
 // - -- --- ---- -----
 
-import math "github.com/oneiro-ndev/ndaumath/pkg/types"
+import math "github.com/ndau/ndaumath/pkg/types"
 
 // generate msgp interface implementations for AccountData and supporting structs
 // we can't generate the streaming interfaces, unfortunately, because the
@@ -17,8 +17,8 @@ import math "github.com/oneiro-ndev/ndaumath/pkg/types"
 //go:generate msgp -io=0
 
 // generate noms marshaler implementations for appropriate types
-//go:generate go run $GOPATH/src/github.com/oneiro-ndev/generator/cmd/nomsify $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing
-//go:generate find $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing -name "*noms_gen*.go" -maxdepth 1 -exec goimports -w {} ;
+//go:generate go run $GOPATH/src/github.com/ndau/generator/cmd/nomsify $GOPATH/src/github.com/ndau/ndau/pkg/ndau/backing
+//go:generate find $GOPATH/src/github.com/ndau/ndau/pkg/ndau/backing -name "*noms_gen*.go" -maxdepth 1 -exec goimports -w {} ;
 //nomsify Hold
 
 // Hold tracks a portion of this account's ndau which cannot currently be spent

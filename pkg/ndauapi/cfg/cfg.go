@@ -14,7 +14,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/oneiro-ndev/ndau/pkg/ndauapi/ws"
+	"github.com/ndau/ndau/pkg/ndauapi/ws"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tendermint/tendermint/rpc/client"

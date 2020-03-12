@@ -12,10 +12,10 @@ package config
 import (
 	"fmt"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	generator "github.com/oneiro-ndev/system_vars/pkg/genesis.generator"
-	sv "github.com/oneiro-ndev/system_vars/pkg/system_vars"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/signature"
+	generator "github.com/ndau/system_vars/pkg/genesis.generator"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 

@@ -10,9 +10,9 @@ package backing
 // - -- --- ---- -----
 
 import (
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-	"github.com/oneiro-ndev/ndaumath/pkg/signature"
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/signature"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // generate msgp interface implementations for AccountData and supporting structs
@@ -21,8 +21,8 @@ import (
 //go:generate msgp -io=0
 
 // generate noms marshaler implementations for appropriate types
-//go:generate go run $GOPATH/src/github.com/oneiro-ndev/generator/cmd/nomsify $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing
-//go:generate find $GOPATH/src/github.com/oneiro-ndev/ndau/pkg/ndau/backing -name "*noms_gen*.go" -maxdepth 1 -exec goimports -w {} ;
+//go:generate go run $GOPATH/src/github.com/ndau/generator/cmd/nomsify $GOPATH/src/github.com/ndau/ndau/pkg/ndau/backing
+//go:generate find $GOPATH/src/github.com/ndau/ndau/pkg/ndau/backing -name "*noms_gen*.go" -maxdepth 1 -exec goimports -w {} ;
 //nomsify AccountData RecourseSettings
 
 // RecourseSettings tracks the recourse settings for outbound transactions
@@ -52,7 +52,7 @@ func NewAccountData(blockTime math.Timestamp, defaultRecoursePeriod math.Duratio
 
 // AccountData contains all the information the node needs to take action on a particular account.
 //
-// See the whitepaper: https://github.com/oneiro-ndev/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
+// See the whitepaper: https://github.com/ndau/whitepapers/blob/master/node_incentives/transactions.md#wallet-data
 type AccountData struct {
 	Balance             math.Ndau                    `json:"balance" chain:"61,Acct_Balance"`
 	ValidationKeys      []signature.PublicKey        `json:"validationKeys" chain:"62,Acct_ValidationKeys"`
