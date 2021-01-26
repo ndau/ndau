@@ -27,6 +27,7 @@ import (
 	"github.com/ndau/ndaumath/pkg/eai"
 	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
@@ -437,17 +438,50 @@ func BuildVMForNodeGoodness(
 				}
 				return ts
 			}()
-			// JSG commenting this, don't commit the reg date to the state, it's unsafe to do it with the
-			// "Defer" mechanism that we're using, and until we have time to fix it, just
-			// search for the reg date each time we calculate node goodness
+			logger := app.DecoratedLogger().WithFields(log.Fields{
+				"addr":    addr,
+				"rts":     rts,
+				"genesis": genesis,
+			})
+			logger.Info("zzzzz test")
+			// JSG were not using the deferred "thunk" mechanism any more because the "addr" var in the closure doesn't
+			// get copied by value, only reference, so only the last func put on the list gets the proper addr var.
+			// Instead we just call UpdateState directly, and we have to replicate the bug in heights 88542 and 189659
+			// for the specific node addrs that get written out on those blocks
+			addrStr := addr.String()
 			if rts != genesis {
-				app.Defer(func(stI metast.State) metast.State {
-					st := stI.(*backing.State)
-					node := st.Nodes[addr.String()]
-					node.SetRegistration(rts)
-					st.Nodes[addr.String()] = node
-					return st
-				})
+				/* 				app.Defer(func(stI metast.State) metast.State {
+				   					st := stI.(*backing.State)
+				   					node := st.Nodes[addr.String()]
+				   					node.SetRegistration(rts)
+				   					logger := app.DecoratedLogger().WithFields(log.Fields{
+				   						"addrStr": addrStr,
+				   						"rts":     rts,
+				   					})
+				   					logger.Info("yyyyy test")
+				   					st.Nodes[addr.String()] = node
+				   					return st
+				   				})
+				*/
+				if (app.Height() == 88542 && addr.String() == "ndarw5i7rmqtqstw4mtnchmfvxnrq4k3e2ytsyvsc7nxt2y7") ||
+					(app.Height() == 189659 && addr.String() == "ndaq3nqhez3vvxn8rx4m6s6n3kv7k9js8i3xw8hqnwvi2ete") ||
+					(app.Height() > 189659) {
+					err := app.UpdateState(func(stI metast.State) (metast.State, error) {
+						st := stI.(*backing.State)
+						node := st.Nodes[addr.String()]
+						node.SetRegistration(rts)
+						logger := app.DecoratedLogger().WithFields(log.Fields{
+							"addrStr": addrStr,
+							"rts":     rts,
+						})
+						logger.Info("yyyyy test")
+						st.Nodes[addr.String()] = node
+						return st, nil
+					})
+					if err != nil {
+						return nil, errors.Wrap(err, "SetRegistration")
+					}
+				}
 			}
 		} else {
 			// if the registration date isn't set and the app feature is not
