@@ -129,7 +129,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 			return
 		}
 
-		limit, afters, err := getPagingParams(r, 100)
+		limit, afters, err := getPagingParams(r, 10000)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("paging parms", err, http.StatusBadRequest))
 			return
@@ -213,7 +213,7 @@ func HandleAccountHistory(cf cfg.Cfg) http.HandlerFunc {
 // in the system
 func HandleAccountList(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		limit, after, err := getPagingParams(r, 100)
+		limit, after, err := getPagingParams(r, 10000)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("reading paging info", err, http.StatusBadRequest))
 			return
