@@ -44,25 +44,35 @@ func (app *App) calculateTxFee(tx metatx.Transactable) (math.Ndau, error) {
 	return math.Ndau(vmReturn), nil
 }
 
+// Change in SIB application rules. Previously SIB was imposed except if the source was an authorized
+// exchange account. Now SIB will be imposed only if the source is not an authorized exchange account
+// and the destination is an authorized exchange account.
+
 func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 	if w, ok := tx.(Withdrawer); ok {
 		sibRate := app.GetState().(*backing.State).SIB
 		if sibRate > 0 {
-			source, err := tx.GetSource(app)
+			addresses, err := app.GetAccountAddresses(tx)
 			if err != nil {
-				return 0, errors.Wrap(err, "getting tx source")
+				return 0, errors.Wrap(err, "getting tx addresses")
 			}
-			isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(source, sv.AccountAttributeExchange)
+			isSourceExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(addresses[0], sv.AccountAttributeExchange)
 			if err != nil {
 				return 0, errors.Wrap(err, "determing whether tx source is exchange account")
 			}
-			if !isExchangeAccount {
-				sib, err := signed.MulDiv(
-					int64(w.Withdrawal()),
-					int64(sibRate),
-					constants.RateDenominator,
-				)
-				return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+			if !isSourceExchangeAccount {
+				isDestinationExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(addresses[1], sv.AccountAttributeExchange)
+				if err != nil {
+					return 0, errors.Wrap(err, "determining whether tx destination is an exchange account")
+				}
+				if isDestinationExchangeAccount {
+					sib, err := signed.MulDiv(
+						int64(w.Withdrawal()),
+						int64(sibRate),
+						constants.RateDenominator,
+					)
+					return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+				}
 			}
 		}
 	}
