@@ -286,9 +286,23 @@ func getLastSummary(app *App) query.Summary {
 		lastSummary.TotalRFE = state.TotalRFE
 		lastSummary.TotalIssue = state.TotalIssue
 		lastSummary.TotalBurned = state.TotalBurned
-		// the total ndau in circulation is the total in all accounts, excluding
-		// the amount of ndau that have been released but not issued
-		lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalBurned)
+
+		// Tracking TotalNdau and TotalCirculation together is a bad idea, especially when queries
+		// return TotalCirculation when TotalNdau is requested. But cleaning that up makes the
+		// implementation of a height gate (which is necessary) very messy, so I'm leaving it.
+
+		// TotalBurned should never have been subtracted from TotalNdau - that's an old bug that's being fixed. But it's inside
+		// the height gate because the calculation of the floor price - and, therefore, SIB - depends on it. And this calculation
+		// changes the rules for RFE. All ndau released from the endowment are immediately in circulation. The TotalIssued value
+		// is only used to calculate the current target price.
+
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			lastSummary.TotalCirculation = lastSummary.TotalNdau
+		} else {
+			// the total ndau in circulation is the total in all accounts, excluding
+			// the amount of ndau that have been released but not issued
+			lastSummary.TotalCirculation = lastSummary.TotalNdau - ((lastSummary.TotalRFE - lastSummary.TotalIssue) + lastSummary.TotalBurned)
+		}
 	}
 	return lastSummary
 }
