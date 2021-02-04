@@ -42,6 +42,12 @@ type Sourcer interface {
 	GetSource(*App) (address.Address, error)
 }
 
+// A HasDestination is a transaction with a destination
+type HasDestination interface {
+	// return the address which is considered the transaction's destination
+	GetDestination(*App) (address.Address, error)
+}
+
 // A Sequencer is a transaction with a sequence number.
 type Sequencer interface {
 	// return the sequence number of this transaction

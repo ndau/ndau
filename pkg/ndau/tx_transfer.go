@@ -109,6 +109,11 @@ func (tx *Transfer) GetSource(*App) (address.Address, error) {
 	return tx.Source, nil
 }
 
+// GetDestination implements HasDestination
+func (tx *Transfer) GetDestination(*App) (address.Address, error) {
+	return tx.Destination, nil
+}
+
 // Withdrawal implements Withdrawer
 func (tx *Transfer) Withdrawal() math.Ndau {
 	return tx.Qty

@@ -52,26 +52,32 @@ func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 	if w, ok := tx.(Withdrawer); ok {
 		sibRate := app.GetState().(*backing.State).SIB
 		if sibRate > 0 {
-			addresses, err := app.GetAccountAddresses(tx)
+			source, err := tx.GetSource(app)
 			if err != nil {
-				return 0, errors.Wrap(err, "getting tx addresses")
+				return 0, errors.Wrap(err, "getting tx source")
 			}
-			isSourceExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(addresses[0], sv.AccountAttributeExchange)
+			isSourceExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(source, sv.AccountAttributeExchange)
 			if err != nil {
 				return 0, errors.Wrap(err, "determing whether tx source is exchange account")
 			}
 			if !isSourceExchangeAccount {
-				isDestinationExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(addresses[1], sv.AccountAttributeExchange)
-				if err != nil {
-					return 0, errors.Wrap(err, "determining whether tx destination is an exchange account")
-				}
-				if isDestinationExchangeAccount {
-					sib, err := signed.MulDiv(
-						int64(w.Withdrawal()),
-						int64(sibRate),
-						constants.RateDenominator,
-					)
-					return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+				if d, ok := tx.(HasDestination); ok {
+					dest, err := d.GetDestination(app)
+					if err != nil {
+						return 0, errors.Wrap(err, "getting tx destination")
+					}
+					isDestinationExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(dest, sv.AccountAttributeExchange)
+					if err != nil {
+						return 0, errors.Wrap(err, "determining whether tx destination is an exchange account")
+					}
+					if isDestinationExchangeAccount {
+						sib, err := signed.MulDiv(
+							int64(w.Withdrawal()),
+							int64(sibRate),
+							constants.RateDenominator,
+						)
+						return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+					}
 				}
 			}
 		}
