@@ -25,6 +25,7 @@ type PriceInfo struct {
 	MarketPrice pricecurve.Nanocent `json:"marketPrice"`
 	TargetPrice pricecurve.Nanocent `json:"targetPrice"`
 	FloorPrice  pricecurve.Nanocent `json:"floorPrice"`
+	TotalRFE    types.Ndau          `json:"totalReleased"`
 	TotalIssued types.Ndau          `json:"totalIssued"`
 	TotalNdau   types.Ndau          `json:"totalNdau"`
 	TotalBurned types.Ndau          `json:"totalBurned"`
@@ -42,6 +43,7 @@ func getPriceInfo(cf cfg.Cfg) (PriceInfo, error) {
 	oci.TotalIssued = summ.TotalIssue
 	oci.TotalNdau = summ.TotalCirculation
 	oci.TotalBurned = summ.TotalBurned
+	oci.TotalRFE = summ.TotalRFE
 
 	sib, _, err := tool.GetSIB(cf.Node)
 	if err != nil {
