@@ -263,6 +263,16 @@ func (app *App) UnstakeAndBurn(
 		st.Accounts[stakeTo.String()] = stakeToAcct
 		st.Accounts[rules.String()] = rulesAcct
 
+		// JSG the above might have modified total ndau in circulation, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			sib, target, err := app.calculateCurrentSIB(st, -1, -1)
+			if err != nil {
+				return st, err
+			}
+			st.SIB = sib
+			st.TargetPrice = target
+		}
+
 		return st, nil
 	}
 }

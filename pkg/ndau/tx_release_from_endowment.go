@@ -52,6 +52,16 @@ func (tx *ReleaseFromEndowment) Apply(appI interface{}) error {
 		// so this should be fine
 		state.TotalRFE += tx.Qty
 
+		// JSG the above might have modified total ndau in circulation, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			sib, target, err := app.calculateCurrentSIB(state, -1, -1)
+			if err != nil {
+				return state, err
+			}
+			state.SIB = sib
+			state.TargetPrice = target
+		}
+
 		return state, err
 	})
 }

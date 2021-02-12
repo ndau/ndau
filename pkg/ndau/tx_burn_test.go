@@ -290,6 +290,9 @@ func TestBurnedQtyIsTracked(t *testing.T) {
 func TestBurnedQtyDeductedFromTotalNdau(t *testing.T) {
 	app, private := initAppTx(t)
 
+	// JSG force reload of summary
+	lastSummary.BlockHeight = ^uint64(0)
+
 	getTotal := func() math.Ndau {
 		resp := app.Query(abci.RequestQuery{
 			Path: query.SummaryEndpoint,
