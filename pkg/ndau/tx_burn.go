@@ -54,6 +54,17 @@ func (tx *Burn) Apply(appI interface{}) error {
 	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
 		st.TotalBurned += tx.Qty
+
+		// JSG the above might have modified total ndau in circulation, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			sib, target, err := app.calculateCurrentSIB(st, -1, -1)
+			if err != nil {
+				return st, err
+			}
+			st.SIB = sib
+			st.TargetPrice = target
+		}
+
 		return st, nil
 	})
 }

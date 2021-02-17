@@ -212,6 +212,16 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 
 		}
 
+		// JSG the above might have modified total ndau in circulation, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			sib, target, err := app.calculateCurrentSIB(state, -1, -1)
+			if err != nil {
+				return state, err
+			}
+			state.SIB = sib
+			state.TargetPrice = target
+		}
+
 		return state, nil
 	})
 }

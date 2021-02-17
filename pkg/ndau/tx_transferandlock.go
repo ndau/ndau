@@ -97,6 +97,16 @@ func (tx *TransferAndLock) Apply(appInt interface{}) error {
 		state.Accounts[tx.Destination.String()] = dest
 		state.Accounts[tx.Source.String()] = source
 
+		// JSG the above might have modified total ndau in circulation, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			sib, target, err := app.calculateCurrentSIB(state, -1, -1)
+			if err != nil {
+				return state, err
+			}
+			state.SIB = sib
+			state.TargetPrice = target
+		}
+
 		return state, nil
 	})
 }
