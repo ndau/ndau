@@ -335,6 +335,16 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 			}
 		}
 
+		// JSG the above might have modified total ndau in circulation, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") {
+			sib, target, err := app.calculateCurrentSIB(state, -1, -1)
+			if err != nil {
+				return state, err
+			}
+			state.SIB = sib
+			state.TargetPrice = target
+		}
+
 		// Since the comments above indicate that the desire is to make sure the state gets
 		// propagated even though there are errors, I'm going to suppress the error return
 		// here since the caller will not update state if error is non-nil.

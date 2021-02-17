@@ -94,6 +94,16 @@ func (tx *SetSysvar) Apply(appI interface{}) error {
 	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
 		state.Sysvars[tx.Name] = tx.Value
+
+		// JSG the above might have modified the SIB script, so recalculate SIB
+		if app.IsFeatureActive("AllRFEInCirculation") && tx.Name == sv.SIBScriptName {
+			sib, target, err := app.calculateCurrentSIB(state, -1, -1)
+			if err != nil {
+				return state, err
+			}
+			state.SIB = sib
+			state.TargetPrice = target
+		}
 		return state, nil
 	})
 }
