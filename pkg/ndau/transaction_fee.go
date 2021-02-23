@@ -44,6 +44,10 @@ func (app *App) calculateTxFee(tx metatx.Transactable) (math.Ndau, error) {
 	return math.Ndau(vmReturn), nil
 }
 
+// Change in SIB application rules. Previously SIB was imposed except if the source was an authorized
+// exchange account. Now SIB will be imposed only if the source is not an authorized exchange account
+// and the destination is an authorized exchange account.
+
 func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 	if w, ok := tx.(Withdrawer); ok {
 		sibRate := app.GetState().(*backing.State).SIB
@@ -52,17 +56,39 @@ func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 			if err != nil {
 				return 0, errors.Wrap(err, "getting tx source")
 			}
-			isExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(source, sv.AccountAttributeExchange)
+			isSourceExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(source, sv.AccountAttributeExchange)
 			if err != nil {
 				return 0, errors.Wrap(err, "determing whether tx source is exchange account")
 			}
-			if !isExchangeAccount {
-				sib, err := signed.MulDiv(
-					int64(w.Withdrawal()),
-					int64(sibRate),
-					constants.RateDenominator,
-				)
-				return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+			if !isSourceExchangeAccount {
+				// JSG only apply SIB if src is not exchange and dest is exchange
+				if app.IsFeatureActive("NewSIBRules") {
+					if d, ok := tx.(HasDestination); ok {
+						dest, err := d.GetDestination(app)
+						if err != nil {
+							return 0, errors.Wrap(err, "getting tx destination")
+						}
+						isDestinationExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(dest, sv.AccountAttributeExchange)
+						if err != nil {
+							return 0, errors.Wrap(err, "determining whether tx destination is an exchange account")
+						}
+						if isDestinationExchangeAccount {
+							sib, err := signed.MulDiv(
+								int64(w.Withdrawal()),
+								int64(sibRate),
+								constants.RateDenominator,
+							)
+							return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+						}
+					}
+				} else {
+					sib, err := signed.MulDiv(
+						int64(w.Withdrawal()),
+						int64(sibRate),
+						constants.RateDenominator,
+					)
+					return math.Ndau(sib), errors.Wrap(err, "calculating SIB")
+				}
 			}
 		}
 	}

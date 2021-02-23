@@ -116,6 +116,11 @@ func (tx *TransferAndLock) GetSource(*App) (address.Address, error) {
 	return tx.Source, nil
 }
 
+// GetDestination implements HasDestination
+func (tx *TransferAndLock) GetDestination(*App) (address.Address, error) {
+	return tx.Destination, nil
+}
+
 // Withdrawal implements Withdrawer
 func (tx *TransferAndLock) Withdrawal() math.Ndau {
 	return tx.Qty

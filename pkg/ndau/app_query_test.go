@@ -237,6 +237,39 @@ func TestPrevalidateReportsCorrectSIB(t *testing.T) {
 	var fee, sib math.Ndau
 	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
 	require.NoError(t, err)
+	//	require.Equal(t, math.Ndau(constants.NapuPerNdau), sib)
+	// JSG SIB is now 0 for all transfers between non exchange addresses
+	require.Equal(t, math.Ndau(0), sib)
+}
+
+func TestPrevalidateReportsCorrectSIBForExchangeDest(t *testing.T) {
+	dc := ddc(t).withExchangeAccount(destAddress)
+	app, private := initAppTx(t)
+	tr := NewTransfer(sourceAddress, destAddress, 2*constants.NapuPerNdau, 1, private)
+	trb, err := metatx.Marshal(tr, TxIDs)
+	require.NoError(t, err)
+
+	// set 50% SIB
+	app.UpdateStateImmediately(func(stI metast.State) (metast.State, error) {
+		state := stI.(*backing.State)
+		state.SIB = constants.RateDenominator / 2
+		return state, nil
+	})
+
+	var resp abci.ResponseQuery
+	dc.Within(app, func() {
+		resp = app.Query(abci.RequestQuery{
+			Path: query.PrevalidateEndpoint,
+			Data: trb,
+		})
+	})
+
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+	require.NotEmpty(t, resp.Info)
+
+	var fee, sib math.Ndau
+	_, err = fmt.Sscanf(resp.Info, query.PrevalidateInfoFmt, &fee, &sib)
+	require.NoError(t, err)
 	require.Equal(t, math.Ndau(constants.NapuPerNdau), sib)
 }
 
