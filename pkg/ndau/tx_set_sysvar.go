@@ -20,6 +20,7 @@ import (
 	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/tinylib/msgp/msgp"
 )
 
 // Validate implements metatx.Transactable
@@ -33,7 +34,14 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 				"sysvar.name": tx.Name,
 			}).Warn("sysvar has no validation configured")
 		}
-		if validity != nil && !*validity {
+
+		// Setting a sysvar to an empty string deletes it, so that value is always valid
+		svv, _, err := msgp.ReadStringBytes(tx.Value)
+		if err != nil {
+			return err
+		}
+
+		if validity != nil && !*validity && svv != "" {
 			app.DecoratedTxLogger(tx).WithFields(log.Fields{
 				"sysvar.name":  tx.Name,
 				"sysvar.value": base64.StdEncoding.EncodeToString(tx.Value),
@@ -93,6 +101,18 @@ func (tx *SetSysvar) Apply(appI interface{}) error {
 	app := appI.(*App)
 	return app.UpdateState(app.applyTxDetails(tx), func(stateI metast.State) (metast.State, error) {
 		state := stateI.(*backing.State)
+
+		// Setting a sysvar to an empty string deletes it
+		svv, _, err := msgp.ReadStringBytes(tx.Value)
+		if err != nil {
+			return state, err
+		}
+
+		if svv == "" {
+			delete(state.Sysvars, tx.Name)
+			return state, nil
+		}
+
 		state.Sysvars[tx.Name] = tx.Value
 
 		// JSG the above might have modified the SIB script, so recalculate SIB
