@@ -400,6 +400,18 @@ func BuildVMForNodeGoodness(
 		}
 	}
 
+	// Pad the node's voting history with good votes if it's too small
+
+	if len(votingHistory) < metast.HistorySize {
+		var goodRoundStats metast.NodeRoundStats
+		goodRoundStats.Power = 1
+		goodRoundStats.Voted = true
+		goodRoundStats.AgainstConsensus = false
+		for n := len(votingHistory); n < metast.HistorySize; n++ {
+			votingHistory = append(votingHistory, goodRoundStats)
+		}
+	}
+
 	votingHistoryV, err := chain.ToValue(votingHistory)
 	if err != nil {
 		return nil, errors.Wrap(err, "votingHistory")
