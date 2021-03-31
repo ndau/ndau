@@ -28,25 +28,24 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 	app := appI.(*App)
 
 	if app.IsFeatureActive("SysvarValidityCheck") {
-		validity := sv.IsValid(tx.Name, tx.Value)
-		if validity == nil {
-			app.DecoratedTxLogger(tx).WithFields(log.Fields{
-				"sysvar.name": tx.Name,
-			}).Warn("sysvar has no validation configured")
-		}
-
 		// Setting a sysvar to an empty string deletes it, so that value is always valid
+		// If tx.Value is not a string, or if it's not an empty string, do validation
 		svv, _, err := msgp.ReadStringBytes(tx.Value)
-		if err != nil {
-			return err
-		}
+		if err != nil || svv != "" {
+			validity := sv.IsValid(tx.Name, tx.Value)
+			if validity == nil {
+				app.DecoratedTxLogger(tx).WithFields(log.Fields{
+					"sysvar.name": tx.Name,
+				}).Warn("sysvar has no validation configured")
+			}
 
-		if validity != nil && !*validity && svv != "" {
-			app.DecoratedTxLogger(tx).WithFields(log.Fields{
-				"sysvar.name":  tx.Name,
-				"sysvar.value": base64.StdEncoding.EncodeToString(tx.Value),
-			}).Info("rejected sysvar: failed validation")
-			return errors.New("sysvar validation failed")
+			if validity != nil && !*validity && svv != "" {
+				app.DecoratedTxLogger(tx).WithFields(log.Fields{
+					"sysvar.name":  tx.Name,
+					"sysvar.value": base64.StdEncoding.EncodeToString(tx.Value),
+				}).Info("rejected sysvar: failed validation")
+				return errors.New("sysvar validation failed")
+			}
 		}
 	}
 
@@ -104,11 +103,7 @@ func (tx *SetSysvar) Apply(appI interface{}) error {
 
 		// Setting a sysvar to an empty string deletes it
 		svv, _, err := msgp.ReadStringBytes(tx.Value)
-		if err != nil {
-			return state, err
-		}
-
-		if svv == "" {
+		if err == nil && svv == "" {
 			delete(state.Sysvars, tx.Name)
 			return state, nil
 		}
