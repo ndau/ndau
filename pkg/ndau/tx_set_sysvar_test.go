@@ -46,13 +46,35 @@ func initAppSetSysvar(t *testing.T) (app *App, pvts []signature.PrivateKey) {
 	return
 }
 
+// set a sysvar, test for the value, unset the sysvar, and test for error
 func TestValidSetSysvar(t *testing.T) {
 	app, privateKeys := initAppSetSysvar(t)
 
-	ssv := NewSetSysvar("foo", []byte("bar"), 1, privateKeys...)
+	strVal := wkt.String("bar")
+	strData, err := strVal.MarshalMsg(nil)
+	require.NoError(t, err)
 
-	resp := deliverTx(t, app, ssv)
+	ssv := NewSetSysvar("foo", strData, 1, privateKeys...)
+
+	resp := deliverTxNoContext(t, app, ssv)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	var fooStr wkt.String
+	err = app.System("foo", &fooStr)
+	require.NoError(t, err)
+	require.Equal(t, "bar", string(fooStr))
+
+	strVal = wkt.String("")
+	strData, err = strVal.MarshalMsg(nil)
+	require.NoError(t, err)
+
+	ssv = NewSetSysvar("foo", strData, 2, privateKeys...)
+
+	resp = deliverTxNoContext(t, app, ssv)
+	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+
+	err = app.System("foo", &fooStr)
+	require.EqualError(t, err, "Sysvar foo does not exist")
 }
 
 func TestSetSysvarIsValidWithSingleKey(t *testing.T) {
