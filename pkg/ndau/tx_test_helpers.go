@@ -233,6 +233,30 @@ func deliverTx(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeli
 	return resp
 }
 
+func deliverTxNoContext(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
+	app.BeginBlock(abci.RequestBeginBlock{
+		Header: abci.Header{
+			Time:   time.Now(),
+			Height: int64(1),
+		},
+		Hash: randBlockHash(t),
+	})
+
+	bytes, err := metatx.Marshal(tx, TxIDs)
+	require.NoError(t, err)
+
+	resp := app.DeliverTx(abci.RequestDeliverTx{Tx: bytes})
+	t.Log(code.ReturnCode(resp.Code))
+	if resp.Log != "" {
+		t.Log(resp.Log)
+	}
+
+	_ = app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
+
+	return resp
+}
+
 func deliverTxAt(t *testing.T, app *App, tx metatx.Transactable, at math.Timestamp) abci.ResponseDeliverTx {
 	resp, _ := deliverTxContext(t, app, tx, ddc(t).at(at))
 	return resp
