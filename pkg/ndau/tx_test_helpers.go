@@ -233,6 +233,8 @@ func deliverTx(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeli
 	return resp
 }
 
+// delivers a transaction without saving and restoring sysvar state, which is needed to test
+// setting and unsetting of sysvar state
 func deliverTxNoContext(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
 	app.BeginBlock(abci.RequestBeginBlock{
 		Header: abci.Header{

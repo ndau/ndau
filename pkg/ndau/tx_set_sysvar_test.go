@@ -46,6 +46,7 @@ func initAppSetSysvar(t *testing.T) (app *App, pvts []signature.PrivateKey) {
 	return
 }
 
+// set a sysvar, test for the value, unset the sysvar, and test for error
 func TestValidSetSysvar(t *testing.T) {
 	app, privateKeys := initAppSetSysvar(t)
 
