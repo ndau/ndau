@@ -374,9 +374,14 @@ func BuildVMForNodeGoodness(
 	}
 
 	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"initial stake":      totalStake,
-		"initial delegation": totalDelegation,
+		"address": addr,
 	})
+	logger.Info("Test")
+
+	logger = app.DecoratedLogger().WithFields(log.Fields{
+		"initial stake": totalStake,
+	})
+	logger.Info("Test")
 
 	// adjust total stake into an appropriate ratio
 	totalStake = goodnessCache.AdjustStake(app, totalStake)
@@ -385,7 +390,17 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "totalStake")
 	}
 
+	logger = app.DecoratedLogger().WithFields(log.Fields{
+		"scaled stake": totalStake,
+	})
+	logger.Info("Test")
+
 	totalDelegation := app.GetState().(*backing.State).TotalDelegationTo(addr)
+	logger = app.DecoratedLogger().WithFields(log.Fields{
+		"initial delegation": totalDelegation,
+	})
+	logger.Info("Test")
+
 	// adjust total delegation into an appropriate ratio
 	totalDelegation = goodnessCache.AdjustDelegation(app, totalDelegation)
 	totalDelegationV, err := chain.ToValue(totalDelegation)
@@ -393,10 +408,10 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "totalDelegation")
 	}
 
-	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"scaled stake":      totalStake,
+	logger = app.DecoratedLogger().WithFields(log.Fields{
 		"scaled delegation": totalDelegation,
 	})
+	logger.Info("Test")
 
 	var votingHistory []metast.NodeRoundStats
 	for _, round := range voteStats.History {

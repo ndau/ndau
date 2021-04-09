@@ -80,6 +80,11 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return goodness, errors.Wrap(err, "goodness stack top not numeric")
 	}
 
+	app.DecoratedLogger().WithFields(log.Fields{
+		"address":          addr,
+		"goodness":    goodness,
+	}).Info("Test")
+
 	return goodness, nil
 }
 
