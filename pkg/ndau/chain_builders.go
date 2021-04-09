@@ -373,11 +373,6 @@ func BuildVMForNodeGoodness(
 		return nil, errors.Wrap(err, "acct")
 	}
 
-	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"initial stake":      totalStake,
-		"initial delegation": totalDelegation,
-	})
-
 	// adjust total stake into an appropriate ratio
 	totalStake = goodnessCache.AdjustStake(app, totalStake)
 	totalStakeV, err := chain.ToValue(totalStake)
@@ -392,11 +387,6 @@ func BuildVMForNodeGoodness(
 	if err != nil {
 		return nil, errors.Wrap(err, "totalDelegation")
 	}
-
-	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"scaled stake":      totalStake,
-		"scaled delegation": totalDelegation,
-	})
 
 	var votingHistory []metast.NodeRoundStats
 	for _, round := range voteStats.History {
@@ -528,13 +518,6 @@ func BuildVMForNodeGoodness(
 	if err != nil {
 		return nil, err
 	}
-
-	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"Address":         addr,
-		"TotalDelegation": totalDelegation,
-		"TotalStake":      totalStake,
-	})
-	logger.Info("New voting power")
 
 	// goodness functions all use the default handler
 	err = theVM.Init(0, rtsV, votingHistoryV, totalDelegationV, addrV, acctV, totalStakeV)
