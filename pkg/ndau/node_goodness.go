@@ -81,7 +81,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 	}
 
 	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"goodness": ss,
+		"goodness": goodness,
 	})
 	logger.Info("New voting power")
 
@@ -158,7 +158,7 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 	}
 	app.DecoratedLogger().WithFields(log.Fields{
 		"len(goodnesses)":  len(goodnesses),
-		"goodnessSum":    	goodnessSum,
+		"goodnessSum":      goodnessSum,
 		"MaxRewardedNodes": maxRewarded,
 	}).Info("SelectByGoodness")
 
