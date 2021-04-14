@@ -520,9 +520,9 @@ func BuildVMForNodeGoodness(
 	}
 
 	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"address":         addr,
-		"totalDelegation": totalDelegation,
-		"totalStake":      totalStake,
+		"Address":         addr,
+		"TotalDelegation": totalDelegation,
+		"TotalStake":      totalStake,
 	})
 	logger.Info("New voting power")
 
