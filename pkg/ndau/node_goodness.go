@@ -80,6 +80,11 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return goodness, errors.Wrap(err, "goodness stack top not numeric")
 	}
 
+	logger := app.DecoratedLogger().WithFields(log.Fields{
+		"goodness":    			goodness,
+	})
+	logger.Info("New voting power")
+
 	return goodness, nil
 }
 
