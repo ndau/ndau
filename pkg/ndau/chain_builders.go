@@ -519,6 +519,13 @@ func BuildVMForNodeGoodness(
 		return nil, err
 	}
 
+	logger := app.DecoratedLogger().WithFields(log.Fields{
+		"address":         addr,
+		"totalDelegation": totalDelegation,
+		"totalStake":      totalStake,
+	})
+	logger.Info("New voting power")
+
 	// goodness functions all use the default handler
 	err = theVM.Init(0, rtsV, votingHistoryV, totalDelegationV, addrV, acctV, totalStakeV)
 	return theVM, err
