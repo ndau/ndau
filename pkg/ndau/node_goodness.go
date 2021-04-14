@@ -81,7 +81,7 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 	}
 
 	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"goodness":    			goodness,
+		"goodness": ss,
 	})
 	logger.Info("New voting power")
 
@@ -147,7 +147,6 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 	}
 
 	goodnesses, goodnessSum := nodeGoodnesses(app)
-
 	var maxRewarded wkt.Uint64
 	err := app.System(sv.NodeRewardMaxRewarded, &maxRewarded)
 	// if there's an error, just proceed without filtering
@@ -157,6 +156,11 @@ func (app *App) SelectByGoodness(random uint64) (address.Address, error) {
 	} else {
 		err = nil
 	}
+	app.DecoratedLogger().WithFields(log.Fields{
+		"len(goodnesses)":  len(goodnesses),
+		"goodnessSum":    	goodnessSum,
+		"MaxRewardedNodes": maxRewarded,
+	}).Info("SelectByGoodness")
 
 	// goodnesses is a list of tuples. It is currently unordered, as it comes
 	// from iterating over a map. We have to sort it for determinism.

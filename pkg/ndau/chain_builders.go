@@ -544,7 +544,7 @@ func BuildVMForNodeGoodness(
 		return nil, err
 	}
 
-	logger := app.DecoratedLogger().WithFields(log.Fields{
+	logger = app.DecoratedLogger().WithFields(log.Fields{
 		"Address":         addr,
 		"TotalDelegation": totalDelegation,
 		"TotalStake":      totalStake,
