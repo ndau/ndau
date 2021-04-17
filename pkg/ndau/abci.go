@@ -41,7 +41,7 @@ func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	// All other nodes must be assigned 0 voting power.
 	var maxValidators wkt.Uint64
 	err := app.System(sv.NodeMaxValidators, &maxValidators)
-	if err == nil {
+	if err == nil && app.IsFeatureActive("MaxValidatorsOn") {
 		logger = logger.WithField("endblock.max_validators", maxValidators)
 		// get goodnesses
 		gs, _ := nodeGoodnesses(app)
