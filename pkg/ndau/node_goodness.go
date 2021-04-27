@@ -51,7 +51,12 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "getting node stakers")
 	}
-	for _, v := range costakers {
+	for c, v := range costakers {
+		logger := app.DecoratedLogger().WithFields(log.Fields{
+			"costaker": c,
+			"amount":   v,
+		})
+		logger.Info("Stake calculation")
 		totalStake += v
 	}
 
