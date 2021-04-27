@@ -52,8 +52,10 @@ func (app *App) NodeStakers(node address.Address) (map[string]math.Ndau, error) 
 			continue
 			// this should never happen but if it does, just continue
 		}
+		print(caddr.String())
 		// Don't double-count stakes (primary or self) to ourself
 		if caddr != node {
+			print("Not a duplicate - add to total")
 			updateStakersFor(caddr)
 		}
 	}
