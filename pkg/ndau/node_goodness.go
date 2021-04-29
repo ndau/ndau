@@ -51,7 +51,12 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "getting node stakers")
 	}
-	for _, v := range costakers {
+	for c, v := range costakers {
+		logger := app.DecoratedLogger().WithFields(log.Fields{
+			"costaker": c,
+			"amount":   v,
+		})
+		logger.Info("Stake calculation")
 		totalStake += v
 	}
 
@@ -80,14 +85,6 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return goodness, errors.Wrap(err, "goodness stack top not numeric")
 	}
 
-<<<<<<< HEAD
-=======
-	logger := app.DecoratedLogger().WithFields(log.Fields{
-		"goodness": goodness,
-	})
-	logger.Info("New voting power")
-
->>>>>>> 15945d07 (Debugging voting)
 	return goodness, nil
 }
 
