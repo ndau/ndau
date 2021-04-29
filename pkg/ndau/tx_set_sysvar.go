@@ -10,7 +10,6 @@ package ndau
 // - -- --- ---- -----
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	metast "github.com/ndau/metanode/pkg/meta/state"
@@ -40,10 +39,6 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 			}
 
 			if validity != nil && !*validity {
-				app.DecoratedTxLogger(tx).WithFields(log.Fields{
-					"sysvar.name":  tx.Name,
-					"sysvar.value": base64.StdEncoding.EncodeToString(tx.Value),
-				}).Info("rejected sysvar: failed validation")
 				return errors.New("sysvar validation failed")
 			}
 		}
