@@ -80,6 +80,13 @@ func (app *App) goodnessOf(addrS string) (int64, error) {
 		return goodness, errors.Wrap(err, "goodness stack top not numeric")
 	}
 
+	// dump goodness value after chaincode is called
+	logger := app.DecoratedLogger().WithFields(log.Fields{
+		"address": addr,
+		"value":   goodness,
+	})
+	logger.Info("nodegoodness value")
+
 	return goodness, nil
 }
 
@@ -106,6 +113,13 @@ func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
 					goodness: uint64(goodness),
 				},
 			)
+		} else {
+			// if we get an error from goodness func, dump it
+			logger := app.DecoratedLogger().WithFields(log.Fields{
+				"error": err,
+				"value": goodness,
+			})
+			logger.Info("nodegoodness error")
 		}
 	}
 	return goodnesses, goodnessSum
