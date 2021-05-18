@@ -112,6 +112,12 @@ func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
 					goodness: uint64(goodness),
 				},
 			)
+		} else {
+			logger := app.DecoratedLogger().WithFields(log.Fields{
+				"error": err,
+				"value": goodness,
+			})
+			logger.Info("nodegoodness error")
 		}
 	}
 	return goodnesses, goodnessSum
