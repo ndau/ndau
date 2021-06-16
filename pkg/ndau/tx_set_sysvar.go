@@ -31,7 +31,7 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 		// If tx.Value is not a string, or if it's not an empty string, do validation
 		svv, _, err := msgp.ReadStringBytes(tx.Value)
 		if err != nil || svv != "" {
-			validity := sv.IsValid(tx.Name, tx.Value)
+			validity, err := sv.IsValid(tx.Name, tx.Value)
 			if validity == nil {
 				app.DecoratedTxLogger(tx).WithFields(log.Fields{
 					"sysvar.name": tx.Name,
@@ -39,6 +39,9 @@ func (tx *SetSysvar) Validate(appI interface{}) error {
 			}
 
 			if validity != nil && !*validity {
+				if err != nil {
+					return errors.Wrap(err, "sysvar validation failed, possible JSON formatting error")
+				}
 				return errors.New("sysvar validation failed")
 			}
 		}
