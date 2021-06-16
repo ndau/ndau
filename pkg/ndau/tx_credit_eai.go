@@ -91,8 +91,8 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 	fixEAIUnlockBug := app.IsFeatureActive("FixEAIUnlockBug")
 
 	return app.UpdateState(
+		app.recalculateWAAs(tx),
 		app.applyTxDetails(tx),
-		app.recalculateWAAs,
 		func(stateI metast.State) (metast.State, error) {
 			state := stateI.(*backing.State)
 			nodeData, _ := app.getAccount(tx.Node)
@@ -394,165 +394,180 @@ func (tx *CreditEAI) GetAccountAddresses(app *App) ([]string, error) {
 
 // we had a WAA bug which caused some nonsense weighted average ages
 // this function runs on each CreditEAI to ensure that we have sensible values
-func (app *App) recalculateWAAs(stateI metast.State) (metast.State, error) {
-	state := stateI.(*backing.State)
-	feature := "UpdateWAAUpdateDateInDetails"
-	// the indexer may be nil, particularly when testing; it's quick and easy
-	// to check for that case, and only enable this when an indexer is present
-	indexer := app.GetSearch()
-	if app.IsFeatureActive(feature) && indexer != nil {
-		// the feature height may or may not be set. Our goal is to run these
-		// calculations exactly once, on the first CreditEAI after the feature
-		// gate is set. The methodology is pretty simple:
-		featureHeight := uint64(0)
-		if app.config.Features != nil {
-			featureHeight = app.config.Features[feature]
-		}
+func (app *App) recalculateWAAs(tx *CreditEAI) func(metast.State) (metast.State, error) {
+	return func(stateI metast.State) (metast.State, error) {
+		state := stateI.(*backing.State)
+		feature := "UpdateWAAUpdateDateInDetails"
+		// the indexer may be nil, particularly when testing; it's quick and easy
+		// to check for that case, and only enable this when an indexer is present
+		indexer := app.GetSearch()
+		if app.IsFeatureActive(feature) && indexer != nil {
+			// the feature height may or may not be set. Our goal is to run these
+			// calculations exactly once, on the first CreditEAI after the feature
+			// gate is set. The methodology is pretty simple:
+			featureHeight := uint64(0)
+			if app.config.Features != nil {
+				featureHeight = app.config.Features[feature]
+			}
 
-		client := indexer.(*srch.Client)
-		featureTs, err := client.BlockTime(featureHeight)
-		if err != nil {
-			// if we can't recalculate the WAAs, we return an error here, which
-			// prevents any further calculation of EAI credits. We get this right,
-			// or the transaction doesn't succeed at all.
-			return stateI, fmt.Errorf(
-				"failed to get block time for height %d: %w",
-				featureHeight,
-				err,
-			)
-		}
+			client := indexer.(*srch.Client)
+			featureTs, err := client.BlockTime(featureHeight)
+			for featureTs == math.Timestamp(0) && err == nil {
+				featureHeight++
+				if featureHeight == app.Height() {
+					featureTs = app.BlockTime()
+				} else {
+					featureTs, err = client.BlockTime(featureHeight)
+				}
+			}
+			if err != nil {
+				// if we can't recalculate the WAAs, we return an error here, which
+				// prevents any further calculation of EAI credits. We get this right,
+				// or the transaction doesn't succeed at all.
+				return stateI, fmt.Errorf(
+					"failed to get block time for height %d: %w",
+					featureHeight,
+					err,
+				)
+			}
 
-		// from here, it's straightforward: for every account, if its WAA was
-		// last calculated before the feature timestamp, recalculate its WAA
-		// from genesis. It would be better to avoid iteration if possible,
-		// but there are only a few thousand accounts; the cost of iterating
-		// over them again and doing nothing is likely to be dwarfed by the
-		// rest of the CreditEAI calculation
-		for addrS, acctData := range state.Accounts {
-			if acctData.LastWAAUpdate < featureTs {
-				// rows, err := client.Postgres.Query(
-				// 	context.Background(),
-				// 	"SELECT block_time, tx.name, tx.hash, tx.data, "+
-				// 		"acct.data->'balance' AS balance "+
-				// 		"FROM transactions AS tx "+
-				// 		"INNER JOIN accounts AS acct "+
-				// 		"ON acct.tx = tx.id "+
-				// 		"INNER JOIN blocks AS block "+
-				// 		"ON block.height = tx.height "+
-				// 		"WHERE address = $1 "+
-				// 		"ORDER BY tx.height, tx.sequence ",
-				// 	addrS,
-				// )
-				ahr, err := client.SearchAccountHistory(addrS, 0, 0)
+			logger := app.DecoratedLogger()
+			logger.WithFields(log.Fields{
+				"featureTs":     featureTs,
+				"featureHeight": featureHeight,
+			}).Info("WAA update begin")
+
+			// from here, it's straightforward: for every account, if its WAA was
+			// last calculated before the feature timestamp, recalculate its WAA
+			// from genesis. It would be better to avoid iteration if possible,
+			// but there are only a few thousand accounts; the cost of iterating
+			// over them again and doing nothing is likely to be dwarfed by the
+			// rest of the CreditEAI calculation
+
+			delegatedAccounts := state.Delegates[tx.Node.String()]
+			delegatedAccounts[tx.Node.String()] = struct{}{}
+
+			for addrS := range delegatedAccounts {
+				addr, err := address.Validate(addrS)
 				if err != nil {
-					return stateI, fmt.Errorf("failed to query tx history: %w", err)
+					// if we can't recalculate the WAAs, we return an error here, which
+					// prevents any further calculation of EAI credits. We get this right,
+					// or the transaction doesn't succeed at all.
+					return stateI, fmt.Errorf(
+						"failed to get block time for height %d: %w",
+						featureHeight,
+						err,
+					)
 				}
 
-				// this lastWAAUpdate, unlike the one in the account, should
-				// be correct at all times
-				var waa math.Duration
-				var lastWAAUpdate math.Timestamp
-				var lastBalance math.Ndau
-				// the following keeps track if we've seen a TX that sets a balance, this helps us to determine if
-				// this acct is a Transfer destination
-				balanceSeen := false
+				acctData, hasAcct := app.getAccount(addr)
+				if !hasAcct {
+					// Accounts might sometimes be removed.
+					// If we encounter that, don't worry about it. An account
+					// which doesn't exist necessarily has 0 balance and is
+					// therefore ineligible to receive EAI anyway. Likewise,
+					// it can't have an incoming rewards list of len > 0.
+					// We can therefore return early here as a minor optimization.
+					continue
+				}
+				// logger.WithFields(log.Fields{
+				// 	"addr":          addrS,
+				// 	"LastWAAUpdate": acctData.LastWAAUpdate,
+				// 	"WAA":           acctData.WeightedAverageAge,
+				// }).Info("WAA update addr")
 
-				for _, valueData := range ahr.Txs {
-					balance := valueData.Balance
-					blockTime, err := client.BlockTime(valueData.BlockHeight)
-					// err = rows.Scan(&blockTime, &name, &hash, &data, &balance)
+				if acctData.LastWAAUpdate < featureTs {
+					ahr, err := client.SearchAccountHistory(addrS, 0, 0)
 					if err != nil {
-						return stateI, fmt.Errorf(
-							"failed to get BlockTime for %s: %w",
-							addrS,
-							err,
-						)
+						return stateI, fmt.Errorf("failed to query tx history: %w", err)
 					}
 
-					// account creation gets a bit of special handling
-					if lastWAAUpdate == 0 {
+					// logger.WithFields(log.Fields{
+					// 	"addr": addrS,
+					// 	"ahr":  ahr,
+					// }).Info("WAA update ahr")
+
+					// this lastWAAUpdate, unlike the one in the account, should
+					// be correct at all times
+					var waa math.Duration
+					var lastWAAUpdate math.Timestamp
+					var lastBalance math.Ndau
+					// the following keeps track if we've seen a TX that sets a balance, this helps us to determine if
+					// this acct is a Transfer destination
+					balanceSeen := false
+
+					for _, valueData := range ahr.Txs {
+						balance := valueData.Balance
+						blockTime, err := client.BlockTime(valueData.BlockHeight)
+						// err = rows.Scan(&blockTime, &name, &hash, &data, &balance)
+						if err != nil {
+							return stateI, fmt.Errorf(
+								"failed to get BlockTime for %s: %w",
+								addrS,
+								err,
+							)
+						}
+
+						// account creation gets a bit of special handling
+						if lastWAAUpdate == 0 {
+							lastWAAUpdate = blockTime
+						}
+
+						// all transactions have the Details waa update applied first
+						// this makes uncredited EAI work better; I don't remember
+						// exactly why and the comment isn't explicit, but we do it
+						// sincePrev := math.DurationFrom(blockTime.Sub(lastWAAUpdate))
+						sincePrev := blockTime.Since(lastWAAUpdate)
+						waa.UpdateWeightedAverageAge(
+							sincePrev,
+							0,
+							math.Ndau(balance),
+						)
+
+						// the WAA is also handled specially in Transfer TXs
+						txData, err := client.GetTxTypeAtHeight(valueData.BlockHeight, "Transfer", 0)
+						if err != nil {
+							return stateI, fmt.Errorf(
+								"failed to get txData for Transfer at block height %d for %s: %w",
+								valueData.BlockHeight,
+								addrS,
+								err,
+							)
+						}
+
+						// if we found a Transfer TX, deal with it appropriately
+						if len(txData.Txs) > 0 {
+							// if we've seen the balance set, and we are the destination, set the WAA
+							if balanceSeen && balance > lastBalance {
+								waa.UpdateWeightedAverageAge(
+									sincePrev,
+									balance-lastBalance,
+									lastBalance,
+								)
+							}
+						}
+
+						// update loop variables
+						lastBalance = balance
+						balanceSeen = true
 						lastWAAUpdate = blockTime
 					}
 
-					// all transactions have the Details waa update applied first
-					// this makes uncredited EAI work better; I don't remember
-					// exactly why and the comment isn't explicit, but we do it
-					// sincePrev := math.DurationFrom(blockTime.Sub(lastWAAUpdate))
-					sincePrev := blockTime.Since(lastWAAUpdate)
-					waa.UpdateWeightedAverageAge(
-						sincePrev,
-						0,
-						math.Ndau(balance),
-					)
+					logger.WithFields(log.Fields{
+						"addr":          addrS,
+						"WAA":           waa,
+						"LastWAAUpdate": app.BlockTime(),
+					}).Info("WAA update addr")
 
-					// the WAA is also handled specially in Transfer and
-					// CreditEAI txs. To replicate that properly, we need to
-					// unpack the transactions.
-
-					// txab, err := TxFromName(name)
-					// if err != nil {
-					// 	return stateI, err
-					// }
-
-					// err = json.Unmarshal(data, txab)
-					// if err != nil {
-					// 	return stateI, fmt.Errorf(
-					// 		"failed to unmarshal transaction %s (acct %s) as %s: %w",
-					// 		hash,
-					// 		addrS,
-					// 		name,
-					// 		err,
-					// 	)
-					// }
-
-					txData, err := client.GetTxTypeAtHeight(valueData.BlockHeight, "Transfer", 0)
-
-					// if we found a Transfer TX, deal with it appropriately
-					if len(txData.Txs) > 0 {
-						// if we've seen the balance set, and we are the destination, set the WAA
-						if balanceSeen && balance > lastBalance {
-							waa.UpdateWeightedAverageAge(
-								sincePrev,
-								balance-lastBalance,
-								lastBalance,
-							)
-						}
-					}
-
-					// switch tx := txab.(type) {
-					// case *Transfer:
-					// 	// transfers only update WAA for the destination
-					// 	if tx.Destination.String() == addrS {
-					// 		waa.UpdateWeightedAverageAge(
-					// 			sincePrev,
-					// 			tx.Qty,
-					// 			lastBalance,
-					// 		)
-					// 	}
-					// case *CreditEAI:
-					// 	// every account gets a bit of income, and therefore WAA,
-					// 	// on every CreditEAI
-					// 	eai := math.Ndau(balance) - lastBalance
-					// 	waa.UpdateWeightedAverageAge(
-					// 		sincePrev,
-					// 		eai,
-					// 		lastBalance,
-					// 	)
-					// }
-
-					// update loop variables
-					lastBalance = balance
-					balanceSeen = true
-					lastWAAUpdate = blockTime
+					// we've recalculated the full history for this account; now
+					// just plug the values back in
+					acctData.WeightedAverageAge = waa
+					acctData.LastWAAUpdate = app.BlockTime()
+					state.Accounts[addrS] = acctData
 				}
-
-				// we've recalculated the full history for this account; now
-				// just plug the values back in
-				acctData.WeightedAverageAge = waa
-				acctData.LastWAAUpdate = app.BlockTime()
-				state.Accounts[addrS] = acctData
 			}
+			logger.Info("WAA update end")
 		}
+		return state, nil
 	}
-	return state, nil
 }
