@@ -190,15 +190,15 @@ func initAppWithIndex(t *testing.T, indexAddr string, indexVersion int) (
 //
 // We've solved this by making what should be a private method, public.
 // All we have to do now is call it.
-func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
-	app, _ = initApp(t)
-	// adjust only if required
-	if atHeight != 0 {
-		app.SetHeight(atHeight)
-	}
-	app.InitChain(abci.RequestInitChain{})
-	return
-}
+// func initAppAtHeight(t *testing.T, atHeight uint64) (app *App) {
+// 	app, _ = initApp(t)
+// 	// adjust only if required
+// 	if atHeight != 0 {
+// 		app.SetHeight(atHeight)
+// 	}
+// 	app.InitChain(abci.RequestInitChain{})
+// 	return
+// }
 
 func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
 	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
@@ -214,19 +214,19 @@ func modify(t *testing.T, addr string, app *App, f func(*backing.AccountData)) {
 	require.NoError(t, err)
 }
 
-func modifyNode(t *testing.T, addr string, app *App, f func(*backing.Node)) {
-	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
-		state := stI.(*backing.State)
-		node := state.Nodes[addr]
+// func modifyNode(t *testing.T, addr string, app *App, f func(*backing.Node)) {
+// 	err := app.UpdateState(func(stI metast.State) (metast.State, error) {
+// 		state := stI.(*backing.State)
+// 		node := state.Nodes[addr]
 
-		f(&node)
+// 		f(&node)
 
-		state.Nodes[addr] = node
-		return state, nil
-	})
+// 		state.Nodes[addr] = node
+// 		return state, nil
+// 	})
 
-	require.NoError(t, err)
-}
+// 	require.NoError(t, err)
+// }
 
 func deliverTx(t *testing.T, app *App, tx metatx.Transactable) abci.ResponseDeliverTx {
 	resp, _ := deliverTxContext(t, app, tx, ddc(t))

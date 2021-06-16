@@ -72,6 +72,7 @@ func initAppNNR(t *testing.T) (*App, generator.Associated) {
 	err := app.System(sv.NominateNodeRewardAddressName, &nnrAddr)
 	require.NoError(t, err)
 	assc[nnrKeys], err = MockSystemAccount(app, nnrAddr)
+	require.NoError(t, err)
 
 	return app, assc
 }
@@ -104,6 +105,7 @@ func TestNNRIsValidWithValidSignature(t *testing.T) {
 func TestNNRIsInvalidWithInvalidSignature(t *testing.T) {
 	app, _ := initAppNNR(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 
 	nnr := NewNominateNodeReward(
 		0,

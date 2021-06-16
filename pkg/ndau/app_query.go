@@ -76,7 +76,7 @@ func accountHistoryQuery(
 
 	search := app.GetSearch()
 	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		app.QueryError(errors.New("must call SetSearch()"), response, "search not available")
 		return
 	}
 	client := search.(*srch.Client)
@@ -85,7 +85,7 @@ func accountHistoryQuery(
 	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
-			errors.New("Cannot decode search params json"), response, "invalid search query")
+			errors.New("cannot decode search params json"), response, "invalid search query")
 		return
 	}
 
@@ -157,7 +157,7 @@ func dateRangeQuery(appI interface{}, request abci.RequestQuery, response *abci.
 
 	search := app.GetSearch()
 	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		app.QueryError(errors.New("must call SetSearch()"), response, "search not available")
 		return
 	}
 	client := search.(*srch.Client)
@@ -217,8 +217,6 @@ func prevalidateQuery(appI interface{}, request abci.RequestQuery, response *abc
 		app.QueryError(err, response, "validating transactable")
 		return
 	}
-
-	return
 }
 
 func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.ResponseQuery) {
@@ -226,7 +224,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 
 	search := app.GetSearch()
 	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		app.QueryError(errors.New("must call SetSearch()"), response, "search not available")
 		return
 	}
 	client := search.(*srch.Client)
@@ -235,7 +233,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
-			errors.New("Cannot decode search params json"), response, "invalid search query")
+			errors.New("cannot decode search params json"), response, "invalid search query")
 		return
 	}
 
@@ -265,7 +263,7 @@ func searchQuery(appI interface{}, request abci.RequestQuery, response *abci.Res
 		value := valueData.Marshal()
 		response.Value = []byte(value)
 	default:
-		app.QueryError(errors.New("Invalid query"), response, "invalid search params")
+		app.QueryError(errors.New("invalid query"), response, "invalid search params")
 	}
 }
 
@@ -375,7 +373,7 @@ func sysvarHistoryQuery(
 
 	search := app.GetSearch()
 	if search == nil {
-		app.QueryError(errors.New("Must call SetSearch()"), response, "search not available")
+		app.QueryError(errors.New("must call SetSearch()"), response, "search not available")
 		return
 	}
 	client := search.(*srch.Client)
@@ -384,7 +382,7 @@ func sysvarHistoryQuery(
 	err := json.Unmarshal(request.GetData(), &params)
 	if err != nil {
 		app.QueryError(
-			errors.New("Cannot decode search params json"), response, "invalid search query")
+			errors.New("cannot decode search params json"), response, "invalid search query")
 		return
 	}
 

@@ -45,6 +45,7 @@ func initAppRecordEndowmentNAVWithIndex(t *testing.T, indexAddr string, indexVer
 	err := app.System(sv.RecordEndowmentNAVAddressName, &recordEndowmentNAVAddr)
 	require.NoError(t, err)
 	assc[recordEndowmentNAVKeys], err = MockSystemAccount(app, recordEndowmentNAVAddr)
+	require.NoError(t, err)
 
 	// special acct contains exactly 1 ndau
 	modify(t, recordEndowmentNAVAddr.String(), app, func(ad *backing.AccountData) {

@@ -243,7 +243,7 @@ func (app *App) UnstakeAndBurn(
 					if err != nil {
 						return nil, errors.Wrap(err, fmt.Sprintf("invalid costaker %s for primary %s", costakerS, target))
 					}
-					stI, err = app.UnstakeAndBurn(qty, burn, costaker, stakeTo, rules, retainFor, true)(st)
+					_, err = app.UnstakeAndBurn(qty, burn, costaker, stakeTo, rules, retainFor, true)(st)
 					if err != nil {
 						return nil, errors.Wrap(err, fmt.Sprintf("unstaking costaker %s for primary %s", costakerS, target))
 					}

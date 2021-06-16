@@ -737,7 +737,7 @@ func BuildVMForRulesValidation(
 		primary = t.Node
 		rules = rulesAcct[0]
 	default:
-		return nil, fmt.Errorf("Rules Validation VM should not be constructed for %T", tx)
+		return nil, fmt.Errorf("rules Validation VM should not be constructed for %T", tx)
 	}
 
 	var aggregateQ, primaryTotalQ, targetTotalQ math.Ndau

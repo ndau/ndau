@@ -29,7 +29,7 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// business rule: there must be at least 1 and no more than a const
 	// validation keys set in this tx
 	if len(tx.NewKeys) < 1 || len(tx.NewKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d validation keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
+		return fmt.Errorf("expect between 1 and %d validation keys; got %d", backing.MaxKeysInAccount, len(tx.NewKeys))
 	}
 
 	if len(tx.ValidationScript) > 0 && !IsChaincode(tx.ValidationScript) {
@@ -48,7 +48,7 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 	// to ensure it's not equal to the actual ownership key
 	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
-		return fmt.Errorf("Target has invalid address kind: %x", kind)
+		return fmt.Errorf("target has invalid address kind: %x", kind)
 	}
 
 	// per-key validation
@@ -59,7 +59,7 @@ func (tx *ChangeValidation) Validate(appI interface{}) (err error) {
 			return errors.Wrap(err, "Failed to generate address from new validation key")
 		}
 		if tx.Target.String() == ntAddr.String() {
-			return fmt.Errorf("New validation key must not equal ownership key")
+			return fmt.Errorf("new validation key must not equal ownership key")
 		}
 	}
 

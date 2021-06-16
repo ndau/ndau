@@ -74,7 +74,7 @@ func TestValidSetSysvar(t *testing.T) {
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
 	err = app.System("foo", &fooStr)
-	require.EqualError(t, err, "Sysvar foo does not exist")
+	require.EqualError(t, err, "sysvar foo does not exist")
 }
 
 func TestSetSysvarIsValidWithSingleKey(t *testing.T) {

@@ -16,7 +16,6 @@ import (
 
 	"github.com/ndau/metanode/pkg/meta/app/code"
 	metatx "github.com/ndau/metanode/pkg/meta/transaction"
-	tx "github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau/backing"
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/ndau/ndaumath/pkg/signature"
@@ -81,7 +80,7 @@ func TestChangeSchemaIsValidWithValidSignature(t *testing.T) {
 				private,
 			)
 
-			changeSchemaBytes, err := tx.Marshal(changeSchema, TxIDs)
+			changeSchemaBytes, err := metatx.Marshal(changeSchema, TxIDs)
 			require.NoError(t, err)
 
 			resp := app.CheckTx(abci.RequestCheckTx{Tx: changeSchemaBytes})
@@ -104,7 +103,7 @@ func TestChangeSchemaIsInvalidWithInvalidSignature(t *testing.T) {
 		private,
 	)
 
-	changeSchemaBytes, err := tx.Marshal(changeSchema, TxIDs)
+	changeSchemaBytes, err := metatx.Marshal(changeSchema, TxIDs)
 	require.NoError(t, err)
 
 	resp := app.CheckTx(abci.RequestCheckTx{Tx: changeSchemaBytes})
