@@ -562,7 +562,7 @@ func (app *App) recalculateWAAs(tx *CreditEAI) func(metast.State) (metast.State,
 					// we've recalculated the full history for this account; now
 					// just plug the values back in
 					acctData.WeightedAverageAge = waa
-					acctData.LastWAAUpdate = app.BlockTime()
+					acctData.LastWAAUpdate = lastWAAUpdate
 					state.Accounts[addrS] = acctData
 				}
 			}
