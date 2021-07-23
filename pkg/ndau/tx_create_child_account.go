@@ -38,7 +38,7 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 	// Verify that the child ownership key submitted generates the child address being created.
 	childKind := tx.Child.Kind()
 	if !address.IsValidKind(childKind) {
-		return fmt.Errorf("Child account %s has invalid address kind: %x",
+		return fmt.Errorf("child account %s has invalid address kind: %x",
 			tx.Child.String(), childKind)
 	}
 	childOwnershipAddress, err := address.Generate(childKind, tx.ChildOwnership.KeyBytes())
@@ -57,7 +57,7 @@ func (tx *CreateChildAccount) Validate(appI interface{}) error {
 	// Similar to SetValidation tx: there must be at least 1 and no more than a const validation keys
 	// keys set in this tx.
 	if len(tx.ChildValidationKeys) < 1 || len(tx.ChildValidationKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d validation keys; got %d",
+		return fmt.Errorf("expect between 1 and %d validation keys; got %d",
 			backing.MaxKeysInAccount, len(tx.ChildValidationKeys))
 	}
 

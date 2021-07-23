@@ -116,6 +116,38 @@ func (search *Client) SearchTxHash(txHash string) (TxValueData, error) {
 	return valueData, err
 }
 
+func (search *Client) GetTxTypeAtHeight(height uint64, txType string, limit int) (TxListValueData, error) {
+	listValueData := TxListValueData{}
+
+	searchKey := fmtTxTypeToHeight(txType)
+
+	max := float64(height) + .9999
+	min := float64(height)
+	count := int64(limit)
+
+	hashes, err := search.Client.ZRevRangeByScoreMinMax(searchKey, min, max, count)
+	if err != nil {
+		return listValueData, err
+	}
+
+	limit = len(hashes)
+
+	// Pull out transaction data using the tx hash index, for each tx hash in the list.
+	for i := 0; i < limit; i++ {
+		valueData, err := search.SearchTxHash(hashes[i])
+		if err != nil {
+			return listValueData, err
+		}
+
+		// Sanity check.  Every search in this loop is exepected to return a valid tx result.
+		if valueData.BlockHeight > 0 {
+			listValueData.Txs = append(listValueData.Txs, valueData)
+		}
+	}
+
+	return listValueData, nil
+}
+
 // SearchTxTypes returns tx data for a range of transactions on or before the given tx hash.
 // If txHashOrHeight is "", this will return the latest page of transactions from the blockchain.
 // txHashOrHeight can be a block height.  Transactions in and before that block are returned.

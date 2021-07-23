@@ -136,7 +136,7 @@ func TestTnLsSetLockOnDest(t *testing.T) {
 	app, private := initAppTx(t)
 
 	destAddress := generateRandomAddr(t)
-	const deltaNapu = int64(123 * constants.QuantaPerUnit)
+	// const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	tr := generateTransferAndLock(t, destAddress, 123, 90*math.Day, 1, []signature.PrivateKey{private})
 	resp := deliverTx(t, app, tr)
@@ -151,7 +151,7 @@ func TestTnLsRecoursePeriod(t *testing.T) {
 	app, private := initAppTx(t)
 
 	destAddress := generateRandomAddr(t)
-	const deltaNapu = int64(123 * constants.QuantaPerUnit)
+	// const deltaNapu = int64(123 * constants.QuantaPerUnit)
 
 	modifySource(t, app, func(src *backing.AccountData) {
 		src.RecourseSettings.Period = 2 * math.Day

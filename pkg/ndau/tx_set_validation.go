@@ -31,7 +31,7 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 	}
 	kind := tx.Target.Kind()
 	if !address.IsValidKind(kind) {
-		return fmt.Errorf("Account has invalid address kind: %x", kind)
+		return fmt.Errorf("account has invalid address kind: %x", kind)
 	}
 	ownershipAddress, err := address.Generate(kind, tx.Ownership.KeyBytes())
 	if err != nil {
@@ -49,7 +49,7 @@ func (tx *SetValidation) Validate(appI interface{}) error {
 	// business rule: there must be at least 1 and no more than a const
 	// validation keys set in this tx
 	if len(tx.ValidationKeys) < 1 || len(tx.ValidationKeys) > backing.MaxKeysInAccount {
-		return fmt.Errorf("Expect between 1 and %d validation keys; got %d", backing.MaxKeysInAccount, len(tx.ValidationKeys))
+		return fmt.Errorf("expect between 1 and %d validation keys; got %d", backing.MaxKeysInAccount, len(tx.ValidationKeys))
 	}
 
 	// no validation key may be equal to the ownership key

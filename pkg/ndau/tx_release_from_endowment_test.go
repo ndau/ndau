@@ -95,6 +95,7 @@ func TestRFEIsValidWithValidSignature(t *testing.T) {
 func TestRFEIsInvalidWithInvalidSignature(t *testing.T) {
 	app, _ := initAppRFE(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 
 	rfe := NewReleaseFromEndowment(
 		targetAddress,

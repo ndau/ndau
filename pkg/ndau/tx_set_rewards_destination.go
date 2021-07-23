@@ -37,7 +37,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 
 	// source account must not be receiving rewards from any other account
 	if len(accountData.IncomingRewardsFrom) > 0 {
-		return fmt.Errorf("Accounts may not both send and receive rewards. Source receives rewards from these accounts: %s", accountData.IncomingRewardsFrom)
+		return fmt.Errorf("accounts may not both send and receive rewards. Source receives rewards from these accounts: %s", accountData.IncomingRewardsFrom)
 	}
 
 	// if dest is the same as source, we're resetting the EAI to accumulate
@@ -47,7 +47,7 @@ func (tx *SetRewardsDestination) Validate(appI interface{}) error {
 		// dest account must not be sending rewards to any other account
 		targetData, _ := app.getAccount(tx.Destination)
 		if targetData.RewardsTarget != nil {
-			return fmt.Errorf("Accounts may not both send and receive rewards. Destination sends rewards to %s", *targetData.RewardsTarget)
+			return fmt.Errorf("accounts may not both send and receive rewards. Destination sends rewards to %s", *targetData.RewardsTarget)
 		}
 
 		// dest account must not be notified

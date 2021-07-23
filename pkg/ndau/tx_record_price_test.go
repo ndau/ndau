@@ -43,6 +43,7 @@ func initAppRecordPriceWithIndex(t *testing.T, indexAddr string, indexVersion in
 	err := app.System(sv.RecordPriceAddressName, &recordPriceAddr)
 	require.NoError(t, err)
 	assc[recordPriceKeys], err = MockSystemAccount(app, recordPriceAddr)
+	require.NoError(t, err)
 
 	// ensure special acct contains exactly 1 napu so balance test works
 	modify(t, recordPriceAddr.String(), app, func(ad *backing.AccountData) {

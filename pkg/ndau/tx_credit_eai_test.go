@@ -16,9 +16,9 @@ import (
 
 	"github.com/ndau/metanode/pkg/meta/app/code"
 	metast "github.com/ndau/metanode/pkg/meta/state"
-	metatx "github.com/ndau/metanode/pkg/meta/transaction"
 	tx "github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau/backing"
+	srch "github.com/ndau/ndau/pkg/ndau/search"
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/ndau/ndaumath/pkg/constants"
 	"github.com/ndau/ndaumath/pkg/eai"
@@ -48,6 +48,13 @@ func initAppCreditEAI(t *testing.T) (*App, signature.PrivateKey) {
 	modify(t, eaiNode, app, func(data *backing.AccountData) {
 		data.ValidationKeys = []signature.PublicKey{public}
 	})
+	return app, private
+}
+
+func initAppCreditEAIWithIndex(t *testing.T, indexAddr string, indexVersion int) (
+	*App, signature.PrivateKey,
+) {
+	app, private := initAppDelegate(t)
 	return app, private
 }
 
@@ -367,7 +374,7 @@ func TestCreditEAIIsDeterministic(t *testing.T) {
 	// set up app preconditions
 	app, _ := initApp(t)
 
-	var txs []metatx.Transactable
+	var txs []tx.Transactable
 
 	delegate := func(from account) {
 		txs = append(txs,
@@ -523,7 +530,7 @@ func TestCreditEAIIsDeterministic2(t *testing.T) {
 	// set up app preconditions
 	app, _ := initApp(t)
 
-	var txs []metatx.Transactable
+	var txs []tx.Transactable
 
 	delegate := func(from account) {
 		txs = append(txs,
@@ -758,4 +765,160 @@ func TestCreditEAIClearsCompletedLock(t *testing.T) {
 	// ensure the account is still locked
 	ad, _ := app.getAccount(sourceAddress)
 	require.Nil(t, ad.Lock)
+}
+
+func TestRecalculateWAA(t *testing.T) {
+	withRedis(t, func(port string) {
+		// Create the app and tx factory.
+		app, private := initAppCreditEAIWithIndex(t, "localhost:"+port, 0)
+
+		if app.config.Features == nil {
+			app.config.Features = make(map[string]uint64)
+		}
+		// WAA recalculation is only necessary because of a feature-gated
+		// fix we'd previously put in, so let's enable that feature
+		app.config.Features["ApplyUncreditedEAI"] = 0
+
+		search := app.GetSearch().(*srch.Client)
+
+		// Ensure Redis is empty.
+		err := search.FlushDB()
+		require.NoError(t, err)
+
+		// Test initial indexing.
+		var insertCount int
+		_, insertCount, err = search.IndexBlockchain(app.GetDB(), app.GetDS())
+		require.NoError(t, err)
+
+		state := app.GetState().(*backing.State)
+		numSysvars := len(state.Sysvars)
+
+		// The sysvars should all be inserted
+		require.GreaterOrEqual(t, insertCount, numSysvars)
+
+		// we need the auto-incrementing height from a persistent delivery
+		// context
+		dc := ddc(t).atHeight(1000)
+
+		// set up an account with a bunch of outbound transfers, triggering
+		// the WAA bug
+		makeacct := func(initialize bool) (address.Address, signature.PrivateKey) {
+			public, private, err := signature.Generate(signature.Ed25519, nil)
+			require.NoError(t, err)
+			addr, err := address.Generate(address.KindUser, public.KeyBytes())
+			require.NoError(t, err)
+
+			if initialize {
+				// just modifying the account with both balance and validation
+				// keys is insufficient, because the account's creation has
+				// to appear within the postgres instance. It therefore needs
+				// a real tx.
+
+				// first, set up the source account
+				modify(t, source, app, func(ad *backing.AccountData) {
+					ad.ValidationKeys = []signature.PublicKey{public}
+					ad.Balance = 1500 * constants.NapuPerNdau
+					ad.Sequence = 1
+				})
+				ensureRecent(t, app, source)
+
+				// now create 'our' account by transfering into it from the source
+				// note that we set the age to a year ago and decr the height
+				resp, _ := deliverTxContext(
+					t, app,
+					NewTransfer(
+						sourceAddress, addr,
+						1000*constants.NapuPerNdau,
+						2,
+						private,
+					),
+					dc.at(dc.ts-math.Year).atHeight(dc.blockHeight-800),
+				)
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+				// incr dc, because it (intentionally) doesn't auto-propagate in this case
+				dc.incr()
+
+				// the account exists, so let's shove in the public key
+				modify(t, addr.String(), app, func(ad *backing.AccountData) {
+					ad.ValidationKeys = []signature.PublicKey{public}
+				})
+			}
+
+			return addr, private
+		}
+
+		// setup
+		performSetup := func() address.Address {
+			// part of setup is ensuring that the WAA update feature is disabled
+			// by default. Specific tests can opt into a lower height gate
+			// for this feature.
+			app.config.Features["UpdateWAAUpdateDateInDetails"] = 1000000
+
+			addr, private := makeacct(true)
+
+			// the bug happens when a bunch of small transfers happen in quick
+			// succession
+			for i := uint64(0); i < 100; i++ {
+				dest, _ := makeacct(false)
+				resp, _ := deliverTxContext(t, app,
+					NewTransfer(addr, dest, 1*constants.NapuPerNdau, i+10, private),
+					dc,
+				)
+				require.Equal(t, code.OK, code.ReturnCode(resp.Code))
+			}
+
+			return addr
+		}
+
+		// test that setup triggered the bug
+		t.Run("setup", func(t *testing.T) {
+			addr := performSetup()
+			acctData, _ := app.getAccount(addr)
+			require.Greater(t, int64(acctData.WeightedAverageAge), int64(math.Year))
+		})
+
+		// tests
+		t.Run("recalc without feature gate is noop", func(t *testing.T) {
+			addr := performSetup()
+			acctData, _ := app.getAccount(addr)
+			oldWAA := acctData.WeightedAverageAge
+
+			tx := NewCreditEAI(nodeAddress, 1, private)
+			err = app.UpdateState(app.recalculateWAAs(tx))
+			require.NoError(t, err)
+			acctData, _ = app.getAccount(addr)
+			require.Equal(t, oldWAA, acctData.WeightedAverageAge)
+		})
+
+		t.Run("recalc with feature gate", func(t *testing.T) {
+			addr := performSetup()
+			acctData, _ := app.getAccount(addr)
+			oldWAA := acctData.WeightedAverageAge
+
+			// Let's assume that the CreditEAI which calls recalculateWAAs
+			// happens on the block subsequent to the final setup.
+			// Let's further assume that that block's time is at least 1
+			// microsecond after the previous block's. Both of these feel like
+			// fairly safe assumptions.
+			//
+			// In that case, the index should contain the block height and time
+			// for the block after the previous transaction, and the feature
+			// gate needs to be configured appropriately. We can make that
+			// happen.
+			app.config.Features["UpdateWAAUpdateDateInDetails"] = dc.blockHeight - 1
+			dc.beginBlock(app)
+
+			tx := NewCreditEAI(nodeAddress, 1, private)
+			err = app.UpdateState(app.recalculateWAAs(tx))
+			require.NoError(t, err)
+			acctData, _ = app.getAccount(addr)
+			t.Log("old WAA:", oldWAA.String())
+			t.Log("current WAA:", acctData.WeightedAverageAge.String())
+			require.Greater(t, oldWAA, acctData.WeightedAverageAge)
+			// we know what the WAA should be, in this case: setup ensures
+			// the account is one year old and has only outbound transfers.
+			// Given that setup, the WAA must be exactly one year.
+			require.Equal(t, math.Duration(math.Year+(100*math.Microsecond)), acctData.WeightedAverageAge)
+		})
+	})
 }

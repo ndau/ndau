@@ -22,6 +22,7 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/ndau/ndau/pkg/ndauapi/reqres"
 	"github.com/ndau/ndau/pkg/tool"
+	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
 )
 
@@ -84,6 +85,19 @@ func HandleSystemSet(cf cfg.Cfg) http.HandlerFunc {
 		err := json2msgp.ConvertStream(r.Body, mdatabuf, nil)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("converting input data", err, http.StatusBadRequest))
+			return
+		}
+
+		// check if JSON is valid format for sysvar
+		valid, err := sv.IsValid(sysvar, mdatabuf.Bytes())
+		if valid != nil && !*valid {
+			var res reqres.APIError
+			if err != nil {
+				res = reqres.NewFromErr(fmt.Sprintf("Invalid JSON for sysvar: %s", sysvar), err, http.StatusBadRequest)
+			} else {
+				res = reqres.NewAPIError(fmt.Sprintf("Invalid JSON for sysvar: %s", sysvar), http.StatusBadRequest)
+			}
+			reqres.RespondJSON(w, res)
 			return
 		}
 

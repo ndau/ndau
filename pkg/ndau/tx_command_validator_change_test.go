@@ -24,7 +24,6 @@ import (
 	generator "github.com/ndau/system_vars/pkg/genesis.generator"
 	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/abci/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -39,6 +38,7 @@ func initAppCVC(t *testing.T) (*App, generator.Associated) {
 	err := app.System(sv.CommandValidatorChangeAddressName, &cvcAddr)
 	require.NoError(t, err)
 	assc[cvcKeys], err = MockSystemAccount(app, cvcAddr)
+	require.NoError(t, err)
 
 	// we require that a node be previously registered
 	modify(t, nodeAddress.String(), app, func(acct *backing.AccountData) {
@@ -86,6 +86,7 @@ func TestCVCIsValidWithValidSignature(t *testing.T) {
 func TestCVCIsInvalidWithInvalidSignature(t *testing.T) {
 	app, _ := initAppCVC(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 
 	cvc := NewCommandValidatorChange(
 		nodeAddress,
@@ -177,7 +178,7 @@ func updateValidators(t *testing.T, app *App, updates ...CommandValidatorChange)
 
 	state := app.GetState().(*backing.State)
 	actual := ebResp.GetValidatorUpdates()
-	expect := make([]types.ValidatorUpdate, len(updates))
+	expect := make([]abci.ValidatorUpdate, len(updates))
 	for i := 0; i < len(updates); i++ {
 		vup, err := updates[i].ToValidator(state)
 		require.NoError(t, err)

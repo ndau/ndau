@@ -37,7 +37,7 @@ func initAppStake(t *testing.T) (*App, signature.PrivateKey, address.Address) {
 
 	nodeData, _ := app.getAccount(nodeAddress)
 	modify(t, nodeAddress.String(), app, func(ad *backing.AccountData) {
-		ad = &nodeData
+		_ = &nodeData
 	})
 
 	modify(t, source, app, func(ad *backing.AccountData) {

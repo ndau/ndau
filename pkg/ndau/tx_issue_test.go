@@ -56,6 +56,7 @@ func TestIssueIsValidWithValidSignature(t *testing.T) {
 func TestIssueIsInvalidWithInvalidSignature(t *testing.T) {
 	app, _ := initAppRFE(t)
 	_, private, err := signature.Generate(signature.Ed25519, nil)
+	require.NoError(t, err)
 
 	issue := NewIssue(
 		math.Ndau(1),
