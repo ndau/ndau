@@ -36,7 +36,7 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 			marketPrice = state.MarketPrice
 		}
 		sib, target, err := app.calculateCurrentSIB(state, marketPrice, -1)
-		fmt.Println("new sib:", sib, "new target price:", target, "old target price:", state.TargetPrice)
+		fmt.Println("new sib:", sib, "new Target Price:", target, "old Target Price:", state.TargetPrice)
 		if err != nil {
 			return stateI, err
 		}
