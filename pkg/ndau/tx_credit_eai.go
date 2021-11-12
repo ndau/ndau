@@ -439,6 +439,12 @@ func (app *App) recalc(stateI metast.State, feature string, tx *CreditEAI) (meta
 		// rest of the CreditEAI calculation
 
 		delegatedAccounts := state.Delegates[tx.Node.String()]
+
+		// If there are no accounts delegated to the node, there's nothing to do
+		if len(delegatedAccounts) == 0 {
+			return state, nil
+		}
+
 		delegatedAccounts[tx.Node.String()] = struct{}{}
 
 		for addrS := range delegatedAccounts {
