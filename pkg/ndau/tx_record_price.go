@@ -36,7 +36,6 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 			marketPrice = state.MarketPrice
 		}
 		sib, target, err := app.calculateCurrentSIB(state, marketPrice, -1)
-		fmt.Println("new sib:", sib, "new Target Price:", target, "old Target Price:", state.TargetPrice)
 		if err != nil {
 			return stateI, err
 		}
@@ -44,7 +43,6 @@ func (app *App) updatePricesAndSIB(marketPrice pricecurve.Nanocent) func(stateI 
 		state.MarketPrice = marketPrice
 		state.TargetPrice = target
 
-		fmt.Println("new state.SIB:", state.SIB, "new state.MarketPrice:", state.MarketPrice, "new TargetPrice:", state.TargetPrice)
 		return state, err
 	}
 }
@@ -114,7 +112,6 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 		return
 	}
 
-	fmt.Println("calling VM to calculate SIB:", sibScript, uint64(targetPrice), uint64(marketPrice), uint64(fp), app.BlockTime())
 	// compute SIB
 	vm, err := BuildVMForSIB(sibScript, uint64(targetPrice), uint64(marketPrice), uint64(fp), app.BlockTime())
 	if err != nil {
@@ -135,7 +132,6 @@ func (app *App) calculateCurrentSIB(state *backing.State, marketPrice, nav price
 	}
 
 	sib = eai.Rate(top)
-	fmt.Println("Vm returned SIB value:", sib)
 	return
 }
 
@@ -154,7 +150,6 @@ func (tx *RecordPrice) Validate(appI interface{}) error {
 
 // Apply implements metatx.Transactable
 func (tx *RecordPrice) Apply(appI interface{}) error {
-	fmt.Println("setting market price", tx.MarketPrice)
 	app := appI.(*App)
 	return app.UpdateState(app.applyTxDetails(tx), app.updatePricesAndSIB(tx.MarketPrice))
 }
