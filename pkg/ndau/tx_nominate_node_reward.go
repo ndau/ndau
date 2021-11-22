@@ -76,9 +76,9 @@ func (tx *NominateNodeReward) Apply(appI interface{}) error {
 			wh = *app.config.NodeRewardWebhook
 		}
 		logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
-			"webhook": wh,
+			"webhook": wh, "random": tx.Random, "winner": nrw,
 		})
-		logger.Info("launching zzzzz callWinnerWebhook goroutine")
+		logger.Info("launching callWinnerWebhook goroutine")
 
 		go app.callWinnerWebhook(tx, nrw, logger)
 		state.NodeRewardWinner = &nrw
