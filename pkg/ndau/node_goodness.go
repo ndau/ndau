@@ -122,12 +122,19 @@ func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
 			logger.Info("nodegoodness error")
 		}
 	}
+	// Sort goodnesses alphabetically by node address, which are guaranteed
+	// to be unique and therefore produce a deterministic ordering. Then
+	// topNGoodnesses below can use sort.SliceStable to preserve that ordering
+	// in the case of equal goodness values.
+	sort.Slice(goodnesses, func(i, j int) bool {
+		return goodnesses[i].addr < goodnesses[j].addr
+	})
 	return goodnesses, goodnessSum
 }
 
 func topNGoodnesses(goodnesses []goodnessPair, n int) []goodnessPair {
-	// reverse sort by goodness
-	sort.Slice(goodnesses, func(i, j int) bool {
+	// Reverse sort by goodness, preserving original order in case of ties
+	sort.SliceStable(goodnesses, func(i, j int) bool {
 		return goodnesses[i].goodness > goodnesses[j].goodness
 	})
 	// pick the top n
