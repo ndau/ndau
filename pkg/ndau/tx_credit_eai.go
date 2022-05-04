@@ -67,6 +67,21 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 		eaiOvertime = nil
 	}
 
+	/*
+		2022-05-01 Change to use current lock bonus table, not the bonus value stored in the account. Set a flag
+		here to be used later, because we have to do this test for every account in the credit EAI loop. The rate
+		table could change at any time, so we always have to check.
+	*/
+
+	lockedBonusRateTable := eai.RateTable{}
+	useCurrentLockBonus := app.IsFeatureActive("UseCurrentLockBonus")
+	if useCurrentLockBonus {
+		err = app.System(sv.LockedRateTableName, &lockedBonusRateTable)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Exchange accounts get a flat rate for EAI.  To accomplish this, we make a 1-element rate
 	// table using the exchange account Rate (dependent on account) with a zero From field.
 	exchangeTable := make(eai.RateTable, 1, 1)
@@ -218,7 +233,25 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 					} else {
 						logger = logger.WithField("lock.unlocksOn", acctData.Lock.UnlocksOn.String())
 					}
+
+					/*
+						2022-05-01 Change - always use the current lock bonus, not the saved one, and
+						update the account state with the new rate if it's different.
+					*/
+
+					if useCurrentLockBonus {
+						currentLockBonus := lockedBonusRateTable.RateAt(acctData.Lock.NoticePeriod)
+						app.DecoratedTxLogger(tx).WithFields(log.Fields{
+							"acctLockBonus":    acctData.Lock.Bonus.String(),
+							"currentLockBonus": currentLockBonus.String(),
+						}).Info("lock bonus update")
+						if acctData.Lock.Bonus != currentLockBonus {
+							acctData.Lock.Bonus = currentLockBonus
+							state.Accounts[addrS].Lock.Bonus = acctData.Lock.Bonus
+						}
+					}
 				}
+
 				logger.Debug("credit EAI calculation fields")
 
 				eaiAward, err := eai.Calculate(
