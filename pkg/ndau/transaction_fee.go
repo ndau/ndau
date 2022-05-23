@@ -48,6 +48,9 @@ func (app *App) calculateTxFee(tx metatx.Transactable) (math.Ndau, error) {
 // exchange account. Now SIB will be imposed only if the source is not an authorized exchange account
 // and the destination is an authorized exchange account.
 
+// Addresses create with an "ndx" prefix are now always treated as exchange addresses for the purpose
+// of calculating SIB, regardless of whether they're actually marked as authorized exchange addresses.
+
 func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 	if w, ok := tx.(Withdrawer); ok {
 		sibRate := app.GetState().(*backing.State).SIB
@@ -60,6 +63,10 @@ func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 			if err != nil {
 				return 0, errors.Wrap(err, "determing whether tx source is exchange account")
 			}
+			// Check for exchange-format addresses that haven't been marked as children of authorized exchanges
+			if source.String()[:3] == "ndx" {
+				isSourceExchangeAccount = true
+			}
 			if !isSourceExchangeAccount {
 				// JSG only apply SIB if src is not exchange and dest is exchange
 				if app.IsFeatureActive("NewSIBRules") {
@@ -71,6 +78,11 @@ func (app *App) calculateSIB(tx NTransactable) (math.Ndau, error) {
 						isDestinationExchangeAccount, err := app.GetState().(*backing.State).AccountHasAttribute(dest, sv.AccountAttributeExchange)
 						if err != nil {
 							return 0, errors.Wrap(err, "determining whether tx destination is an exchange account")
+						}
+						// Check for exchange-format destinations that haven't been set up with CreateChildAccount yet,
+						// to prevent such addresses from avoiding SIB on incoming transfers.
+						if dest.String()[:3] == "ndx" {
+							isDestinationExchangeAccount = true
 						}
 						if isDestinationExchangeAccount {
 							sib, err := signed.MulDiv(
