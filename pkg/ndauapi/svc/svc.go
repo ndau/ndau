@@ -73,7 +73,6 @@ var dummyResultBlock = rpctypes.ResultBlock{
 	BlockMeta: &dummyBlockMeta,
 	Block:     &tmtypes.Block{},
 }
-var dummyVotes = 
 
 func dummyParsedTimestamp() types.Timestamp {
 	x, _ := types.ParseTimestamp(dummyTimestamp)
