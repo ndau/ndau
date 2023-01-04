@@ -15,7 +15,7 @@ import (
 	"io"
 	"os"
 
-	metatx "github.com/ndau/metanode/pkg/meta/transaction"
+	"github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau"
 	"github.com/pkg/errors"
 
