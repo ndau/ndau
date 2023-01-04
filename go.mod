@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/attic-labs/noms v0.0.0-20210827224422-e5fa29d95e8b
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-zoo/bone v1.3.0
 	github.com/kentquirk/boneful v1.1.1
@@ -14,6 +13,7 @@ require (
 	github.com/ndau/metanode v1.9.4
 	github.com/ndau/msgp-well-known-types v0.1.2
 	github.com/ndau/ndaumath v1.3.9
+	github.com/ndau/noms v1.0.1
 	github.com/ndau/noms-util v0.0.0-20200211161432-2af5ada2c877
 	github.com/ndau/system_vars v1.5.6
 	github.com/ndau/writers v1.1.2
