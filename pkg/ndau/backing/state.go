@@ -10,7 +10,7 @@ package backing
 // - -- --- ---- -----
 
 import (
-	nt "github.com/attic-labs/noms/go/types"
+	nt "github.com/ndau/noms/go/types"
 	meta "github.com/ndau/metanode/pkg/meta/state"
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/ndau/ndaumath/pkg/eai"
