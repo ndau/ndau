@@ -10,11 +10,11 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/ndau/chaincode v1.2.10
 	github.com/ndau/json2msgp v1.1.1
-	github.com/ndau/metanode v1.9.4
+	github.com/ndau/metanode v1.9.5
 	github.com/ndau/msgp-well-known-types v0.1.2
 	github.com/ndau/ndaumath v1.3.9
 	github.com/ndau/noms v1.0.1
-	github.com/ndau/noms-util v0.0.0-20200211161432-2af5ada2c877
+	github.com/ndau/noms-util v1.0.1
 	github.com/ndau/system_vars v1.5.6
 	github.com/ndau/writers v1.1.2
 	github.com/pkg/errors v0.9.1
