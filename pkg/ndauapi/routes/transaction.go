@@ -87,9 +87,12 @@ func searchTxHash(node cfg.TMClient, txhash string) (*types.Block, int, uint64, 
 		return nil, -1, 0, 0, err
 	}
 
-	if txoffset >= int(block.Block.Header.NumTxs) {
-		return nil, -1, 0, 0, fmt.Errorf("tx offset out of range: %d >= %d", txoffset, int(block.Block.Header.NumTxs))
-	}
+	// Note - Vle: TotalTxs and NumTxs were removed from the header from tendermint v0.33.0
+	// Temporary solution: ignore this filter
+	// if txoffset >= int(block.Block.Header.NumTxs) {
+	// 	return nil, -1, 0, 0, fmt.Errorf("tx offset out of range: %d >= %d", txoffset, int(block.Block.Header.NumTxs))
+	// }
+	// End note
 
 	return block.Block, txoffset, valueData.Fee, valueData.SIB, nil
 }
@@ -131,9 +134,11 @@ func buildTransactionData(timestamp string, txbytes []byte, blockheight int64, t
 // Search the index for the blocks containing the transaction (or those before it) with the given
 // hash and transaction types and page size limit.
 // txhash can be one of the following:
-//   empty string:   start from the last transaction in the latest block on the blockchain
-//   a tx hash:      start from that hash (which might be one of many in a given block)
-//   a block height: start from the last transaction in the block on or before that height
+//
+//	empty string:   start from the last transaction in the latest block on the blockchain
+//	a tx hash:      start from that hash (which might be one of many in a given block)
+//	a block height: start from the last transaction in the block on or before that height
+//
 // The reason we still need the tool API to take a txhash as opposed to always passing a height
 // (which is possible since we have an index that converts txhash to height and txoffset) is
 // because we need a height-txoffset pair to avoid having multiple transactions in a block
