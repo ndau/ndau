@@ -137,7 +137,10 @@ func noFilter(p *tmtypes.BlockMeta) bool {
 }
 
 func nonemptyFilter(p *tmtypes.BlockMeta) bool {
-	return p.Header.NumTxs > 0
+	// Note - Vle: TotalTxs and NumTxs were removed from the header from tendermint v0.33.0
+	// Temporary solution: ignore this filter
+	// return p.Header.NumTxs > 0
+	return true
 }
 
 func getCurrentBlockHeight(cf cfg.Cfg) (int64, error) {
