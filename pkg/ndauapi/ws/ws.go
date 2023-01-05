@@ -20,5 +20,8 @@ func Node(nodeAddress string) (*client.HTTP, error) {
 	if nodeAddress == "" {
 		return nil, errors.New("node address cannot be empty")
 	}
-	return client.NewHTTP(nodeAddress, "/websocket"), nil
+	// Note - Vle: Undocumented breaking changes from tendermint v0.32 -> v0.33
+	//             return type in v0.33 is value of type (*client.HTTP, error)
+	// return client.NewHTTP(nodeAddress, "/websocket"), nil
+	return client.NewHTTP(nodeAddress, "/websocket")
 }
