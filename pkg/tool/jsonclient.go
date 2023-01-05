@@ -21,6 +21,7 @@ import (
 
 	// Note - Vle: libs/common has been removed in favor of specific pkgs from tendermint v0.33.0
 	// cmn "github.com/tendermint/tendermint/libs/common"
+	cmn "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/rpc/client"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	ttypes "github.com/tendermint/tendermint/types"
@@ -51,14 +52,14 @@ func (JSONClient) ABCIInfo() (*ctypes.ResultABCIInfo, error) {
 }
 
 // ABCIQuery implements ABCIClient
-func (JSONClient) ABCIQuery(path string, data []byte) (*ctypes.ResultABCIQuery, error) {
-	// Note - before tm0.33.0:	func (JSONClient) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQuery, error) {
+// Note - before tm 0.33.0:	func (JSONClient) ABCIQuery(path string, data []byte) (*ctypes.ResultABCIQuery, error) {
+func (JSONClient) ABCIQuery(path string, data cmn.HexBytes) (*ctypes.ResultABCIQuery, error) {
 	return nil, errors.New("ABCIQuery not implemented for JSONClient")
 }
 
 // ABCIQueryWithOptions implements ABCIClient
-func (JSONClient) ABCIQueryWithOptions(path string, data []byte, opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
-	// Note - before tm0.33.0:	func (JSONClient) ABCIQueryWithOptions(path string, data cmn.HexBytes, opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
+// Note - before tm 0.33.0: func (JSONClient) ABCIQueryWithOptions(path string, data []byte, opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
+func (JSONClient) ABCIQueryWithOptions(path string, data cmn.HexBytes, opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
 	return nil, errors.New("ABCIQueryWithOptions not implemented for JSONClient")
 }
 
