@@ -69,10 +69,21 @@ var dummyAccount = backing.AccountData{
 }
 var dummyTimestamp = "2018-07-10T20:01:02Z"
 var dummyBlockMeta = tmtypes.BlockMeta{}
+
+// Note - Vle: Undocumented breaking changes from tendermint v0.32 -> v0.33
+// BlockMeta is nolonger part of ResultBlock
+// solution: take the blockID value for ResultBlock from BlockMeta
+//
+//	var dummyResultBlock = rpctypes.ResultBlock{
+//		BlockMeta: &dummyBlockMeta,
+//		Block:     &tmtypes.Block{},
+//	}
 var dummyResultBlock = rpctypes.ResultBlock{
-	BlockMeta: &dummyBlockMeta,
-	Block:     &tmtypes.Block{},
+	BlockID: &dummyBlockMeta.BlockID,
+	Block:   &tmtypes.Block{},
 }
+
+// End Note
 
 func dummyParsedTimestamp() types.Timestamp {
 	x, _ := types.ParseTimestamp(dummyTimestamp)
