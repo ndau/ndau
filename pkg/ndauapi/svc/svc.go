@@ -79,7 +79,7 @@ var dummyBlockMeta = tmtypes.BlockMeta{}
 //		Block:     &tmtypes.Block{},
 //	}
 var dummyResultBlock = rpctypes.ResultBlock{
-	BlockID: &dummyBlockMeta.BlockID,
+	BlockID: dummyBlockMeta.BlockID,
 	Block:   &tmtypes.Block{},
 }
 
