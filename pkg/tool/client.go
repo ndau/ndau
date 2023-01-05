@@ -15,5 +15,9 @@ import "github.com/tendermint/tendermint/rpc/client"
 //
 // The returned type *client.HTTP implements the client.ABCIClient interface
 func Client(node string) *client.HTTP {
-	return client.NewHTTP(node, "/websocket")
+	// Note - Vle: Undocumented breaking changes from tendermint v0.32 -> v0.33
+	//             return type in v0.33 is value of type (*client.HTTP, error)
+	// return client.NewHTTP(node, "/websocket")
+	httpClient, _ := client.NewHTTP(node, "/websocket")
+	return httpClient
 }
