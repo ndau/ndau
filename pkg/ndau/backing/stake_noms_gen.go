@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/attic-labs/noms/go/marshal"
-	nt "github.com/attic-labs/noms/go/types"
+	"github.com/ndau/noms/go/marshal"
+	nt "github.com/ndau/noms/go/types"
 	"github.com/ndau/ndaumath/pkg/address"
 	math "github.com/ndau/ndaumath/pkg/types"
 	util "github.com/ndau/noms-util"

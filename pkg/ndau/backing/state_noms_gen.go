@@ -17,8 +17,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/attic-labs/noms/go/marshal"
-	nt "github.com/attic-labs/noms/go/types"
+	"github.com/ndau/noms/go/marshal"
+	nt "github.com/ndau/noms/go/types"
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/ndau/ndaumath/pkg/eai"
 	"github.com/ndau/ndaumath/pkg/pricecurve"

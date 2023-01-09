@@ -217,6 +217,14 @@ func New(cf cfg.Cfg) *boneful.Service {
 		Consumes(JSON).
 		Produces(JSON))
 
+	svc.Route(svc.GET("/account/votes/:address/:date").To(routes.HandleAccountVotes(cf)).
+		Operation("AccountVotes").
+		Doc("Returns the number of votes to which an account is entitled on a valid ndau DAO election date").
+		Param(boneful.PathParameter("address", "The address of the account for which to return votes").DataType("string").Required(true)).
+		Param(boneful.PathParameter("DATE", "Timestamp (ISO 3339) of DAO vote (only YYYY-MM-DD is used).").DataType("string").Required(true)).
+		Produces(JSON).
+		Writes(dummyAccount))
+
 	svc.Route(svc.GET("/block/before/:height").To(routes.HandleBlockBefore(cf)).
 		Operation("BlockBefore").
 		Doc("Returns a (possibly filtered) sequence of block metadata for blocks on or before a given height.").

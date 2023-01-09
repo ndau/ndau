@@ -14,7 +14,7 @@ package search
 import (
 	"fmt"
 
-	"github.com/attic-labs/noms/go/datas"
+	"github.com/ndau/noms/go/datas"
 	"github.com/ndau/metanode/pkg/meta/state"
 	"github.com/ndau/ndau/pkg/ndau/backing"
 	math "github.com/ndau/ndaumath/pkg/types"

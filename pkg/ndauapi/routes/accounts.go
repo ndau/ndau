@@ -45,9 +45,24 @@ type AccountHistoryItems struct {
 	Next  string
 }
 
+type AccountVotes struct {
+	Address address.Address
+	Votes   int64
+}
+
 // HandleAccount returns a HandlerFunc that returns information about a single account
 // specified in the URL.
 func HandleAccount(cf cfg.Cfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		addr := bone.GetValue(r, "address")
+		addrs := []string{addr}
+		processAccounts(w, cf.Node, addrs)
+	}
+}
+
+// HandleVotes returns a HandlerFunc that returns information about the votes belonging to
+// a single account ast a specified DAO date.
+func HandleAccountVotes(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		addr := bone.GetValue(r, "address")
 		addrs := []string{addr}
