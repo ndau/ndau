@@ -51,6 +51,7 @@ func LogMW(handler http.Handler, logger logrus.FieldLogger) http.HandlerFunc {
 			"code":       lw.status,
 			"len":        lw.length,
 			"ua":         r.Header.Get("User-Agent"),
+			"client":     r.Header.Get("X-Forwarded-For"),
 			"took":       duration,
 		}).Info("REQ")
 	}
