@@ -110,9 +110,16 @@ func Load(configPath string) (*Config, error) {
 // If the file does not exist, a default is transparently created
 func LoadDefault(configPath string) (*Config, error) {
 	config, err := Load(configPath)
-	if err != nil && os.IsNotExist(err) {
-		config, err = DefaultConfig()
+
+	// EJM - 2023-02-07 Failure to load the config file should be a fatal error, not a signal to enable all features
+	// all the time. If a node with all (known) features enabled is desired, just create a config file and set all
+	// feature heights to 0. Setting all features active because the config file is in the wrong place leads to
+	// errors (app hash mismatches) that are difficult to debug.
+
+	if err != nil {
+		return nil, err
 	}
+
 	return config, err
 }
 
