@@ -190,7 +190,7 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 				"tx":      "ClaimNodeReward",
 				"address": addrA,
 				"script":  award,
-			}).Debug("Node reward payment")
+			}).Debug("Node reward payment to co-staker")
 
 			if err != nil {
 				allErrs[err.Error()] = xx
@@ -207,6 +207,12 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}
+			logger.WithFields(log.Fields{
+				"tx":      "ClaimNodeReward",
+				"address": tx.Node,
+				"reward":  state.UnclaimedNodeReward,
+			}).Debug("Node reward payment to node")
+
 			state.UnclaimedNodeReward = math.Ndau(0)
 		}
 
