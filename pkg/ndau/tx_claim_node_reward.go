@@ -124,6 +124,14 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 			}
 		}
 
+		// we need a logger
+		logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
+			"tx":        "ClaimNodeReward",
+			"node":      tx.Node.String(),
+			"script":    state.Nodes[tx.Node.String()].DistributionScript,
+			"blockTime": app.BlockTime(),
+		})
+
 		// Now, if the chaincode actually ran and returned something useful we can iterate through the list;
 		// otherwise nothing will happen here and we'll just fall through to giving everything to the node
 		// operator (which will eventually show up in the statistics).
@@ -177,6 +185,13 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 			}
 			state.UnclaimedNodeReward -= award
 			_, err = state.PayReward(addrA, award, app.BlockTime(), app.getDefaultRecourseDuration(), false, false)
+
+			logger.WithFields(log.Fields{
+				"tx":      "ClaimNodeReward",
+				"address": addrA,
+				"script":  award,
+			}).Debug("Node reward payment")
+
 			if err != nil {
 				allErrs[err.Error()] = xx
 			}
@@ -199,13 +214,6 @@ func (tx *ClaimNodeReward) Apply(appI interface{}) error {
 		// since we always want to be sure that our payouts are applied, even if it's only
 		// to the node operator. So instead we just log them.
 		if len(allErrs) > 0 {
-			// we need a logger
-			logger := app.DecoratedTxLogger(tx).WithFields(log.Fields{
-				"tx":        "ClaimNodeReward",
-				"node":      tx.Node.String(),
-				"script":    state.Nodes[tx.Node.String()].DistributionScript,
-				"blockTime": app.BlockTime(),
-			})
 			for e := range allErrs {
 				logger.WithField("text", e).Error("error during node reward payout")
 			}
