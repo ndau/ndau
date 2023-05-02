@@ -42,6 +42,7 @@ func RespondJSON(w http.ResponseWriter, res Responder) {
 	}
 
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("X-Robots-Tag", "noindex")
 	w.WriteHeader(status)  // doesn't return an error
 	_, err = w.Write(resB) // ignoring bytes written
 	if err != nil {
