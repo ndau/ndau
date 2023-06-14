@@ -10,17 +10,17 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/ndau/chaincode v1.2.10
 	github.com/ndau/json2msgp v1.1.1
-	github.com/ndau/metanode v1.9.5
+	github.com/ndau/metanode v0.9.6
 	github.com/ndau/msgp-well-known-types v0.1.2
 	github.com/ndau/ndaumath v1.3.9
 	github.com/ndau/noms v1.0.1
 	github.com/ndau/noms-util v1.0.1
 	github.com/ndau/system_vars v1.5.6
 	github.com/ndau/writers v1.1.2
+	github.com/oneiro-ndev/tendermint.0.32.3 v0.32.6
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
-	github.com/oneiro-ndev/tendermint.0.32.3 v0.32.6	
 	github.com/tinylib/msgp v1.1.8
 )
 
