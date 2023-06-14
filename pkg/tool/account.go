@@ -19,8 +19,8 @@ import (
 	"github.com/ndau/ndau/pkg/query"
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // GetAccount gets the account data associated with a given address

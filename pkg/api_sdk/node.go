@@ -12,7 +12,7 @@ package sdk
 import (
 	"github.com/ndau/ndau/pkg/ndauapi/routes"
 	"github.com/pkg/errors"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // Info gets the node's current status

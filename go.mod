@@ -20,7 +20,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
-	github.com/tendermint/tendermint v0.32.3
+	github.com/oneiro-ndev/tendermint.0.32.3 v0.32.6	
 	github.com/tinylib/msgp v1.1.8
 )
 

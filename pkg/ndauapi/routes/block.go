@@ -24,8 +24,8 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/ndau/ndau/pkg/ndauapi/reqres"
 	"github.com/ndau/ndau/pkg/tool"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
+	tmtypes "github.com/oneiro-ndev/tendermint.0.32.3/types"
 )
 
 // BlockchainRequest represents a blockchain request.

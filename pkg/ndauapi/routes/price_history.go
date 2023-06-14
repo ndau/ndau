@@ -18,7 +18,7 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/ndau/ndau/pkg/ndauapi/reqres"
 	"github.com/ndau/ndau/pkg/tool"
-	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
 )
 
 // PriceHistoryResults encapsulates a set of price history data in a json-friendly way

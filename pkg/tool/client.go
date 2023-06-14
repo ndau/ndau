@@ -9,7 +9,7 @@ package tool
 // https://www.apache.org/licenses/LICENSE-2.0.txt
 // - -- --- ---- -----
 
-import "github.com/tendermint/tendermint/rpc/client"
+import "github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
 
 // Client sets up a client connection to a Tendermint node from its address
 //

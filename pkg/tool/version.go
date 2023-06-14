@@ -11,8 +11,8 @@ package tool
 
 import (
 	"github.com/ndau/ndau/pkg/query"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // Version gets the version the connected node is running

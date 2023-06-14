@@ -11,7 +11,7 @@ package tool
 
 import (
 	metatx "github.com/ndau/metanode/pkg/meta/transaction"
-	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
 )
 
 // SendCommit broadcasts and commits a transaction

@@ -12,7 +12,7 @@ package ws
 import (
 	"errors"
 
-	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
 )
 
 // Node sets up a client connection to a Tendermint node

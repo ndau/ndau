@@ -18,9 +18,9 @@ import (
 	"github.com/ndau/ndaumath/pkg/signature"
 	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/pkg/errors"
-	tc "github.com/tendermint/tendermint/crypto"
-	ted "github.com/tendermint/tendermint/crypto/ed25519"
-	tsecp "github.com/tendermint/tendermint/crypto/secp256k1"
+	tc "github.com/oneiro-ndev/tendermint.0.32.3/crypto"
+	ted "github.com/oneiro-ndev/tendermint.0.32.3/crypto/ed25519"
+	tsecp "github.com/oneiro-ndev/tendermint.0.32.3/crypto/secp256k1"
 )
 
 // TMAddress constructs a Tendermint-style address from an ndau format public key

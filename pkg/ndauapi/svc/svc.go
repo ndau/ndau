@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tendermint/tendermint/p2p"
+	"github.com/oneiro-ndev/tendermint.0.32.3/p2p"
 
 	"github.com/kentquirk/boneful"
 	"github.com/ndau/metanode/pkg/meta/app"
@@ -29,8 +29,8 @@ import (
 	"github.com/ndau/ndaumath/pkg/pricecurve"
 	"github.com/ndau/ndaumath/pkg/signature"
 	"github.com/ndau/ndaumath/pkg/types"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
+	tmtypes "github.com/oneiro-ndev/tendermint.0.32.3/types"
 )
 
 // NewLogMux returns a new boneful service with all of our routes and logging middleware.

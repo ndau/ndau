@@ -9,7 +9,7 @@
 
 // This file contains the basic definition for an ABCI Application.
 //
-// Interface: https://godoc.org/github.com/tendermint/tendermint/abci/types#Application
+// Interface: https://godoc.org/github.com/oneiro-ndev/tendermint.0.32.3/abci/types#Application
 
 package ndau
 

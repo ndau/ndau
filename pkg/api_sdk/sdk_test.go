@@ -31,7 +31,7 @@ import (
 	"github.com/ndau/ndaumath/pkg/signature"
 	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
+	abcitypes "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
 )
 
 const (

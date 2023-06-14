@@ -13,8 +13,8 @@ import (
 	"github.com/ndau/metanode/pkg/meta/app/code"
 	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // GetSummary gets the summary information from the state

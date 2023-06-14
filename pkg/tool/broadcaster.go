@@ -17,8 +17,8 @@ import (
 	metatx "github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/rpc/client"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	ctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 type broadcaster func(client.ABCIClient, []byte) (interface{}, error)

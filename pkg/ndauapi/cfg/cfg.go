@@ -17,8 +17,8 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/ws"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 // A TMClient implements all the tendermint client methods we expect
 //
 // It should be relatively easy to implement by wrapping
-// https://godoc.org/github.com/tendermint/tendermint/rpc/client/mock#ABCIApp
+// https://godoc.org/github.com/oneiro-ndev/tendermint.0.32.3/rpc/client/mock#ABCIApp
 // with something which mocks a block
 type TMClient interface {
 	client.ABCIClient

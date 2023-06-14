@@ -15,8 +15,8 @@ import (
 
 	"github.com/ndau/ndau/pkg/query"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/oneiro-ndev/tendermint.0.32.3/p2p"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
 )
 
 // NodeResponse represents a response from the nodes call.

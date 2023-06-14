@@ -16,9 +16,9 @@ import (
 	"github.com/ndau/ndau/pkg/ndau/config"
 	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	tmmock "github.com/tendermint/tendermint/rpc/client/mock"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	abcitypes "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
+	tmmock "github.com/oneiro-ndev/tendermint.0.32.3/rpc/client/mock"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // Client returns a TMClient connected to a mock tendermint connected to a

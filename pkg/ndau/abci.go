@@ -14,7 +14,7 @@ import (
 	"github.com/ndau/ndau/pkg/ndau/backing"
 	sv "github.com/ndau/system_vars/pkg/system_vars"
 	log "github.com/sirupsen/logrus"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
 )
 
 // BeginBlock overrides the metanode BeginBlock ABCI message handler.

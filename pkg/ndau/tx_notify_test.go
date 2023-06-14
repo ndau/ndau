@@ -22,7 +22,7 @@ import (
 	"github.com/ndau/ndaumath/pkg/signature"
 	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
 )
 
 func initAppNotify(t *testing.T) (*App, signature.PrivateKey) {

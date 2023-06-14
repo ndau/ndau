@@ -19,7 +19,7 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/reqres"
 	"github.com/ndau/ndau/pkg/tool"
 	"github.com/sirupsen/logrus"
-	"github.com/tendermint/tendermint/p2p"
+	"github.com/oneiro-ndev/tendermint.0.32.3/p2p"
 )
 
 // Time to wait for tendermint to respond.

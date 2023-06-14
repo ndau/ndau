@@ -20,8 +20,8 @@ import (
 	"github.com/ndau/ndau/pkg/query"
 	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // Prevalidate prevalidates the provided transactable

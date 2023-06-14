@@ -15,7 +15,7 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/cfg"
 	"github.com/ndau/writers/pkg/testwriter"
 	"github.com/sirupsen/logrus"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
+	abcitypes "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
 )
 
 // Cfg creates a mock config

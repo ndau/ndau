@@ -22,7 +22,7 @@ import (
 	"github.com/ndau/ndaumath/pkg/signature"
 	sv "github.com/ndau/system_vars/pkg/system_vars"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
 )
 
 func initAppUnregisterNode(t *testing.T) *App {

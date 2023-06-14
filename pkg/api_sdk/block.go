@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // GetBlocksByHeight returns a sequence of block metadata for blocks with heights in the specified range.

@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	config "github.com/ndau/ndau/pkg/tool.config"
-	rpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
 )
 
 // This is used as an ndau account name as well as a chaos namespace in our tests.

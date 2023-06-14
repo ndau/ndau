@@ -18,10 +18,10 @@ import (
 	"github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau"
 	"github.com/pkg/errors"
-	cmn "github.com/tendermint/tendermint/libs/common"
-	"github.com/tendermint/tendermint/rpc/client"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	ttypes "github.com/tendermint/tendermint/types"
+	cmn "github.com/oneiro-ndev/tendermint.0.32.3/libs/common"
+	"github.com/oneiro-ndev/tendermint.0.32.3/rpc/client"
+	ctypes "github.com/oneiro-ndev/tendermint.0.32.3/rpc/core/types"
+	ttypes "github.com/oneiro-ndev/tendermint.0.32.3/types"
 )
 
 // JSONClient conforms to the client.ABCIClient interface, but is not

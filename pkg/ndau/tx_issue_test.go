@@ -15,7 +15,7 @@ import (
 
 	"github.com/ndau/ndaumath/pkg/eai"
 	"github.com/ndau/ndaumath/pkg/pricecurve"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/oneiro-ndev/tendermint.0.32.3/abci/types"
 
 	"github.com/ndau/metanode/pkg/meta/app/code"
 	tx "github.com/ndau/metanode/pkg/meta/transaction"

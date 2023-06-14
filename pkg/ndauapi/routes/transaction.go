@@ -22,7 +22,7 @@ import (
 	"github.com/ndau/ndau/pkg/ndauapi/reqres"
 	"github.com/ndau/ndau/pkg/tool"
 	"github.com/ndau/ndaumath/pkg/constants"
-	"github.com/tendermint/tendermint/types"
+	"github.com/oneiro-ndev/tendermint.0.32.3/types"
 	"github.com/tinylib/msgp/msgp"
 )
 
