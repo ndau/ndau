@@ -45,7 +45,7 @@ func NewClient(node string) (*Client, error) {
 	return &Client{
 		addr: u,
 		http: &http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 30 * time.Second, //Nodes have gotten slower, we need a longer timeout
 		},
 	}, nil
 }
