@@ -241,10 +241,14 @@ func (tx *CreditEAI) Apply(appI interface{}) error {
 
 					if useCurrentLockBonus {
 						currentLockBonus := lockedBonusRateTable.RateAt(acctData.Lock.NoticePeriod)
-						app.DecoratedTxLogger(tx).WithFields(log.Fields{
-							"acctLockBonus":    acctData.Lock.Bonus.String(),
-							"currentLockBonus": currentLockBonus.String(),
-						}).Info("lock bonus update")
+						/*
+							2023-05-02 Remove uninteresting logging message for EVERY locked account on EVERY CreditEAI transaction!
+
+									app.DecoratedTxLogger(tx).WithFields(log.Fields{
+									"acctLockBonus":    acctData.Lock.Bonus.String(),
+									"currentLockBonus": currentLockBonus.String(),
+								}).Info("lock bonus update")
+						*/
 						if acctData.Lock.Bonus != currentLockBonus {
 							acctData.Lock.Bonus = currentLockBonus
 							state.Accounts[addrS].Lock.Bonus = acctData.Lock.Bonus
