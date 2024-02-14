@@ -104,7 +104,9 @@ func nodeGoodnesses(app *App) ([]goodnessPair, uint64) {
 			continue
 		}
 		goodness, err := app.goodnessFunc(addr)
-		if err == nil && goodness > 0 {
+		// Remove the test that considers a goodness of 0 to be an error, so
+		// nodes can be dropped from the validator set by setting their goodness to 0.
+		if err == nil {
 			goodnessSum += uint64(goodness)
 			goodnesses = append(
 				goodnesses,
