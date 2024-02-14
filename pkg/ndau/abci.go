@@ -10,6 +10,7 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	metast "github.com/ndau/metanode/pkg/meta/state"
 	"github.com/ndau/msgp-well-known-types/wkt"
 	"github.com/ndau/ndau/pkg/ndau/backing"
 	sv "github.com/ndau/system_vars/pkg/system_vars"
@@ -63,6 +64,18 @@ func (app *App) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 			}
 			vu.Power = int64(g.goodness)
 			reb.ValidatorUpdates = append(reb.ValidatorUpdates, *vu)
+			// If we've told tendermint to remove the validator by setting its
+			// voting power to 0, then we need to remove the validator from our
+			// own list of nodes. This is exactly what the UnregisterNode
+			// transaction does. It's not worth trying to batch the updates
+			// since most of the time only one validator will be deleted in a block.
+			if vu.Power == 0 {
+				app.UpdateState(func(stateI metast.State) (metast.State, error) {
+					state := stateI.(*backing.State)
+					delete(state.Nodes, g.addr)
+					return state, nil
+				})
+			}
 		}
 		logger.WithField("endblock.len_vus", len(reb.ValidatorUpdates))
 		logger.Info("updated node validation power")
