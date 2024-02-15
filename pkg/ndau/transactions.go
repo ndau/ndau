@@ -122,11 +122,11 @@ var _ NTransactable = (*Delegate)(nil)
 //
 // The transaction doesn't include the actual EAI computations. There are two
 // reasons for this:
-//   1. All nodes must perform the calculations anyway in order to verify that
-//      the transaction is valid. If you're doing the calculations anway, there's
-//      not much point in adding them to the transaction in the first place.
-//   2. The originating node can't know ahead of time what the official block
-//      time will be.
+//  1. All nodes must perform the calculations anyway in order to verify that
+//     the transaction is valid. If you're doing the calculations anway, there's
+//     not much point in adding them to the transaction in the first place.
+//  2. The originating node can't know ahead of time what the official block
+//     time will be.
 type CreditEAI struct {
 	Node       address.Address       `msg:"nod" chain:"4,Tx_Node" json:"node"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
@@ -415,6 +415,7 @@ var _ NTransactable = (*ResolveStake)(nil)
 type Burn struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
 	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	EthAddr    string                `msg:"eth" chain:"13,Tx_EthAddr" json:"ethaddr"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
