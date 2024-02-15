@@ -74,7 +74,7 @@ func TestEncodeDecodeAccountHistoryParams(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeAccountHistoryParams Msgsize() is inaccurate")
 	}
 
 	vn := AccountHistoryParams{}
@@ -187,7 +187,7 @@ func TestEncodeDecodeAccountHistoryResponse(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeAccountHistoryResponse Msgsize() is inaccurate")
 	}
 
 	vn := AccountHistoryResponse{}
@@ -300,7 +300,7 @@ func TestEncodeDecodeAccountListParams(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeAccountListParams Msgsize() is inaccurate")
 	}
 
 	vn := AccountListParams{}
@@ -413,7 +413,7 @@ func TestEncodeDecodeAccountTxValueData(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeAccountTxValueData Msgsize() is inaccurate")
 	}
 
 	vn := AccountTxValueData{}
@@ -526,7 +526,7 @@ func TestEncodeDecodePriceQueryParams(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodePriceQueryParams Msgsize() is inaccurate")
 	}
 
 	vn := PriceQueryParams{}
@@ -639,7 +639,7 @@ func TestEncodeDecodePriceQueryResult(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodePriceQueryResult Msgsize() is inaccurate")
 	}
 
 	vn := PriceQueryResult{}
@@ -752,7 +752,7 @@ func TestEncodeDecodePriceQueryResults(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodePriceQueryResults Msgsize() is inaccurate")
 	}
 
 	vn := PriceQueryResults{}
@@ -865,7 +865,7 @@ func TestEncodeDecodeQueryParams(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeQueryParams Msgsize() is inaccurate")
 	}
 
 	vn := QueryParams{}
@@ -978,7 +978,7 @@ func TestEncodeDecodeRangeEndpoint(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeRangeEndpoint Msgsize() is inaccurate")
 	}
 
 	vn := RangeEndpoint{}
@@ -1091,7 +1091,7 @@ func TestEncodeDecodeSysvarHistoryParams(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeSysvarHistoryParams Msgsize() is inaccurate")
 	}
 
 	vn := SysvarHistoryParams{}
@@ -1204,7 +1204,7 @@ func TestEncodeDecodeTxListValueData(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeTxListValueData Msgsize() is inaccurate")
 	}
 
 	vn := TxListValueData{}
@@ -1317,7 +1317,7 @@ func TestEncodeDecodeTxValueData(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeTxValueData Msgsize() is inaccurate")
 	}
 
 	vn := TxValueData{}
@@ -1430,7 +1430,7 @@ func TestEncodeDecodeValueData(t *testing.T) {
 
 	m := v.Msgsize()
 	if buf.Len() > m {
-		t.Logf("WARNING: Msgsize() for %v is inaccurate", v)
+		t.Log("WARNING: TestEncodeDecodeValueData Msgsize() is inaccurate")
 	}
 
 	vn := ValueData{}
