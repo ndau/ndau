@@ -10,7 +10,6 @@ package config
 // - -- --- ---- -----
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -93,7 +92,7 @@ func DefaultConfigPath(ndauhome string) string {
 
 // Load returns a config object loaded from its file
 func Load(configPath string) (*Config, error) {
-	bytes, err := ioutil.ReadFile(configPath)
+	bytes, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}

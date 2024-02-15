@@ -12,7 +12,6 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -74,7 +73,7 @@ func HandleAccountVotes(cf cfg.Cfg) http.HandlerFunc {
 // on a POSTed list of account IDs.
 func HandleAccounts(cf cfg.Cfg) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		bodyBytes, err := ioutil.ReadAll(r.Body)
+		bodyBytes, err := os.ReadAll(r.Body)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewAPIError("could not read request body", http.StatusBadRequest))
 			return

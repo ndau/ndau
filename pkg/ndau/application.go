@@ -15,7 +15,7 @@ package ndau
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -61,7 +61,7 @@ func NewApp(dbSpec string, indexAddr string, indexVersion int, config config.Con
 // NewAppSilent prepares a new Ndau App which doesn't log
 func NewAppSilent(dbSpec string, indexAddr string, indexVersion int, config config.Config) (*App, error) {
 	logger := log.New()
-	logger.Out = ioutil.Discard
+	logger.Out = io.Discard
 
 	return NewAppWithLogger(dbSpec, indexAddr, indexVersion, config, logger)
 }
@@ -134,7 +134,7 @@ func InitMockAppWithIndex(indexAddr string, indexVersion int) (
 	}
 
 	var configfile *os.File
-	configfile, err = ioutil.TempFile("", "config.*.toml")
+	configfile, err = os.CreateTemp("", "config.*.toml")
 	if err != nil {
 		return
 	}
@@ -190,36 +190,36 @@ func (app *App) getAccount(addr address.Address) (backing.AccountData, bool) {
 //
 // For example, say we have a feature in some transaction validation code that rounds a qty:
 //
-//   qty := math.Round(tx.Qty)
+//	qty := math.Round(tx.Qty)
 //
 // Then later we decided to round to the nearest tenth instead, we would write:
 //
-//   qty := tx.Qty
-//   if app.IsFeatureActive("RoundToTenths") {
-//       qty = math.Round(qty*10)/10
-//   } else {
-//       qty = math.Round(qty)
-//   }
+//	qty := tx.Qty
+//	if app.IsFeatureActive("RoundToTenths") {
+//	    qty = math.Round(qty*10)/10
+//	} else {
+//	    qty = math.Round(qty)
+//	}
 //
 // Then even later we decide to round to the nearest hundredth, we would write:
 //
-//   qty := tx.Qty
-//   if app.IsFeatureActive("RoundToHundredths") {
-//       qty = math.Round(qty*100)/100
-//   } else if app.IsFeatureActive("RoundToTenths") {
-//       qty = math.Round(qty*10)/10
-//   } else {
-//       qty = math.Round(qty)
-//   }
+//	qty := tx.Qty
+//	if app.IsFeatureActive("RoundToHundredths") {
+//	    qty = math.Round(qty*100)/100
+//	} else if app.IsFeatureActive("RoundToTenths") {
+//	    qty = math.Round(qty*10)/10
+//	} else {
+//	    qty = math.Round(qty)
+//	}
 //
 // That way we remain backward compatible until the new rules become active as the app's
 // state (i.e. block height) increases.
 //
-//   height:        0          120               300
-//                  |           |                 |
-//   blockchain:    |--x---x----+---y------y------+--z--z-------z---...
-//                  |           |                 |
-//   feature:    genesis   RoundToTenths   RoundToHundredths
+//	height:        0          120               300
+//	               |           |                 |
+//	blockchain:    |--x---x----+---y------y------+--z--z-------z---...
+//	               |           |                 |
+//	feature:    genesis   RoundToTenths   RoundToHundredths
 //
 // A transaction "x" that occurs prior to block 120 gets the default handling since genesis.
 // A transaction "y" with height in [120, 300) gets the rounding-by-tenths handling.

@@ -13,7 +13,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -114,7 +114,7 @@ func (c *Client) get(obj interface{}, url string) error {
 		return errors.Wrap(err, "performing request")
 	}
 	defer response.Body.Close()
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrap(err, "reading response body")
 	}
@@ -146,7 +146,7 @@ func (c *Client) post(req interface{}, resp interface{}, url string) error {
 		return errors.Wrap(err, "performing request")
 	}
 	defer response.Body.Close()
-	data, err = ioutil.ReadAll(response.Body)
+	data, err = io.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrap(err, "reading response body")
 	}

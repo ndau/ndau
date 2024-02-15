@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -41,8 +40,9 @@ const AccountListOffset = 100
 const ValidationKeyOffset = 10000
 
 // AccountStartNumber is for the "change" part of the path.
-//   0 is not used,
-//   1 is the first valid account path for the wallet.
+//
+//	0 is not used,
+//	1 is the first valid account path for the wallet.
 const AccountStartNumber = 1
 
 // AccountPathFormat is a format string for making paths.
@@ -94,7 +94,7 @@ func DefaultConfig() *Config {
 
 // Load returns a config object loaded from its file
 func Load(configPath string) (*Config, error) {
-	bytes, err := ioutil.ReadFile(configPath)
+	bytes, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (c *Config) Save() error {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cp, buf.Bytes(), 0600) // u=rw;go-
+	return os.WriteFile(cp, buf.Bytes(), 0600) // u=rw;go-
 }
 
 // GetAccounts returns the unique accounts known to this config.

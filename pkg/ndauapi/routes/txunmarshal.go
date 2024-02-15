@@ -12,7 +12,6 @@ package routes
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 
 	metatx "github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau"
@@ -33,7 +32,7 @@ func TxUnmarshal(txtype string, r io.Reader) (metatx.Transactable, error) {
 		return nil, err
 	}
 
-	buf, err := ioutil.ReadAll(r)
+	buf, err := os.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
