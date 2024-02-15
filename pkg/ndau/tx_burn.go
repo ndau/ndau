@@ -19,6 +19,7 @@ import (
 	"github.com/ndau/ndaumath/pkg/signature"
 	math "github.com/ndau/ndaumath/pkg/types"
 	sv "github.com/ndau/system_vars/pkg/system_vars"
+	log "github.com/sirupsen/logrus"
 )
 
 // Validate implements metatx.Transactable
@@ -36,6 +37,14 @@ func (tx *Burn) Validate(appI interface{}) error {
 
 	if acctData.IsLocked(app.BlockTime()) {
 		return errors.New("burn from locked accounts prohibited")
+	}
+
+	if len(tx.EthAddr) > 0 {
+		logger := app.DecoratedLogger()
+		logger.WithFields(log.Fields{
+			"EthAddr": tx.EthAddr,
+			"Target":  tx.Target,
+		}).Info("Burn with optional EthAddr")
 	}
 
 	return nil
