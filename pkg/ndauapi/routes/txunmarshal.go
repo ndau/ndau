@@ -32,7 +32,7 @@ func TxUnmarshal(txtype string, r io.Reader) (metatx.Transactable, error) {
 		return nil, err
 	}
 
-	buf, err := os.ReadAll(r)
+	buf, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

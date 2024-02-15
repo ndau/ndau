@@ -1061,6 +1061,7 @@ func TestBurn_SignableBytes(t *testing.T) {
 			NewBurn(
 				burnTarget,
 				4560236255123809,
+				"",
 				1158830314075150,
 			),
 		},
@@ -1069,6 +1070,7 @@ func TestBurn_SignableBytes(t *testing.T) {
 			NewBurn(
 				burnTarget,
 				4560236255123809,
+				"",
 				1158830314075150,
 				private,
 			),

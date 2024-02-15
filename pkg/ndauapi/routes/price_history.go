@@ -11,6 +11,7 @@ package routes
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	srch "github.com/ndau/ndau/pkg/ndau/search"
@@ -45,7 +46,7 @@ func priceHistory(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		bdata, err := os.ReadAll(r.Body)
+		bdata, err := io.ReadAll(r.Body)
 		if err != nil {
 			reqres.RespondJSON(w, reqres.NewFromErr("reading params", err, http.StatusBadRequest))
 			return

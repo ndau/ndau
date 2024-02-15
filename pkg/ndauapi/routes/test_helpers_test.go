@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -66,7 +67,7 @@ func createNdauBlock(t *testing.T) string {
 	if err != nil {
 		t.Errorf("Error starting account command: %s", err)
 	}
-	acctErr, _ := os.ReadAll(acctStderr)
+	acctErr, _ := io.ReadAll(acctStderr)
 	err = acctCmd.Wait()
 	if err == nil {
 		err = exec.Command(ndauTool, "account", "set-validation", acctName).Run()
@@ -136,7 +137,7 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	if err != nil {
 		t.Errorf("Error starting namespace command: %s", err)
 	}
-	namespaceErr, _ := os.ReadAll(namespaceStderr)
+	namespaceErr, _ := io.ReadAll(namespaceStderr)
 	err = namespaceCmd.Wait()
 	if err != nil && !strings.Contains(string(namespaceErr), "already present") {
 		t.Errorf("Error creating namespace: %s", err)
@@ -167,7 +168,7 @@ func createChaosBlock(t *testing.T, valnum int) (namespaceBase64, key, value str
 	if err != nil {
 		t.Errorf("Error starting list command: %s", err)
 	}
-	listOutput, _ := os.ReadAll(listStdout)
+	listOutput, _ := io.ReadAll(listStdout)
 	err = listCmd.Wait()
 	if err != nil {
 		t.Errorf("Error getting namespace list: %s", err)
