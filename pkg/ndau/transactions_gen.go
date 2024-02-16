@@ -10,9 +10,9 @@ import (
 // MarshalMsg implements msgp.Marshaler
 func (z *Burn) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 4
+	// map header, size 5
 	// string "tgt"
-	o = append(o, 0x84, 0xa3, 0x74, 0x67, 0x74)
+	o = append(o, 0x85, 0xa3, 0x74, 0x67, 0x74)
 	o, err = z.Target.MarshalMsg(o)
 	if err != nil {
 		err = msgp.WrapError(err, "Target")
@@ -25,6 +25,9 @@ func (z *Burn) MarshalMsg(b []byte) (o []byte, err error) {
 		err = msgp.WrapError(err, "Qty")
 		return
 	}
+	// string "eth"
+	o = append(o, 0xa3, 0x65, 0x74, 0x68)
+	o = msgp.AppendString(o, z.EthAddr)
 	// string "seq"
 	o = append(o, 0xa3, 0x73, 0x65, 0x71)
 	o = msgp.AppendUint64(o, z.Sequence)
@@ -71,6 +74,12 @@ func (z *Burn) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "Qty")
 				return
 			}
+		case "eth":
+			z.EthAddr, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "EthAddr")
+				return
+			}
 		case "seq":
 			z.Sequence, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
@@ -110,7 +119,7 @@ func (z *Burn) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Burn) Msgsize() (s int) {
-	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Qty.Msgsize() + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
+	s = 1 + 4 + z.Target.Msgsize() + 4 + z.Qty.Msgsize() + 4 + msgp.StringPrefixSize + len(z.EthAddr) + 4 + msgp.Uint64Size + 4 + msgp.ArrayHeaderSize
 	for za0001 := range z.Signatures {
 		s += z.Signatures[za0001].Msgsize()
 	}
