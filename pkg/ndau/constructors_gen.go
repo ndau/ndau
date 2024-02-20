@@ -666,18 +666,20 @@ func NewBurn(
 	return tx
 }
 
-// NewBurn creates a new Burn transactable
+// NewBurnAndMint creates a new BurnAndMint transactable
 //
 // If signing keys are present, the new transactable is signed with all of them
-func NewBurn(
+func NewBurnAndMint(
     target address.Address,
     qty math.Ndau,
+    ethaddr string,
     sequence uint64,
 	signingKeys ...signature.PrivateKey,
-) *Burn {
-	tx := &Burn{
+) *BurnAndMint {
+	tx := &BurnAndMint{
         Target: target,
         Qty: qty,
+        EthAddr: ethaddr,
         Sequence: sequence,
 	}
     if len(signingKeys) > 0 {

@@ -50,7 +50,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(25): &RecordEndowmentNAV{},
 	metatx.TxID(26): &ResolveStake{},
 	metatx.TxID(27): &Burn{},
-	metatx.TxID(28): &Burn{},
+	metatx.TxID(28): &BurnAndMint{},
 	metatx.TxID(30): &ChangeSchema{},
 }
 

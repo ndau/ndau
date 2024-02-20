@@ -234,8 +234,8 @@ func (tx *Burn) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
-// SignableBytes partially implements metatx.Transactable for Burn
-func (tx *Burn) SignableBytes() []byte {
+// SignableBytes partially implements metatx.Transactable for BurnAndMint
+func (tx *BurnAndMint) SignableBytes() []byte {
 	return sbOf(tx)
 }
 
