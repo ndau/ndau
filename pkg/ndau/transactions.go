@@ -415,7 +415,6 @@ var _ NTransactable = (*ResolveStake)(nil)
 type Burn struct {
 	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
 	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
-	EthAddr    string                `msg:"eth" chain:"13,Tx_EthAddr" json:"ethaddr"`
 	Sequence   uint64                `msg:"seq" json:"sequence"`
 	Signatures []signature.Signature `msg:"sig" json:"signatures"`
 }
