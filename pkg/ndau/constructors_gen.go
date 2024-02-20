@@ -648,14 +648,12 @@ func NewResolveStake(
 func NewBurn(
     target address.Address,
     qty math.Ndau,
-    ethaddr string,
     sequence uint64,
 	signingKeys ...signature.PrivateKey,
 ) *Burn {
 	tx := &Burn{
         Target: target,
         Qty: qty,
-        EthAddr: ethaddr,
         Sequence: sequence,
 	}
     if len(signingKeys) > 0 {
