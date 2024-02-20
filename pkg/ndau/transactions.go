@@ -50,6 +50,7 @@ var TxIDs = map[metatx.TxID]metatx.Transactable{
 	metatx.TxID(25): &RecordEndowmentNAV{},
 	metatx.TxID(26): &ResolveStake{},
 	metatx.TxID(27): &Burn{},
+	metatx.TxID(28): &Burn{},
 	metatx.TxID(30): &ChangeSchema{},
 }
 
@@ -420,3 +421,16 @@ type Burn struct {
 }
 
 var _ NTransactable = (*Burn)(nil)
+
+// BurnAndMint transactions burn the specfied amount of ndau, permanently removing it
+// from circulation, and trigger a message to the NPAY minter to mint the burned
+// quantity in NPAY to the designated Ethereum address.
+type BurnAndMint struct {
+	Target     address.Address       `msg:"tgt" chain:"3,Tx_Target" json:"target"`
+	Qty        math.Ndau             `msg:"qty" chain:"11,Tx_Quantity" json:"qty"`
+	EthAddr    string                `msg:"eth" chain:"51,Tx_EthAddr" json:"ethaddr"`
+	Sequence   uint64                `msg:"seq" json:"sequence"`
+	Signatures []signature.Signature `msg:"sig" json:"signatures"`
+}
+
+var _ NTransactable = (*BurnAndMint)(nil)
