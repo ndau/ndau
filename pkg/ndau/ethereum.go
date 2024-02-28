@@ -12,7 +12,11 @@ package ndau
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	b64 "encoding/base64"
+	"encoding/json"
 	"math/big"
+	"os"
 	"regexp"
 
 	"github.com/ethereum/go-ethereum"
@@ -22,6 +26,93 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 )
+
+type priv_validator_key struct {
+	address string
+	pub_key struct {
+		keytype string
+		value   string
+	}
+	priv_key struct {
+		keytype string
+		value   string
+	}
+}
+
+// getTendermintPrivateKey - Get the Tendermint private validator key file contents
+// for signing minter voting transactions. This is the same as the ndau node account
+// ownership key, but that is no longer available (not persisted on disk). Reading
+// this key file is the same thing Tendermint does, so this usage is no less secure.
+
+func getTendermintPrivateKey() ([]byte, error) {
+
+	var priv_key []byte             // The 64-byte ed25519 private key
+	var pvk_json priv_validator_key // Contents of priv_validator_key.json
+
+	// Get the Tendermint data directory and concatenate the key file. os.Getenv
+	// doesn't return an error, just an empty string if the environment variable
+	// is either missing or null. That's strange (for an ndau node), but not an error.
+
+	tmDataDir := os.Getenv("TM_DATA_DIR")
+	pkFileName := tmDataDir + "/config/priv_validator_key.json"
+
+	// Read the JSON key file and extract the private validator key
+
+	pkJSON, err := os.ReadFile(pkFileName)
+
+	if err == nil {
+
+		// Unmarshal the JSON into the pk file struct and decode the base64
+		// private key. We don't care about anything else since we're using it
+		// for an Ethereum secp256k1 keypair. It's just 64 random bytes.
+
+		err = json.Unmarshal(pkJSON, &pvk_json)
+		priv_key, err = b64.StdEncoding.DecodeString(pvk_json.priv_key.value)
+	}
+
+	return priv_key, err
+}
+
+// ECDSALegacy - Create a deterministic secp256k1 key. This code is copied directly
+// from https://github.com/FiloSottile/keygen, the only change being the use of a
+// byte array as the seed rather than wrapping an io.Reader interface around it.
+
+func ECDSALegacy(c elliptic.Curve, b []byte) (*ecdsa.PrivateKey, error) {
+
+	params := c.Params()
+
+	seedlen := params.N.BitLen()/8 + 8
+	one := big.NewInt(1)
+	k := new(big.Int).SetBytes(b[0 : seedlen-1])
+	n := new(big.Int).Sub(params.N, one)
+	k.Mod(k, n)
+	k.Add(k, one)
+
+	priv := new(ecdsa.PrivateKey)
+	priv.PublicKey.Curve = c
+	priv.D = k
+	priv.PublicKey.X, priv.PublicKey.Y = c.ScalarBaseMult(k.Bytes())
+	return priv, nil
+}
+
+// makeSecp256k1Key - Use the Tendermint private key bytes to generate a crypto.ecdsa key
+
+func makeSecp256k1Key(seed []byte) (*ecdsa.PrivateKey, error) {
+
+	c := crypto.S256()
+
+	seed, err := getTendermintPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	ethPrivKey, err := ECDSALegacy(c, seed)
+	if err != nil {
+		return nil, err
+	}
+
+	return ethPrivKey, nil
+}
 
 // isValid - check whether a string is a valid Ethereum address and is
 // not a smart contract address
