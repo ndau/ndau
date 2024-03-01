@@ -18,6 +18,7 @@ import (
 	"math/big"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -27,16 +28,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type priv_validator_key struct {
-	address string
-	pub_key struct {
-		keytype string
-		value   string
-	}
-	priv_key struct {
-		keytype string
-		value   string
-	}
+// Tendermint priv_validator_key.json structure
+type PVKey struct {
+	Address string `json:"address"`
+	Pub_key struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"pub_key"`
+	Priv_key struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"priv_key"`
 }
 
 // getTendermintPrivateKey - Get the Tendermint private validator key file contents
@@ -46,28 +48,36 @@ type priv_validator_key struct {
 
 func getTendermintPrivateKey() ([]byte, error) {
 
-	var priv_key []byte             // The 64-byte ed25519 private key
-	var pvk_json priv_validator_key // Contents of priv_validator_key.json
+	var priv_key []byte // The 64-byte ed25519 private key
+
+	// Contents of priv_validator_key.json
 
 	// Get the Tendermint data directory and concatenate the key file. os.Getenv
 	// doesn't return an error, just an empty string if the environment variable
 	// is either missing or null. That's strange (for an ndau node), but not an error.
 
 	tmDataDir := os.Getenv("TM_DATA_DIR")
+	if tmDataDir == "" {
+		tmDataDir = "/Users/edmcnierney/go/src/github.com/ndau/edmcnierney/node_identities/abundance/tendermint"
+	}
 	pkFileName := tmDataDir + "/config/priv_validator_key.json"
 
 	// Read the JSON key file and extract the private validator key
 
-	pkJSON, err := os.ReadFile(pkFileName)
+	pvkJSON, err := os.ReadFile(pkFileName)
+	if err != nil {
+		return nil, err
+	}
 
+	pvk := PVKey{}
+
+	// Unmarshal the JSON into the pk file struct and decode the base64
+	// private key. We don't care about anything else since we're using it
+	// for an Ethereum secp256k1 keypair. It's just 64 random bytes.
+
+	err = json.Unmarshal([]byte(pvkJSON), &pvk)
 	if err == nil {
-
-		// Unmarshal the JSON into the pk file struct and decode the base64
-		// private key. We don't care about anything else since we're using it
-		// for an Ethereum secp256k1 keypair. It's just 64 random bytes.
-
-		err = json.Unmarshal(pkJSON, &pvk_json)
-		priv_key, err = b64.StdEncoding.DecodeString(pvk_json.priv_key.value)
+		priv_key, err = b64.StdEncoding.DecodeString(pvk.Priv_key.Value)
 	}
 
 	return priv_key, err
@@ -115,35 +125,56 @@ func makeSecp256k1Key(seed []byte) (*ecdsa.PrivateKey, error) {
 }
 
 // isValid - check whether a string is a valid Ethereum address and is
-// not a smart contract address
+// not a smart contract address. Don't do any fancy error handling - if anything
+// goes wrong return false. If it's an RPC provider glitch the user can just
+// try again later; we probably can't submit the minter vote, either.
 
 func isValid(ethaddr string) bool {
+
+	// Basic format check
+
 	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
-	valid := re.MatchString(ethaddr)
+	if !re.MatchString(ethaddr) {
+		return false
+	}
+
+	// We know ethaddr is a valid hex string of the right length. If it
+	// looks like it's checksummed (has uppercase characters), test it.
+
+	address := common.HexToAddress(ethaddr)
+
+	if strings.ToLower(ethaddr) != ethaddr {
+		mcaddress, err := common.NewMixedcaseAddressFromString(ethaddr)
+		if err != nil || !mcaddress.ValidChecksum() {
+			return false
+		}
+	}
 
 	// If it's a valid address, check to see if there's any bytecode there.
 	// If not, it's a valid address for minting.
 
-	if valid {
-		address := common.HexToAddress(ethaddr)
+	// TODO - Deal with RPC provider configuration
 
-		// TODO - Deal with RPC provider configuration
-
-		client, err := ethclient.Dial("https://mainnet.infura.io")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		bytecode, err := client.CodeAt(context.Background(), address, nil) // nil is latest block
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if len(bytecode) == 0 {
-			return true
-		}
+	rpc := os.Getenv("RPC_PROVIDER")
+	if rpc == "" {
+		rpc = "https://mainnet.infura.io/v3/2d964329cb8746139ba47fe1ccf3b9e5"
 	}
-	return false
+
+	client, err := ethclient.Dial(rpc)
+	if err != nil {
+		return false
+	}
+
+	bytecode, err := client.CodeAt(context.Background(), address, nil) // nil is latest block
+	if err != nil {
+		return false
+	}
+
+	if len(bytecode) != 0 { // There's a smart contract there
+		return false
+	}
+
+	return true
 }
 
 func signAndSend(message string) error {
