@@ -5,7 +5,8 @@ import (
 
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/ndau/ndaumath/pkg/signature"
-	math "github.com/ndau/ndaumath/pkg/types"
+
+	//	math "github.com/ndau/ndaumath/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1116,4 +1117,3 @@ func TestChangeSchema_SignableBytes(t *testing.T) {
 		})
 	}
 }
-

@@ -30,7 +30,7 @@ func TestBurnsWhoseQtyLTE0AreInvalid(t *testing.T) {
 	app, private := initAppTx(t)
 
 	for idx, negQty := range []math.Ndau{0, -1, -2} {
-		tr := NewBurn(sourceAddress, negQty, "", uint64(idx+1), private)
+		tr := NewBurn(sourceAddress, negQty, uint64(idx+1), private)
 		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	}
@@ -42,7 +42,7 @@ func TestBurnsFromLockedAddressesProhibited(t *testing.T) {
 		acct.Lock = backing.NewLock(90*math.Day, eai.DefaultLockBonusEAI)
 	})
 
-	tr := NewBurn(sourceAddress, 1, "", 1, private)
+	tr := NewBurn(sourceAddress, 1, 1, private)
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -58,7 +58,7 @@ func TestBurnsFromLockedButExpiredAddressesAreValid(t *testing.T) {
 		acct.Lock.UnlocksOn = &twoDaysAgo
 	})
 
-	tr := NewBurn(sourceAddress, 1, "", 1, private)
+	tr := NewBurn(sourceAddress, 1, 1, private)
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 }
@@ -74,7 +74,7 @@ func TestBurnsFromNotifiedAddressesAreInvalid(t *testing.T) {
 		acct.Lock.UnlocksOn = &tomorrow
 	})
 
-	tr := NewBurn(sourceAddress, 1, "", 1, private)
+	tr := NewBurn(sourceAddress, 1, 1, private)
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
@@ -89,7 +89,7 @@ func TestBurnsDeductBalanceFromSource(t *testing.T) {
 
 	const deltaNapu = 50 * constants.QuantaPerUnit
 
-	tr := NewBurn(sourceAddress, deltaNapu, "", 1, private)
+	tr := NewBurn(sourceAddress, deltaNapu, 1, private)
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 
@@ -100,7 +100,7 @@ func TestBurnsDeductBalanceFromSource(t *testing.T) {
 
 func TestBurnSignatureMustValidate(t *testing.T) {
 	app, private := initAppTx(t)
-	tr := NewBurn(sourceAddress, 1, "", 1, private)
+	tr := NewBurn(sourceAddress, 1, 1, private)
 	// I'm almost completely certain that this will be an invalid signature
 	sig, err := signature.RawSignature(signature.Ed25519, make([]byte, signature.Ed25519.SignatureSize()))
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestInvalidBurnDoesntAffectBalance(t *testing.T) {
 	})
 
 	// invalid: sequence 0
-	tr := NewBurn(sourceAddress, 1, "", 0, private)
+	tr := NewBurn(sourceAddress, 1, 0, private)
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 
@@ -136,18 +136,18 @@ func TestBurnsOfMoreThanSourceBalanceAreInvalid(t *testing.T) {
 	modifySource(t, app, func(src *backing.AccountData) {
 		src.Balance = 1 * constants.QuantaPerUnit
 	})
-	tr := NewBurn(sourceAddress, 2*constants.QuantaPerUnit, "", 1, private)
+	tr := NewBurn(sourceAddress, 2*constants.QuantaPerUnit, 1, private)
 	resp := deliverTx(t, app, tr)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 }
 
 func TestBurnSequenceMustIncrease(t *testing.T) {
 	app, private := initAppTx(t)
-	invalidZero := NewBurn(sourceAddress, 1, "", 0, private)
+	invalidZero := NewBurn(sourceAddress, 1, 0, private)
 	resp := deliverTx(t, app, invalidZero)
 	require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	// valid now, because its sequence is greater than the account sequence
-	tr := NewBurn(sourceAddress, 1, "", 1, private)
+	tr := NewBurn(sourceAddress, 1, 1, private)
 	resp = deliverTx(t, app, tr)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	// invalid now because account sequence must have been updated
@@ -168,7 +168,7 @@ func TestBurnWithExpiredRecoursesWorks(t *testing.T) {
 	require.NoError(t, err)
 	tr := NewBurn(
 		sourceAddress,
-		1, "",
+		1,
 		1, key,
 	)
 	require.NoError(t, err)
@@ -191,7 +191,7 @@ func TestBurnWithUnexpiredRecoursesFails(t *testing.T) {
 	require.NoError(t, err)
 	tr := NewBurn(
 		sourceAddress,
-		1, "",
+		1,
 		1, key,
 	)
 	require.NoError(t, err)
@@ -216,22 +216,22 @@ func TestValidationScriptValidatesBurns(t *testing.T) {
 	})
 
 	t.Run("only first key", func(t *testing.T) {
-		tr := NewBurn(sourceAddress, 123, "", 1, private)
+		tr := NewBurn(sourceAddress, 123, 1, private)
 		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	})
 	t.Run("both keys in order", func(t *testing.T) {
-		tr := NewBurn(sourceAddress, 123, "", 2, private, private2)
+		tr := NewBurn(sourceAddress, 123, 2, private, private2)
 		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	})
 	t.Run("both keys out of order", func(t *testing.T) {
-		tr := NewBurn(sourceAddress, 123, "", 3, private2, private)
+		tr := NewBurn(sourceAddress, 123, 3, private2, private)
 		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.OK, code.ReturnCode(resp.Code))
 	})
 	t.Run("only second key", func(t *testing.T) {
-		tr := NewBurn(sourceAddress, 123, "", 4, private2)
+		tr := NewBurn(sourceAddress, 123, 4, private2)
 		resp := deliverTx(t, app, tr)
 		require.Equal(t, code.InvalidTransaction, code.ReturnCode(resp.Code))
 	})
@@ -245,7 +245,7 @@ func TestBurnDeductsTxFee(t *testing.T) {
 			ad.Balance = math.Ndau(1 + i)
 		})
 
-		tx := NewBurn(sourceAddress, 1, "", 1+i, private)
+		tx := NewBurn(sourceAddress, 1, 1+i, private)
 
 		resp := deliverTxWithTxFee(t, app, tx)
 
@@ -265,7 +265,7 @@ func TestBurnDeductsTxFee(t *testing.T) {
 func TestAppSurvivesEmptySignatureBurn(t *testing.T) {
 	app, _ := initAppTx(t)
 
-	tx := NewBurn(sourceAddress, 1, "", 1)
+	tx := NewBurn(sourceAddress, 1, 1)
 
 	resp := deliverTx(t, app, tx)
 	// must be invalid because no signatures
@@ -278,7 +278,7 @@ func TestBurnedQtyIsTracked(t *testing.T) {
 	oldTotalBurned := app.GetState().(*backing.State).TotalBurned
 
 	qty := math.Ndau(50) * constants.NapuPerNdau
-	tx := NewBurn(sourceAddress, qty, "", 1, private)
+	tx := NewBurn(sourceAddress, qty, 1, private)
 
 	resp := deliverTx(t, app, tx)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
@@ -308,7 +308,7 @@ func TestBurnedQtyDeductedFromTotalNdau(t *testing.T) {
 	oldTotal := getTotal()
 
 	qty := math.Ndau(50) * constants.NapuPerNdau
-	tx := NewBurn(sourceAddress, qty, "", 1, private)
+	tx := NewBurn(sourceAddress, qty, 1, private)
 
 	resp := deliverTx(t, app, tx)
 	require.Equal(t, code.OK, code.ReturnCode(resp.Code))
