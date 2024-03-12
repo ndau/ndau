@@ -64,8 +64,8 @@ func (tx *BurnAndMint) Apply(appI interface{}) error {
 	// var hash [32]byte
 	hash, _ := hex.DecodeString(metatx.Hash(tx))
 	var txHash [32]byte
-	copy(txHash[:], hash[:4])
-	MintNPAY(txHash, big.NewInt(987654), big.NewInt(100), tx.EthAddr)
+	copy(txHash[:], hash[:32])
+	MintNPAY(txHash, big.NewInt(987654), big.NewInt(int64(tx.Qty)), tx.EthAddr)
 
 	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
