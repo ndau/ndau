@@ -15,17 +15,21 @@ import (
 	"crypto/elliptic"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
+	"log"
 	"math/big"
 	"os"
 	"regexp"
 	"strings"
 
-	"github.com/ethereum/go-ethereum"
+	"github.com/core-coin/uint256"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	log "github.com/sirupsen/logrus"
+
+	minter "./contracts"
 )
 
 // Tendermint priv_validator_key.json structure
@@ -46,25 +50,19 @@ type PVKey struct {
 // ownership key, but that is no longer available (not persisted on disk). Reading
 // this key file is the same thing Tendermint does, so this usage is no less secure.
 
-func getTendermintPrivateKey() ([]byte, error) {
+func GetTendermintPrivateKey() ([]byte, error) {
 
 	var priv_key []byte // The 64-byte ed25519 private key
 
-	// Contents of priv_validator_key.json
-
-	// Get the Tendermint data directory and concatenate the key file. os.Getenv
-	// doesn't return an error, just an empty string if the environment variable
-	// is either missing or null. That's strange (for an ndau node), but not an error.
-
 	tmDataDir := os.Getenv("TM_DATA_DIR")
+
 	if tmDataDir == "" {
 		tmDataDir = "/Users/edmcnierney/go/src/github.com/ndau/edmcnierney/node_identities/abundance/tendermint"
 	}
-	pkFileName := tmDataDir + "/config/priv_validator_key.json"
 
 	// Read the JSON key file and extract the private validator key
 
-	pvkJSON, err := os.ReadFile(pkFileName)
+	pvkJSON, err := os.ReadFile(tmDataDir + "/config/priv_validator_key.json")
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +105,9 @@ func ECDSALegacy(c elliptic.Curve, b []byte) (*ecdsa.PrivateKey, error) {
 
 // makeSecp256k1Key - Use the Tendermint private key bytes to generate a crypto.ecdsa key
 
-func makeSecp256k1Key(seed []byte) (*ecdsa.PrivateKey, error) {
+func MakeSecp256k1Key(seed []byte) (*ecdsa.PrivateKey, error) {
 
 	c := crypto.S256()
-
-	seed, err := getTendermintPrivateKey()
-	if err != nil {
-		return nil, err
-	}
 
 	ethPrivKey, err := ECDSALegacy(c, seed)
 	if err != nil {
@@ -129,13 +122,15 @@ func makeSecp256k1Key(seed []byte) (*ecdsa.PrivateKey, error) {
 // goes wrong return false. If it's an RPC provider glitch the user can just
 // try again later; we probably can't submit the minter vote, either.
 
-func isValid(ethaddr string) bool {
+func IsEthAddressValid(ethaddr string) error {
 
 	// Basic format check
 
+	errorNotValid := errors.New("address is not valid")
+
 	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 	if !re.MatchString(ethaddr) {
-		return false
+		return errorNotValid
 	}
 
 	// We know ethaddr is a valid hex string of the right length. If it
@@ -146,7 +141,7 @@ func isValid(ethaddr string) bool {
 	if strings.ToLower(ethaddr) != ethaddr {
 		mcaddress, err := common.NewMixedcaseAddressFromString(ethaddr)
 		if err != nil || !mcaddress.ValidChecksum() {
-			return false
+			return errorNotValid
 		}
 	}
 
@@ -162,98 +157,85 @@ func isValid(ethaddr string) bool {
 
 	client, err := ethclient.Dial(rpc)
 	if err != nil {
-		return false
+		return errorNotValid
 	}
 
 	bytecode, err := client.CodeAt(context.Background(), address, nil) // nil is latest block
 	if err != nil {
-		return false
+		return errorNotValid
 	}
 
 	if len(bytecode) != 0 { // There's a smart contract there
-		return false
-	}
-
-	return true
-}
-
-func signAndSend(message string) error {
-	privateKey, err := crypto.HexToECDSA("fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		log.Fatal("error casting public key to ECDSA")
-	}
-
-	// TODO - Deal with RPC provider configuration
-
-	client, err := ethclient.Dial("https://mainnet.infura.io")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	chainID, _ := client.ChainID(context.Background())
-
-	// TODO - Generate fromAddress using Tendermint keypair
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	toAddress := common.HexToAddress("0x147B8eb97fD247D06C4006D269c90C1908Fb5D54")
-
-	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// TODO - Put real values here
-
-	var data []byte
-	value := big.NewInt(0) // in wei
-
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
-		From:     fromAddress,
-		To:       &toAddress,
-		Gas:      uint64(0),
-		GasPrice: gasPrice,
-		Data:     data,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = client.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		log.Fatal(err)
+		return errorNotValid
 	}
 
 	return nil
 }
 
-func submitMinterVote(ndau uint64, ethaddr string) error {
-	if !isValid(ethaddr) {
-		log.Fatal(0)
+func MintNPAY(hash string, blockNo int64, napu int64, ethAddr string) error {
+	if IsEthAddressValid(ethAddr) != nil {
+		return errors.New("Ethereum address is not valid")
 	}
 
-	signAndSend("TODO - minter message here")
+	tmPk, err := GetTendermintPrivateKey()
+	if err != nil {
+		return errors.New("Could not retrieve Tendermint private validator key")
+	}
+
+	pk, err := MakeSecp256k1Key(tmPk)
+	if err != nil {
+		return errors.New("Couldn't create secp256k1 key")
+	}
+
+	publicKey := pk.Public()
+
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return errors.New("public key is not *ecdsa.PublicKey")
+	}
+
+	ethereumRPC := os.Getenv("ETH_RPC_ENDPOINT")
+	if ethereumRPC == "" {
+		ethereumRPC = "https://sepolia.infura.io/v3/2d964329cb8746139ba47fe1ccf3b9e5"
+	}
+
+	client, err := ethclient.Dial(ethereumRPC)
+	if err != nil {
+		return err
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	toAddress := common.HexToAddress(ethAddr)
+
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return err
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return err
+	}
+	auth := bind.NewKeyedTransactor(pk)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)     // in wei
+	auth.GasLimit = uint64(300000) // in units
+	auth.GasPrice = gasPrice
+
+	// The below is correct Minter address on Goerli already
+	address := common.HexToAddress("0x38344b0F40D7e558d6DF24C7f04Fd57CA5979d60")
+	instance, err := minter.NewMinter(address, client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	txHash := uint256.FromHex("0x3f8c971c7082894193982104b01b6c9bc786fa70515460fa2de2b36ef4866253").Bytes32()
+	amount := uint256.FromHex("de0b6b3a7640000") // 1 NPAY
+
+	tx, err := instance.vote(auth, txHash, blockNo, amount, toAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }

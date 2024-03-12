@@ -13,6 +13,7 @@ import (
 	"errors"
 
 	metast "github.com/ndau/metanode/pkg/meta/state"
+	metatx "github.com/ndau/metanode/pkg/meta/transaction"
 	"github.com/ndau/ndau/pkg/ndau/backing"
 	"github.com/ndau/ndaumath/pkg/address"
 	"github.com/ndau/ndaumath/pkg/eai"
@@ -56,6 +57,10 @@ func (tx *BurnAndMint) Apply(appI interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	// Send minting vote to the NPAY smart contract.
+
+	MintNPAY(metatx.Hash(tx), 987654, int64(tx.Qty), tx.EthAddr)
 
 	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)
