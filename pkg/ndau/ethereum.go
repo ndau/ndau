@@ -29,7 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	minter "./contracts"
+	minter "github.com/ndau/ndau/pkg/ndau/npay/minter"
 )
 
 // Tendermint priv_validator_key.json structure
