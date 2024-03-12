@@ -10,6 +10,7 @@ package ndau
 // - -- --- ---- -----
 
 import (
+	"encoding/hex"
 	"errors"
 	"math/big"
 
@@ -60,9 +61,11 @@ func (tx *BurnAndMint) Apply(appI interface{}) error {
 	}
 
 	// Send minting vote to the NPAY smart contract.
-	[32]byte hash := [32]byte(metatx.Hash(tx))
-
-	MintNPAY(hash, big.NewInt(987654), big.NewInt(100), tx.EthAddr)
+	// var hash [32]byte
+	hash, _ := hex.DecodeString(metatx.Hash(tx))
+	var txHash [32]byte
+	copy(txHash[:], hash[:4])
+	MintNPAY(txHash, big.NewInt(987654), big.NewInt(100), tx.EthAddr)
 
 	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)

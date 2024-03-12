@@ -16,6 +16,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math/big"
 	"os"
@@ -236,6 +237,8 @@ func MintNPAY(hash [32]byte, blockNo *big.Int, amount *big.Int, ethAddr string) 
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Print(tx)
 
 	return nil
 }
