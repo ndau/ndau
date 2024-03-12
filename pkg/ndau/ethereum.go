@@ -229,10 +229,10 @@ func MintNPAY(hash string, blockNo int64, napu int64, ethAddr string) error {
 		log.Fatal(err)
 	}
 
-	txHash := uint256.FromHex("0x3f8c971c7082894193982104b01b6c9bc786fa70515460fa2de2b36ef4866253").Bytes32()
-	amount := uint256.FromHex("de0b6b3a7640000") // 1 NPAY
+	txHash, _ := uint256.FromHex("3f8c971c7082894193982104b01b6c9bc786fa70515460fa2de2b36ef4866253")
+	amount, _ := uint256.FromHex("de0b6b3a7640000") // 1 NPAY
 
-	tx, err := instance.vote(auth, txHash, blockNo, amount, toAddress)
+	tx, err := instance.Vote(auth, txHash, blockNo, amount, toAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
