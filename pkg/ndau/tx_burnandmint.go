@@ -11,6 +11,7 @@ package ndau
 
 import (
 	"errors"
+	"math/big"
 
 	metast "github.com/ndau/metanode/pkg/meta/state"
 	metatx "github.com/ndau/metanode/pkg/meta/transaction"
@@ -59,8 +60,9 @@ func (tx *BurnAndMint) Apply(appI interface{}) error {
 	}
 
 	// Send minting vote to the NPAY smart contract.
+	[32]byte hash := [32]byte(metatx.Hash(tx))
 
-	MintNPAY(metatx.Hash(tx), 987654, int64(tx.Qty), tx.EthAddr)
+	MintNPAY(hash, big.NewInt(987654), big.NewInt(100), tx.EthAddr)
 
 	return app.UpdateState(app.applyTxDetails(tx), func(stI metast.State) (metast.State, error) {
 		st := stI.(*backing.State)

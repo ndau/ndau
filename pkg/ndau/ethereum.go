@@ -22,7 +22,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/core-coin/uint256"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -172,7 +171,7 @@ func IsEthAddressValid(ethaddr string) error {
 	return nil
 }
 
-func MintNPAY(hash string, blockNo int64, napu int64, ethAddr string) error {
+func MintNPAY(hash [32]byte, blockNo *big.Int, amount *big.Int, ethAddr string) error {
 	if IsEthAddressValid(ethAddr) != nil {
 		return errors.New("Ethereum address is not valid")
 	}
@@ -229,10 +228,11 @@ func MintNPAY(hash string, blockNo int64, napu int64, ethAddr string) error {
 		log.Fatal(err)
 	}
 
-	txHash, _ := uint256.FromHex("3f8c971c7082894193982104b01b6c9bc786fa70515460fa2de2b36ef4866253")
-	amount, _ := uint256.FromHex("de0b6b3a7640000") // 1 NPAY
+	// txHash, _ := uint256.FromHex("3f8c971c7082894193982104b01b6c9bc786fa70515460fa2de2b36ef4866253")
+	// amount :=new(big.Int)
+	// amount.SetString("de0b6b3a7640000",16) // 1 NPAY
 
-	tx, err := instance.Vote(auth, txHash, blockNo, amount, toAddress)
+	tx, err := instance.Vote0(auth, hash, blockNo, amount, toAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
