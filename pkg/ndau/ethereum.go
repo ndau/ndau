@@ -174,17 +174,17 @@ func IsEthAddressValid(ethaddr string) error {
 
 func MintNPAY(hash [32]byte, blockNo *big.Int, amount *big.Int, ethAddr string) error {
 	if IsEthAddressValid(ethAddr) != nil {
-		return errors.New("Ethereum address is not valid")
+		return errors.New("ethereum address is not valid")
 	}
 
 	tmPk, err := GetTendermintPrivateKey()
 	if err != nil {
-		return errors.New("Could not retrieve Tendermint private validator key")
+		return errors.New("could not retrieve Tendermint private validator key")
 	}
 
 	pk, err := MakeSecp256k1Key(tmPk)
 	if err != nil {
-		return errors.New("Couldn't create secp256k1 key")
+		return errors.New("couldn't create secp256k1 key")
 	}
 
 	publicKey := pk.Public()
@@ -196,7 +196,7 @@ func MintNPAY(hash [32]byte, blockNo *big.Int, amount *big.Int, ethAddr string) 
 
 	ethereumRPC := os.Getenv("ETH_RPC_ENDPOINT")
 	if ethereumRPC == "" {
-		ethereumRPC = "https://sepolia.infura.io/v3/2d964329cb8746139ba47fe1ccf3b9e5"
+		ethereumRPC = "https://goerli.infura.io/v3/2d964329cb8746139ba47fe1ccf3b9e5"
 	}
 
 	client, err := ethclient.Dial(ethereumRPC)
@@ -216,7 +216,8 @@ func MintNPAY(hash [32]byte, blockNo *big.Int, amount *big.Int, ethAddr string) 
 	if err != nil {
 		return err
 	}
-	auth := bind.NewKeyedTransactor(pk)
+
+	auth, _ := bind.NewKeyedTransactorWithChainID(pk, big.NewInt(1))
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
 	auth.GasLimit = uint64(300000) // in units

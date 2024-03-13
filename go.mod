@@ -4,15 +4,14 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/core-coin/uint256 v1.0.0
-	github.com/ethereum/go-ethereum v1.13.13
+	github.com/ethereum/go-ethereum v1.13.14
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-zoo/bone v1.3.0
 	github.com/kentquirk/boneful v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/ndau/chaincode v1.2.10
 	github.com/ndau/json2msgp v1.1.1
-	github.com/ndau/metanode v1.10.0
+	github.com/ndau/metanode v1.10.1
 	github.com/ndau/msgp-well-known-types v0.1.2
 	github.com/ndau/ndaumath v1.3.9
 	github.com/ndau/noms v1.0.4
@@ -24,6 +23,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tendermint/tendermint v0.32.3
 	github.com/tinylib/msgp v1.1.9
+	golang.org/x/crypto v0.21.0
 )
 
 require (
@@ -85,12 +85,11 @@ require (
 	github.com/tendermint/tm-db v0.1.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.18.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.15.0 // indirect
 	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
